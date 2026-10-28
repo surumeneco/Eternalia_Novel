@@ -1,0 +1,24 @@
+{
+  "name": "eternalia-novel",
+  "private": true,
+  "version": "0.1.0-alpha",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev -w @eternalia/web",
+    "dev:api": "npm run dev -w @eternalia/api",
+    "build:contracts": "npm run build -w @eternalia/contracts",
+    "verify:exploratory": "npm run build:contracts && npm run verify:exploratory -w @eternalia/contracts",
+    "build": "npm run build:contracts && npm run build -w @eternalia/api && npm run build -w @eternalia/web",
+    "alpha": "npm run build:contracts && node apps/preview/src/server.mjs",
+    "test:alpha": "npm run build:contracts && node --test packages/contracts/exploratory/*.test.mjs apps/preview/tests/*.test.mjs",
+    "check:alpha": "npm run test:alpha",
+    "alpha:offline": "node apps/preview/src/server.mjs",
+    "seed:alpha": "node apps/preview/src/seed.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
