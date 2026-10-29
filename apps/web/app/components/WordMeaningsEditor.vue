@@ -6,6 +6,7 @@ const props = defineProps<{
   modelValue: string;
   languages: Choice[];
   words: Choice[];
+  wordClasses: Choice[];
 }>();
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>();
 const meanings = ref<WordMeaning[]>([]);
@@ -53,7 +54,15 @@ function wordsOf(origin: WordEtymology) {
           <button type="button" class="inline-action" @click="meanings.splice(index, 1)">意味を削除</button>
         </div>
         <label>品詞
-          <input v-model="meaning.partOfSpeech" type="text" maxlength="80" placeholder="名詞・動詞など" />
+          <select v-if="wordClasses.length" v-model="meaning.partOfSpeech">
+            <option value="">未指定</option>
+            <option v-for="wordClass in wordClasses" :key="wordClass.id" :value="wordClass.title">
+              {{ wordClass.title }}
+            </option>
+            <option v-if="meaning.partOfSpeech && !wordClasses.some(entry => entry.title === meaning.partOfSpeech)"
+              :value="meaning.partOfSpeech">{{ meaning.partOfSpeech }}（旧値）</option>
+          </select>
+          <input v-else v-model="meaning.partOfSpeech" type="text" maxlength="80" placeholder="名詞・動詞など" />
         </label>
         <label>意味・説明
           <textarea v-model="meaning.definition" maxlength="2000" rows="3" />
