@@ -17,7 +17,7 @@ const chaptersOf = (partId: string) => sorted(partId, 'chapter');
   <div>
     <TopicPath :items="[{ label: 'ホーム', to: '/' }, { label: 'ストーリー', to: '/stories' }, { label: series?.content.title ?? 'シリーズ' }]" />
     <ReaderPanel>
-      <p v-if="pending" role="status">目次を読み込んでいます。</p>
+      <ReadingSkeleton v-if="pending" label="目次を読み込んでいます。" />
       <div v-else-if="error || !series" role="alert">
         <h1>ストーリーを表示できません</h1>
         <p class="error-text">シリーズが存在しないか、公開されていません。</p>
