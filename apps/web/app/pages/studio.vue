@@ -283,6 +283,7 @@ async function logout() {
         </div>
         <div v-if="auth?.authenticated" class="action-row">
           <NuxtLink to="/studio/publication">公開管理</NuxtLink>
+          <NuxtLink to="/studio/order">並べ替え</NuxtLink>
           <NuxtLink to="/studio/memos">メモ</NuxtLink>
           <button class="inline-action" type="button" @click="logout">ログアウト</button>
         </div>
