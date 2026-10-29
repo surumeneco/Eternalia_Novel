@@ -8,6 +8,7 @@ const props = defineProps<{
 const { data: series, pending, error, refresh } = await useFetch<ReaderNode[]>('/api/public/series');
 function collectionLink(id: string) {
   if (props.section === 'stories') return '/stories/' + id;
+  if (props.section === 'tips') return '/tips/' + id;
   return { path: '/series/' + id, query: { section: props.section } };
 }
 </script>
