@@ -6,7 +6,8 @@ const { data: item, pending, error, refresh } = await useFetch<ReaderNode>(
 );
 const displayDetails = computed(() => Object.fromEntries(
   Object.entries(item.value?.content.details ?? {}).filter(([key]) =>
-    !(item.value?.kind === 'word' && key === 'meanings')),
+    !((item.value?.kind === 'word' && key === 'meanings') ||
+      (item.value?.kind === 'language' && (key === 'characters' || key === 'wordClasses')))),
 ));
 const kindNames: Record<string,string> = {
   volume: '編', part: '部', chapter: '章', category: 'カテゴリ',
@@ -30,6 +31,8 @@ const kindNames: Record<string,string> = {
         <AuthorEditLink :item-id="item.id" />
         <RichContent :source="item.content.body" />
         <WordMeaningsReader v-if="item.kind === 'word'" :serialized="item.content.details.meanings" />
+        <LanguageStructureReader v-if="item.kind === 'language'"
+          :characters="item.content.details.characters" :word-classes="item.content.details.wordClasses" />
         <dl v-if="Object.keys(displayDetails).length" class="reader-details">
           <template v-for="(value, key) in displayDetails" :key="key">
             <dt>{{ key }}</dt><dd>{{ value }}</dd>
