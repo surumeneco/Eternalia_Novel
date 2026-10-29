@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { AuthorNode } from '~/types/author';
 import type { ReaderKind } from '~/types/reader';
+import { parseLanguageWordClasses } from '@eternalia/contracts';
 
 interface AuthState { configured: boolean; authenticated: boolean }
 const { data: auth, pending: authPending, refresh: refreshAuth } =
@@ -109,6 +110,14 @@ const activeWordLanguages = computed(() => {
     ? nodes.value.filter(node => node.kind === 'language' && node.parentId === language.parentId)
         .map(node => ({id:node.id,title:node.draft.title}))
     : [];
+});
+const activeWordClasses = computed(() => {
+  const language = selected.value?.parentId ? byId.value.get(selected.value.parentId) : null;
+  if (language?.kind !== 'language') return [];
+  try {
+    return parseLanguageWordClasses(language.draft.details.wordClasses ?? '[]')
+      .map(entry => ({ id: entry.id, title: entry.name }));
+  } catch { return []; }
 });
 const activeWordReferences = computed(() => {
   const languageIds = new Set(activeWordLanguages.value.map(node => node.id));
@@ -343,7 +352,7 @@ async function logout() {
                   <input v-model="form.details.partOfSpeech" maxlength="80" />
                 </label>
                 <WordMeaningsEditor v-if="selected.kind === 'word'" v-model="wordMeanings"
-                  :languages="activeWordLanguages" :words="activeWordReferences" />
+                  :languages="activeWordLanguages" :words="activeWordReferences" :word-classes="activeWordClasses" />
                 <label v-if="selected.kind === 'event'">相対年
                   <input v-model="form.details.year" maxlength="10000" />
                 </label>
