@@ -1,3 +1,47 @@
-<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>Eternalia — 作品の世界へ</title><link rel="stylesheet" href="/assets/style.css" /></head>
-<body><header class="topbar"><div class="brand"><span class="logo" aria-hidden="true">E</span><div><strong>Eternalia</strong><small>Stories & Worlds</small></div></div><nav aria-label="メインメニュー"><a class="active" href="/">公開作品</a><a href="/admin">作者用</a></nav></header>
-<main class="container reader"><section class="hero"><p class="eyebrow">THE ETERNAL ARCHIVE</p><h1>物語と、その世界のすべて。</h1><p>シリーズを開き、物語・設定集・創作言語・年表を読むことができます。公開済みの資料だけが表示されます。</p></section><div id="status" class="status" role="status"></div><section id="library" aria-label="公開シリーズ" class="grid"></section><section id="series-view" hidden><div class="section-heading"><button type="button" id="back" class="ghost">← シリーズ一覧</button><span class="eyebrow">SERIES DETAIL</span></div><div id="series-title"></div><div class="reader-layout"><aside id="tree" class="panel tree" aria-label="公開目次"></aside><article class="panel reading-surface" id="reading" aria-label="閲覧内容"></article></div></section></main><footer>Eternalia α — ローカル動作確認版。掲載情報はサンプルまたは作者が入力したデータです。</footer><script type="module" src="/assets/reader.js"></script></body></html>
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Eternalia — 作品の世界へ</title>
+  <link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="logo" aria-hidden="true">E</span><div><strong>Eternalia</strong><small>Stories & Worlds</small></div></div>
+    <nav aria-label="メインメニュー"><a class="active" href="/">公開作品</a><a href="/admin">作者用</a></nav>
+  </header>
+  <div class="container site-structure">
+    <aside class="portal-sidebar" aria-label="補助情報">
+      <h2>公開資料</h2>
+      <ul>
+        <li>ストーリー</li><li>設定集</li><li>辞書・創作言語</li><li>年表</li>
+      </ul>
+      <p class="subtle">シリーズを開くと、公開されている資料を領域横断で閲覧できます。</p>
+    </aside>
+    <main class="site-main reader">
+      <section class="hero">
+        <p class="eyebrow">ETERNALIA</p>
+        <h1>物語と、その世界のすべて。</h1>
+        <p>シリーズを開き、物語・設定集・創作言語・年表を読むことができます。公開済みの資料だけが表示されます。</p>
+      </section>
+      <div id="status" class="status" role="status"></div>
+      <section id="library" aria-label="公開シリーズ" class="grid"></section>
+      <section id="series-view" hidden>
+        <div class="section-heading">
+          <button type="button" id="back" class="ghost">← シリーズ一覧</button>
+          <span class="eyebrow">SERIES DETAIL</span>
+        </div>
+        <div id="series-title"></div>
+        <div class="reader-layout">
+          <aside id="tree" class="panel tree" aria-label="公開目次"></aside>
+          <article class="panel reading-surface" id="reading" aria-label="閲覧内容"></article>
+        </div>
+      </section>
+    </main>
+  </div>
+  <footer>Eternalia α — ローカル動作確認版。掲載情報はサンプルまたは作者が入力したデータです。</footer>
+  <script type="module" src="/assets/reader.js"></script>
+</body>
+</html>
