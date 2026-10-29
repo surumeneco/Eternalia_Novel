@@ -57,7 +57,7 @@ const labels: Record<ReaderKind, string> = {
       { label: series?.content.title || 'シリーズ' }
     ]" />
     <ReaderPanel>
-      <p v-if="pending" role="status">シリーズを読み込んでいます。</p>
+      <ReadingSkeleton v-if="pending" label="シリーズを読み込んでいます。" />
       <div v-else-if="error" role="alert">
         <h1>シリーズを表示できません</h1>
         <p class="error-text">存在しないか、現在公開されていない可能性があります。</p>
