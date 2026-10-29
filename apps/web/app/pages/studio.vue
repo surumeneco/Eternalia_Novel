@@ -137,7 +137,13 @@ async function load() {
 onMounted(async () => {
   await refreshAuth();
   window.addEventListener('beforeunload', beforeUnload);
-  if (auth.value?.authenticated) await load();
+  if (auth.value?.authenticated) {
+    await load();
+    const requested = useRoute().query.item;
+    if (typeof requested === 'string' && nodes.value.some(node => node.id === requested)) {
+      selectedId.value = requested;
+    }
+  }
 });
 async function reloadNodes() {
   if (confirmDiscard()) await load();
@@ -240,7 +246,10 @@ async function logout() {
                      <h1>作者の書斎</h1>
           <p>下書き保存と公開スナップショットの反映は別操作です。</p>
         </div>
-        <button v-if="auth?.authenticated" class="inline-action" type="button" @click="logout">ログアウト</button>
+        <div v-if="auth?.authenticated" class="action-row">
+          <NuxtLink to="/studio/publication">公開管理</NuxtLink>
+          <button class="inline-action" type="button" @click="logout">ログアウト</button>
+        </div>
       </div>
       <p v-if="authPending" role="status">認証状態を確認しています。</p>
       <div v-else-if="!auth?.configured" role="alert">
