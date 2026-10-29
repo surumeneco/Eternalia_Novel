@@ -54,4 +54,4 @@ test('ordering of unpublished work does not reveal its title via public readers'
   db=reorderSiblings(db,{parentId:s.id,kind:'volume',
     orderedIds:[b.id,a.id],expectedRevisions:rev},now+1);
   assert.deepEqual(publicTree(db,s.id,now+2).filter(n=>n.kind==='volume').map(n=>n.id),[a.id]);
-});});
+});
