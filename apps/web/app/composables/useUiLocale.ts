@@ -34,6 +34,12 @@ export const uiMessages = {
     word: '単語',
     grammar: '文法',
     event: '出来事',
+    collectionLoading: '公開シリーズを読み込んでいます。',
+    collectionEmpty: '現在閲覧できるシリーズはありません。',
+    storiesCollectionDescription: 'シリーズごとの編・部・章・本文を閲覧します。',
+    tipsCollectionDescription: 'シリーズに属するカテゴリ・設定・設定項目を閲覧します。',
+    dictionaryCollectionDescription: 'シリーズの創作言語、単語、文法を閲覧します。',
+    timelineCollectionDescription: 'シリーズの年代区分と出来事を閲覧します.',
   },
 } as const;
 
