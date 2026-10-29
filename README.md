@@ -1,35 +1,27 @@
-# Eternalia_Novel — α版ローカル検証パッケージ
+# Eternalia_Novel — α版再実装（ドラフト）
 
-**ローカル実行可能・ユーザー確認用α版（2026-10-28）**。Nuxt 4 / NestJS / PostgreSQLの採用は確定済みですが、現在それらの正式なインストール・統合・動作検証は未完了です。α版はNode.js標準ライブラリで動作する独立プレビューを使用しています。
+旧v0.3のデザイントークン／情報階層を引き継いだ **Nuxt 4 + NestJS + PostgreSQL** のα版です。最初のNode標準ライブラリによるローカルプレビューも比較・単体確認用に残してあります。
 
-## すぐに動作確認
+現在の作業ブランチ: `draft/alpha-reimplementation-20261029`。ドラフトPR: [#2](https://github.com/surumeneco/Eternalia_Novel/pull/2)。CAT-TDDの正規GateとDiscord実アカウント・実ブラウザ検証は未完了です。**mainへマージしていません**。
 
-- **Windows:** `start-alpha.cmd` をダブルクリック（Node.js 22+）
-- **macOS/Linux:** `./start-alpha.sh`
-- 読者用URL、作者用URLは起動したターミナルに表示されます。**作者URLには認証キーのハッシュフラグメントが付属するため、全文をコピー**してください。
-- サンプル: 空の状態なら `node apps/preview/src/seed.mjs` を実行してから起動。
+## 選べる起動方法
 
-詳しい操作シナリオ: [`docs/alpha-setup.md`](docs/alpha-setup.md)
+1. **ローカル単体α（Discord/Postgres不要）**: Windows `start-alpha.cmd`、macOS/Linux `./start-alpha.sh`。旧プレビューと同じ読者・作者用URL（作者は起動時表示されるローカル専用キー）を使用します。UI配色はv0.3を継承。手順: [`docs/alpha-setup.md`](docs/alpha-setup.md)。
+2. **採用構成の統合α（Nuxt/Nest/PostgreSQL/Discord）**: [`docs/alpha-nuxt-setup.md`](docs/alpha-nuxt-setup.md) に従って `.env`、Docker Compose、migration、Nuxt、Nestを起動。読者: `http://localhost:3000/`、作者: `http://localhost:3000/studio`。
 
-## 内容
+どちらも本番インターネットへ公開しないでください。既存単体αのJSONとPostgreSQLの内容は自動同期されません。
 
-- `apps/preview/`: localhostのみで稼働する検証用Web UI / HTTP API、ローカルJSONデータストア。**本番向け認証ではありません**。
-- `packages/contracts/`: 階層管理、下書き/公開スナップショット、親非公開・公開日時、編集競合などの純粋なTypeScriptドメインロジック（テスト実施）。
-- `apps/web/`: Nuxt 4の現行採用構成の最小骨格（未統合/未ビルド）。
-- `apps/api/`: NestJSの現行採用構成の最小骨格（未統合/未ビルド）。
-- `compose.yaml`: PostgreSQL開発コンテナ構成（未稼働）。
-- `docs/`: α版確認手順、開発工程・仕様境界。
+## ディレクトリ
 
-### 採用済み要件からα版に実装した主な範囲
+- `apps/web` — Nuxt 4：ホーム、ストーリー/設定集/辞書/年表、シリーズ、項目閲覧、ルビ・ページ区切り、作者の書斎
+- `apps/api` — NestJS：公開専用API、作者限定CRUD/公開反映、Discord OAuth2+PKCE、PostgreSQL保存と競合制御
+- `packages/contracts` — 純粋ドメイン：階層、下書き、公開スナップショット、祖先可視性、公開開始日、項目プリセット
+- `db/migrations` — `content_nodes` / `published_snapshots` / OAuth state / author sessions
+- `apps/preview` — オフライン用旧プレビュー（localhost限定キーとJSONストア、Discord認証とは別）
+- `docs` — 設計継承、検証境界、機能別引継ぎ
 
-- シリーズ→編→部→章、設定カテゴリ→Tip→TipSection、言語→単語/文法、年代区分→出来事の所属関係
-- 下書き保存と明示公開の分離。公開版スナップショットの保存
-- 匿名読者に対する祖先の公開可否/開始日時の遮断、編集・公開APIの区別
-- 更新競合409、カテゴリ別TipSectionプリセットを新規Tipに一度だけコピー
-- ルビ・ページ分割を文字列マーカーから読者画面で表示する暫定仕様
+## 検証と残課題
 
-### CAT-TDDについて
+GitHub Actions `Alpha checks`: npm固定インストール、既存探索的α試験、Nuxt/Nest/契約ビルド、Nuxt型検査、PostgreSQL 17のmigrationと公開スナップショット／競合処理の探索的結合試験、作者ガード単体試験。実測結果は**コミットごとのCIログ**で確認してください。
 
-`cat-tdd-chatgpt` の `issue-work` フローを適用し、仕様と実装、実測可能な探索的テストを分離しています。現環境では正規ランタイムのdoctor・handoff guard・TestModel生成・Queue/Red/Green/Conformanceが実行できなかったため、**このパッケージはCATの正式完了成果ではありません**。`CAT-HANDOFF.md` から作業を再開してください。
-
-正式なGitHub `surumeneco/Eternalia_Novel` mainへのPR/マージも未実施です。
+未完了: CAT-TDD正規doctor・Guard／Conformance、Discord実アカウントOAuth2、UIのブラウザ操作とv0.3との実視覚比較、年表換算・意味別語源・管理マスタ等の詳細仕様。CI成功だけで正式α受入完了とは判断しません。詳しくは [`docs/alpha-check-evidence.md`](docs/alpha-check-evidence.md) と [`CAT-HANDOFF.md`](CAT-HANDOFF.md)。
