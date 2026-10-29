@@ -2,7 +2,11 @@
 
 旧v0.3のデザイントークン／情報階層を引き継いだ **Nuxt 4 + NestJS + PostgreSQL** のα版です。最初のNode標準ライブラリによるローカルプレビューも比較・単体確認用に残してあります。
 
-現在の作業ブランチ: `draft/alpha-reimplementation-20261029`。ドラフトPR: [#2](https://github.com/surumeneco/Eternalia_Novel/pull/2)。CAT-TDDの正規GateとDiscord実アカウント・実ブラウザ検証は未完了です。**mainへマージしていません**。
+現在の作業ブランチ: `feature/alpha-reimplementation-20261029`。ドラフトPR（feature → develop）: [#3](https://github.com/surumeneco/Eternalia_Novel/pull/3)。CAT-TDDの正規GateとDiscord実アカウント・実ブラウザ検証は未完了です。**mainへマージしていません**。
+
+## ブランチ運用
+
+`main`は安定版、`develop`は開発統合、`feature/*`は機能開発用です。`feature/*`は`develop`を起点に切り、CIとレビュー後にPRで`develop`へ統合します。`main`への統合は安定化・リリース時に別途実施します。
 
 ## 選べる起動方法
 
