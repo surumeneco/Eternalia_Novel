@@ -32,7 +32,7 @@ const sections = [
     </ReaderPanel>
     <ReaderPanel class="reader-panel-spaced">
       <h2 class="section-heading">公開シリーズ</h2>
-      <p v-if="pending" role="status">読み込み中です。</p>
+      <ReadingSkeleton v-if="pending" label="読み込み中です。" />
       <div v-else-if="error" role="alert">
         <p class="error-text">公開シリーズを取得できませんでした。</p>
         <button class="inline-action" type="button" @click="refresh()">再試行</button>
@@ -46,7 +46,7 @@ const sections = [
     </ReaderPanel>
     <ReaderPanel class="reader-panel-spaced">
       <h2 class="section-heading">新着・更新</h2>
-      <p v-if="recentPending" role="status">更新情報を読み込んでいます。</p>
+      <ReadingSkeleton v-if="recentPending" label="更新情報を読み込んでいます。" />
       <div v-else-if="recentError" role="alert">
         <p class="error-text">更新情報を取得できませんでした。</p>
         <button class="inline-action" type="button" @click="refreshRecent()">再試行</button>
