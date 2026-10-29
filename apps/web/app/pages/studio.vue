@@ -47,6 +47,14 @@ const wordMeanings = computed<string>({
   get: () => form.details.meanings ?? '[]',
   set: value => { form.details.meanings = value; },
 });
+const languageCharacters = computed<string>({
+  get: () => form.details.characters ?? '[]',
+  set: value => { form.details.characters = value; },
+});
+const languageWordClasses = computed<string>({
+  get: () => form.details.wordClasses ?? '[]',
+  set: value => { form.details.wordClasses = value; },
+});
 const createOpen = ref(false);
 const createParentId = ref<string | null>(null);
 const createKind = ref<ReaderKind>('series');
@@ -198,7 +206,8 @@ async function createItem() {
         content:{
           title:createTitle.value.trim(), body:'',
           details:createKind.value === 'category' ? {presets:'[]'} :
-            createKind.value === 'word' ? {meanings:'[]'} : {},
+            createKind.value === 'word' ? {meanings:'[]'} :
+            createKind.value === 'language' ? {characters:'[]',wordClasses:'[]'} : {},
         },
       },
     });
@@ -327,6 +336,8 @@ async function logout() {
                 <label>本文・説明<textarea v-model="form.body" rows="14" maxlength="100000"
                   placeholder="ページ区切り: [[page]] ／ ルビ: ｜漢字《かんじ》"></textarea></label>
                 <CategoryPresetEditor v-if="selected.kind === 'category'" v-model="categoryPresets" />
+                <LanguageStructureEditor v-if="selected.kind === 'language'"
+                  v-model:characters="languageCharacters" v-model:word-classes="languageWordClasses" />
                 <label v-if="selected.kind === 'word' && !form.details.meanings && form.details.partOfSpeech">
                   旧形式の品詞
                   <input v-model="form.details.partOfSpeech" maxlength="80" />
