@@ -1,6 +1,6 @@
 # α採用構成のローカル起動（Nuxt 4 / NestJS / PostgreSQL）
 
-**対象ブランチ**: `draft/alpha-reimplementation-20261029`（PR #2）。Node.js 22以上、Docker/Compose、npmを利用します。リポジトリのルートで操作してください。
+**対象ブランチ**: `feature/alpha-reimplementation-20261029`（PR #3、統合先は`develop`）。Node.js 22以上、Docker/Compose、npmを利用します。リポジトリのルートで操作してください。
 
 ## 1. 依存と環境変数
 
