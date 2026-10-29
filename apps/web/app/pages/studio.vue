@@ -296,9 +296,7 @@ async function logout() {
                 <label>名称・見出し<input v-model="form.title" maxlength="150" required /></label>
                 <label>本文・説明<textarea v-model="form.body" rows="14" maxlength="100000"
                   placeholder="ページ区切り: [[page]] ／ ルビ: ｜漢字《かんじ》"></textarea></label>
-                <label v-if="selected.kind === 'category'">項目プリセット（JSON）
-                  <textarea v-model="form.details.presets" rows="4" maxlength="10000"></textarea>
-                </label>
+                <CategoryPresetEditor v-if="selected.kind === 'category'" v-model="form.details.presets" />
                 <label v-if="selected.kind === 'word'">品詞
                   <input v-model="form.details.partOfSpeech" maxlength="10000" />
                 </label>
