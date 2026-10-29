@@ -1,7 +1,7 @@
 # α版 GitHub Actions検証境界
 
-CI workflow: `.github/workflows/alpha-checks.yml`。Push / Pull Requestで固定npm lockから `npm ci`、既存α探索的テスト、contracts/Nest/Nuxtビルド、Nuxt型検査を走らせる。
+CI: `.github/workflows/alpha-checks.yml`。固定npm lockから `npm ci`、既存探索的αテスト、contracts/Nest/Nuxtビルド、Nuxt型検査、PostgreSQL 17サービス起動、明示的migration適用、独立スナップショット・改訂競合・管理Guardの探索的結合/単体テストを実行する。
 
-**この文書は検証計画であって結果ではない。** 成功・失敗は当該HEADのGitHub Actions実行記録とログを根拠に別途記録する。CI成功でも以下はそれぞれnot-run/未確認のまま: 正規CAT-TDD doctor/guard/Red/Green/conformance、PostgreSQL接続/移行、Discord OAuth2本人認証、ブラウザの実操作、旧v0.3画面との視覚比較、公開後の本番利用。
+**実行結果は当該HEADのGitHub Actionsログで確認する。CI設定をコミットしただけで成功とはみなさない。**
 
-元の `apps/preview` はローカル用であり、Nest読取ブリッジもそれに依存する。PostgreSQL実装に移るまで本番デプロイ不可。
+CIが成功しても、以下は別途not-runまたは未確認: 正規CAT-TDD doctor/guard/Red/Green/conformance、Discord実アカウントによるOAuth2、ブラウザの作者編集導線、旧v0.3画面との実スクリーンショット比較、年表換算・辞書の全仕様、公開後の利用者アクセス検証。CIの一時DBは破棄されるので本番データ保存を意味しない。

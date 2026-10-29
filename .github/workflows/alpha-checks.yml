@@ -10,7 +10,23 @@ permissions:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: eternalia
+          POSTGRES_USER: eternalia
+          POSTGRES_PASSWORD: ci-temp-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U eternalia -d eternalia"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      DATABASE_URL: postgres://eternalia:ci-temp-password@127.0.0.1:5432/eternalia
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -27,3 +43,7 @@ jobs:
         run: npm run build
       - name: Check Nuxt types
         run: npm run typecheck -w @eternalia/web
+      - name: Apply PostgreSQL migrations
+        run: npm run db:migrate
+      - name: Exercise alpha PostgreSQL persistence and author guard tests
+        run: npm run test:db

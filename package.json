@@ -17,7 +17,8 @@
     "check:alpha": "npm run test:alpha",
     "alpha:offline": "node apps/preview/src/server.mjs",
     "seed:alpha": "node apps/preview/src/seed.mjs",
-    "db:migrate": "node scripts/migrate.mjs"
+    "db:migrate": "node scripts/migrate.mjs",
+    "test:db": "node --test apps/api/tests/*.test.mjs"
   },
   "engines": {
     "node": ">=22"
