@@ -5,3 +5,4 @@ export * from './timeline.js';
 export * from './language-structure.js';
 export * from './reorder.js';
 export * from './spelling-diagnostics.js';
+export * from './public-path.js';
