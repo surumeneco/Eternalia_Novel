@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
-import { createNode, editNode, publishNode, setVisibility, publicSeries, toReader } from '@eternalia/contracts';
+import { createNode, editNode, publishNode, setVisibility, publicSeries, publicTree, toReader, reorderSiblings } from '@eternalia/contracts';
 
 const require = createRequire(import.meta.url);
 require('reflect-metadata');
@@ -108,4 +108,30 @@ test('PostgreSQL preserves separate word senses and hides unpublished etymology 
   } finally {
     await repository.onModuleDestroy();
   }
+});
+
+test('PostgreSQL persists explicitly reordered sibling order and detects stale batch revision', async () => {
+  const repository=new PostgresLibraryService();
+  const seriesId=randomUUID(),a=randomUUID(),b=randomUUID(),now=Date.UTC(2026,9,29);
+  try {
+    await repository.mutate(db=>{
+      let next=createNode(db,{id:seriesId,kind:'series',content:{title:'order-series',body:'',details:{}},now});
+      for(const [id,title] of [[a,'A'],[b,'B']]) next=createNode(next,{
+        id,kind:'volume',parentId:seriesId,content:{title,body:'',details:{}},now,
+      });
+      for(const id of [seriesId,a,b]) next=publishNode(next,id,1,now);
+      return next;
+    });
+    await repository.mutate(db=>reorderSiblings(db,{
+      parentId:seriesId,kind:'volume',orderedIds:[b,a],
+      expectedRevisions:{[a]:1,[b]:1},
+    },now+1));
+    const loaded=await repository.read();
+    assert.deepEqual(publicTree(loaded,seriesId,now+2).filter(n=>n.kind==='volume')
+      .map(n=>n.id),[b,a]);
+    await assert.rejects(repository.mutate(db=>reorderSiblings(db,{
+      parentId:seriesId,kind:'volume',orderedIds:[a,b],
+      expectedRevisions:{[a]:1,[b]:1},
+    },now+2)),e=>e.code==='conflict');
+  } finally { await repository.onModuleDestroy(); }
 });
