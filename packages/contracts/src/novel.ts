@@ -4,6 +4,7 @@
  * preview and the future Nuxt/Nest/PostgreSQL implementation.
  */
 import { canReadPublished } from './publication.js';
+import { parseWordMeanings, type WordMeaning } from './word-meanings.js';
 
 export const kinds = [
   'series', 'volume', 'part', 'chapter', 'category', 'tip', 'tipSection',
@@ -62,6 +63,25 @@ function normalizeContent(raw: unknown): Content {
   }
   return { title, body, details };
 }
+/** Referential integrity for a source language and word within one Series. */
+function validateMeaningReferences(library: Library, languageId: string, content: Content): void {
+  if (content.details.meanings === undefined) return;
+  const meanings = parseWordMeanings(content.details.meanings);
+  const sourceSeries = ancestorsOf(library, languageId)[0]?.id;
+  for (const meaning of meanings) for (const origin of meaning.etymologies) {
+    if (!origin.languageId) continue;
+    const language = find(library, origin.languageId);
+    if (language.kind !== 'language' || ancestorsOf(library, language.id)[0]?.id !== sourceSeries) {
+      domainError('bad-request', '語源の参照言語は同一シリーズに所属する必要があります。');
+    }
+    if (origin.wordId) {
+      const word = find(library, origin.wordId);
+      if (word.kind !== 'word' || word.parentId !== language.id) {
+        domainError('bad-request', '語源の参照単語は指定した言語に所属する必要があります。');
+      }
+    }
+  }
+}
 function find(library: Library, id: string): NovelNode {
   const item = library.nodes.find(n => n.id === id);
   if (!item) domainError('not-found', '項目が見つかりません。');
@@ -80,6 +100,7 @@ export function createNode(library: Library, input: { id: string; kind: Kind; pa
   const parent = input.parentId ? find(library, input.parentId) : null;
   if (parentKind === null ? parent !== null : parent?.kind !== parentKind) domainError('bad-request', '親子階層が不正です。');
   const content = normalizeContent(input.content);
+  if (input.kind === 'word' && parent) validateMeaningReferences(library, parent.id, content);
   const next = clone(library);
   const siblings = next.nodes.filter(n => n.parentId === (parent?.id ?? null) && n.kind === input.kind);
   next.nodes.push({ id: input.id, kind: input.kind, parentId: parent?.id ?? null,
@@ -111,6 +132,9 @@ export function editNode(library: Library, id: string, expectedRevision: number,
   const item = find(next, id);
   if (!Number.isSafeInteger(expectedRevision) || expectedRevision !== item.revision) domainError('conflict', '他の編集により更新されています。');
   item.draft = normalizeContent(content);
+  if (item.kind === 'word' && item.parentId) {
+    validateMeaningReferences(next, item.parentId, item.draft);
+  }
   if (item.kind === 'category' && item.draft.details.presets !== undefined) parsePresets(item.draft.details.presets);
   item.revision += 1;
   item.updatedAt = now;
@@ -151,6 +175,39 @@ export function ancestorsOf(library: Library, id: string): NovelNode[] {
   }
   return chain;
 }
+/** Resolve an etymology reference without recursively projecting other word etymologies. */
+function readableReference(library: Library, id: string, kind: Kind, now: number): NovelNode | null {
+  let chain: NovelNode[];
+  try { chain = ancestorsOf(library, id); } catch { return null; }
+  const node = chain[chain.length - 1];
+  if (!node || node.kind !== kind || !node.published) return null;
+  return canReadPublished(
+    chain.map(part => ({ isPublic: part.isPublic, publicSinceEpochMs: part.publicSince })),
+    chain.every(part => part.published !== null), now,
+  ) ? node : null;
+}
+function publicMeaning(library: Library, meaning: WordMeaning, now: number): WordMeaning {
+  return {
+    id: meaning.id, partOfSpeech: meaning.partOfSpeech, definition: meaning.definition,
+    etymologies: meaning.etymologies.map(origin => {
+      const language = origin.languageId
+        ? readableReference(library, origin.languageId, 'language', now) : null;
+      const word = origin.wordId && language
+        ? readableReference(library, origin.wordId, 'word', now) : null;
+      return {
+        id: origin.id, note: origin.note,
+        ...(language ? {
+          languageId: language.id,
+          languageTitle: language.published!.value.title,
+        } : {}),
+        ...(word ? {
+          wordId: word.id,
+          wordTitle: word.published!.value.title,
+        } : {}),
+      };
+    }),
+  };
+}
 export function toReader(library: Library, id: string, now: number): ReaderNode | null {
   let path: NovelNode[];
   try { path = ancestorsOf(library, id); } catch { return null; }
@@ -162,7 +219,13 @@ export function toReader(library: Library, id: string, now: number): ReaderNode 
   // Only fields explicitly designed for readers may cross the API boundary.
   // In particular, category presets are AUTHOR metadata, even if category is public.
   const details: Details = {};
-  if (node.kind === 'word' && published.details.partOfSpeech !== undefined) details.partOfSpeech = published.details.partOfSpeech;
+  if (node.kind === 'word') {
+    if (published.details.partOfSpeech !== undefined) details.partOfSpeech = published.details.partOfSpeech;
+    if (published.details.meanings !== undefined) {
+      details.meanings = JSON.stringify(parseWordMeanings(published.details.meanings)
+        .map(meaning => publicMeaning(library, meaning, now)));
+    }
+  }
   if (node.kind === 'event' && published.details.year !== undefined) details.year = published.details.year;
   return { id: node.id, kind: node.kind, parentId: node.parentId,
     order: node.order, content: { title: published.title, body: published.body, details },
