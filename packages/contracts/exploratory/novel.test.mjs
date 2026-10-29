@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { newLibrary, createNode, editNode, publishNode, setVisibility, publicSeries,
-  toReader, publicTree, publicRecent, parseWordMeanings } from '../dist/index.js';
+  toReader, publicTree, publicRecent, parseWordMeanings, parseLanguageCharacters } from '../dist/index.js';
 import { randomUUID } from 'node:crypto';
 const now = Date.UTC(2026,9,28);
 function create(db,kind,parentId=null,title=kind,details={}) {
@@ -88,4 +88,34 @@ test('meanings validate referential consistency and distinct identities', () => 
   assert.throws(() => editNode(db,word.id,1,payload([{
     ...base,etymologies:[{id:randomUUID(),languageId:foreign.id,note:'別シリーズ'}],
   }]),now), e => e.code === 'bad-request','cross-series etymology is forbidden');
+});
+
+test('language characters, following rules and word classes are published as a snapshot', () => {
+  let db = newLibrary();
+  const series = create(db,'series',null,'世界'); db = series.db;
+  const a = randomUUID(), b = randomUUID();
+  const characters = [
+    {id:a,glyph:'a',pronunciation:'a',canStart:true,canEnd:true,nextIds:[b]},
+    {id:b,glyph:'b',pronunciation:'b',canStart:false,canEnd:true,nextIds:[]},
+  ];
+  const wordClasses = [{id:randomUUID(),name:'名詞',description:'名称を表す'}];
+  const language = create(db,'language',series.id,'L語',{
+    characters:JSON.stringify(characters),wordClasses:JSON.stringify(wordClasses),
+  }); db = language.db;
+  db = publish(db,series.id);
+  db = publish(db,language.id);
+  const published = toReader(db,language.id,now+1);
+  assert.deepEqual(parseLanguageCharacters(published.content.details.characters)[0].nextIds,[b]);
+  assert.equal(JSON.parse(published.content.details.wordClasses)[0].name,'名詞');
+  const changed = [{...characters[0],pronunciation:'new' },characters[1]];
+  db = editNode(db,language.id,1,{
+    title:'L語',body:'',details:{
+      characters:JSON.stringify(changed),wordClasses:JSON.stringify(wordClasses),
+    },
+  },now+2);
+  assert.equal(JSON.parse(toReader(db,language.id,now+3).content.details.characters)[0].pronunciation,'a',
+    'draft changes do not alter public language profile');
+  assert.throws(() => editNode(db,language.id,2,{
+    title:'L語',body:'',details:{characters:JSON.stringify([{...characters[0],nextIds:[randomUUID()]}])},
+  },now+4), e => e.code === 'bad-request','following character must exist in the same language');
 });
