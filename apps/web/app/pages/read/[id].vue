@@ -39,7 +39,7 @@ function chapterLink(chapterId: string) {
       { label: chapter?.content.title ?? '章' },
     ]" />
     <ReaderPanel>
-      <p v-if="pending" role="status">本文を読み込んでいます。</p>
+      <ReadingSkeleton v-if="pending" label="本文を読み込んでいます。" />
       <div v-else-if="error || chapter?.kind !== 'chapter'" role="alert">
         <h1>章を表示できません</h1>
         <p class="error-text">章が存在しないか、公開されていません。</p>
