@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ReaderKind, ReaderNode } from '~/types/reader';
+const { t } = useUiLocale();
 
 const route = useRoute();
 const seriesId = computed(() => String(route.params.id));
@@ -36,8 +37,8 @@ const groups = computed(() => categories.value
 <template>
   <div>
     <TopicPath :items="[
-      { label: 'ホーム', to: '/' },
-      { label: '設定集', to: '/tips' },
+      { label: t('home'), to: '/' },
+      { label: t('tips'), to: '/tips' },
       { label: series?.content.title ?? 'シリーズ' },
     ]" />
     <ReaderPanel>
@@ -45,7 +46,7 @@ const groups = computed(() => categories.value
       <div v-else-if="error || !series" role="alert">
         <h1>設定集を表示できません</h1>
         <p class="error-text">シリーズが存在しないか、公開されていません。</p>
-        <button class="inline-action" type="button" @click="refresh()">再試行</button>
+        <button class="inline-action" type="button" @click="refresh()">{{ t('retry') }}</button>
       </div>
       <template v-else>
         <h1>{{ series.content.title }} — 設定集</h1>
