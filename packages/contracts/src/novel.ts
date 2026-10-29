@@ -183,4 +183,18 @@ export function publicTree(library: Library, seriesId: string, now: number): Rea
 export function publicSeries(library: Library, now: number): ReaderNode[] {
   return library.nodes.filter(n => n.kind === 'series').map(n => toReader(library, n.id, now)).filter((n): n is ReaderNode => n !== null);
 }
+/**
+ * Recent public content is projected through the same ancestor/snapshot gate as
+ * individual item URLs. Never derive it from draft.updatedAt or raw node titles.
+ */
+export function publicRecent(library: Library, now: number, limit = 10): ReaderNode[] {
+  const recentKinds: ReadonlySet<Kind> = new Set(['chapter', 'tip', 'tipSection', 'word', 'grammar', 'event']);
+  const safeLimit = Number.isSafeInteger(limit) ? Math.max(0, Math.min(limit, 50)) : 10;
+  return library.nodes
+    .filter(node => recentKinds.has(node.kind))
+    .map(node => toReader(library, node.id, now))
+    .filter((node): node is ReaderNode => node !== null)
+    .sort((a, b) => b.publishedAt - a.publishedAt || a.id.localeCompare(b.id))
+    .slice(0, safeLimit);
+}
 export function managedList(library: Library): NovelNode[] { return clone(library.nodes); }
