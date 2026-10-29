@@ -354,6 +354,8 @@ async function logout() {
                 <label>本文・説明<textarea v-model="form.body" rows="14" maxlength="100000"
                   placeholder="ページ区切り: [[page]] ／ ルビ: ｜漢字《かんじ》"></textarea></label>
                 <CategoryPresetEditor v-if="selected.kind === 'category'" v-model="categoryPresets" />
+                <AuthorReferencePanel v-if="selected.kind === 'chapter' || selected.kind === 'tip'"
+                  :selected-id="selected.id" :nodes="nodes" />
                 <LanguageStructureEditor v-if="selected.kind === 'language'"
                   v-model:characters="languageCharacters" v-model:word-classes="languageWordClasses" />
                 <label v-if="selected.kind === 'word' && !form.details.meanings && form.details.partOfSpeech">
