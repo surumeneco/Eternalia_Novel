@@ -44,6 +44,7 @@ function chapterLink(chapterId: string) {
       </div>
       <article v-else>
         <h1>{{ chapter.content.title }}</h1>
+        <AuthorEditLink :item-id="chapter.id" />
         <p class="note">公開：<time :datetime="new Date(chapter.publishedAt).toISOString()">{{ new Date(chapter.publishedAt).toLocaleDateString('ja-JP') }}</time></p>
         <RichContent :source="chapter.content.body" paged />
         <nav v-if="seriesId" class="chapter-navigation" aria-label="章の移動">
