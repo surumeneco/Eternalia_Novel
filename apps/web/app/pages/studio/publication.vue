@@ -12,6 +12,12 @@ const successText = ref('');
 const section = ref('all');
 const statusFilter = ref('all');
 const search = ref('');
+const scheduled = reactive<Record<string, string>>({});
+function localDateTime(ms: number): string {
+  const date = new Date(ms);
+  return new Date(ms - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
+}
+
 const types: Record<ReaderKind, string> = {
   series: 'シリーズ', volume: '編', part: '部', chapter: '章',
   category: 'カテゴリ', tip: '設定', tipSection: '設定項目',
@@ -74,6 +80,9 @@ async function load() {
   errorText.value = '';
   try {
     nodes.value = await $fetch<AuthorNode[]>('/api/admin/nodes');
+    for (const node of nodes.value) {
+      scheduled[node.id] = node.publicSince === null ? '' : localDateTime(node.publicSince);
+    }
   } catch {
     errorText.value = '公開管理データを取得できません。';
   } finally {
@@ -84,6 +93,30 @@ onMounted(async () => {
   await refreshAuth();
   if (auth.value?.authenticated) await load();
 });
+async function saveSchedule(node: AuthorNode) {
+  if (busyId.value || !node.published) return;
+  const input = scheduled[node.id];
+  const time = input ? new Date(input).getTime() : NaN;
+  if (!Number.isSafeInteger(time) || time < 0) {
+    errorText.value = '公開開始日時を入力してください。';
+    return;
+  }
+  busyId.value = node.id;
+  errorText.value = '';
+  successText.value = '';
+  try {
+    await $fetch('/api/admin/nodes/' + encodeURIComponent(node.id) + '/visibility', {
+      method: 'POST',
+      body: { expectedRevision: node.revision, isPublic: node.isPublic, publicSince: time },
+    });
+    await load();
+    successText.value = '公開開始日時を更新しました。';
+  } catch {
+    errorText.value = '日時の変更に失敗しました。競合の可能性があるため再読込してください。';
+  } finally {
+    busyId.value = null;
+  }
+}
 async function action(node: AuthorNode, kind: 'publish' | 'visibility') {
   if (busyId.value) return;
   if (kind === 'publish' && !window.confirm('保存済みの下書きを公開版に反映し、公開設定を有効にします。よろしいですか？')) return;
@@ -187,6 +220,12 @@ async function action(node: AuthorNode, kind: 'publish' | 'visibility') {
                 <button type="button" class="inline-action" :disabled="!!busyId" @click="action(node, 'visibility')">
                   {{ node.isPublic ? '非公開にする' : '公開にする' }}
                 </button>
+                <label class="schedule-field">公開開始日時
+                  <input v-model="scheduled[node.id]" type="datetime-local" :disabled="!!busyId || !node.published" />
+                </label>
+                <button type="button" class="inline-action" :disabled="!!busyId || !node.published" @click="saveSchedule(node)">
+                  日時を保存
+                </button>
                 <NuxtLink :to="{ path: '/studio', query: { item: node.id } }">編集</NuxtLink>
               </div>
             </div>
@@ -212,6 +251,8 @@ async function action(node: AuthorNode, kind: 'publish' | 'visibility') {
 .publication-summary { min-width:0; }
 .publication-summary h2 { font-size:1.15rem;margin:.3rem 0;overflow-wrap:anywhere; }
 .publication-path { overflow-wrap:anywhere; }
+.schedule-field { display:block;font-size:.8rem; }
+.schedule-field input { margin-top:.25rem;width:auto;max-width:100%; }
 .publication-actions { display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;justify-content:flex-end;flex:0 0 auto; }
 @media (max-width:740px) {
   .publication-row { flex-direction:column; }
