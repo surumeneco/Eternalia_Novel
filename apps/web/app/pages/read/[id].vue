@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ReaderNode } from '~/types/reader';
+const { t } = useUiLocale();
 const route = useRoute();
 const id = computed(() => String(route.params.id));
 const { data: chapter, pending, error, refresh } = await useFetch<ReaderNode>(
@@ -33,17 +34,17 @@ function chapterLink(chapterId: string) {
 <template>
   <div>
     <TopicPath :items="[
-      { label: 'ホーム', to: '/' },
-      { label: 'ストーリー', to: '/stories' },
+      { label: t('home'), to: '/' },
+      { label: t('stories'), to: '/stories' },
       ...(series ? [{ label: series.content.title, to: '/stories/' + series.id }] : []),
-      { label: chapter?.content.title ?? '章' },
+      { label: chapter?.content.title ?? t('chapter') },
     ]" />
     <ReaderPanel>
       <ReadingSkeleton v-if="pending" label="本文を読み込んでいます。" />
       <div v-else-if="error || chapter?.kind !== 'chapter'" role="alert">
         <h1>章を表示できません</h1>
         <p class="error-text">章が存在しないか、公開されていません。</p>
-        <button class="inline-action" type="button" @click="refresh()">再試行</button>
+        <button class="inline-action" type="button" @click="refresh()">{{ t('retry') }}</button>
       </div>
       <article v-else>
         <h1>{{ chapter.content.title }}</h1>
