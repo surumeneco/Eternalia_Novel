@@ -11,9 +11,10 @@ import { LocalAlphaLibraryService } from './local-alpha-library.service';
 import { LibraryStorageService } from './library-storage.service';
 import { PostgresLibraryService } from './postgres-library.service';
 import { PublicSeriesController } from './public-series.controller';
+import { PublicPathController } from './public-path.controller';
 
 @Module({
-  controllers: [HealthController, PublicSeriesController, AuthController, AdminNodesController, AuthorMemosController, AuthorOrderController],
+  controllers: [HealthController, PublicSeriesController, PublicPathController, AuthController, AdminNodesController, AuthorMemosController, AuthorOrderController],
   providers: [
     LocalAlphaLibraryService, PostgresLibraryService, LibraryStorageService,
     DiscordAuthService, AuthorGuard, AuthorMemosService,
