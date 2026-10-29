@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import type { ReaderNode, ReaderKind } from '~/types/reader';
 
+const { t } = useUiLocale();
 const route = useRoute();
 const id = computed(() => String(route.params.id));
 const sections = {
-  stories: { label: 'ストーリー', kinds: ['volume', 'part', 'chapter'] },
-  tips: { label: '設定集', kinds: ['category', 'tip', 'tipSection'] },
-  dictionaries: { label: '辞書', kinds: ['language', 'word', 'grammar'] },
-  timeline: { label: '年表', kinds: ['periodization', 'event'] },
+  stories: { label: t('stories'), kinds: ['volume', 'part', 'chapter'] },
+  tips: { label: t('tips'), kinds: ['category', 'tip', 'tipSection'] },
+  dictionaries: { label: t('dictionaries'), kinds: ['language', 'word', 'grammar'] },
+  timeline: { label: t('timeline'), kinds: ['periodization', 'event'] },
 } satisfies Record<string, { label: string; kinds: ReaderKind[] }>;
 type SectionKey = keyof typeof sections;
 const section = computed<SectionKey | null>(() => {
@@ -52,7 +53,7 @@ const labels: Record<ReaderKind, string> = {
 <template>
   <div>
     <TopicPath :items="[
-      { label: 'ホーム', to: '/' },
+      { label: t('home'), to: '/' },
       ...(section ? [{ label: sections[section].label, to: '/' + section }] : []),
       { label: series?.content.title || 'シリーズ' }
     ]" />
@@ -61,16 +62,16 @@ const labels: Record<ReaderKind, string> = {
       <div v-else-if="error" role="alert">
         <h1>シリーズを表示できません</h1>
         <p class="error-text">存在しないか、現在公開されていない可能性があります。</p>
-        <button class="inline-action" type="button" @click="refresh()">再試行</button>
+        <button class="inline-action" type="button" @click="refresh()">{{ t('retry') }}</button>
       </div>
       <template v-else-if="series">
         <h1>{{ series.content.title }}</h1>
         <p v-if="series.content.body" class="reader-prose">{{ series.content.body }}</p>
         <nav v-if="!section" class="series-areas" aria-label="シリーズ内の資料">
           <NuxtLink :to="'/stories/' + id">ストーリーの目次</NuxtLink>
-          <NuxtLink :to="'/tips/' + id">設定集</NuxtLink>
-          <NuxtLink :to="'/dictionaries/' + id">辞書</NuxtLink>
-          <NuxtLink :to="'/timeline/' + id">年表</NuxtLink>
+          <NuxtLink :to="'/tips/' + id">{{ t('tips') }}</NuxtLink>
+          <NuxtLink :to="'/dictionaries/' + id">{{ t('dictionaries') }}</NuxtLink>
+          <NuxtLink :to="'/timeline/' + id">{{ t('timeline') }}</NuxtLink>
         </nav>
         <h2 class="section-heading">{{ section ? sections[section].label : '公開コンテンツ' }}</h2>
         <ul v-if="visible.length" class="reader-list">
