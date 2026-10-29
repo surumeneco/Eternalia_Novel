@@ -19,7 +19,7 @@ function collectionLink(id: string) {
     <TopicPath :items="[{ label: 'ホーム', to: '/' }, { label: props.title }]" />
     <ReaderPanel>
       <h1>{{ props.title }}</h1>
-      <p v-if="pending" role="status">公開シリーズを読み込んでいます。</p>
+      <ReadingSkeleton v-if="pending" label="公開シリーズを読み込んでいます。" />
       <div v-else-if="error" role="alert">
         <p class="error-text">公開シリーズを取得できませんでした。</p>
         <button class="inline-action" type="button" @click="refresh()">再試行</button>
