@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { newLibrary, createNode, editNode, publishNode, setVisibility, publicSeries,
-  toReader, publicTree, publicRecent } from '../dist/index.js';
+  toReader, publicTree, publicRecent, parseWordMeanings } from '../dist/index.js';
 import { randomUUID } from 'node:crypto';
 const now = Date.UTC(2026,9,28);
 function create(db,kind,parentId=null,title=kind,details={}) {
@@ -37,4 +37,55 @@ test('recent feed contains only currently readable publication snapshots', () =>
   assert.equal(publicRecent(db, now + 1).length, 0, 'scheduled content is not a recent item yet');
   assert.equal(publicRecent(db, now + 60000).length, 1);
   assert.equal(publicRecent(db, now + 60000)[0].content.title, '第一章');
+});
+
+test('same-part-of-speech meanings retain independent etymologies and snapshots', () => {
+  let db = newLibrary();
+  const series = create(db, 'series', null, '世界'); db = series.db;
+  const lang1 = create(db, 'language', series.id, 'A語'); db = lang1.db;
+  const lang2 = create(db, 'language', series.id, 'B語'); db = lang2.db;
+  const source = create(db, 'word', lang2.id, '根'); db = source.db;
+  const word = create(db, 'word', lang1.id, '詞'); db = word.db;
+  const meanings = [
+    { id: randomUUID(), partOfSpeech:'名詞', definition:'第一の意味', etymologies:[
+      { id:randomUUID(),languageId:lang2.id,wordId:source.id,note:'古語から' },
+    ] },
+    { id: randomUUID(), partOfSpeech:'名詞', definition:'第二の意味', etymologies:[
+      { id:randomUUID(),languageId:lang2.id,note:'別系統' },
+    ] },
+  ];
+  db = editNode(db, word.id, 1,
+    { title:'詞',body:'',details:{meanings:JSON.stringify(meanings)} }, now);
+  assert.equal(parseWordMeanings(db.nodes.find(n => n.id === word.id).draft.details.meanings).length, 2);
+  for (const id of [series.id,lang1.id,lang2.id,source.id,word.id]) db = publish(db,id);
+  const original = toReader(db,word.id,now+1);
+  const released = JSON.parse(original.content.details.meanings);
+  assert.equal(released.length,2);
+  assert.equal(released[0].etymologies[0].wordTitle,'根');
+  assert.notEqual(released[0].id,released[1].id);
+  db = editNode(db, word.id, db.nodes.find(n => n.id === word.id).revision,
+    { title:'詞',body:'',details:{meanings:JSON.stringify([meanings[0]])}},now+2);
+  assert.equal(JSON.parse(toReader(db,word.id,now+3).content.details.meanings).length,2,
+    'saved draft must not mutate published meanings');
+  db = visibility(db,source.id,false);
+  const restricted = JSON.parse(toReader(db,word.id,now+4).content.details.meanings);
+  assert.equal(restricted[0].etymologies[0].wordId,undefined,'private referenced word ID must be omitted');
+  assert.equal(restricted[0].etymologies[0].wordTitle,undefined,'private referenced word title must be omitted');
+  assert.equal(restricted[0].etymologies[0].languageTitle,'B語','public language may remain visible');
+});
+test('meanings validate referential consistency and distinct identities', () => {
+  let db = newLibrary();
+  const a = create(db,'series'); db = a.db;
+  const b = create(db,'series'); db = b.db;
+  const language = create(db,'language',a.id); db = language.db;
+  const foreign = create(db,'language',b.id); db = foreign.db;
+  const word = create(db,'word',language.id); db = word.db;
+  const id = randomUUID();
+  const base = {id,partOfSpeech:'名詞',definition:'意味',etymologies:[]};
+  const payload = meanings => ({ title:'項目',body:'',details:{meanings:JSON.stringify(meanings)} });
+  assert.throws(() => editNode(db,word.id,1,payload([base,{...base,definition:'別の意味'}]),now),
+    e => e.code === 'bad-request','duplicate meaning IDs are forbidden');
+  assert.throws(() => editNode(db,word.id,1,payload([{
+    ...base,etymologies:[{id:randomUUID(),languageId:foreign.id,note:'別シリーズ'}],
+  }]),now), e => e.code === 'bad-request','cross-series etymology is forbidden');
 });
