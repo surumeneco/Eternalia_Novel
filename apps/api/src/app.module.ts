@@ -3,6 +3,7 @@ import { HealthController } from './health.controller';
 import { AuthController } from './auth.controller';
 import { AdminNodesController } from './admin-nodes.controller';
 import { AuthorMemosController } from './author-memos.controller';
+import { AuthorOrderController } from './author-order.controller';
 import { AuthorMemosService } from './author-memos.service';
 import { AuthorGuard } from './author.guard';
 import { DiscordAuthService } from './discord-auth.service';
@@ -12,7 +13,7 @@ import { PostgresLibraryService } from './postgres-library.service';
 import { PublicSeriesController } from './public-series.controller';
 
 @Module({
-  controllers: [HealthController, PublicSeriesController, AuthController, AdminNodesController, AuthorMemosController],
+  controllers: [HealthController, PublicSeriesController, AuthController, AdminNodesController, AuthorMemosController, AuthorOrderController],
   providers: [
     LocalAlphaLibraryService, PostgresLibraryService, LibraryStorageService,
     DiscordAuthService, AuthorGuard, AuthorMemosService,
