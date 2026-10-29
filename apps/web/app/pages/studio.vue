@@ -43,6 +43,45 @@ const createOpen = ref(false);
 const createParentId = ref<string | null>(null);
 const createKind = ref<ReaderKind>('series');
 const createTitle = ref('');
+const editorDirty = computed(() => {
+  const draft = selected.value?.draft;
+  if (!draft) return false;
+  const currentDetails = form.details;
+  const originalDetails = draft.details ?? {};
+  const detailKeys = new Set([...Object.keys(currentDetails), ...Object.keys(originalDetails)]);
+  return form.title !== draft.title || form.body !== draft.body ||
+    [...detailKeys].some(key => (currentDetails[key] ?? '') !== (originalDetails[key] ?? ''));
+});
+const creationDirty = computed(() => createOpen.value && createTitle.value.trim().length > 0);
+const hasUnsavedChanges = computed(() => editorDirty.value || creationDirty.value);
+function confirmDiscard(): boolean {
+  return !hasUnsavedChanges.value || window.confirm('未保存の変更があります。破棄して移動しますか？');
+}
+function restoreEditor() {
+  form.title = selected.value?.draft.title ?? '';
+  form.body = selected.value?.draft.body ?? '';
+  form.details = { ...(selected.value?.draft.details ?? {}) };
+}
+function selectNode(nodeId: string) {
+  if (selectedId.value === nodeId && !createOpen.value) return;
+  if (!confirmDiscard()) return;
+  createOpen.value = false;
+  selectedId.value = nodeId;
+  restoreEditor();
+}
+function cancelCreate() {
+  if (creationDirty.value && !window.confirm('未保存の新規項目を破棄しますか？')) return;
+  createOpen.value = false;
+  createTitle.value = '';
+}
+function beforeUnload(event: BeforeUnloadEvent) {
+  if (!hasUnsavedChanges.value) return;
+  event.preventDefault();
+  event.returnValue = '';
+}
+onBeforeRouteLeave(() => confirmDiscard());
+onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload));
+
 const creationChoices = computed(() =>
   children[createParentId.value ? nodes.value.find(n => n.id === createParentId.value)?.kind || 'root' : 'root']
 );
@@ -93,8 +132,12 @@ async function load() {
 }
 onMounted(async () => {
   await refreshAuth();
+  window.addEventListener('beforeunload', beforeUnload);
   if (auth.value?.authenticated) await load();
 });
+async function reloadNodes() {
+  if (confirmDiscard()) await load();
+}
 
 async function runChange(work: () => Promise<void>, okText:string) {
   if (busy.value) return;
@@ -111,6 +154,8 @@ async function runChange(work: () => Promise<void>, okText:string) {
   } finally { busy.value = false; }
 }
 function openCreate(parentId: string | null) {
+  if (!confirmDiscard()) return;
+  restoreEditor();
   createParentId.value = parentId;
   const parent = parentId ? byId.value.get(parentId) : null;
   createKind.value = children[parent?.kind || 'root'][0] || 'series';
@@ -172,6 +217,7 @@ async function schedule() {
     scheduledLocal.value ? new Date(scheduledLocal.value).getTime() : null);
 }
 async function logout() {
+  if (!confirmDiscard()) return;
   await runChange(async () => {
     await $fetch('/api/auth/logout',{method:'POST',body:{}});
     selectedId.value=null;
@@ -187,8 +233,7 @@ async function logout() {
     <ReaderPanel>
       <div class="studio-title">
         <div>
-          <p class="note">AUTHOR STUDIO / α</p>
-          <h1>作者の書斎</h1>
+                     <h1>作者の書斎</h1>
           <p>下書き保存と公開スナップショットの反映は別操作です。</p>
         </div>
         <button v-if="auth?.authenticated" class="inline-action" type="button" @click="logout">ログアウト</button>
@@ -209,7 +254,7 @@ async function logout() {
           <aside class="studio-sidebar" aria-label="作者ライブラリ">
             <div class="section-header">
               <h2>ライブラリ</h2>
-              <button class="inline-action" type="button" :disabled="busy" @click="load">再読込</button>
+              <button class="inline-action" type="button" :disabled="busy" @click="reloadNodes">再読込</button>
             </div>
             <div class="filter-row" role="group" aria-label="資料種別">
               <button v-for="(f, key) in filters" :key="key" class="inline-action"
@@ -219,7 +264,7 @@ async function logout() {
               <li v-for="entry in ordered" :key="entry.node.id">
                 <button class="node-button" type="button" :aria-pressed="selectedId === entry.node.id"
                   :style="{ paddingInlineStart: 10 + entry.depth * 13 + 'px' }"
-                  @click="selectedId = entry.node.id">
+                  @click="selectNode(entry.node.id)">
                   <small class="note">{{ kinds[entry.node.kind] }}</small>
                   {{ entry.node.draft.title }}
                 </button>
@@ -241,7 +286,7 @@ async function logout() {
               <label>タイトル<input v-model="createTitle" maxlength="150" required /></label>
               <div class="action-row">
                 <button class="primary" type="submit" :disabled="busy">作成</button>
-                <button class="inline-action" type="button" @click="createOpen = false">キャンセル</button>
+                <button class="inline-action" type="button" @click="cancelCreate">キャンセル</button>
               </div>
             </form>
             <template v-else-if="selected">
