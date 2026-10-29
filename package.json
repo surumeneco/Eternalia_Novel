@@ -16,7 +16,8 @@
     "test:alpha": "npm run build:contracts && node --test packages/contracts/exploratory/*.test.mjs apps/preview/tests/*.test.mjs",
     "check:alpha": "npm run test:alpha",
     "alpha:offline": "node apps/preview/src/server.mjs",
-    "seed:alpha": "node apps/preview/src/seed.mjs"
+    "seed:alpha": "node apps/preview/src/seed.mjs",
+    "db:migrate": "node scripts/migrate.mjs"
   },
   "engines": {
     "node": ">=22"
