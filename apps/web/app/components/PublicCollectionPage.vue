@@ -9,6 +9,7 @@ const { data: series, pending, error, refresh } = await useFetch<ReaderNode[]>('
 function collectionLink(id: string) {
   if (props.section === 'stories') return '/stories/' + id;
   if (props.section === 'tips') return '/tips/' + id;
+  if (props.section === 'dictionaries') return '/dictionaries/' + id;
   return { path: '/series/' + id, query: { section: props.section } };
 }
 </script>
