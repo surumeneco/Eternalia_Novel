@@ -1,3 +1,6 @@
+<script setup lang="ts">
+const { t } = useUiLocale();
+</script>
 <template>
-  <PublicCollectionPage title="ストーリー" description="シリーズごとの編・部・章・本文を閲覧します。" section="stories" />
+  <PublicCollectionPage :title="t('stories')" :description="t('storiesCollectionDescription')" section="stories" />
 </template>
