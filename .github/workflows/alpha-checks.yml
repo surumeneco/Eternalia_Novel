@@ -1,0 +1,29 @@
+name: Alpha checks
+on:
+  push:
+    branches:
+      - draft/alpha-reimplementation-20261029
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Exercise existing alpha domain and HTTP tests
+        run: npm run test:alpha
+      - name: Build contracts, Nest and Nuxt
+        run: npm run build
+      - name: Check Nuxt types
+        run: npm run typecheck -w @eternalia/web
