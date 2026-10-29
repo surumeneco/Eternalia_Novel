@@ -36,6 +36,11 @@ function depth(node: ReaderNode): number {
   }
   return d;
 }
+function itemLink(node: ReaderNode) {
+  return node.kind === 'chapter'
+    ? { path: '/read/' + node.id, query: { series: id.value } }
+    : '/items/' + node.id;
+}
 const labels: Record<ReaderKind, string> = {
   series: 'シリーズ', volume: '編', part: '部', chapter: '章',
   category: 'カテゴリ', tip: '設定', tipSection: '設定項目',
@@ -61,10 +66,16 @@ const labels: Record<ReaderKind, string> = {
       <template v-else-if="series">
         <h1>{{ series.content.title }}</h1>
         <p v-if="series.content.body" class="reader-prose">{{ series.content.body }}</p>
+        <nav v-if="!section" class="series-areas" aria-label="シリーズ内の資料">
+          <NuxtLink :to="'/stories/' + id">ストーリーの目次</NuxtLink>
+          <NuxtLink :to="'/tips/' + id">設定集</NuxtLink>
+          <NuxtLink :to="'/dictionaries/' + id">辞書</NuxtLink>
+          <NuxtLink :to="'/timeline/' + id">年表</NuxtLink>
+        </nav>
         <h2 class="section-heading">{{ section ? sections[section].label : '公開コンテンツ' }}</h2>
         <ul v-if="visible.length" class="reader-list">
           <li v-for="node in visible" :key="node.id">
-            <NuxtLink :to="'/items/' + node.id" :style="{ paddingInlineStart: (16 + depth(node) * 16) + 'px' }">
+            <NuxtLink :to="itemLink(node)" :style="{ paddingInlineStart: (16 + depth(node) * 16) + 'px' }">
               <small class="note">{{ labels[node.kind] }}</small> {{ node.content.title }}
             </NuxtLink>
           </li>
@@ -77,4 +88,6 @@ const labels: Record<ReaderKind, string> = {
 
 <style scoped>
 .reader-prose { white-space: pre-wrap; overflow-wrap: anywhere; }
+.series-areas {display:flex;gap:.6rem;flex-wrap:wrap;margin:1rem 0 1.5rem;}
+.series-areas a {padding:.35rem .65rem;border:1px solid var(--color-border-base);background:var(--color-background-soft);}
 </style>
