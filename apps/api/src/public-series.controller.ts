@@ -1,10 +1,10 @@
 import { Controller, Get, NotFoundException, Param } from '@nestjs/common';
 import { publicSeries, publicTree, toReader } from '@eternalia/contracts';
-import { LocalAlphaLibraryService } from './local-alpha-library.service';
+import { LibraryStorageService } from './library-storage.service';
 
 @Controller('public')
 export class PublicSeriesController {
-  constructor(private readonly library: LocalAlphaLibraryService) {}
+  constructor(private readonly library: LibraryStorageService) {}
 
   @Get('series')
   async list() {
