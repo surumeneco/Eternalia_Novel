@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { AuthorNode } from '~/types/author';
 import type { ReaderKind } from '~/types/reader';
-import { parseLanguageWordClasses } from '@eternalia/contracts';
+import { parseLanguageWordClasses, diagnoseWordSpelling } from '@eternalia/contracts';
 
 interface AuthState { configured: boolean; authenticated: boolean }
 const { data: auth, pending: authPending, refresh: refreshAuth } =
@@ -123,6 +123,10 @@ const activeWordReferences = computed(() => {
   const languageIds = new Set(activeWordLanguages.value.map(node => node.id));
   return nodes.value.filter(node => node.kind === 'word' && node.parentId && languageIds.has(node.parentId))
     .map(node => ({id:node.id,title:node.draft.title,parentId:node.parentId}));
+});
+const spellingWarnings = computed(() => {
+  if (selected.value?.kind !== 'word') return [];
+  return diagnoseWordSpelling({ nodes: nodes.value }, selected.value.id, form.title);
 });
 const ordered = computed(() => {
   const indexed = new Map<string | null,AuthorNode[]>();
@@ -344,6 +348,9 @@ async function logout() {
               <p class="note">下書き改訂 {{ selected.revision }} ／ {{ selected.published ? '公開スナップショットあり' : '未公開' }}</p>
               <form @submit.prevent="saveDraft">
                 <label>名称・見出し<input v-model="form.title" maxlength="150" required /></label>
+                <ul v-if="selected.kind === 'word' && spellingWarnings.length" class="spelling-warnings" aria-label="綴りに関する警告">
+                  <li v-for="warning in spellingWarnings" :key="warning.code">{{ warning.message }}</li>
+                </ul>
                 <label>本文・説明<textarea v-model="form.body" rows="14" maxlength="100000"
                   placeholder="ページ区切り: [[page]] ／ ルビ: ｜漢字《かんじ》"></textarea></label>
                 <CategoryPresetEditor v-if="selected.kind === 'category'" v-model="categoryPresets" />
@@ -412,4 +419,5 @@ textarea { min-height:6rem;resize:vertical;line-height:1.7; }
 .status-success { color:#bfffd4; }
 hr { border:0;border-top:1px solid var(--color-border-base);margin:1.5rem 0; }
 @media (max-width:900px) { .studio-grid { grid-template-columns:minmax(0,1fr); } .studio-title{align-items:flex-start;flex-direction:column;} }
+.spelling-warnings { color:#ffe2a9;margin:.25rem 0 1rem; }
 </style>
