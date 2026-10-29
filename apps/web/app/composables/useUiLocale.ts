@@ -11,6 +11,10 @@ export const uiMessages = {
     timeline: '年表',
     studio: '作者の書斎',
     retry: '再試行',
+    menu: 'メニュー',
+    close: '閉じる',
+    browse: '閲覧する',
+    backToTop: 'ページ先頭へ戻る',
   },
 } as const;
 
