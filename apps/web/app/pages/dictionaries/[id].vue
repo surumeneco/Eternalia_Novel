@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ReaderKind, ReaderNode } from '~/types/reader';
+import type { WordMeaning } from '@eternalia/contracts';
 
 const route = useRoute();
 const seriesId = computed(() => String(route.params.id));
@@ -23,14 +24,29 @@ const activeLanguages = computed(() => languages.value.filter(
 const allWords = computed(() => activeLanguages.value.flatMap(language =>
   children(language.id, 'word').map(word => ({ language, word })),
 ));
+function meaningsOf(word: ReaderNode): WordMeaning[] {
+  const value = word.content.details.meanings;
+  if (!value) return [];
+  try {
+    const decoded: unknown = JSON.parse(value);
+    return Array.isArray(decoded) ? decoded as WordMeaning[] : [];
+  } catch { return []; }
+}
+function wordParts(word: ReaderNode): string[] {
+  const senses = meaningsOf(word).map(meaning => meaning.partOfSpeech).filter(Boolean);
+  if (!senses.length && word.content.details.partOfSpeech) senses.push(word.content.details.partOfSpeech);
+  return [...new Set(senses)];
+}
 const partsOfSpeech = computed(() => [...new Set(
-  allWords.value.map(({ word }) => word.content.details.partOfSpeech?.trim() ?? '').filter(Boolean),
+  allWords.value.flatMap(({ word }) => wordParts(word)),
 )].sort((a, b) => a.localeCompare(b, 'ja')));
 const visibleWords = computed(() => allWords.value.filter(({ word }) => {
   const needle = query.value.trim().toLocaleLowerCase();
-  return (!partOfSpeech.value || word.content.details.partOfSpeech === partOfSpeech.value) &&
-    (!needle || [word.content.title, word.content.body, word.content.details.partOfSpeech ?? '']
-      .some(value => value.toLocaleLowerCase().includes(needle)));
+  return (!partOfSpeech.value || wordParts(word).includes(partOfSpeech.value)) &&
+    (!needle || [
+      word.content.title, word.content.body, ...wordParts(word),
+      ...meaningsOf(word).map(meaning => meaning.definition),
+    ].some(value => value.toLocaleLowerCase().includes(needle)));
 }));
 const visibleGrammar = computed(() => activeLanguages.value.flatMap(language =>
   children(language.id, 'grammar').map(grammar => ({ language, grammar })),
@@ -84,8 +100,13 @@ watch(languageId, () => { partOfSpeech.value = ''; });
             <ul v-if="visibleWords.some(entry => entry.language.id === language.id)" class="reader-list">
               <li v-for="entry in visibleWords.filter(entry => entry.language.id === language.id)" :key="entry.word.id">
                 <NuxtLink :to="'/items/' + entry.word.id">{{ entry.word.content.title }}</NuxtLink>
-                <span v-if="entry.word.content.details.partOfSpeech" class="note">（{{ entry.word.content.details.partOfSpeech }}）</span>
+                <span v-if="wordParts(entry.word).length" class="note">（{{ wordParts(entry.word).join('・') }}）</span>
                 <p v-if="entry.word.content.body" class="dictionary-description">{{ entry.word.content.body }}</p>
+                <ul v-if="meaningsOf(entry.word).length" class="word-definitions">
+                  <li v-for="meaning in meaningsOf(entry.word)" :key="meaning.id">
+                    <span v-if="meaning.partOfSpeech" class="note">{{ meaning.partOfSpeech }}：</span>{{ meaning.definition }}
+                  </li>
+                </ul>
               </li>
             </ul>
             <p v-else class="note">条件に一致する公開単語はありません。</p>
@@ -114,5 +135,7 @@ watch(languageId, () => { partOfSpeech.value = ''; });
 }
 .dictionary-language { margin:1.5rem 0 2rem; }
 .dictionary-language h3 { margin-top:1.5rem; }
+.word-definitions { padding-inline-start:1.4rem;margin:.5rem 0; }
+.word-definitions li { overflow-wrap:anywhere;white-space:pre-wrap; }
 .dictionary-description { white-space:pre-wrap;overflow-wrap:anywhere;margin:.5rem 0; }
 </style>
