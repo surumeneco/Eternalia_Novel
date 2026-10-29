@@ -1,0 +1,25 @@
+name: Alpha dependency lock reconciling evidence
+on:
+  push:
+    branches:
+      - draft/alpha-reimplementation-20261029
+    paths:
+      - 'apps/api/package.json'
+      - 'scripts/print-lock-delta.mjs'
+      - '.github/workflows/lock-reconciliation-draft.yml'
+permissions:
+  contents: read
+jobs:
+  inspect-lock:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Compute lock delta without modifying the repository
+        run: |
+          cp package-lock.json /tmp/eternalia-original-lock.json
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          node scripts/print-lock-delta.mjs
