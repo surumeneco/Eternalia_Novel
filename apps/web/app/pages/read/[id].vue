@@ -2,10 +2,13 @@
 import type { ReaderNode } from '~/types/reader';
 const route = useRoute();
 const id = computed(() => String(route.params.id));
-const seriesId = computed(() => typeof route.query.series === 'string' ? route.query.series : '');
 const { data: chapter, pending, error, refresh } = await useFetch<ReaderNode>(
   () => '/api/public/items/' + encodeURIComponent(id.value),
 );
+const { data: ancestry } = await useFetch<ReaderNode[]>(
+  () => '/api/public/items/' + encodeURIComponent(id.value) + '/path',
+);
+const seriesId = computed(() => ancestry.value?.find(node => node.kind === 'series')?.id ?? '');
 const { data: tree } = await useAsyncData(
   () => 'read-series-' + seriesId.value,
   () => seriesId.value
@@ -24,7 +27,7 @@ const currentIndex = computed(() => siblings.value.findIndex(n => n.id === id.va
 const previous = computed(() => currentIndex.value > 0 ? siblings.value[currentIndex.value - 1] : null);
 const next = computed(() => currentIndex.value >= 0 ? siblings.value[currentIndex.value + 1] ?? null : null);
 function chapterLink(chapterId: string) {
-  return { path: '/read/' + chapterId, query: seriesId.value ? { series: seriesId.value } : {} };
+  return '/read/' + chapterId;
 }
 </script>
 <template>
