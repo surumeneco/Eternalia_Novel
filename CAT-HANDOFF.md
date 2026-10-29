@@ -7,7 +7,7 @@
 - 対象: `surumeneco/Eternalia_Novel`（Nuxt 4 / NestJS / PostgreSQL / Discord OAuth2）
 - 要件・受入正本: Google Drive `forGPT/Eternalia_Novel/` の `100_機能仕様.md`、`200_情報構造・画面設計.md`、`220_ビジュアルデザイン・画面コンポーネント継承設計.md`、`300_データモデル.md`、`310_API・セキュリティ.md`、`400_受入検証計画.md`
 - 開発計画: 同フォルダの `40_開発・検証/430_α版段階的実装計画・引継ぎ_20261029.md`
-- 作業ブランチ: `feature/alpha-reimplementation-20261029`（確認した基準SHA: `57d82906bf4a2b47465545387adc07c8c6b15466`）
+- 作業ブランチ: `feature/alpha-reimplementation-20261029`（実装更新基準SHA: `24cba872b1fdb9c35e97c3ed64f094541336d71b`。本記録の更新コミットより前）
 - `develop` / `main`: `7d23cbf43b37bcafef29abacdb6802657ae16cdc`
 - [PR #3](https://github.com/surumeneco/Eternalia_Novel/pull/3): feature → develop、open/draft、未マージ。mainへ直接反映しない。
 
@@ -24,10 +24,22 @@
 | 検証 | 状態 | 根拠・限界 |
 | --- | --- | --- |
 | GitHub Actions `Alpha checks` | `passed`（基準SHAのみ） | [Run 40822331572](https://github.com/surumeneco/Eternalia_Novel/actions/runs/40822331572) は completed/success。新しいコミットへ成功を転用しない |
-| CAT-TDD runtime doctor / stage guard | `not-run` | このチャット実行環境には正規CATランタイム・対象repoのcheckoutがなく、GitHubのGit接続も名前解決に失敗 |
+| CAT-TDD runtime doctor / stage guard | `not-run` | このチャット実行環境には正規CATランタイム・対象repoのcheckoutがない。GitHub APIによる実ファイルの読み書き・反映確認は成功しているが、CAT runtimeは実行していない |
 | CAT process-closure / TestModel / vectors / Queue / Red / Green / implementation-conformance | `not-run` | 探索的テスト、CI、GitHub APIを正規Gateの代用にしない |
 | Discord実アカウント認証 / ブラウザE2E / 旧v0.3視覚比較 | `not-run` | CI成功だけでは成立しない |
 | α受入 / developマージ / mainリリース / デプロイ | `not-run` | 不足する領域固有機能を完成扱いしない |
+
+## 2026-10-29 追加実装と反映確認
+
+- **GitHub APIによる反映 verified**: `feature/alpha-reimplementation-20261029`、[PR #3](https://github.com/surumeneco/Eternalia_Novel/pull/3)（open/draft、head=feature、base=develop）。`main`/`develop`は変更・マージしていない。
+- `55ca24f` `apps/web/app/layouts/default.vue`: 実体のない「更新情報を表示する予定です」プレースホルダー撤去。
+- `b07f68d` `apps/web/app/pages/studio.vue`: 未保存の編集/作成をシリーズ・項目切替、再読込、ログアウト、画面離脱で確認。英語の装飾文言撤去。
+- `df98371`＋`678f078` `apps/web/app/pages/tips/[id].vue`、`PublicCollectionPage.vue`: 設定集公開一覧、カテゴリ別のTip/TipSection、文字列検索・絞込と領域導線。
+- `01f5c4c`＋`423a02a` `apps/web/app/pages/dictionaries/[id].vue`、`PublicCollectionPage.vue`: 公開言語・単語・文法一覧、言語/品詞フィルターと検索。
+- `17d0fe5`＋`9030a87` `apps/web/app/pages/timeline/[id].vue`、`PublicCollectionPage.vue`: 年代区分別の公開出来事閲覧と切替。**年代間換算式が未決のため統合年換算・時系列統合ソートは未実装**。
+- `4e67000`＋`24cba87` `apps/web/app/components/CategoryPresetEditor.vue`、`studio.vue`: カテゴリの項目プリセットをJSON textareaから名前/本文/順序/削除UIへ置換。新規Tip作成時の複製と既存Tipへの非伝播は既存ドメイン実装に従う。
+- **CI**: `9030a870`までのpush/PR `Alpha checks` はcompleted/success（run [40851368124](https://github.com/surumeneco/Eternalia_Novel/actions/runs/40851368124)、[40851377596](https://github.com/surumeneco/Eternalia_Novel/actions/runs/40851377596)）。`24cba872`以降は結果を最新runから再取得すること。本CIはCAT process-closure/Red/Green、ブラウザE2E、旧UI視覚比較の代替ではない。
+- **未完了**: 意味別語源・複数意味、言語の文字/音韻、年表の統合換算・時系列ソート、設定タグ/関連、構造並べ替え、領域別作者エディタ、公開管理の統合、各階層の詳細/権限/検索の受入試験、未決の削除・無効化。α成立宣言とPRのdevelopマージは行っていない。
 
 ## 機能上の残作業
 
