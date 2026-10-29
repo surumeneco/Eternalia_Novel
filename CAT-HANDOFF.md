@@ -43,3 +43,13 @@
 7. **CAT-TDD正規実行環境**: 対象checkoutと検証済みCAT runtimeを取得したうえでdoctor→stage routing/guardsと正規証拠を実行する。
 
 **判定**: 現時点でCIは成功しているが、α版の全受入条件は未達。`develop` へのマージ、`main` への反映、α完成宣言は行わない。 
+
+## 2026-10-29 追加: A7 HTTP/SSR受入検証の実行器
+
+- 2026-10-29作業開始コミット `ce13d536`。新規 `scripts/seed-http-acceptance.mjs` は実PostgreSQLとドメイン関数で公開/下書き/祖先非公開/予約公開/未公開のフィクスチャを挿入し、検証対象IDを一時マニフェストに出力する。
+- `apps/api/http-acceptance/http-acceptance.test.mjs` は実Nuxtプロキシ/Nest API、SSRページ、直接URL、公開版と下書き分離、匿名の管理API拒否を検査する。**ブラウザ操作やDiscord実アカウント試験の代替ではない**。
+- `scripts/check-http-acceptance.mjs` を作成。Node 22+、既存の `npm ci`・`npm run build`・`npm run db:migrate` 完了、`DATABASE_URL` に破棄可能なテストDBを指定した状態で `node --env-file-if-exists=.env scripts/check-http-acceptance.mjs` を実行する。**ランナーはDBへ実際にテストデータを作成する。実運用DBには実行禁止**。
+- 旧位置 `apps/api/tests/http-acceptance.test.mjs` と新位置の重複を確認。旧ファイル削除は安全性チェックで拒否されたため**未整理**。代わりに `test:db` はDB単体/統合の明示列挙、`test:http` は起動済みサービス向けの別コマンドとした。削除拒否の回避は行っていない。
+- `.github/workflows/alpha-checks.yml` へのHTTPジョブ追加も安全性チェックで拒否され、**CIには未接続**。このHTTP受入試験を実行済み・passedと表示しない。既存のBuild/DB CIの結果とは別管理とする。
+- 作者編集 `apps/web/app/pages/studio.vue` の公開操作後の再読込で未保存入力が失われ得る問題を確認したが、修正書き込みが拒否された。**未修正**。
+- CAT正規doctor/Guard/Model/Queue/Red/Greenは未実施。Draft PR #3を維持し、受入未達のためmergeしない。
