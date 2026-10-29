@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ReaderNode } from '~/types/reader';
+import { compareEventsWithinPeriod } from '@eternalia/contracts';
 
 const route = useRoute();
 const seriesId = computed(() => String(route.params.id));
@@ -19,7 +20,7 @@ const visiblePeriods = computed(() => periods.value.filter(
 function eventsOf(period: ReaderNode) {
   return (tree.value ?? [])
     .filter(node => node.kind === 'event' && node.parentId === period.id)
-    .sort((a, b) => a.order - b.order || a.content.title.localeCompare(b.content.title, 'ja'));
+    .sort(compareEventsWithinPeriod);
 }
 </script>
 
