@@ -27,6 +27,7 @@ const kindNames: Record<string,string> = {
       <template v-else-if="item">
         <p class="note">{{ kindNames[item.kind] || item.kind }}</p>
         <h1>{{ item.content.title }}</h1>
+        <AuthorEditLink :item-id="item.id" />
         <RichContent :source="item.content.body" />
         <WordMeaningsReader v-if="item.kind === 'word'" :serialized="item.content.details.meanings" />
         <dl v-if="Object.keys(displayDetails).length" class="reader-details">
