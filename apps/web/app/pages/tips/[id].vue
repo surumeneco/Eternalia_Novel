@@ -41,7 +41,7 @@ const groups = computed(() => categories.value
       { label: series?.content.title ?? 'シリーズ' },
     ]" />
     <ReaderPanel>
-      <p v-if="pending" role="status">設定集を読み込んでいます。</p>
+      <ReadingSkeleton v-if="pending" label="設定集を読み込んでいます。" />
       <div v-else-if="error || !series" role="alert">
         <h1>設定集を表示できません</h1>
         <p class="error-text">シリーズが存在しないか、公開されていません。</p>
