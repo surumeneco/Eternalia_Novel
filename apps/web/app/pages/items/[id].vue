@@ -4,6 +4,10 @@ const route = useRoute();
 const { data: item, pending, error, refresh } = await useFetch<ReaderNode>(
   () => '/api/public/items/' + encodeURIComponent(String(route.params.id)),
 );
+const displayDetails = computed(() => Object.fromEntries(
+  Object.entries(item.value?.content.details ?? {}).filter(([key]) =>
+    !(item.value?.kind === 'word' && key === 'meanings')),
+));
 const kindNames: Record<string,string> = {
   volume: '編', part: '部', chapter: '章', category: 'カテゴリ',
   tip: '設定', tipSection: '設定項目', language: '言語', word: '単語',
@@ -24,8 +28,9 @@ const kindNames: Record<string,string> = {
         <p class="note">{{ kindNames[item.kind] || item.kind }}</p>
         <h1>{{ item.content.title }}</h1>
         <RichContent :source="item.content.body" />
-        <dl v-if="Object.keys(item.content.details).length" class="reader-details">
-          <template v-for="(value, key) in item.content.details" :key="key">
+        <WordMeaningsReader v-if="item.kind === 'word'" :serialized="item.content.details.meanings" />
+        <dl v-if="Object.keys(displayDetails).length" class="reader-details">
+          <template v-for="(value, key) in displayDetails" :key="key">
             <dt>{{ key }}</dt><dd>{{ value }}</dd>
           </template>
         </dl>
