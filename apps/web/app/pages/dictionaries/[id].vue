@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ReaderKind, ReaderNode } from '~/types/reader';
+const { t } = useUiLocale();
 import type { WordMeaning } from '@eternalia/contracts';
 
 const route = useRoute();
@@ -57,8 +58,8 @@ watch(languageId, () => { partOfSpeech.value = ''; });
 <template>
   <div>
     <TopicPath :items="[
-      { label: 'ホーム', to: '/' },
-      { label: '辞書', to: '/dictionaries' },
+      { label: t('home'), to: '/' },
+      { label: t('dictionaries'), to: '/dictionaries' },
       { label: series?.content.title ?? 'シリーズ' },
     ]" />
     <ReaderPanel>
@@ -66,7 +67,7 @@ watch(languageId, () => { partOfSpeech.value = ''; });
       <div v-else-if="error || !series" role="alert">
         <h1>辞書を表示できません</h1>
         <p class="error-text">シリーズが存在しないか、公開されていません。</p>
-        <button class="inline-action" type="button" @click="refresh()">再試行</button>
+        <button class="inline-action" type="button" @click="refresh()">{{ t('retry') }}</button>
       </div>
       <template v-else>
         <h1>{{ series.content.title }} — 辞書</h1>
