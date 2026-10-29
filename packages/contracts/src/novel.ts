@@ -5,6 +5,7 @@
  */
 import { canReadPublished } from './publication.js';
 import { parseWordMeanings, type WordMeaning } from './word-meanings.js';
+import { parseLanguageCharacters, parseLanguageWordClasses } from './language-structure.js';
 
 export const kinds = [
   'series', 'volume', 'part', 'chapter', 'category', 'tip', 'tipSection',
@@ -82,6 +83,10 @@ function validateMeaningReferences(library: Library, languageId: string, content
     }
   }
 }
+function validateLanguageStructure(content: Content): void {
+  if (content.details.characters !== undefined) parseLanguageCharacters(content.details.characters);
+  if (content.details.wordClasses !== undefined) parseLanguageWordClasses(content.details.wordClasses);
+}
 function find(library: Library, id: string): NovelNode {
   const item = library.nodes.find(n => n.id === id);
   if (!item) domainError('not-found', '項目が見つかりません。');
@@ -101,6 +106,7 @@ export function createNode(library: Library, input: { id: string; kind: Kind; pa
   if (parentKind === null ? parent !== null : parent?.kind !== parentKind) domainError('bad-request', '親子階層が不正です。');
   const content = normalizeContent(input.content);
   if (input.kind === 'word' && parent) validateMeaningReferences(library, parent.id, content);
+  if (input.kind === 'language') validateLanguageStructure(content);
   const next = clone(library);
   const siblings = next.nodes.filter(n => n.parentId === (parent?.id ?? null) && n.kind === input.kind);
   next.nodes.push({ id: input.id, kind: input.kind, parentId: parent?.id ?? null,
@@ -132,6 +138,7 @@ export function editNode(library: Library, id: string, expectedRevision: number,
   const item = find(next, id);
   if (!Number.isSafeInteger(expectedRevision) || expectedRevision !== item.revision) domainError('conflict', '他の編集により更新されています。');
   item.draft = normalizeContent(content);
+  if (item.kind === 'language') validateLanguageStructure(item.draft);
   if (item.kind === 'word' && item.parentId) {
     validateMeaningReferences(next, item.parentId, item.draft);
   }
@@ -224,6 +231,14 @@ export function toReader(library: Library, id: string, now: number): ReaderNode 
     if (published.details.meanings !== undefined) {
       details.meanings = JSON.stringify(parseWordMeanings(published.details.meanings)
         .map(meaning => publicMeaning(library, meaning, now)));
+    }
+  }
+  if (node.kind === 'language') {
+    if (published.details.characters !== undefined) {
+      details.characters = JSON.stringify(parseLanguageCharacters(published.details.characters));
+    }
+    if (published.details.wordClasses !== undefined) {
+      details.wordClasses = JSON.stringify(parseLanguageWordClasses(published.details.wordClasses));
     }
   }
   if (node.kind === 'event' && published.details.year !== undefined) details.year = published.details.year;
