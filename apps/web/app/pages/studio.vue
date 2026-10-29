@@ -39,6 +39,10 @@ const statusText = ref('');
 const form = reactive<{ title:string; body:string; details:Record<string,string> }>({
   title:'',body:'',details:{},
 });
+const categoryPresets = computed<string>({
+  get: () => form.details.presets ?? '[]',
+  set: value => { form.details.presets = value; },
+});
 const createOpen = ref(false);
 const createParentId = ref<string | null>(null);
 const createKind = ref<ReaderKind>('series');
@@ -296,7 +300,7 @@ async function logout() {
                 <label>名称・見出し<input v-model="form.title" maxlength="150" required /></label>
                 <label>本文・説明<textarea v-model="form.body" rows="14" maxlength="100000"
                   placeholder="ページ区切り: [[page]] ／ ルビ: ｜漢字《かんじ》"></textarea></label>
-                <CategoryPresetEditor v-if="selected.kind === 'category'" v-model="form.details.presets" />
+                <CategoryPresetEditor v-if="selected.kind === 'category'" v-model="categoryPresets" />
                 <label v-if="selected.kind === 'word'">品詞
                   <input v-model="form.details.partOfSpeech" maxlength="10000" />
                 </label>
