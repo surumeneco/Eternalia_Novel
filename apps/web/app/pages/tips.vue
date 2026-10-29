@@ -1,3 +1,6 @@
+<script setup lang="ts">
+const { t } = useUiLocale();
+</script>
 <template>
-  <PublicCollectionPage title="設定集" description="シリーズに属するカテゴリ・設定・設定項目を閲覧します。" section="tips" />
+  <PublicCollectionPage :title="t('tips')" :description="t('tipsCollectionDescription')" section="tips" />
 </template>
