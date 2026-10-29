@@ -33,10 +33,6 @@ const navigation = [
             </ul>
           </nav>
         </section>
-        <section class="stone-panel">
-          <h2>更新情報</h2>
-          <p class="note">公開された更新情報を表示する予定です。</p>
-        </section>
       </aside>
       <main id="main-content" class="site-main">
         <slot />
