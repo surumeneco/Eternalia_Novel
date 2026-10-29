@@ -1,23 +1,43 @@
 <script setup lang="ts">
-interface PublicSeries { id: string; title: string }
-const { data: series, pending, error, refresh } = await useFetch<PublicSeries[]>('/api/public/series');
+import type { ReaderNode } from '~/types/reader';
+const { data: series, pending, error, refresh } = await useFetch<ReaderNode[]>('/api/public/series');
+const sections = [
+  { to: '/stories', label: 'ストーリー', description: '編・部・章と本文' },
+  { to: '/tips', label: '設定集', description: 'カテゴリ・設定・項目' },
+  { to: '/dictionaries', label: '辞書', description: '言語・語彙・文法' },
+  { to: '/timeline', label: '年表', description: '年代区分と出来事' },
+] as const;
 </script>
+
 <template>
-  <main class="content">
-    <header><h1>Eternalia</h1><p>小説・設定・辞書・年表</p></header>
-    <section aria-labelledby="series-heading">
-      <h2 id="series-heading">公開シリーズ</h2>
+  <div>
+    <ReaderPanel>
+      <h1>Eternalia</h1>
+      <p>ストーリー、設定集、辞書、年表をシリーズごとに閲覧できます。</p>
+      <h2 class="section-heading">コンテンツ</h2>
+      <ul class="reader-list">
+        <li v-for="section in sections" :key="section.to">
+          <NuxtLink :to="section.to">{{ section.label }} <span class="note">— {{ section.description }}</span></NuxtLink>
+        </li>
+      </ul>
+    </ReaderPanel>
+    <ReaderPanel class="reader-panel-spaced">
+      <h2 class="section-heading">公開シリーズ</h2>
       <p v-if="pending" role="status">読み込み中です。</p>
       <div v-else-if="error" role="alert">
-        <p>公開シリーズを取得できませんでした。</p>
-        <button type="button" @click="refresh()">再試行</button>
+        <p class="error-text">公開シリーズを取得できませんでした。</p>
+        <button class="inline-action" type="button" @click="refresh()">再試行</button>
       </div>
-      <ul v-else-if="series?.length"><li v-for="item in series" :key="item.id">{{ item.title }}</li></ul>
+      <ul v-else-if="series?.length" class="reader-list">
+        <li v-for="item in series" :key="item.id">
+          <NuxtLink :to="'/series/' + item.id">{{ item.content.title }}</NuxtLink>
+        </li>
+      </ul>
       <p v-else>現在、公開中のシリーズはありません。</p>
-    </section>
-  </main>
+    </ReaderPanel>
+  </div>
 </template>
+
 <style scoped>
-.content { max-width: 64rem; margin: 0 auto; padding: clamp(1rem, 4vw, 3rem); font-family: system-ui, sans-serif; line-height: 1.7; }
-button { cursor: pointer; }
+.reader-panel-spaced { margin-top: 1.2rem; }
 </style>
