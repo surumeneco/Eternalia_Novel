@@ -2,8 +2,13 @@ name: Alpha checks
 on:
   push:
     branches:
-      - draft/alpha-reimplementation-20261029
+      - main
+      - develop
+      - 'feature/**'
   pull_request:
+    branches:
+      - develop
+      - main
   workflow_dispatch:
 permissions:
   contents: read
