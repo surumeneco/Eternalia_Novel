@@ -9,6 +9,27 @@ const displayDetails = computed(() => Object.fromEntries(
     !((item.value?.kind === 'word' && key === 'meanings') ||
       (item.value?.kind === 'language' && (key === 'characters' || key === 'wordClasses')))),
 ));
+const { data: ancestry } = await useFetch<ReaderNode[]>(
+  () => '/api/public/items/' + encodeURIComponent(String(route.params.id)) + '/path',
+);
+const crumbs = computed(() => {
+  const kind = item.value?.kind;
+  const section = kind && ['volume','part','chapter'].includes(kind) ? {label:'ストーリー',to:'/stories'} :
+    kind && ['category','tip','tipSection'].includes(kind) ? {label:'設定集',to:'/tips'} :
+    kind && ['language','word','grammar'].includes(kind) ? {label:'辞書',to:'/dictionaries'} :
+    kind && ['periodization','event'].includes(kind) ? {label:'年表',to:'/timeline'} : null;
+  const chain = ancestry.value ?? [];
+  const parts = chain.length > 0 ? chain : item.value ? [item.value] : [];
+  return [
+    {label:'ホーム',to:'/'},
+    ...(section ? [section] : []),
+    ...parts.map((node,index) => ({
+      label:node.content.title,
+      to:index===parts.length-1 ? undefined :
+        node.kind==='series' ? '/series/'+node.id : '/items/'+node.id,
+    })),
+  ];
+});
 const kindNames: Record<string,string> = {
   volume: '編', part: '部', chapter: '章', category: 'カテゴリ',
   tip: '設定', tipSection: '設定項目', language: '言語', word: '単語',
@@ -17,7 +38,7 @@ const kindNames: Record<string,string> = {
 </script>
 <template>
   <div>
-    <TopicPath :items="[{ label: 'ホーム', to: '/' }, { label: item?.content.title || '公開項目' }]" />
+    <TopicPath :items="crumbs" />
     <ReaderPanel>
       <p v-if="pending" role="status">公開項目を読み込んでいます。</p>
       <div v-else-if="error" role="alert">
