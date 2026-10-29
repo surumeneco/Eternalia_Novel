@@ -63,3 +63,49 @@ test('PostgreSQL advisory lock serializes competing edits of the same draft', as
     await repository.onModuleDestroy();
   }
 });
+
+test('PostgreSQL preserves separate word senses and hides unpublished etymology source references', async () => {
+  const repository = new PostgresLibraryService();
+  const seriesId=randomUUID(), sourceLanguageId=randomUUID(), targetLanguageId=randomUUID();
+  const sourceWordId=randomUUID(), targetWordId=randomUUID();
+  const senseA=randomUUID(), senseB=randomUUID();
+  const now=Date.UTC(2026,9,29);
+  const data = title => ({title,body:'',details:{}});
+  const meanings=[
+    {id:senseA,partOfSpeech:'名詞',definition:'第1義',etymologies:[
+      {id:randomUUID(),languageId:sourceLanguageId,wordId:sourceWordId,note:'元の語'},
+    ]},
+    {id:senseB,partOfSpeech:'名詞',definition:'第2義',etymologies:[]},
+  ];
+  try {
+    for(const [id,kind,parentId,title,details] of [
+      [seriesId,'series',null,'保存テスト',{}],
+      [sourceLanguageId,'language',seriesId,'原語',{}],
+      [targetLanguageId,'language',seriesId,'対象語',{}],
+      [sourceWordId,'word',sourceLanguageId,'原形',{}],
+      [targetWordId,'word',targetLanguageId,'新語',{meanings:JSON.stringify(meanings)}],
+    ]) {
+      await repository.mutate(db => createNode(db,{
+        id,kind,parentId,content:{...data(title),details},now,
+      }));
+    }
+    for(const id of [seriesId,sourceLanguageId,targetLanguageId,sourceWordId,targetWordId]) {
+      await repository.mutate(db => {
+        const revision=db.nodes.find(node=>node.id===id).revision;
+        return publishNode(db,id,revision,now);
+      });
+    }
+    const initial=toReader(await repository.read(),targetWordId,now+1);
+    assert.equal(JSON.parse(initial.content.details.meanings).length,2);
+    const source=JSON.parse(initial.content.details.meanings)[0].etymologies[0];
+    assert.equal(source.wordTitle,'原形');
+    await repository.mutate(db => setVisibility(
+      db,sourceWordId,db.nodes.find(node=>node.id===sourceWordId).revision,false,null,now+2,
+    ));
+    const hidden=JSON.parse(toReader(await repository.read(),targetWordId,now+3).content.details.meanings);
+    assert.equal(hidden[0].etymologies[0].wordId,undefined);
+    assert.equal(hidden[0].etymologies[0].wordTitle,undefined);
+  } finally {
+    await repository.onModuleDestroy();
+  }
+});
