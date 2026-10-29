@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ReaderNode } from '~/types/reader';
+const { t } = useUiLocale();
 import { compareEventsWithinPeriod } from '@eternalia/contracts';
 
 const route = useRoute();
@@ -27,8 +28,8 @@ function eventsOf(period: ReaderNode) {
 <template>
   <div>
     <TopicPath :items="[
-      { label: 'ホーム', to: '/' },
-      { label: '年表', to: '/timeline' },
+      { label: t('home'), to: '/' },
+      { label: t('timeline'), to: '/timeline' },
       { label: series?.content.title ?? 'シリーズ' },
     ]" />
     <ReaderPanel>
@@ -36,7 +37,7 @@ function eventsOf(period: ReaderNode) {
       <div v-else-if="error || !series" role="alert">
         <h1>年表を表示できません</h1>
         <p class="error-text">シリーズが存在しないか、公開されていません。</p>
-        <button type="button" class="inline-action" @click="refresh()">再試行</button>
+        <button type="button" class="inline-action" @click="refresh()">{{ t('retry') }}</button>
       </div>
       <template v-else>
         <h1>{{ series.content.title }} — 年表</h1>
