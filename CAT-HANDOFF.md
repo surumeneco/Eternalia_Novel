@@ -53,3 +53,18 @@
 - `.github/workflows/alpha-checks.yml` へのHTTPジョブ追加も安全性チェックで拒否され、**CIには未接続**。このHTTP受入試験を実行済み・passedと表示しない。既存のBuild/DB CIの結果とは別管理とする。
 - 作者編集 `apps/web/app/pages/studio.vue` の公開操作後の再読込で未保存入力が失われ得る問題を確認したが、修正書き込みが拒否された。**未修正**。
 - CAT正規doctor/Guard/Model/Queue/Red/Greenは未実施。Draft PR #3を維持し、受入未達のためmergeしない。
+
+## 2026-10-29 追加: 公開順序・作者参照・読者遷移・辞書診断
+
+実装Workと変更範囲（本段落追加前のソースHEAD: `9fbbfcd2`。正式CAT-TDD Queueではない）:
+
+- **WR-03 / ST表示順 / A2・A6**: `packages/contracts/src/reorder.ts`、`apps/api/src/author-order.controller.ts`、`apps/web/app/pages/studio/order.vue`。同親・同種の全兄弟IDで順序を指定。楽観的競合チェック、許可作者のみ、明示操作で公開一覧順を変更。ドメイン探索テストと実PostgreSQLテストを追加。公開順序変更が独立した公開操作になる仕様詳細は別途正本への確定が必要。
+- **LG-08**: `packages/contracts/src/spelling-diagnostics.ts`。同一言語の完全一致綴りと、文字・語頭・後続・語末の音韻経路に一致しない登録候補を作者編集で警告。拒否／警告の契約未決につき非破壊の診断のみ。探索的テスト追加。
+- **WR-04 / ST-06**: `apps/web/app/components/AuthorReferencePanel.vue` を章・設定の作者編集に接続。同一シリーズの設定・単語・文法の作者下書き参照を、認可済み管理画面内に限定。
+- **CM-01・PB-03 / 読者ナビゲーション**: `packages/contracts/src/public-path.ts` と `apps/api/src/public-path.controller.ts` で全祖先の公開判定とスナップショットに従う公開パンくず取得を追加。URL直接アクセスの章からシリーズを特定し、目次/前後章へ戻れるようNuxt修正。汎用シリーズ/項目詳細の導線とパンくずも改善。私的・予約公開祖先の負例テスト追加。
+- **CM-05**: `apps/web/app/components/ReadingSkeleton.vue` とホーム・ストーリー・設定・辞書・年表・詳細・章・共通公開一覧へスケルトン読込表示を適用。reduced motion配慮。
+- 実CIにて追加テストの構文エラーを発見、`c8bc846b`で修正済み。以降のPush/PR結果は**最終HEAD**のrunで再取得すること。
+
+未実施/決定要の残Work: **設定タグ・順序付き設定関連の公開投影**（先行のコード書込が安全性チェックで拒否）、**年代区分をまたぐ換算式**、**独立した無効化/非公開済み削除と復旧契約**、固定UI/エラーの多言語化、長文/IME/ルビのブラウザ検証、本人/他人のDiscord実ログイン、画面横断のブラウザE2E、実HTTP検証スクリプトの実行、正規CAT Gate。既知の未保存入力が公開操作後の再読込で失われ得る問題は依然未修正。
+
+**α受入判定**: 上記未完了が残るため未成立。CI greenはCAT Gate/実ブラウザ/実機/デプロイ/公開リリースを意味しない。PR #3はDraftのままとし、`develop`/`main`にはマージしない。
