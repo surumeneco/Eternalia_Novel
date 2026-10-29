@@ -68,3 +68,14 @@
 未実施/決定要の残Work: **設定タグ・順序付き設定関連の公開投影**（先行のコード書込が安全性チェックで拒否）、**年代区分をまたぐ換算式**、**独立した無効化/非公開済み削除と復旧契約**、固定UI/エラーの多言語化、長文/IME/ルビのブラウザ検証、本人/他人のDiscord実ログイン、画面横断のブラウザE2E、実HTTP検証スクリプトの実行、正規CAT Gate。既知の未保存入力が公開操作後の再読込で失われ得る問題は依然未修正。
 
 **α受入判定**: 上記未完了が残るため未成立。CI greenはCAT Gate/実ブラウザ/実機/デプロイ/公開リリースを意味しない。PR #3はDraftのままとし、`develop`/`main`にはマージしない。
+
+
+## 2026-10-30 追加: 固定UI文言と本文記法ヘルパー（CAT正規Gate未実施）
+
+- 引継ぎ時HEADは `450fcf2b`。継続したfeatureブランチで作業し、PR #3はDraft、develop/mainへの統合なし。
+- 固定UI辞書 `apps/web/app/composables/useUiLocale.ts`（前回追加）を公開シリーズ・章・設定・辞書・年表のナビゲーションおよび詳細パンくずへ接続。辞書は日本語だけを提供し、追加言語は確定/翻訳後の拡張対象。作者の作品本文は翻訳しない。
+- `apps/web/app/utils/manuscript-markup.ts` と `apps/web/tests/manuscript-markup.test.mjs`：現行の本文ルビ記法 `｜漢字《かんじ》` / `[[page]]` の選択範囲挿入をUTF-16オフセットで扱う純粋関数。Nodeテストは `npm run test:alpha` 内で実行。ただし**作者UIには未接続**。
+- 新規 `ManuscriptEditor.vue` にNuxt型エラー（`HTMLTextAreaElement.isComposing`）があり、型チェック失敗を観測。修正書込みが拒否されたため、問題の未接続コンポーネントだけをコミット `164f0f0b` で削除し、GitHub CIをGreenに復旧。ヘルパーとテストは維持。
+- `PublicCollectionPage.vue` の共通ラベル更新、既存の `studio.vue` 公開操作後の未保存入力保護、設定タグ/関連や年代換算、無効化/削除等は**未実装**。拒否された編集を別の場所へ迂回して同等実装を追加していない。
+- 実HTTP実行、Discord本人/他人認証、ブラウザE2E、デバイスでの長文・IME・Undo・ルビ検証、CAT-TDD正規doctor/Guard/Queue/Red/Greenは**未実施**。既存CIの型チェック・単体/DB成功をCATやα受入合格へ読み替えない。
+- この段落追加前の最終コードSHA: `0cc5fae22799c8c0730f7abb607d383d330c1251`。Push/PR Actionsを**本段落を含む最終HEAD**で再取得し、結論を確認すること。
