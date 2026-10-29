@@ -40,7 +40,7 @@ const kindNames: Record<string,string> = {
   <div>
     <TopicPath :items="crumbs" />
     <ReaderPanel>
-      <p v-if="pending" role="status">公開項目を読み込んでいます。</p>
+      <ReadingSkeleton v-if="pending" label="公開項目を読み込んでいます。" />
       <div v-else-if="error" role="alert">
         <h1>項目を表示できません</h1>
         <p class="error-text">存在しないか、現在公開されていない可能性があります。</p>
