@@ -13,7 +13,7 @@
     "verify:exploratory": "npm run build:contracts && npm run verify:exploratory -w @eternalia/contracts",
     "build": "npm run build:contracts && npm run build -w @eternalia/api && npm run build -w @eternalia/web",
     "alpha": "npm run build:contracts && node apps/preview/src/server.mjs",
-    "test:alpha": "npm run build:contracts && node --test packages/contracts/exploratory/*.test.mjs apps/preview/tests/*.test.mjs",
+    "test:alpha": "npm run build:contracts && node --test packages/contracts/exploratory/*.test.mjs apps/preview/tests/*.test.mjs && node --experimental-strip-types --test apps/web/tests/*.test.mjs",
     "check:alpha": "npm run test:alpha",
     "alpha:offline": "node apps/preview/src/server.mjs",
     "seed:alpha": "node apps/preview/src/seed.mjs",
