@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { newLibrary, createNode, editNode, publishNode, setVisibility, publicSeries,
-  toReader, publicTree } from '../dist/index.js';
+  toReader, publicTree, publicRecent } from '../dist/index.js';
 import { randomUUID } from 'node:crypto';
 const now = Date.UTC(2026,9,28);
 function create(db,kind,parentId=null,title=kind,details={}) {
@@ -22,3 +22,19 @@ test('independent tipSection publication and grammar publication',()=>{let db=ne
 test('unsafe content and overly large inputs rejected',()=>{const s=create(newLibrary(),'series');assert.throws(()=>editNode(s.db,s.id,1,{title:'',body:'',details:{}},now),e=>e.code==='bad-request');assert.throws(()=>editNode(s.db,s.id,1,{title:'x',body:'z'.repeat(100001),details:{}},now),e=>e.code==='bad-request');});
 
 test('private category presets must never appear in public API payload',()=>{let db=newLibrary();const s=create(db,'series');db=s.db;const cat=create(db,'category',s.id,'人物',{presets:JSON.stringify([{title:'作者だけの秘密',body:'秘密' }])});db=cat.db;for(const id of [s.id,cat.id])db=publish(db,id);const visible=toReader(db,cat.id,now+1);assert.deepEqual(visible.content.details,{});assert.ok(!JSON.stringify(publicTree(db,s.id,now+1)).includes('作者だけの秘密'));});
+
+test('recent feed contains only currently readable publication snapshots', () => {
+  let { db, s, v, p, c } = sampleStory();
+  for (const id of [s, v, p, c]) db = publish(db, id, now);
+  assert.deepEqual(publicRecent(db, now + 1).map(n => n.id), [c]);
+  db = visibility(db, v, false);
+  assert.equal(publicRecent(db, now + 1).length, 0, 'private ancestor cannot leak through recent');
+  db = visibility(db, v, true);
+  db = editNode(db, c, db.nodes.find(n => n.id === c).revision,
+    { title: '未公開の変更', body: '未公開の秘密', details: {} }, now + 1);
+  assert.ok(!JSON.stringify(publicRecent(db, now + 1)).includes('未公開の秘密'));
+  db = visibility(db, c, true, now + 60000);
+  assert.equal(publicRecent(db, now + 1).length, 0, 'scheduled content is not a recent item yet');
+  assert.equal(publicRecent(db, now + 60000).length, 1);
+  assert.equal(publicRecent(db, now + 60000)[0].content.title, '第一章');
+});
