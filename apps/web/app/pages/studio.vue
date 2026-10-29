@@ -43,6 +43,10 @@ const categoryPresets = computed<string>({
   get: () => form.details.presets ?? '[]',
   set: value => { form.details.presets = value; },
 });
+const wordMeanings = computed<string>({
+  get: () => form.details.meanings ?? '[]',
+  set: value => { form.details.meanings = value; },
+});
 const createOpen = ref(false);
 const createParentId = ref<string | null>(null);
 const createKind = ref<ReaderKind>('series');
@@ -91,6 +95,18 @@ const creationChoices = computed(() =>
 );
 
 const byId = computed(() => new Map(nodes.value.map(node => [node.id,node])));
+const activeWordLanguages = computed(() => {
+  const language = selected.value?.parentId ? byId.value.get(selected.value.parentId) : null;
+  return language?.kind === 'language'
+    ? nodes.value.filter(node => node.kind === 'language' && node.parentId === language.parentId)
+        .map(node => ({id:node.id,title:node.draft.title}))
+    : [];
+});
+const activeWordReferences = computed(() => {
+  const languageIds = new Set(activeWordLanguages.value.map(node => node.id));
+  return nodes.value.filter(node => node.kind === 'word' && node.parentId && languageIds.has(node.parentId))
+    .map(node => ({id:node.id,title:node.draft.title,parentId:node.parentId}));
+});
 const ordered = computed(() => {
   const indexed = new Map<string | null,AuthorNode[]>();
   for (const node of nodes.value) {
@@ -181,7 +197,8 @@ async function createItem() {
         kind: createKind.value, parentId:createParentId.value,
         content:{
           title:createTitle.value.trim(), body:'',
-          details:createKind.value === 'category' ? {presets:'[]'} : {},
+          details:createKind.value === 'category' ? {presets:'[]'} :
+            createKind.value === 'word' ? {meanings:'[]'} : {},
         },
       },
     });
@@ -310,9 +327,12 @@ async function logout() {
                 <label>本文・説明<textarea v-model="form.body" rows="14" maxlength="100000"
                   placeholder="ページ区切り: [[page]] ／ ルビ: ｜漢字《かんじ》"></textarea></label>
                 <CategoryPresetEditor v-if="selected.kind === 'category'" v-model="categoryPresets" />
-                <label v-if="selected.kind === 'word'">品詞
-                  <input v-model="form.details.partOfSpeech" maxlength="10000" />
+                <label v-if="selected.kind === 'word' && !form.details.meanings && form.details.partOfSpeech">
+                  旧形式の品詞
+                  <input v-model="form.details.partOfSpeech" maxlength="80" />
                 </label>
+                <WordMeaningsEditor v-if="selected.kind === 'word'" v-model="wordMeanings"
+                  :languages="activeWordLanguages" :words="activeWordReferences" />
                 <label v-if="selected.kind === 'event'">相対年
                   <input v-model="form.details.year" maxlength="10000" />
                 </label>
