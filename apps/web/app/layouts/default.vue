@@ -43,6 +43,8 @@ const navigation = [
         <p><a href="#top">ページ先頭へ戻る</a></p>
       </main>
     </div>
-    <footer class="site-footer"><small>Eternalia — ストーリー・設定集・辞書・年表</small></footer>
+    <footer class="site-footer">
+      <small>Eternalia — ストーリー・設定集・辞書・年表 ／ <NuxtLink to="/studio">作者の書斎</NuxtLink></small>
+    </footer>
   </div>
 </template>
