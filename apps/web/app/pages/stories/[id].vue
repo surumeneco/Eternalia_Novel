@@ -29,10 +29,11 @@ const chaptersOf = (partId: string) => sorted(partId, 'chapter');
         <h2 class="section-heading">目次</h2>
         <p v-if="!volumes.length">公開中の編はありません。</p>
         <section v-for="volume in volumes" :key="volume.id" class="story-volume">
-          <h3>{{ volume.content.title }}</h3>
+          <h3><NuxtLink :to="'/items/' + volume.id">{{ volume.content.title }}</NuxtLink></h3>
           <p v-if="volume.content.body" class="note story-summary">{{ volume.content.body }}</p>
           <div v-for="part in partsOf(volume.id)" :key="part.id" class="story-part">
-            <h4>{{ part.content.title }}</h4>
+            <h4><NuxtLink :to="'/items/' + part.id">{{ part.content.title }}</NuxtLink></h4>
+            <p v-if="part.content.body" class="note story-summary">{{ part.content.body }}</p>
             <ul class="reader-list" v-if="chaptersOf(part.id).length">
               <li v-for="chapter in chaptersOf(part.id)" :key="chapter.id">
                 <NuxtLink :to="{ path: '/read/' + chapter.id, query: { series: id } }">{{ chapter.content.title }}</NuxtLink>
