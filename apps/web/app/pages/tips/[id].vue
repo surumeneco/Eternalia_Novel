@@ -14,6 +14,8 @@ const series = computed(() => tree.value?.find(
 const search = ref('');
 const selectedCategory = ref('');
 const selectedTag = ref('');
+// Route component reuse must not carry filters from an unrelated series.
+watch(seriesId, () => { selectedCategory.value = ''; selectedTag.value = ''; search.value = ''; });
 const tipOrder = ref<'manual' | 'title' | 'recent'>('manual');
 function tagsFor(tip: ReaderNode): string[] {
   try { return parseTipTags(tip.content.details.tags ?? '[]'); }
