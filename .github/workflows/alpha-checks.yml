@@ -71,4 +71,5 @@ jobs:
       - name: Build contracts, Nest and Nuxt independently
         run: npm run build
       - name: Check Nuxt types independently
+        if: success() || failure()
         run: npm run typecheck -w @eternalia/web
