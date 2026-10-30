@@ -14,7 +14,7 @@ export function insertManuscriptMarkup(
   if (kind === 'page') {
     const marker = '[[page]]';
     return {
-      value: source.slice(0, start) + marker + source.slice(end),
+      value: source.slice(0, start) + marker + source.slice(start),
       selectionStart: start + marker.length,
       selectionEnd: start + marker.length,
     };
