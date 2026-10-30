@@ -18,7 +18,7 @@
     "alpha:offline": "node apps/preview/src/server.mjs",
     "seed:alpha": "node apps/preview/src/seed.mjs",
     "db:migrate": "node --env-file-if-exists=.env scripts/migrate.mjs",
-    "test:db": "node --test apps/api/tests/author-guard.test.mjs apps/api/tests/author-memos.test.mjs apps/api/tests/postgres-alpha.test.mjs",
+    "test:db": "node --test apps/api/tests/author-guard.test.mjs apps/api/tests/author-memos.test.mjs apps/api/tests/postgres-alpha.test.mjs apps/api/tests/tip-relations-postgres.test.mjs",
     "test:http": "node --test apps/api/http-acceptance/http-acceptance.test.mjs"
   },
   "engines": {
