@@ -12,9 +12,12 @@ test('ruby insertion without selection highlights the base placeholder', () => {
     value: '前｜文字《よみ》後', selectionStart: 2, selectionEnd: 4,
   });
 });
-test('page marker replaces selected text without affecting surrounding characters', () => {
+test('page marker inserts at selection start without deleting selected manuscript text', () => {
   assert.deepEqual(insert('朝昼夜', 1, 2, 'page'), {
-    value: '朝[[page]]夜', selectionStart: 9, selectionEnd: 9,
+    value: '朝[[page]]昼夜', selectionStart: 9, selectionEnd: 9,
+  });
+  assert.deepEqual(insert('第一行\n第二行', 0, 7, 'page'), {
+    value: '[[page]]第一行\n第二行', selectionStart: 8, selectionEnd: 8,
   });
 });
 test('supplementary Unicode selection uses textarea UTF-16 offsets', () => {
