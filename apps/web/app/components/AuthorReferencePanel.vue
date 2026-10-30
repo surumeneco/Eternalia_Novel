@@ -26,8 +26,16 @@ const entries=computed(()=>props.nodes.filter(node=>{
   }
   if(current?.id!==seriesId.value) return false;
   const needle=query.value.trim().toLocaleLowerCase();
-  return !needle || [node.draft.title,node.draft.body]
-    .some(value=>value.toLocaleLowerCase().includes(needle));
+  if (!needle) return true;
+  const fields = [node.draft.title, node.draft.body];
+  if (node.kind === 'tip') {
+    for (const section of props.nodes) {
+      if (section.kind === 'tipSection' && section.parentId === node.id) {
+        fields.push(section.draft.title, section.draft.body);
+      }
+    }
+  }
+  return fields.some(value => value.toLocaleLowerCase().includes(needle));
 }).sort((a,b)=>a.draft.title.localeCompare(b.draft.title,'ja')).slice(0,100));
 const active=computed(()=>entries.value.find(node=>node.id===highlightedId.value)??null);
 const activeSections=computed(()=>active.value?.kind==='tip'
