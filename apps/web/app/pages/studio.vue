@@ -68,6 +68,14 @@ const categoryPresets = computed<string>({
   get: () => form.details.presets ?? '[]',
   set: value => { form.details.presets = value; },
 });
+const tipTags = computed<string>({
+  get: () => form.details.tags ?? '[]',
+  set: value => { form.details.tags = value; },
+});
+const tipRelatedTipIds = computed<string>({
+  get: () => form.details.relatedTipIds ?? '[]',
+  set: value => { form.details.relatedTipIds = value; },
+});
 const wordMeanings = computed<string>({
   get: () => form.details.meanings ?? '[]',
   set: value => { form.details.meanings = value; },
@@ -384,6 +392,9 @@ async function logout() {
                   @compositionstart="composingBody = true" @compositionend="composingBody = false"
                   placeholder="ページ区切り: [[page]] ／ ルビ: ｜漢字《かんじ》"></textarea></label>
                 <CategoryPresetEditor v-if="selected.kind === 'category'" v-model="categoryPresets" />
+                <TipLinksEditor v-if="selected.kind === 'tip'"
+                  v-model:tags="tipTags" v-model:related-tip-ids="tipRelatedTipIds"
+                  :selected-id="selected.id" :nodes="nodes" />
                 <AuthorReferencePanel v-if="selected.kind === 'chapter' || selected.kind === 'tip'"
                   :selected-id="selected.id" :nodes="nodes" />
                 <LanguageStructureEditor v-if="selected.kind === 'language'"
