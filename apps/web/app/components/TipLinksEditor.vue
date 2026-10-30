@@ -51,7 +51,7 @@ watch(() => [props.selectedId, props.tags], () => {
 }, { immediate: true });
 watch(() => props.selectedId, () => { selectedRelatedId.value = ''; });
 function updateTags() {
-  emit('update:tags', JSON.stringify(tagText.value.split(',').map(tag => tag.trim()).filter(Boolean)));
+  emit('update:tags', JSON.stringify(tagText.value.split(/[,、\n]+/).map(tag => tag.trim()).filter(Boolean)));
 }
 function changeRelations(ids: string[]) {
   emit('update:relatedTipIds', JSON.stringify(ids));
