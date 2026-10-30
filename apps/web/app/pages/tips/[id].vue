@@ -14,6 +14,7 @@ const series = computed(() => tree.value?.find(
 const search = ref('');
 const selectedCategory = ref('');
 const selectedTag = ref('');
+const tipOrder = ref<'manual' | 'title' | 'recent'>('manual');
 function tagsFor(tip: ReaderNode): string[] {
   try { return parseTipTags(tip.content.details.tags ?? '[]'); }
   catch { return []; }
@@ -28,10 +29,19 @@ function children(parentId: string, kind: ReaderKind): ReaderNode[] {
     .sort((a, b) => a.order - b.order || a.content.title.localeCompare(b.content.title, 'ja'));
 }
 const categories = computed(() => children(seriesId.value, 'category'));
+function sortedTips(tips: ReaderNode[]): ReaderNode[] {
+  if (tipOrder.value === 'title') {
+    return [...tips].sort((a, b) => a.content.title.localeCompare(b.content.title, 'ja') || a.id.localeCompare(b.id));
+  }
+  if (tipOrder.value === 'recent') {
+    return [...tips].sort((a, b) => b.publishedAt - a.publishedAt || a.id.localeCompare(b.id));
+  }
+  return tips;
+}
 const groups = computed(() => categories.value
   .filter(category => !selectedCategory.value || category.id === selectedCategory.value)
   .map(category => {
-    const tips = children(category.id, 'tip').filter(tip => {
+    const tips = sortedTips(children(category.id, 'tip')).filter(tip => {
       const tags = tagsFor(tip);
       if (selectedTag.value && !tags.includes(selectedTag.value)) return false;
       if (!normalizedQuery.value) return true;
@@ -79,6 +89,13 @@ const groups = computed(() => categories.value
             <select v-model="selectedTag">
               <option value="">すべてのタグ</option>
               <option v-for="tag in allTags" :key="tag" :value="tag">{{ tag }}</option>
+            </select>
+          </label>
+          <label>並び順
+            <select v-model="tipOrder">
+              <option value="manual">設定された順序</option>
+              <option value="title">名称順</option>
+              <option value="recent">公開版の更新が新しい順</option>
             </select>
           </label>
         </div>
