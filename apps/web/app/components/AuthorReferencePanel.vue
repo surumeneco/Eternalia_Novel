@@ -68,6 +68,7 @@ watch(()=>props.selectedId,()=>{highlightedId.value='';});
       <h4>{{ active.draft.title }}</h4>
       <p class="note">{{ active.published?'公開版あり':'未公開' }}（作者の下書き）</p>
       <p class="reference-body">{{ active.draft.body || '本文はありません。' }}</p>
+      <WordMeaningsReader v-if="active.kind==='word'" :serialized="active.draft.details.meanings" />
       <dl v-if="activeSections.length" class="reference-sections">
         <div v-for="section in activeSections" :key="section.id">
           <dt>{{ section.draft.title }}</dt>
