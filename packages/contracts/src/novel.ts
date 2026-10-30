@@ -5,6 +5,7 @@
  */
 import { canReadPublished } from './publication.js';
 import { parseWordMeanings, type WordMeaning } from './word-meanings.js';
+import { parseTipTags, parseTipRelationIds } from './tip-links.js';
 import { parseLanguageCharacters, parseLanguageWordClasses } from './language-structure.js';
 
 export const kinds = [
@@ -83,6 +84,20 @@ function validateMeaningReferences(library: Library, languageId: string, content
     }
   }
 }
+/** Related settings must resolve to another Tip inside the same Series. */
+function validateTipReferences(library: Library, sourceId: string, categoryId: string, content: Content): void {
+  if (content.details.tags !== undefined) parseTipTags(content.details.tags);
+  if (content.details.relatedTipIds === undefined) return;
+  const seriesId = ancestorsOf(library, categoryId)[0]?.id;
+  for (const targetId of parseTipRelationIds(content.details.relatedTipIds)) {
+    if (targetId === sourceId) domainError('bad-request', '自身を関連設定に指定できません。');
+    const target = find(library, targetId);
+    if (target.kind !== 'tip' || !target.parentId ||
+      ancestorsOf(library, target.parentId)[0]?.id !== seriesId) {
+      domainError('bad-request', '関連設定は同一シリーズの設定に限定されます。');
+    }
+  }
+}
 function validateLanguageStructure(content: Content): void {
   if (content.details.characters !== undefined) parseLanguageCharacters(content.details.characters);
   if (content.details.wordClasses !== undefined) parseLanguageWordClasses(content.details.wordClasses);
@@ -106,6 +121,7 @@ export function createNode(library: Library, input: { id: string; kind: Kind; pa
   if (parentKind === null ? parent !== null : parent?.kind !== parentKind) domainError('bad-request', '親子階層が不正です。');
   const content = normalizeContent(input.content);
   if (input.kind === 'word' && parent) validateMeaningReferences(library, parent.id, content);
+  if (input.kind === 'tip' && parent) validateTipReferences(library, input.id, parent.id, content);
   if (input.kind === 'language') validateLanguageStructure(content);
   const next = clone(library);
   const siblings = next.nodes.filter(n => n.parentId === (parent?.id ?? null) && n.kind === input.kind);
@@ -143,6 +159,9 @@ export function editNode(library: Library, id: string, expectedRevision: number,
     validateMeaningReferences(next, item.parentId, item.draft);
   }
   if (item.kind === 'category' && item.draft.details.presets !== undefined) parsePresets(item.draft.details.presets);
+  if (item.kind === 'tip' && item.parentId) {
+    validateTipReferences(next, id, item.parentId, item.draft);
+  }
   item.revision += 1;
   item.updatedAt = now;
   return next;
@@ -226,6 +245,18 @@ export function toReader(library: Library, id: string, now: number): ReaderNode 
   // Only fields explicitly designed for readers may cross the API boundary.
   // In particular, category presets are AUTHOR metadata, even if category is public.
   const details: Details = {};
+  if (node.kind === 'tip') {
+    if (published.details.tags !== undefined) {
+      details.tags = JSON.stringify(parseTipTags(published.details.tags));
+    }
+    if (published.details.relatedTipIds !== undefined) {
+      const related = parseTipRelationIds(published.details.relatedTipIds).flatMap(targetId => {
+        const target = readableReference(library, targetId, 'tip', now);
+        return target ? [{ id: target.id, title: target.published!.value.title }] : [];
+      });
+      details.relatedTips = JSON.stringify(related);
+    }
+  }
   if (node.kind === 'word') {
     if (published.details.partOfSpeech !== undefined) details.partOfSpeech = published.details.partOfSpeech;
     if (published.details.meanings !== undefined) {
