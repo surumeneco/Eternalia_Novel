@@ -52,6 +52,7 @@ const kindNames: Record<string,string> = {
         <p class="note">{{ kindNames[item.kind] || item.kind }}</p>
         <h1>{{ item.content.title }}</h1>
         <AuthorEditLink :item-id="item.id" />
+        <p class="note">公開版更新：<time :datetime="new Date(item.publishedAt).toISOString()">{{ new Date(item.publishedAt).toLocaleString('ja-JP') }}</time></p>
         <RichContent :source="item.content.body" />
         <TipLinksReader v-if="item.kind === 'tip'" :tags="item.content.details.tags"
           :related-tips="item.content.details.relatedTips" />
