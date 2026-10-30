@@ -29,7 +29,7 @@ const entries=computed(()=>props.nodes.filter(node=>{
   return !needle || [node.draft.title,node.draft.body]
     .some(value=>value.toLocaleLowerCase().includes(needle));
 }).sort((a,b)=>a.draft.title.localeCompare(b.draft.title,'ja')).slice(0,100));
-const active=computed(()=>byId.value.get(highlightedId.value)??null);
+const active=computed(()=>entries.value.find(node=>node.id===highlightedId.value)??null);
 const activeSections=computed(()=>active.value?.kind==='tip'
   ? props.nodes.filter(node=>node.kind==='tipSection' && node.parentId===active.value?.id)
       .sort((a,b)=>a.order-b.order || a.draft.title.localeCompare(b.draft.title,'ja'))
