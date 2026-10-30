@@ -21,15 +21,23 @@ const { data: tree, pending, error, refresh } = await useFetch<ReaderNode[]>(
 const series = computed(() => tree.value?.find(node => node.kind === 'series'));
 const allowed = computed(() => section.value ? new Set<ReaderKind>(sections[section.value].kinds) : null);
 const byId = computed(() => new Map((tree.value ?? []).map(node => [node.id, node])));
+// Order is scoped to a parent AND a kind. Different kinds can share 0-based
+// positions, so compare kind order before each node's position in the path.
+const kindOrder: Record<ReaderKind, number> = {
+  series: -1, volume: 0, part: 0, chapter: 0,
+  category: 1, tip: 0, tipSection: 0,
+  language: 2, word: 0, grammar: 1,
+  periodization: 3, event: 0,
+};
 function position(node: ReaderNode): number[] {
-  const sequence = [node.order];
+  const sequence = [kindOrder[node.kind], node.order];
   const visited = new Set<string>([node.id]);
   let parentId = node.parentId;
-  while (parentId && parentId !== id.value && !visited.has(parentId) && sequence.length < 12) {
+  while (parentId && parentId !== id.value && !visited.has(parentId) && sequence.length < 24) {
     visited.add(parentId);
     const parent = byId.value.get(parentId);
     if (!parent) break;
-    sequence.unshift(parent.order);
+    sequence.unshift(kindOrder[parent.kind], parent.order);
     parentId = parent.parentId;
   }
   return sequence;
