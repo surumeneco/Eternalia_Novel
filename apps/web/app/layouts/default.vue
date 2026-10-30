@@ -7,6 +7,7 @@ const navigation = computed(() => [
   { to: '/tips', label: t('tips') },
   { to: '/dictionaries', label: t('dictionaries') },
   { to: '/timeline', label: t('timeline') },
+  { to: '/search', label: '検索' },
 ] as const);
 </script>
 
