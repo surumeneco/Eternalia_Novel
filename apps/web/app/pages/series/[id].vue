@@ -20,10 +20,30 @@ const { data: tree, pending, error, refresh } = await useFetch<ReaderNode[]>(
 );
 const series = computed(() => tree.value?.find(node => node.kind === 'series'));
 const allowed = computed(() => section.value ? new Set<ReaderKind>(sections[section.value].kinds) : null);
-const visible = computed(() => (tree.value ?? []).filter(node =>
-  node.kind !== 'series' && (!allowed.value || allowed.value.has(node.kind))
-));
 const byId = computed(() => new Map((tree.value ?? []).map(node => [node.id, node])));
+function position(node: ReaderNode): number[] {
+  const sequence = [node.order];
+  const visited = new Set<string>([node.id]);
+  let parentId = node.parentId;
+  while (parentId && parentId !== id.value && !visited.has(parentId) && sequence.length < 12) {
+    visited.add(parentId);
+    const parent = byId.value.get(parentId);
+    if (!parent) break;
+    sequence.unshift(parent.order);
+    parentId = parent.parentId;
+  }
+  return sequence;
+}
+const visible = computed(() => (tree.value ?? [])
+  .filter(node => node.kind !== 'series' && (!allowed.value || allowed.value.has(node.kind)))
+  .sort((a, b) => {
+    const left = position(a);
+    const right = position(b);
+    for (let i = 0; i < Math.min(left.length, right.length); i++) {
+      if (left[i] !== right[i]) return left[i]! - right[i]!;
+    }
+    return left.length - right.length || a.content.title.localeCompare(b.content.title, 'ja');
+  }));
 function depth(node: ReaderNode): number {
   let d = 0;
   let parentId = node.parentId;
