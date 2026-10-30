@@ -94,6 +94,7 @@ const labels: Record<ReaderKind, string> = {
       </div>
       <template v-else-if="series">
         <h1>{{ series.content.title }}</h1>
+        <AuthorEditLink :item-id="series.id" />
         <p v-if="series.content.body" class="reader-prose">{{ series.content.body }}</p>
         <nav v-if="!section" class="series-areas" aria-label="シリーズ内の資料">
           <NuxtLink :to="'/stories/' + id">ストーリーの目次</NuxtLink>
