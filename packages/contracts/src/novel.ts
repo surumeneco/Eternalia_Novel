@@ -280,14 +280,28 @@ export function toReader(library: Library, id: string, now: number): ReaderNode 
 export function publicTree(library: Library, seriesId: string, now: number): ReaderNode[] {
   const series = toReader(library, seriesId, now);
   if (!series || series.kind !== 'series') return [];
-  const visible = library.nodes.map(n => toReader(library, n.id, now)).filter((n): n is ReaderNode => n !== null);
-  const included = new Set<string>([seriesId]);
-  let changed = true;
-  while (changed) {
-    changed = false;
-    for (const item of visible) if (item.parentId && included.has(item.parentId) && !included.has(item.id)) { included.add(item.id); changed = true; }
+  // Walk only descendants of the selected series; unrelated worlds never
+  // need public projection or ancestry lookup during this request.
+  const children = new Map<string, NovelNode[]>();
+  for (const node of library.nodes) if (node.parentId) {
+    const siblings = children.get(node.parentId) ?? [];
+    siblings.push(node);
+    children.set(node.parentId, siblings);
   }
-  return visible.filter(n => included.has(n.id)).sort((a,b) => a.order - b.order || a.content.title.localeCompare(b.content.title));
+  const result: ReaderNode[] = [series];
+  const visited = new Set<string>([seriesId]);
+  const queue = [seriesId];
+  for (let index = 0; index < queue.length; index++) {
+    for (const child of children.get(queue[index]!) ?? []) {
+      if (visited.has(child.id)) continue;
+      visited.add(child.id);
+      const readable = toReader(library, child.id, now);
+      if (!readable) continue;
+      result.push(readable);
+      queue.push(child.id);
+    }
+  }
+  return result.sort((a,b) => a.order - b.order || a.content.title.localeCompare(b.content.title));
 }
 export function publicSeries(library: Library, now: number): ReaderNode[] {
   return library.nodes.filter(n => n.kind === 'series').map(n => toReader(library, n.id, now))
