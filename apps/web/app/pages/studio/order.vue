@@ -155,6 +155,7 @@ onMounted(async()=>{
         </ol>
         <div class="order-toolbar">
           <button type="button" class="inline-action" :disabled="busy||loading||!changed" @click="restore">変更を取り消す</button>
+          <button type="button" class="inline-action" :disabled="busy||loading" @click="reload">サーバーから再読込</button>
           <button type="button" class="order-save" :disabled="busy||loading||!changed" @click="save">表示順を反映</button>
           <NuxtLink to="/studio">執筆・編集に戻る</NuxtLink>
         </div>
