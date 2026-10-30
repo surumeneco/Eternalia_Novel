@@ -112,6 +112,7 @@ function restoreEditor() {
   form.details = { ...(selected.value?.draft.details ?? {}) };
 }
 function selectNode(nodeId: string) {
+  if (busy.value) return;
   if (selectedId.value === nodeId && !createOpen.value) return;
   if (!confirmDiscard()) return;
   createOpen.value = false;
@@ -119,6 +120,7 @@ function selectNode(nodeId: string) {
   restoreEditor();
 }
 function cancelCreate() {
+  if (busy.value) return;
   if (creationDirty.value && !window.confirm('未保存の新規項目を破棄しますか？')) return;
   createOpen.value = false;
   createTitle.value = '';
@@ -234,7 +236,7 @@ async function runChange(work: () => Promise<void>, okText:string) {
   } finally { busy.value = false; }
 }
 function openCreate(parentId: string | null) {
-  if (!confirmDiscard()) return;
+  if (busy.value || !confirmDiscard()) return;
   restoreEditor();
   createParentId.value = parentId;
   const parent = parentId ? byId.value.get(parentId) : null;
@@ -349,7 +351,7 @@ async function logout() {
             </div>
             <ul class="node-list">
               <li v-for="entry in ordered" :key="entry.node.id">
-                <button class="node-button" type="button" :aria-pressed="selectedId === entry.node.id"
+                <button class="node-button" type="button" :disabled="busy" :aria-pressed="selectedId === entry.node.id"
                   :style="{ paddingInlineStart: 10 + entry.depth * 13 + 'px' }"
                   @click="selectNode(entry.node.id)">
                   <small class="note">{{ kinds[entry.node.kind] }}</small>
@@ -373,7 +375,7 @@ async function logout() {
               <label>タイトル<input v-model="createTitle" maxlength="150" required /></label>
               <div class="action-row">
                 <button class="primary" type="submit" :disabled="busy">作成</button>
-                <button class="inline-action" type="button" @click="cancelCreate">キャンセル</button>
+                <button class="inline-action" type="button" :disabled="busy" @click="cancelCreate">キャンセル</button>
               </div>
             </form>
             <template v-else-if="selected">
