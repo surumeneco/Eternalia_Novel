@@ -227,12 +227,12 @@ async function reloadNodes() {
   if (await load()) restoreEditor();
 }
 
-async function runChange(work: () => Promise<void>, okText:string) {
+async function runChange(work: () => Promise<void>, okText:string, reloadAfter = true) {
   if (busy.value) return;
   busy.value = true; errorText.value=''; statusText.value='';
   try {
     await work();
-    if (await load()) {
+    if (!reloadAfter || await load()) {
       statusText.value = okText;
     } else {
       errorText.value = '更新の送信後に最新の状態を取得できませんでした。再読込して内容を確認してください。';
@@ -316,7 +316,7 @@ async function logout() {
     selectedId.value=null;
     nodes.value=[];
     await refreshAuth();
-  }, 'ログアウトしました。');
+  }, 'ログアウトしました。', false);
 }
 </script>
 
