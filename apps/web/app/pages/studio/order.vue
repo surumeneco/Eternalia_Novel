@@ -109,10 +109,17 @@ async function reload() {
   if (confirmDiscard()) await load();
 }
 onBeforeRouteLeave(()=>confirmDiscard());
+function beforeUnload(event: BeforeUnloadEvent) {
+  if (!changed.value) return;
+  event.preventDefault();
+  event.returnValue = '';
+}
 onMounted(async()=>{
+  window.addEventListener('beforeunload', beforeUnload);
   await refreshAuth();
   if (auth.value?.authenticated) await load();
 });
+onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload));
 </script>
 
 <template>
