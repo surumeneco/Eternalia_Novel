@@ -173,11 +173,9 @@ const ordered = computed(() => {
   visit(null,0);
   return out;
 });
-watch(selected, (node) => {
-  form.title = node?.draft.title ?? '';
-  form.body = node?.draft.body ?? '';
-  form.details = { ...(node?.draft.details ?? {}) };
-}, { immediate:true });
+// Refreshing the current node after publication must preserve the editing buffer.
+// Loading a different item initializes that item's saved draft instead.
+watch(() => selected.value?.id, () => restoreEditor(), { immediate: true });
 
 const scheduledLocal = ref('');
 watch(selected, node => {
@@ -186,13 +184,15 @@ watch(selected, node => {
     : '';
 }, { immediate: true });
 
-async function load() {
+async function load(): Promise<boolean> {
   try {
     nodes.value = await $fetch<AuthorNode[]>('/api/admin/nodes');
     if (!nodes.value.some(n => n.id === selectedId.value)) selectedId.value = null;
     errorText.value = '';
+    return true;
   } catch (e: unknown) {
     errorText.value = 'ライブラリを取得できませんでした。認証・DB設定を確認してください。';
+    return false;
   }
 }
 onMounted(async () => {
@@ -207,7 +207,8 @@ onMounted(async () => {
   }
 });
 async function reloadNodes() {
-  if (confirmDiscard()) await load();
+  if (!confirmDiscard()) return;
+  if (await load()) restoreEditor();
 }
 
 async function runChange(work: () => Promise<void>, okText:string) {
