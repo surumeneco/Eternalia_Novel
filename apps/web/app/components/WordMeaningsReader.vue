@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { WordMeaning } from '@eternalia/contracts';
+import type { WordMeaning, WordEtymology } from '@eternalia/contracts';
 
 const props = defineProps<{ serialized?: string }>();
 const meanings = computed<WordMeaning[]>(() => {
@@ -9,6 +9,10 @@ const meanings = computed<WordMeaning[]>(() => {
     return Array.isArray(parsed) ? parsed as WordMeaning[] : [];
   } catch { return []; }
 });
+function visibleOrigins(meaning: WordMeaning): WordEtymology[] {
+  return meaning.etymologies.filter(origin =>
+    !!origin.languageTitle || !!origin.wordTitle || !!origin.note.trim());
+}
 </script>
 
 <template>
@@ -18,10 +22,10 @@ const meanings = computed<WordMeaning[]>(() => {
       <li v-for="meaning in meanings" :key="meaning.id">
         <p v-if="meaning.partOfSpeech" class="note meaning-class">{{ meaning.partOfSpeech }}</p>
         <p class="meaning-definition">{{ meaning.definition }}</p>
-        <div v-if="meaning.etymologies.length" class="meaning-origins">
+        <div v-if="visibleOrigins(meaning).length" class="meaning-origins">
           <h3>語源</h3>
           <ul>
-            <li v-for="origin in meaning.etymologies" :key="origin.id">
+            <li v-for="origin in visibleOrigins(meaning)" :key="origin.id">
               <template v-if="origin.languageId && origin.languageTitle">
                 <NuxtLink :to="'/items/' + origin.languageId">{{ origin.languageTitle }}</NuxtLink>
               </template>
