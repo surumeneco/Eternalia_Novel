@@ -106,6 +106,8 @@ jobs:
         run: npm ci
       - name: Build shared domain contracts
         run: npm run build:contracts
+      - name: Build Nest API for integration imports
+        run: npm run build -w @eternalia/api
       - name: Apply PostgreSQL migrations
         run: npm run db:migrate
       - name: Verify PostgreSQL transactions and author guards
