@@ -162,6 +162,12 @@ const spellingWarnings = computed(() => {
   if (selected.value?.kind !== 'word') return [];
   return diagnoseWordSpelling({ nodes: nodes.value }, selected.value.id, form.title);
 });
+const kindOrder: Record<ReaderKind, number> = {
+  series: 0, volume: 0, part: 0, chapter: 0,
+  category: 1, tip: 0, tipSection: 0,
+  language: 2, word: 0, grammar: 1,
+  periodization: 3, event: 0,
+};
 const ordered = computed(() => {
   const indexed = new Map<string | null,AuthorNode[]>();
   for (const node of nodes.value) {
@@ -169,7 +175,7 @@ const ordered = computed(() => {
     bucket.push(node);
     indexed.set(node.parentId,bucket);
   }
-  for (const bucket of indexed.values()) bucket.sort((a,b) => a.order - b.order || a.draft.title.localeCompare(b.draft.title));
+  for (const bucket of indexed.values()) bucket.sort((a,b) => kindOrder[a.kind] - kindOrder[b.kind] || a.order - b.order || a.draft.title.localeCompare(b.draft.title, 'ja'));
   const out: {node:AuthorNode; depth:number}[] = [];
   const visited = new Set<string>();
   function visit(parentId: string | null,depth:number) {
