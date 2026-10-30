@@ -42,6 +42,7 @@ function applySelected() {
   tagsText.value = newMemo.value ? '' : (selected.value?.tags ?? []).join(', ');
 }
 function selectMemo(id: string) {
+  if (busy.value) return;
   if (id === selectedId.value && !newMemo.value) return;
   if (!confirmDiscard()) return;
   newMemo.value = false;
@@ -51,7 +52,7 @@ function selectMemo(id: string) {
   statusText.value = '';
 }
 function startNew() {
-  if (!confirmDiscard()) return;
+  if (busy.value || !confirmDiscard()) return;
   newMemo.value = true;
   selectedId.value = null;
   applySelected();
@@ -98,7 +99,7 @@ async function save() {
   } finally { busy.value = false; }
 }
 async function reload() {
-  if (confirmDiscard()) await load();
+  if (!busy.value && confirmDiscard()) await load();
 }
 function beforeUnload(event: BeforeUnloadEvent) {
   if (!dirty.value) return;
@@ -130,7 +131,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload',beforeUnload));
         <div class="memo-grid">
           <aside class="memo-sidebar">
             <div class="memo-actions">
-              <button type="button" class="inline-action" @click="startNew">新規メモ</button>
+              <button type="button" class="inline-action" :disabled="busy || loading" @click="startNew">新規メモ</button>
               <button type="button" class="inline-action" :disabled="loading || busy" @click="reload">再読込</button>
             </div>
             <label>メモを検索
@@ -139,7 +140,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload',beforeUnload));
             <p v-if="loading" role="status">読み込み中です。</p>
             <ul v-else class="memo-list">
               <li v-for="memo in visibleMemos" :key="memo.id">
-                <button type="button" :aria-pressed="selectedId === memo.id && !newMemo" @click="selectMemo(memo.id)">
+                <button type="button" :disabled="busy || loading" :aria-pressed="selectedId === memo.id && !newMemo" @click="selectMemo(memo.id)">
                   {{ memo.title }}
                   <span class="note">{{ new Date(memo.updatedAt).toLocaleDateString('ja-JP') }}</span>
                 </button>
