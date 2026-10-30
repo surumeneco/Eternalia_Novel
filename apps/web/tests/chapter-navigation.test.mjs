@@ -49,8 +49,8 @@ test('chapter ordering is deterministic for equal explicit positions', () => {
     node('series', 'series', null),
     node('volume', 'volume', 'series'),
     node('part', 'part', 'volume'),
-    node('b', 'chapter', 'part', 0, '乙'),
-    node('a', 'chapter', 'part', 0, '甲'),
+    node('b', 'chapter', 'part', 0, 'い'),
+    node('a', 'chapter', 'part', 0, 'あ'),
   ];
   assert.deepEqual(publishedChapterSequence(items, 'series').map(item => item.id), ['a', 'b']);
   assert.deepEqual(publishedChapterSequence([...items].reverse(), 'series').map(item => item.id), ['a', 'b']);
