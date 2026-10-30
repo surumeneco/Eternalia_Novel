@@ -89,6 +89,25 @@ async function save() {
 function confirmDiscard() {
   return !changed.value || window.confirm('未反映の並べ替えを破棄しますか？');
 }
+function changeParent(event: Event) {
+  const select = event.target as HTMLSelectElement;
+  if (!confirmDiscard()) {
+    select.value = selectedParent.value;
+    return;
+  }
+  selectedParent.value = select.value;
+}
+function changeKind(event: Event) {
+  const select = event.target as HTMLSelectElement;
+  if (!confirmDiscard()) {
+    select.value = selectedKind.value;
+    return;
+  }
+  selectedKind.value = select.value as ReaderKind;
+}
+async function reload() {
+  if (confirmDiscard()) await load();
+}
 onBeforeRouteLeave(()=>confirmDiscard());
 onMounted(async()=>{
   await refreshAuth();
@@ -111,12 +130,12 @@ onMounted(async()=>{
       <template v-else>
         <div class="order-filters">
           <label>親となる項目
-            <select v-model="selectedParent" :disabled="loading||busy" @change="restore">
+            <select :value="selectedParent" :disabled="loading||busy" @change="changeParent">
               <option v-for="parent in parents" :key="parent.id" :value="parent.id">{{ parent.title }}（{{ parent.kind==='root'?'全体':kinds[parent.kind] }}）</option>
             </select>
           </label>
           <label>項目の種類
-            <select v-model="selectedKind" :disabled="loading||busy">
+            <select :value="selectedKind" :disabled="loading||busy" @change="changeKind">
               <option v-for="kind in choices" :key="kind" :value="kind">{{ kinds[kind] }}</option>
             </select>
           </label>
