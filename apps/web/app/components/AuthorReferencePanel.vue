@@ -30,6 +30,10 @@ const entries=computed(()=>props.nodes.filter(node=>{
     .some(value=>value.toLocaleLowerCase().includes(needle));
 }).sort((a,b)=>a.draft.title.localeCompare(b.draft.title,'ja')).slice(0,100));
 const active=computed(()=>byId.value.get(highlightedId.value)??null);
+const activeSections=computed(()=>active.value?.kind==='tip'
+  ? props.nodes.filter(node=>node.kind==='tipSection' && node.parentId===active.value?.id)
+      .sort((a,b)=>a.order-b.order || a.draft.title.localeCompare(b.draft.title,'ja'))
+  : []);
 const labels={tip:'設定',word:'単語',grammar:'文法'} as const;
 watch(()=>props.selectedId,()=>{highlightedId.value='';});
 </script>
@@ -64,6 +68,12 @@ watch(()=>props.selectedId,()=>{highlightedId.value='';});
       <h4>{{ active.draft.title }}</h4>
       <p class="note">{{ active.published?'公開版あり':'未公開' }}（作者の下書き）</p>
       <p class="reference-body">{{ active.draft.body || '本文はありません。' }}</p>
+      <dl v-if="activeSections.length" class="reference-sections">
+        <div v-for="section in activeSections" :key="section.id">
+          <dt>{{ section.draft.title }}</dt>
+          <dd>{{ section.draft.body || '内容は未入力です。' }}</dd>
+        </div>
+      </dl>
     </article>
   </section>
 </template>
@@ -77,4 +87,8 @@ watch(()=>props.selectedId,()=>{highlightedId.value='';});
 .reference-list button[aria-pressed=true] { outline:2px solid var(--color-concept-main); }
 .reference-detail { margin-top:1rem;padding:.75rem;background:var(--color-background-base); }
 .reference-body { white-space:pre-wrap;overflow-wrap:anywhere;max-height:16rem;overflow:auto; }
+.reference-sections { margin:1rem 0 0;max-height:20rem;overflow-y:auto; }
+.reference-sections > div { border-top:1px solid var(--color-border-base);padding:.6rem 0; }
+.reference-sections dt { font-weight:700; }
+.reference-sections dd { white-space:pre-wrap;overflow-wrap:anywhere;margin:.3rem 0 0; }
 </style>
