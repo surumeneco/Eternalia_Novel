@@ -226,8 +226,11 @@ async function runChange(work: () => Promise<void>, okText:string) {
   busy.value = true; errorText.value=''; statusText.value='';
   try {
     await work();
-    await load();
-    statusText.value = okText;
+    if (await load()) {
+      statusText.value = okText;
+    } else {
+      errorText.value = '更新の送信後に最新の状態を取得できませんでした。再読込して内容を確認してください。';
+    }
   } catch (e: unknown) {
     const info = e as { data?: { message?: string | string[] } };
     errorText.value = Array.isArray(info.data?.message)
