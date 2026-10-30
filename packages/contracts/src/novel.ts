@@ -315,11 +315,17 @@ export function publicSeries(library: Library, now: number): ReaderNode[] {
 export function publicRecent(library: Library, now: number, limit = 10): ReaderNode[] {
   const recentKinds: ReadonlySet<Kind> = new Set(['chapter', 'tip', 'tipSection', 'word', 'grammar', 'event']);
   const safeLimit = Number.isSafeInteger(limit) ? Math.max(0, Math.min(limit, 50)) : 10;
-  return library.nodes
-    .filter(node => recentKinds.has(node.kind))
-    .map(node => toReader(library, node.id, now))
-    .filter((node): node is ReaderNode => node !== null)
-    .sort((a, b) => b.publishedAt - a.publishedAt || a.id.localeCompare(b.id))
-    .slice(0, safeLimit);
+  if (safeLimit === 0) return [];
+  // Published timestamps determine recent order, so evaluate the newest
+  // candidates first rather than projecting every old or unpublished item.
+  const candidates = library.nodes.filter(node => recentKinds.has(node.kind) && node.published !== null)
+    .sort((a,b) => b.published!.publishedAt - a.published!.publishedAt || a.id.localeCompare(b.id));
+  const recent: ReaderNode[] = [];
+  for (const candidate of candidates) {
+    const node = toReader(library, candidate.id, now);
+    if (node) recent.push(node);
+    if (recent.length === safeLimit) break;
+  }
+  return recent;
 }
 export function managedList(library: Library): NovelNode[] { return clone(library.nodes); }
