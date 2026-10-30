@@ -290,7 +290,9 @@ export function publicTree(library: Library, seriesId: string, now: number): Rea
   return visible.filter(n => included.has(n.id)).sort((a,b) => a.order - b.order || a.content.title.localeCompare(b.content.title));
 }
 export function publicSeries(library: Library, now: number): ReaderNode[] {
-  return library.nodes.filter(n => n.kind === 'series').map(n => toReader(library, n.id, now)).filter((n): n is ReaderNode => n !== null);
+  return library.nodes.filter(n => n.kind === 'series').map(n => toReader(library, n.id, now))
+    .filter((n): n is ReaderNode => n !== null)
+    .sort((a, b) => a.order - b.order || a.content.title.localeCompare(b.content.title, 'ja'));
 }
 /**
  * Recent public content is projected through the same ancestor/snapshot gate as
