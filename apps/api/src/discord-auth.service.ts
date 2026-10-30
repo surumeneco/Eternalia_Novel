@@ -63,6 +63,9 @@ export class DiscordAuthService implements OnModuleDestroy {
   }
   async start(): Promise<{ redirect: string; setCookie: string }> {
     const pool = this.requirePool();
+    // Expired one-time OAuth states and author sessions are never reusable.
+    await pool.query('DELETE FROM oauth_states WHERE expires_at < NOW()');
+    await pool.query('DELETE FROM author_sessions WHERE expires_at < NOW()');
     const state = randomBytes(32).toString('hex');
     const verifier = randomBytes(32).toString('base64url');
     const challenge = createHash('sha256').update(verifier).digest('base64url');
