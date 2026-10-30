@@ -32,6 +32,12 @@ const sections: Record<string, ReaderKind[]> = {
   timeline: ['series', 'periodization', 'event'],
 };
 const byId = computed(() => new Map(nodes.value.map(node => [node.id, node])));
+const kindOrder: Record<ReaderKind, number> = {
+  series: 0, volume: 0, part: 0, chapter: 0,
+  category: 1, tip: 0, tipSection: 0,
+  language: 2, word: 0, grammar: 1,
+  periodization: 3, event: 0,
+};
 function ancestry(node: AuthorNode): AuthorNode[] {
   const path: AuthorNode[] = [];
   const visited = new Set<string>();
@@ -67,10 +73,14 @@ const filtered = computed(() => nodes.value.filter(node => {
   if (statusFilter.value === 'hidden' && published(node)) return false;
   if (statusFilter.value === 'unpublished' && node.published) return false;
   return true;
-}).sort((a, b) =>
-  ancestry(a).map(x => x.order.toString().padStart(8, '0')).join('/')
-    .localeCompare(ancestry(b).map(x => x.order.toString().padStart(8, '0')).join('/'))
-));
+}).sort((a, b) => {
+  const left = ancestry(a).flatMap(node => [kindOrder[node.kind], node.order]);
+  const right = ancestry(b).flatMap(node => [kindOrder[node.kind], node.order]);
+  for (let i = 0; i < Math.min(left.length, right.length); i++) {
+    if (left[i] !== right[i]) return left[i]! - right[i]!;
+  }
+  return left.length - right.length || a.id.localeCompare(b.id);
+}));
 function pathTitle(node: AuthorNode): string {
   return ancestry(node).map(item => item.draft.title).join(' / ');
 }
