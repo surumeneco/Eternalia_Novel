@@ -41,6 +41,32 @@ const { data: tree, pending: treePending, error: treeError, refresh: refreshTree
 const selectedSeries = computed(() => (series.value ?? [])
   .find(item => item.id === selectedSeriesId.value));
 const byId = computed(() => new Map((tree.value ?? []).map(node => [node.id, node])));
+const kindOrder: Record<ReaderKind, number> = {
+  series: -1, volume: 0, part: 0, chapter: 0,
+  category: 1, tip: 0, tipSection: 0,
+  language: 2, word: 0, grammar: 1,
+  periodization: 3, event: 0,
+};
+function manualPath(node: ReaderNode): number[] {
+  const path = [kindOrder[node.kind], node.order];
+  const visited = new Set<string>([node.id]);
+  let parentId = node.parentId;
+  while (parentId && !visited.has(parentId) && path.length < 24) {
+    visited.add(parentId);
+    const parent = byId.value.get(parentId);
+    if (!parent || parent.kind === 'series') break;
+    path.unshift(kindOrder[parent.kind], parent.order);
+    parentId = parent.parentId;
+  }
+  return path;
+}
+function manualOrder(a: ReaderNode, b: ReaderNode): number {
+  const left = manualPath(a), right = manualPath(b);
+  for (let i = 0; i < Math.min(left.length, right.length); i++) {
+    if (left[i] !== right[i]) return left[i]! - right[i]!;
+  }
+  return left.length - right.length || a.id.localeCompare(b.id);
+}
 function searchFields(node: ReaderNode): string[] {
   const fields = [node.content.title, node.content.body];
   const parent = node.parentId ? byId.value.get(node.parentId) : null;
@@ -74,7 +100,7 @@ const results = computed(() => (tree.value ?? [])
   .sort((a, b) => {
     if (sortOrder.value === 'recent') return b.publishedAt - a.publishedAt || a.id.localeCompare(b.id);
     if (sortOrder.value === 'title') return a.content.title.localeCompare(b.content.title, 'ja') || a.id.localeCompare(b.id);
-    return a.order - b.order || a.content.title.localeCompare(b.content.title, 'ja');
+    return manualOrder(a, b);
   }));
 function itemLink(node: ReaderNode): string {
   return (node.kind === 'chapter' ? '/read/' : '/items/') + node.id;
