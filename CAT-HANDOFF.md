@@ -79,3 +79,17 @@
 - `PublicCollectionPage.vue` の共通ラベル更新、既存の `studio.vue` 公開操作後の未保存入力保護、設定タグ/関連や年代換算、無効化/削除等は**未実装**。拒否された編集を別の場所へ迂回して同等実装を追加していない。
 - 実HTTP実行、Discord本人/他人認証、ブラウザE2E、デバイスでの長文・IME・Undo・ルビ検証、CAT-TDD正規doctor/Guard/Queue/Red/Greenは**未実施**。既存CIの型チェック・単体/DB成功をCATやα受入合格へ読み替えない。
 - この段落追加前の最終コードSHA: `0cc5fae22799c8c0730f7abb607d383d330c1251`。Push/PR Actionsを**本段落を含む最終HEAD**で再取得し、結論を確認すること。
+
+## 2026-10-30 継続実装: ST-04/ST-05/ST-09 設定タグ・関連設定
+
+- 仕様根拠: `forGPT/Eternalia_Novel/10_要件定義/100_機能仕様.md` の ST-04（タグ）、ST-05（順序付き設定間関連）、ST-09（タグ・カテゴリ検索）、および `30_詳細設計/300_データモデル.md` の公開参照制約。
+- 開始時の feature HEAD は `05da0b20`。変更は `feature/alpha-reimplementation-20261029` へ単位別にコミットし、`develop` / `main` は変更していない。
+- 新規 `packages/contracts/src/tip-links.ts`: タグ・関連先IDの上限制約、重複・空値・構造不正検査。既存 `content.details` を使用し、DBスキーマ変更は不要。
+- `packages/contracts/src/novel.ts`: 他シリーズ・自身・非Tip・不存在参照を拒否。公開スナップショットの `tags` は公開し、`relatedTipIds` は公開APIに出さず、祖先公開判定と公開稿を満たす参照先だけを `relatedTips` として射影。非公開関連先のID/タイトルを秘匿。
+- `apps/web/app/components/TipLinksEditor.vue` と `apps/web/app/pages/studio.vue`: 作者のタグ編集、同シリーズの関連設定選択・並べ替え・解除を下書きフォームへ接続。
+- `apps/web/app/components/TipLinksReader.vue` と `apps/web/app/pages/items/[id].vue`: 公開タグと公開済み関連先へのリンクを表示。汎用 details 出力から内部JSONを分離。
+- `apps/web/app/pages/tips/[id].vue`: 公開設定をタグで横断検索/絞り込み。非公開設定のタグは一覧に入らない。
+- 探索的テスト `packages/contracts/exploratory/tip-links.test.mjs` を実装より前に追加。`5083e52d` の Actions `40993897207` は未実装 export により Red（失敗）。ドメイン実装 `f41239b3` の Actions `40993972057` は Green（成功）。**これはCAT生成Queueの正式Red/Green証拠ではなく、GitHub CIで観測した探索的テスト結果**。
+- 最終実装HEAD: `cf4eda352aec68606bbcc2bab64e45e3407ca79c`。Push Actions `40994135327`、PR Actions `40994140433` が双方 `completed/success`。既存単体/DBテスト、Nuxt/Nestビルド、Nuxt型検査が成功。
+- CAT規範の doctor/guards/process-closure/model/vectors/Queue/implementation-conformance は正規ランタイム未取得のため未実施。利用者が許可した代替手順に従い探索的Red/Green・CIと静的推論を開発上の進捗として採用するが、正規CAT Gate通過とは称さない。
+- **なお未実施**: 実ブラウザでのタグ編集・入力と読者検索、Discord本人/別人、長文IME、全4領域のE2E、年代換算・削除/無効化の未決仕様。PR #3はDraftを維持しα版の正式受入・mergeは保留。前節の「設定タグ・関連は未実装」という記述は本節の実装分に限り更新される。
