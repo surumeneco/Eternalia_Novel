@@ -81,3 +81,23 @@ for (const route of routes) {
     assert.equal(db.nodes.find(node => node.id === leaf)?.draft.body, 'private-updated-body');
   });
 }
+
+test('public tree stays within one series even if other worlds contain public items', () => {
+  const left = fixture(['series', 'category', 'tip']);
+  const right = fixture(['series', 'language', 'word']);
+  const library = { nodes: [...left.db.nodes, ...right.db.nodes] };
+  assert.deepEqual(
+    new Set(publicTree(library, left.series, now + 1).map(node => node.id)),
+    new Set(left.ids),
+  );
+  assert.deepEqual(
+    new Set(publicTree(library, right.series, now + 1).map(node => node.id)),
+    new Set(right.ids),
+  );
+  const hiddenLeft = setVisibility(library, left.series, 1, false, null, now);
+  assert.deepEqual(publicTree(hiddenLeft, left.series, now + 1), []);
+  assert.deepEqual(
+    new Set(publicTree(hiddenLeft, right.series, now + 1).map(node => node.id)),
+    new Set(right.ids),
+  );
+});
