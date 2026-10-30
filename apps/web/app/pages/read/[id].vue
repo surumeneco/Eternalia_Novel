@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ReaderNode } from '~/types/reader';
+import { publishedChapterSequence } from '~/utils/chapter-navigation';
 const { t } = useUiLocale();
 const route = useRoute();
 const id = computed(() => String(route.params.id));
@@ -22,13 +23,8 @@ const chapterSequence = computed(() => {
   if (chapter.value?.kind !== 'chapter' || !seriesId.value) return [];
   const publishedNodes = tree.value ?? [];
   if (!publishedNodes.some(node => node.id === chapter.value?.id)) return [];
-  const orderedChildren = (parentId: string, kind: ReaderNode['kind']) =>
-    publishedNodes.filter(node => node.kind === kind && node.parentId === parentId)
-      .sort((a, b) => a.order - b.order || a.content.title.localeCompare(b.content.title, 'ja'));
   // Continue reading across Part and Volume boundaries, excluding unpublished paths.
-  return orderedChildren(seriesId.value, 'volume')
-    .flatMap(volume => orderedChildren(volume.id, 'part')
-      .flatMap(part => orderedChildren(part.id, 'chapter')));
+  return publishedChapterSequence(publishedNodes, seriesId.value);
 });
 const currentIndex = computed(() => chapterSequence.value.findIndex(n => n.id === id.value));
 const previous = computed(() => currentIndex.value > 0 ? chapterSequence.value[currentIndex.value - 1] : null);
