@@ -7,14 +7,14 @@ const id = computed(() => String(route.params.id));
 const { data: chapter, pending, error, refresh } = await useFetch<ReaderNode>(
   () => '/api/public/items/' + encodeURIComponent(id.value),
 );
-const { data: ancestry } = await useFetch<ReaderNode[]>(
+const { data: ancestry, error: ancestryError, refresh: refreshAncestry } = await useFetch<ReaderNode[]>(
   () => '/api/public/items/' + encodeURIComponent(id.value) + '/path',
 );
 const seriesId = computed(() => ancestry.value?.find(node => node.kind === 'series')?.id ?? '');
-const { data: tree } = await useAsyncData(
+const { data: tree, error: treeError, refresh: refreshTree } = await useAsyncData(
   () => 'read-series-' + seriesId.value,
   () => seriesId.value
-    ? $fetch<ReaderNode[]>('/api/public/series/' + encodeURIComponent(seriesId.value) + '/tree').catch(() => [])
+    ? $fetch<ReaderNode[]>('/api/public/series/' + encodeURIComponent(seriesId.value) + '/tree')
     : Promise.resolve([] as ReaderNode[]),
   { watch: [seriesId] },
 );
@@ -53,7 +53,12 @@ function chapterLink(chapterId: string) {
         <AuthorEditLink :item-id="chapter.id" />
         <p class="note">公開：<time :datetime="new Date(chapter.publishedAt).toISOString()">{{ new Date(chapter.publishedAt).toLocaleDateString('ja-JP') }}</time></p>
         <RichContent :source="chapter.content.body" paged />
-        <nav v-if="seriesId" class="chapter-navigation" aria-label="章の移動">
+        <div v-if="ancestryError || treeError" role="alert" class="navigation-error">
+          <p>章の前後関係を取得できませんでした。本文の閲覧は引き続き可能です。</p>
+          <button type="button" class="inline-action"
+            @click="ancestryError ? refreshAncestry() : refreshTree()">章一覧を再読込</button>
+        </div>
+        <nav v-if="seriesId && !treeError" class="chapter-navigation" aria-label="章の移動">
           <NuxtLink v-if="previous" :to="chapterLink(previous.id)">前の章：{{ previous.content.title }}</NuxtLink>
           <NuxtLink :to="'/stories/' + seriesId">目次へ戻る</NuxtLink>
           <NuxtLink v-if="next" :to="chapterLink(next.id)">次の章：{{ next.content.title }}</NuxtLink>
@@ -63,5 +68,6 @@ function chapterLink(chapterId: string) {
   </div>
 </template>
 <style scoped>
+.navigation-error { margin-top:1.5rem; }
 .chapter-navigation { border-top: 1px solid var(--color-border-base); padding-top: 1rem; margin-top: 2rem; display: flex; flex-wrap: wrap; justify-content: space-between; gap: .7rem; }
 </style>
