@@ -49,7 +49,7 @@ const groups = computed(() => categories.value
       if (!normalizedQuery.value) return true;
       const sections = children(tip.id, 'tipSection');
       return [category.content.title, tip.content.title, tip.content.body, ...tags,
-        ...sections.map(section => section.content.title)]
+        ...sections.flatMap(section => [section.content.title, section.content.body])]
         .some(value => value.toLocaleLowerCase().includes(normalizedQuery.value));
     });
     return { category, tips };
