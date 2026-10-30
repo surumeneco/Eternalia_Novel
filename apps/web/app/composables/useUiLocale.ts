@@ -15,6 +15,7 @@ export const uiMessages = {
     close: '閉じる',
     browse: '閲覧する',
     backToTop: 'ページ先頭へ戻る',
+    skipToContent: '本文へ移動',
     siteDescription: 'ストーリー、設定集、辞書、年表をシリーズごとに閲覧できます。',
     content: 'コンテンツ',
     publishedSeries: '公開シリーズ',
