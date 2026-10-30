@@ -52,3 +52,23 @@ jobs:
         run: npm run db:migrate
       - name: Exercise alpha PostgreSQL persistence and author guard tests
         run: npm run test:db
+
+  compile-and-typecheck:
+    # Independent of the domain test job: compilation errors must remain visible
+    # even when a domain regression stops the other job early.
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Build contracts, Nest and Nuxt independently
+        run: npm run build
+      - name: Check Nuxt types independently
+        run: npm run typecheck -w @eternalia/web
