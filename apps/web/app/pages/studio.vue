@@ -2,6 +2,7 @@
 import type { AuthorNode } from '~/types/author';
 import type { ReaderKind } from '~/types/reader';
 import { parseLanguageWordClasses, diagnoseWordSpelling } from '@eternalia/contracts';
+import { insertManuscriptMarkup, type ManuscriptInsertionKind } from '~/utils/manuscript-markup';
 
 interface AuthState { configured: boolean; authenticated: boolean }
 const { data: auth, pending: authPending, refresh: refreshAuth } =
@@ -40,6 +41,29 @@ const statusText = ref('');
 const form = reactive<{ title:string; body:string; details:Record<string,string> }>({
   title:'',body:'',details:{},
 });
+const bodyTextarea = ref<HTMLTextAreaElement | null>(null);
+const composingBody = ref(false);
+function insertMarkup(kind: ManuscriptInsertionKind) {
+  const el = bodyTextarea.value;
+  if (!el || composingBody.value || busy.value) return;
+  const result = insertManuscriptMarkup(form.body, el.selectionStart, el.selectionEnd, kind);
+  if (!result) {
+    errorText.value = 'ルビ記号または改行を含む選択範囲にはルビを付けられません。';
+    return;
+  }
+  if (result.value.length > 100000) {
+    errorText.value = '本文の文字数上限を超えています。';
+    return;
+  }
+  form.body = result.value;
+  errorText.value = '';
+  nextTick(() => {
+    const current = bodyTextarea.value;
+    if (!current) return;
+    current.focus();
+    current.setSelectionRange(result.selectionStart, result.selectionEnd);
+  });
+}
 const categoryPresets = computed<string>({
   get: () => form.details.presets ?? '[]',
   set: value => { form.details.presets = value; },
@@ -351,7 +375,12 @@ async function logout() {
                 <ul v-if="selected.kind === 'word' && spellingWarnings.length" class="spelling-warnings" aria-label="綴りに関する警告">
                   <li v-for="warning in spellingWarnings" :key="warning.code">{{ warning.message }}</li>
                 </ul>
-                <label>本文・説明<textarea v-model="form.body" rows="14" maxlength="100000"
+                <div v-if="selected.kind === 'chapter'" class="manuscript-toolbar" role="group" aria-label="本文の記法を挿入">
+                  <button type="button" class="inline-action" :disabled="busy || composingBody" @mousedown.prevent @click="insertMarkup('ruby')">選択文字にルビを付ける</button>
+                  <button type="button" class="inline-action" :disabled="busy || composingBody" @mousedown.prevent @click="insertMarkup('page')">ページ区切りを挿入</button>
+                </div>
+                <label>本文・説明<textarea ref="bodyTextarea" v-model="form.body" rows="14" maxlength="100000"
+                  @compositionstart="composingBody = true" @compositionend="composingBody = false"
                   placeholder="ページ区切り: [[page]] ／ ルビ: ｜漢字《かんじ》"></textarea></label>
                 <CategoryPresetEditor v-if="selected.kind === 'category'" v-model="categoryPresets" />
                 <AuthorReferencePanel v-if="selected.kind === 'chapter' || selected.kind === 'tip'"
@@ -417,6 +446,7 @@ label { display:block;margin:1rem 0;font-weight:650; }
 input,select,textarea { display:block;width:100%;margin-top:.45rem;padding:.6rem .7rem;background:var(--color-background-input);color:var(--color-text-base);border:1px solid var(--color-border-base);border-radius:var(--radius-input); }
 textarea { min-height:6rem;resize:vertical;line-height:1.7; }
 .action-row { display:flex;flex-wrap:wrap;gap:.6rem;margin:1rem 0; }
+.manuscript-toolbar { display:flex;flex-wrap:wrap;gap:.4rem;margin:1rem 0 .4rem; }
 .primary,.login-link { display:inline-block;background:#00698c;border:1px solid var(--color-concept-main);color:#fff;padding:.45rem .8rem;text-decoration:none; }
 .status-success { color:#bfffd4; }
 hr { border:0;border-top:1px solid var(--color-border-base);margin:1.5rem 0; }
