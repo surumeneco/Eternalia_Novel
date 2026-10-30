@@ -20,6 +20,22 @@ export function reorderSiblings(library: Library, request: ReorderRequest, now: 
     'category','tip','tipSection','language','word','grammar','periodization','event'].includes(request.kind)) {
     domainError('bad-request', '対象の種類が不正です。');
   }
+  const parentKinds: Record<Kind, Kind | null> = {
+    series: null, volume: 'series', part: 'volume', chapter: 'part',
+    category: 'series', tip: 'category', tipSection: 'tip',
+    language: 'series', word: 'language', grammar: 'language',
+    periodization: 'series', event: 'periodization',
+  };
+  if (!(request.parentId === null || typeof request.parentId === 'string')) {
+    domainError('bad-request', '親IDが不正です。');
+  }
+  const parent = request.parentId === null
+    ? null : library.nodes.find(node => node.id === request.parentId);
+  if (parentKinds[request.kind] === null
+    ? request.parentId !== null
+    : !parent || parent.kind !== parentKinds[request.kind]) {
+    domainError('bad-request', '並べ替え対象の親子階層が不正です。');
+  }
   const siblings = library.nodes.filter(n => n.parentId === request.parentId && n.kind === request.kind)
     .sort((a,b) => a.order - b.order || a.id.localeCompare(b.id));
   if (siblings.length !== request.orderedIds.length || new Set(request.orderedIds).size !== siblings.length ||
