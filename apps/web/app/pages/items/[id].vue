@@ -7,7 +7,8 @@ const { data: item, pending, error, refresh } = await useFetch<ReaderNode>(
 );
 const displayDetails = computed(() => Object.fromEntries(
   Object.entries(item.value?.content.details ?? {}).filter(([key]) =>
-    !((item.value?.kind === 'word' && key === 'meanings') ||
+    !((item.value?.kind === 'tip' && (key === 'tags' || key === 'relatedTips')) ||
+      (item.value?.kind === 'word' && key === 'meanings') ||
       (item.value?.kind === 'language' && (key === 'characters' || key === 'wordClasses')))),
 ));
 const { data: ancestry } = await useFetch<ReaderNode[]>(
@@ -52,6 +53,8 @@ const kindNames: Record<string,string> = {
         <h1>{{ item.content.title }}</h1>
         <AuthorEditLink :item-id="item.id" />
         <RichContent :source="item.content.body" />
+        <TipLinksReader v-if="item.kind === 'tip'" :tags="item.content.details.tags"
+          :related-tips="item.content.details.relatedTips" />
         <WordMeaningsReader v-if="item.kind === 'word'" :serialized="item.content.details.meanings" />
         <LanguageStructureReader v-if="item.kind === 'language'"
           :characters="item.content.details.characters" :word-classes="item.content.details.wordClasses" />
