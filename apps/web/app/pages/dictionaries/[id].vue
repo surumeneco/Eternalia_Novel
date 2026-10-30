@@ -14,6 +14,7 @@ const series = computed(() => tree.value?.find(
 const languageId = ref('');
 const query = ref('');
 const partOfSpeech = ref('');
+watch(seriesId, () => { languageId.value = ''; partOfSpeech.value = ''; query.value = ''; });
 function children(parentId: string, kind: ReaderKind) {
   return (tree.value ?? []).filter(node => node.kind === kind && node.parentId === parentId)
     .sort((a, b) => a.order - b.order || a.content.title.localeCompare(b.content.title, 'ja'));
