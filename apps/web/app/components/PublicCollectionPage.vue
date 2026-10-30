@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ReaderNode } from '~/types/reader';
+const { t } = useUiLocale();
 const props = defineProps<{
   title: string;
   description: string;
@@ -16,20 +17,20 @@ function collectionLink(id: string) {
 </script>
 <template>
   <div>
-    <TopicPath :items="[{ label: 'ホーム', to: '/' }, { label: props.title }]" />
+    <TopicPath :items="[{ label: t('home'), to: '/' }, { label: props.title }]" />
     <ReaderPanel>
       <h1>{{ props.title }}</h1>
-      <ReadingSkeleton v-if="pending" label="公開シリーズを読み込んでいます。" />
+      <ReadingSkeleton v-if="pending" :label="t('collectionLoading')" />
       <div v-else-if="error" role="alert">
-        <p class="error-text">公開シリーズを取得できませんでした。</p>
-        <button class="inline-action" type="button" @click="refresh()">再試行</button>
+        <p class="error-text">{{ t('seriesLoadError') }}</p>
+        <button class="inline-action" type="button" @click="refresh()">{{ t('retry') }}</button>
       </div>
       <ul v-else-if="series?.length" class="reader-list">
         <li v-for="item in series" :key="item.id">
           <NuxtLink :to="collectionLink(item.id)">{{ item.content.title }}</NuxtLink>
         </li>
       </ul>
-      <p v-else>現在閲覧できるシリーズはありません。</p>
+      <p v-else>{{ t('collectionEmpty') }}</p>
     </ReaderPanel>
   </div>
 </template>
