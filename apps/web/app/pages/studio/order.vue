@@ -52,15 +52,17 @@ function move(index:number, delta:number) {
   [copy[index],copy[to]]=[copy[to]!,copy[index]!];
   orderedIds.value=copy;
 }
-async function load() {
+async function load(): Promise<boolean> {
   loading.value=true;
   errorText.value='';
   try {
     nodes.value=await $fetch<AuthorNode[]>('/api/admin/nodes');
     if (selectedParent.value!=='root' && !byId.value.has(selectedParent.value)) selectedParent.value='root';
     restore();
+    return true;
   } catch {
     errorText.value='項目を取得できませんでした。';
+    return false;
   } finally {loading.value=false;}
 }
 async function save() {
@@ -79,8 +81,8 @@ async function save() {
         expectedRevisions:Object.fromEntries(siblings.value.map(node=>[node.id,node.revision])),
       },
     });
-    await load();
-    statusText.value='順序を反映しました。';
+    if (await load()) statusText.value='順序を反映しました。';
+    else errorText.value='順序変更の送信後、最新状態を取得できませんでした。再読込して確認してください。';
   } catch (error:unknown) {
     const response=error as {data?:{message?:string}};
     errorText.value=response.data?.message ?? '並べ替えに失敗しました。競合の可能性があります。再読込してください。';
