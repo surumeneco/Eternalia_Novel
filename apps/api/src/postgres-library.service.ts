@@ -101,7 +101,7 @@ export class PostgresLibraryService implements OnModuleDestroy {
           node.publicSince === null ? null : new Date(node.publicSince),
           new Date(node.updatedAt),
         ]);
-        if (node.published) {
+        if (node.published && JSON.stringify(node.published) !== JSON.stringify(prior?.published)) {
           const snapshot = node.published;
           await client.query(`
             INSERT INTO published_snapshots (node_id,source_draft_revision,snapshot,published_at)
