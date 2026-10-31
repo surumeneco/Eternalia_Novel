@@ -663,6 +663,12 @@ test('author manuscript editor fits narrow mobile viewports without horizontal o
       assert.ok(await editor.isVisible(), 'body editor must remain visible at ' + width + 'px');
       assert.ok(await page.getByRole('button', { name: '下書きを保存' }).isVisible(),
         'save action must remain visible at ' + width + 'px');
+      if (process.env.HTTP_SCREENSHOT_DIR) {
+        await mkdir(process.env.HTTP_SCREENSHOT_DIR, { recursive: true });
+        await page.screenshot({
+          path: join(process.env.HTTP_SCREENSHOT_DIR, 'studio-' + width + '.png'), fullPage: true,
+        });
+      }
     }
     await author.close();
   } finally {
