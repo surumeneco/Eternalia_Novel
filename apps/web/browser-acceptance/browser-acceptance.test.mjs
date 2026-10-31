@@ -434,6 +434,49 @@ test('author browser drafts, publishes and hides chapter, setting, word, grammar
   }
 });
 
+test('long multilingual manuscript survives browser reload and explicit publication without text loss', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const response = await author.request.post(base + '/api/admin/nodes', {
+      headers: { Origin: base },
+      data: {
+        kind: 'chapter', parentId: fixture.part,
+        content: { title: fixture.prefix + '-unicode-chapter', body: '', details: {} },
+      },
+    });
+    assert.equal(response.status(), 201, await response.text());
+    const chapter = (await response.json()).id;
+    const manuscript = ('日本語と漢字・ひらがな・カタカナ。Élève、Straße、𠮷、📚。\n' +
+      'ルビ｜言葉《ことば》とページ区切り。\n').repeat(250);
+    const page = await author.newPage();
+    await page.goto(base + '/studio?item=' + chapter);
+    const editor = page.getByRole('textbox', { name: '本文・説明', exact: true });
+    await editor.waitFor();
+    await editor.fill(manuscript);
+    await page.getByRole('button', { name: '下書きを保存' }).click();
+    await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
+    await page.reload();
+    await editor.waitFor();
+    assert.equal(await editor.inputValue(), manuscript, 'long multilingual draft must round-trip exactly');
+    page.once('dialog', dialog => dialog.accept());
+    await page.getByRole('button', { name: '保存済み下書きを公開版へ反映' }).click();
+    await page.getByText('公開スナップショットを更新しました。').waitFor();
+    const published = await author.request.get(base + '/api/public/items/' + chapter);
+    assert.equal(published.status(), 200);
+    assert.equal((await published.json()).content.body, manuscript,
+      'public snapshot must preserve Unicode, newlines and long manuscript content');
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
+
 test('author memo browser persists tags and handles failed post-write readback', { timeout: 90_000 }, async () => {
   assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
   const browser = await chromium.launch({ headless: true });
