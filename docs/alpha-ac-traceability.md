@@ -68,11 +68,11 @@
 | AC-57 | 章本文・TipSection・単語意味と語源を編集し保存して再取得する | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 意味別語源と長文の下書き保存/再読込（他領域の全フィールド未検証） | not-run |
 | AC-58 | 公開情報一覧・新着表示・タグ・区分マスタ・作者用メモを確認する | 未特定 | — | not-run |
 | AC-59 | 画面の読込中とローカライズ対象の固定文言を確認する | 未特定 | — | pending-decision |
-| AC-60 | DS-01、v0.3 VisualDesignConcept、200/220 | 未特定 | — | not-run |
-| AC-61 | DS-02、旧FE `_pallet/_color.scss` | 未特定 | — | not-run |
-| AC-62 | DS-02、旧FE `_font-size/_margin/_radius.scss` | 未特定 | — | not-run |
-| AC-63 | DS-03、旧FE `layouts/default.vue` と `components/app/common` | 未特定 | — | not-run |
-| AC-64 | DS-04、CM-01/05/08 | 未特定 | — | not-run |
+| AC-60 | DS-01、v0.3 VisualDesignConcept、200/220 | apps/web/app/assets/css/eternalia.css、apps/web/tests/legacy-design-tokens.test.mjs | CI: 11枚の画面撮影・旧色トークン照合（旧v0.3画像との人間の比較は未実施） | not-run |
+| AC-61 | DS-02、旧FE `_pallet/_color.scss` | apps/web/tests/legacy-design-tokens.test.mjs | CI: v0.3 palette SCSSの色値・意味ロールを稼働CSSと照合（旧UI実画面の比較は未実施） | not-run |
+| AC-62 | DS-02、旧FE `_font-size/_margin/_radius.scss` | apps/web/tests/legacy-design-tokens.test.mjs | CI: v0.3の文字サイズ6段階・余白・角丸を稼働CSSと照合（画面幅別の視覚確認は未実施） | not-run |
+| AC-63 | DS-03、旧FE `layouts/default.vue` と `components/app/common` | apps/web/browser-acceptance/browser-acceptance.test.mjs | CI: 11枚の読者/作者スクリーンショット取得（旧Header/SideMenu等との画像比較は未実施） | not-run |
+| AC-64 | DS-04、CM-01/05/08 | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 競合アラート・未保存保護・読者ルート（全状態と多言語は未検証） | not-run |
 | AC-65 | DS-05、WR-02/05 | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 読者390/768/1280px・作者320/390px・ルビ選択範囲（実IME未検証） | not-run |
 | AC-66 | v0.3共通、PB-06、CM-09 | 未特定 | — | not-run |
 | AC-67 | v0.3設定・辞書、ST-03/05/06/09、LG-05〜08 | 未特定 | — | not-run |
@@ -86,7 +86,9 @@
 | AC-75 | CM-02/03/08/09 | 未特定 | — | pending-decision |
 | AC-76 | CM-10、v0.3全体共通「非公開済データの削除」 | 未特定 | — | pending-decision |
 | AC-77 | CM-11、v0.3全体共通「無効化フラグ」 | 未特定 | — | pending-decision |
-| AC-78 | DS-01、200/220、旧UI・v0.3デザイン | 未特定 | — | pending-decision |
+| AC-78 | DS-01、200/220、旧UI・v0.3デザイン | apps/web/app/assets/css/eternalia.css、apps/web/browser-acceptance/browser-acceptance.test.mjs | CI: 作者3画面幅のスクリーンショット取得（編集キャンバスの設計承認は未実施） | pending-decision |
+
+検証追加: [CI #41214098597](https://github.com/surumeneco/Eternalia_Novel/actions/runs/41214098597) のbuild-and-testでv0.3デザイントークン3テスト成功。[CI #41213912611 の11画像artifact](https://github.com/surumeneco/Eternalia_Novel/actions/runs/41213912611/artifacts/13047567293) は撮影済みだが視覚比較は未実施。画像artifactは7日保持。
 
 ## 次の検証単位
 
