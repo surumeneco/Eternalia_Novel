@@ -293,3 +293,27 @@ test('shared shell accessibility and navigation labels use Japanese fallback', (
     assert.equal(translateUiMessage(key, 'unknown'), expected, key + ' fallback');
   }
 });
+
+test('public search UI fixed text uses typed Japanese fallback keys', () => {
+  const labels = {
+    "searchTitle": "公開資料を検索",
+    "searchIntro": "公開中のシリーズを選び、ストーリー・設定集・辞書・年表から探します。",
+    "searchSelectSeries": "シリーズを選択",
+    "searchQueryLabel": "検索語",
+    "searchPlaceholder": "名称・本文・タグ・語義",
+    "searchSortLabel": "並び順",
+    "searchRecent": "公開版の更新が新しい順",
+    "searchTitleSort": "名称順",
+    "searchManual": "設定された順序",
+    "searchChooseSeries": "検索対象のシリーズを選択してください。",
+    "searchLoading": "公開資料を読み込んでいます。",
+    "searchLoadError": "公開資料を取得できませんでした。シリーズの公開状態を確認してください。",
+    "searchResultsUnit": "件の公開資料",
+    "searchPublishedUpdated": "公開版更新：",
+    "searchEmpty": "条件に一致する公開資料はありません。"
+};
+  for (const [key, expected] of Object.entries(labels)) {
+    assert.equal(translateUiMessage(key, 'ja'), expected, key);
+    assert.equal(translateUiMessage(key, 'unknown'), expected, key + ' fallback');
+  }
+});
