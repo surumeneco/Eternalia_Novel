@@ -10,7 +10,7 @@ const query = ref('');
 const domain = ref<Domain>('all');
 const sortOrder = ref<SortOrder>('recent');
 const domains: Array<{ id: Domain; label: string }> = [
-  { id: 'all', label: 'すべて' },
+  { id: 'all', label: t('studioFilterAll') },
   { id: 'stories', label: t('stories') },
   { id: 'tips', label: t('tips') },
   { id: 'dictionaries', label: t('dictionaries') },
@@ -23,10 +23,10 @@ const domainKinds: Record<Exclude<Domain, 'all'>, ReaderKind[]> = {
   timeline: ['periodization', 'event'],
 };
 const kindLabels: Record<ReaderKind, string> = {
-  series: 'シリーズ', volume: '編', part: '部', chapter: '章',
-  category: 'カテゴリ', tip: '設定', tipSection: '設定項目',
-  language: '言語', word: '単語', grammar: '文法',
-  periodization: '年代区分', event: '出来事',
+  series: t('studioKindSeries'), volume: t('studioKindVolume'), part: t('studioKindPart'), chapter: t('chapter'),
+  category: t('studioKindCategory'), tip: t('tip'), tipSection: t('tipSection'),
+  language: t('studioKindLanguage'), word: t('word'), grammar: t('grammar'),
+  periodization: t('studioKindPeriodization'), event: t('event'),
 };
 const { data: series, pending: seriesPending, error: seriesError, refresh: refreshSeries } =
   await useFetch<ReaderNode[]>('/api/public/series');
@@ -112,10 +112,10 @@ function parentName(node: ReaderNode): string {
 
 <template>
   <div>
-    <TopicPath :items="[{ label: t('home'), to: '/' }, { label: '公開資料を検索' }]" />
+    <TopicPath :items="[{ label: t('home'), to: '/' }, { label: t('searchTitle') }]" />
     <ReaderPanel>
-      <h1>公開資料を検索</h1>
-      <p class="note">公開中のシリーズを選び、ストーリー・設定集・辞書・年表から探します。</p>
+      <h1>{{ t('searchTitle') }}</h1>
+      <p class="note">{{ t('searchIntro') }}</p>
       <ReadingSkeleton v-if="seriesPending" :label="t('loading')" />
       <div v-else-if="seriesError" role="alert">
         <p class="error-text">{{ t('seriesLoadError') }}</p>
@@ -123,37 +123,37 @@ function parentName(node: ReaderNode): string {
       </div>
       <template v-else>
         <div class="search-filters">
-          <label>シリーズ
+          <label>{{ t('studioKindSeries') }}
             <select v-model="selectedSeriesId">
-              <option value="">シリーズを選択</option>
+              <option value="">{{ t('searchSelectSeries') }}</option>
               <option v-for="item in series" :key="item.id" :value="item.id">{{ item.content.title }}</option>
             </select>
           </label>
-          <label>検索語
-            <input v-model="query" type="search" maxlength="150" placeholder="名称・本文・タグ・語義" />
+          <label>{{ t('searchQueryLabel') }}
+            <input v-model="query" type="search" maxlength="150" :placeholder="t('searchPlaceholder')" />
           </label>
-          <label>資料の種類
+          <label>{{ t('shellResourceTypes') }}
             <select v-model="domain">
               <option v-for="item in domains" :key="item.id" :value="item.id">{{ item.label }}</option>
             </select>
           </label>
-          <label>並び順
+          <label>{{ t('searchSortLabel') }}
             <select v-model="sortOrder">
-              <option value="recent">公開版の更新が新しい順</option>
-              <option value="title">名称順</option>
-              <option value="manual">設定された順序</option>
+              <option value="recent">{{ t('searchRecent') }}</option>
+              <option value="title">{{ t('searchTitleSort') }}</option>
+              <option value="manual">{{ t('searchManual') }}</option>
             </select>
           </label>
         </div>
         <p v-if="!series?.length" class="note">{{ t('seriesEmpty') }}</p>
-        <p v-else-if="!selectedSeriesId" class="note">検索対象のシリーズを選択してください。</p>
-        <ReadingSkeleton v-else-if="treePending" label="公開資料を読み込んでいます。" />
+        <p v-else-if="!selectedSeriesId" class="note">{{ t('searchChooseSeries') }}</p>
+        <ReadingSkeleton v-else-if="treePending" :label="t('searchLoading')" />
         <div v-else-if="treeError || !selectedSeries" role="alert">
-          <p class="error-text">公開資料を取得できませんでした。シリーズの公開状態を確認してください。</p>
+          <p class="error-text">{{ t('searchLoadError') }}</p>
           <button type="button" class="inline-action" @click="refreshTree()">{{ t('retry') }}</button>
         </div>
         <template v-else>
-          <p role="status" class="note">{{ selectedSeries.content.title }}：{{ results.length }} 件の公開資料</p>
+          <p role="status" class="note">{{ selectedSeries.content.title }}：{{ results.length }} {{ t('searchResultsUnit') }}</p>
           <ul v-if="results.length" class="reader-list">
             <li v-for="item in results" :key="item.id" class="search-result">
               <NuxtLink :to="itemLink(item)">{{ item.content.title }}</NuxtLink>
@@ -161,12 +161,12 @@ function parentName(node: ReaderNode): string {
                 <template v-if="parentName(item)"> · {{ parentName(item) }}</template>
               </span>
               <p v-if="item.content.body" class="result-summary">{{ item.content.body }}</p>
-              <small class="note">公開版更新：
+              <small class="note">{{ t('searchPublishedUpdated') }}
                 <time :datetime="new Date(item.publishedAt).toISOString()">{{ new Date(item.publishedAt).toLocaleDateString('ja-JP') }}</time>
               </small>
             </li>
           </ul>
-          <p v-else>条件に一致する公開資料はありません。</p>
+          <p v-else>{{ t('searchEmpty') }}</p>
         </template>
       </template>
     </ReaderPanel>
