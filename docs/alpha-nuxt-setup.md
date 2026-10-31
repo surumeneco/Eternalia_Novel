@@ -65,4 +65,18 @@ HTTP_ACCEPTANCE_DISPOSABLE_DB=1 NODE_ENV=test node --env-file-if-exists=.env scr
 
 PowerShellでは実行前に `$env:HTTP_ACCEPTANCE_DISPOSABLE_DB='1'` と `$env:NODE_ENV='test'` を設定してください。実運用DBや普段の執筆DBには決して実行しないでください。
 
+### 実ChromiumブラウザE2E（追加）
+
+GitHub Actionsの `http-ssr-acceptance` ジョブはUbuntu 24.04上でPlaywright 1.56.1/Chromiumを導入し、実Nuxt画面のスマートフォン幅閲覧・ページ送り、4領域の詳細表示、合成作者セッションでのシリーズ作成→下書き→明示公開、作者用メモ/並べ替え/公開管理の表示、ルビ選択範囲、未保存変更の遷移確認を実行します（`apps/web/browser-acceptance/browser-acceptance.test.mjs`）。Discordの実OAuth2ログインと本人/別人の手動試験、実IME変換は**含みません**。
+
+ローカルでブラウザE2Eを追加実行する場合は、前節の**空の破棄可能なDB**とマイグレーション完了を前提として、Playwright 1.56.1 と対応Chromiumを用意し、`HTTP_BROWSER_ACCEPTANCE=1` を加えて同じスクリプトを起動します。PlaywrightはCI専用のためアプリ本体の依存には含めていません。
+
+```bash
+npm install --no-save --package-lock=false playwright@1.56.1
+npx playwright install chromium
+HTTP_ACCEPTANCE_DISPOSABLE_DB=1 HTTP_BROWSER_ACCEPTANCE=1 NODE_ENV=test node --env-file-if-exists=.env scripts/check-http-acceptance.mjs
+```
+
+PowerShellでは最後の実行前に `$env:HTTP_ACCEPTANCE_DISPOSABLE_DB='1'`、`$env:HTTP_BROWSER_ACCEPTANCE='1'`、`$env:NODE_ENV='test'` を設定します。Nuxtの `stories/tips/dictionaries/timeline` と `studio` は子ルートを描画する必要があり、SSR・ブラウザ試験がその退行を検出します。
+
 この手順は実装コードから構成したものです。ユーザー端末でのDiscord認証・ブラウザ描画、CAT-TDDの規範Gate、実ユーザー認証付き管理APIの総合受入はまだ実測していません。エラーが出た場合はCIログと環境変数の不一致を切り分けてください。
