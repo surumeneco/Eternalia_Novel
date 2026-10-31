@@ -4,7 +4,8 @@
  * and never writes secrets or demo data into checked-in sources.
  */
 import 'reflect-metadata';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import pg from 'pg';
 import { writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { createNode, editNode, newLibrary, publishNode, setVisibility } from '@eternalia/contracts';
@@ -66,7 +67,29 @@ try {
 } finally {
   await repository.onModuleDestroy();
 }
+// Synthetic opaque sessions test the author boundary without contacting Discord.
+const testAuthorId = process.env.HTTP_ACCEPTANCE_TEST_AUTHOR_ID ?? '';
+if (!/^\d{15,25}$/.test(testAuthorId)) {
+  throw new Error('HTTP_ACCEPTANCE_TEST_AUTHOR_ID must be an isolated synthetic account ID');
+}
+const authorToken = randomBytes(32).toString('hex');
+const outsiderToken = randomBytes(32).toString('hex');
+const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL, max: 1 });
+try {
+  for (const [token, userId] of [
+    [authorToken, testAuthorId],
+    [outsiderToken, '987654321098765432'],
+  ]) {
+    await pool.query(
+      "INSERT INTO author_sessions(session_digest,discord_user_id,expires_at) VALUES ($1,$2,NOW() + INTERVAL '1 hour')",
+      [createHash('sha256').update(token).digest('hex'), userId],
+    );
+  }
+} finally {
+  await pool.end();
+}
 const fixture = {
+  authorToken, outsiderToken,
   prefix, seriesA, seriesB, volume, part, chapter, scheduled, category,
   tip, section, hiddenCategory, hiddenTip, unpublishedTip, language, word,
   grammar, period, event, languageB,
