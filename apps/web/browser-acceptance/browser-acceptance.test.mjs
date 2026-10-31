@@ -142,9 +142,17 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
     await studio.getByText('公開条件を変更しました。').waitFor();
     assert.equal((await reader.request.get(base + '/api/public/items/' + created.id)).status(), 404,
       'future publication date must hide the direct anonymous endpoint');
-    await publishDate.fill('');
-    await studio.getByRole('button', { name: '日時を設定' }).click();
-    await studio.getByText('公開条件を変更しました。').waitFor();
+    // Clear the future schedule through the separate publication management
+    // screen. An empty date must be accepted as immediate publication.
+    const publicationManagement = await author.newPage();
+    await publicationManagement.goto(base + '/studio/publication');
+    const managedRow = publicationManagement.locator('.publication-row').filter({
+      has: publicationManagement.getByRole('heading', { name: title, exact: true }),
+    });
+    await managedRow.locator('input[type="datetime-local"]').fill('');
+    await managedRow.getByRole('button', { name: '日時を保存' }).click();
+    await publicationManagement.getByText('公開開始日時を更新しました。').waitFor();
+    await publicationManagement.close();
     const afterScheduleClear = await reader.request.get(base + '/api/public/items/' + created.id);
     assert.equal(afterScheduleClear.status(), 200, 'clearing a schedule restores public access');
     assert.equal((await afterScheduleClear.json()).content.body, 'ブラウザから保存した公開用の説明');
