@@ -106,8 +106,10 @@ onMounted(async () => {
 async function saveSchedule(node: AuthorNode) {
   if (busyId.value || !node.published) return;
   const input = scheduled[node.id];
-  const time = input ? new Date(input).getTime() : NaN;
-  if (!Number.isSafeInteger(time) || time < 0) {
+  // Empty means clear the future schedule. The domain visibility contract
+  // normalizes null to the current time for an already-published public item.
+  const time = input ? new Date(input).getTime() : null;
+  if (time !== null && (!Number.isSafeInteger(time) || time < 0)) {
     errorText.value = '公開開始日時を入力してください。';
     return;
   }
