@@ -369,6 +369,10 @@ test('author browser saves and explicitly publishes chapter, setting, word and e
       await page.getByRole('button', { name: '下書きを保存' }).click();
       await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
       assert.equal((await publicItem(id)).status, 404, kind + ' saved draft must remain private');
+      await page.reload();
+      await editor.waitFor();
+      assert.equal(await editor.inputValue(), first, kind + ' saved draft must survive editor reload');
+      assert.equal((await publicItem(id)).status, 404, kind + ' reload must not publish the draft');
 
       page.once('dialog', dialog => dialog.accept());
       await page.getByRole('button', { name: '保存済み下書きを公開版へ反映' }).click();
@@ -390,6 +394,11 @@ test('author browser saves and explicitly publishes chapter, setting, word and e
       await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
       assert.equal((await publicItem(id)).value?.content.body, first,
         kind + ' second draft must not change public snapshot');
+      await page.reload();
+      await editor.waitFor();
+      assert.equal(await editor.inputValue(), second, kind + ' second draft must survive editor reload');
+      assert.equal((await publicItem(id)).value?.content.body, first,
+        kind + ' reloading an unpublished revision must preserve the public snapshot');
 
       page.once('dialog', dialog => dialog.accept());
       await page.getByRole('button', { name: '保存済み下書きを公開版へ反映' }).click();
