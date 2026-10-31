@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { WordMeaning, WordEtymology } from '@eternalia/contracts';
+const { t } = useUiLocale();
 
 type Choice = { id: string; title: string; parentId?: string | null };
 const props = defineProps<{
@@ -18,7 +19,7 @@ watch(() => props.modelValue, raw => {
     meanings.value = value as WordMeaning[];
     parseError.value = '';
   } catch {
-    parseError.value = '意味データを読み込めません。元データの確認が必要です。';
+    parseError.value = t('wordMeaningParseError');
   }
 }, { immediate: true });
 watch(meanings, value => {
@@ -44,54 +45,54 @@ function wordsOf(origin: WordEtymology) {
 
 <template>
   <fieldset class="word-meanings">
-    <legend>単語の意味と語源</legend>
-    <p class="note">意味は品詞が同じでも別々に保持します。語源は意味ごとに登録できます。</p>
+    <legend>{{ t('wordMeaningsLegend') }}</legend>
+    <p class="note">{{ t('wordMeaningsNote') }}</p>
     <p v-if="parseError" class="error-text" role="alert">{{ parseError }}</p>
     <template v-else>
       <section v-for="(meaning, index) in meanings" :key="meaning.id" class="word-meaning">
         <div class="word-meaning-header">
-          <h3>意味 {{ index + 1 }}</h3>
-          <button type="button" class="inline-action" @click="meanings.splice(index, 1)">意味を削除</button>
+          <h3>{{ t('wordMeaningTitle') }} {{ index + 1 }}</h3>
+          <button type="button" class="inline-action" @click="meanings.splice(index, 1)">{{ t('wordMeaningDelete') }}</button>
         </div>
-        <label>品詞
+        <label>{{ t('wordPartOfSpeech') }}
           <select v-if="wordClasses.length" v-model="meaning.partOfSpeech">
-            <option value="">未指定</option>
+            <option value="">{{ t('wordUnspecified') }}</option>
             <option v-for="wordClass in wordClasses" :key="wordClass.id" :value="wordClass.title">
               {{ wordClass.title }}
             </option>
             <option v-if="meaning.partOfSpeech && !wordClasses.some(entry => entry.title === meaning.partOfSpeech)"
-              :value="meaning.partOfSpeech">{{ meaning.partOfSpeech }}（旧値）</option>
+              :value="meaning.partOfSpeech">{{ meaning.partOfSpeech }}（{{ t('wordLegacy') }}）</option>
           </select>
-          <input v-else v-model="meaning.partOfSpeech" type="text" maxlength="80" placeholder="名詞・動詞など" />
+          <input v-else v-model="meaning.partOfSpeech" type="text" maxlength="80" :placeholder="t('wordPartOfSpeechPlaceholder')" />
         </label>
-        <label>意味・説明
+        <label>{{ t('wordDefinition') }}
           <textarea v-model="meaning.definition" maxlength="2000" rows="3" />
         </label>
-        <h4>この意味の語源</h4>
+        <h4>{{ t('wordEtymologies') }}</h4>
         <div v-for="origin in meaning.etymologies" :key="origin.id" class="word-origin">
-          <label>参照する言語
+          <label>{{ t('wordReferenceLanguage') }}
             <select v-model="origin.languageId" @change="origin.wordId = undefined">
-              <option value="">参照なし</option>
+              <option value="">{{ t('wordNoReference') }}</option>
               <option v-for="language in languages" :key="language.id" :value="language.id">{{ language.title }}</option>
             </select>
           </label>
-          <label>参照する単語
+          <label>{{ t('wordReferenceWord') }}
             <select v-model="origin.wordId" :disabled="!origin.languageId">
-              <option value="">参照なし</option>
+              <option value="">{{ t('wordNoReference') }}</option>
               <option v-for="word in wordsOf(origin)" :key="word.id" :value="word.id">{{ word.title }}</option>
             </select>
           </label>
-          <label>語源の説明
+          <label>{{ t('wordOriginNote') }}
             <textarea v-model="origin.note" maxlength="1000" rows="2" />
           </label>
-          <button type="button" class="inline-action" @click="removeOrigin(meaning, origin)">語源を削除</button>
+          <button type="button" class="inline-action" @click="removeOrigin(meaning, origin)">{{ t('wordOriginDelete') }}</button>
         </div>
         <button type="button" class="inline-action" :disabled="meaning.etymologies.length >= 12" @click="addOrigin(meaning)">
-          語源を追加
+          {{ t('wordOriginAdd') }}
         </button>
       </section>
       <button type="button" class="inline-action" :disabled="meanings.length >= 30" @click="addMeaning">
-        意味を追加
+        {{ t('wordMeaningAdd') }}
       </button>
     </template>
   </fieldset>
