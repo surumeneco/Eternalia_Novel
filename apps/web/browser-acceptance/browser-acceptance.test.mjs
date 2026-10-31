@@ -346,6 +346,10 @@ test('author browser drafts, publishes and hides chapter, setting, word, grammar
     const section = await create('tipSection', tip, 'section');
     const language = await create('language', series, 'language', { characters: '[]', wordClasses: '[]' });
     const word = await create('word', language, 'word', { meanings: '[]' });
+    const authorNodesResponse = await author.request.get(base + '/api/admin/nodes');
+    assert.equal(authorNodesResponse.status(), 200);
+    const newWord = (await authorNodesResponse.json()).find(node => node.id === word);
+    assert.equal(newWord?.isPublic, true, 'new words must default to public visibility');
     const grammar = await create('grammar', language, 'grammar');
     const period = await create('periodization', series, 'period');
     const event = await create('event', period, 'event', { year: '1' });
