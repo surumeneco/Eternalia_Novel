@@ -152,6 +152,26 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
     await managedRow.locator('input[type="datetime-local"]').fill('');
     await managedRow.getByRole('button', { name: '日時を保存' }).click();
     await publicationManagement.getByText('公開開始日時を更新しました。').waitFor();
+
+    // AC-14: a successful mutation followed by a failed readback is not a
+    // verified success. Do not silently acknowledge a stale management view.
+    await managedRow.locator('input[type="datetime-local"]').fill('2100-01-01T00:00');
+    await publicationManagement.route('**/api/admin/nodes', async route => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({ status: 503, contentType: 'application/json', body: '{"message":"test readback failure"}' });
+      } else {
+        await route.continue();
+      }
+    });
+    await managedRow.getByRole('button', { name: '日時を保存' }).click();
+    await publicationManagement.getByText('公開管理データを取得できません。').waitFor();
+    assert.equal(await publicationManagement.getByText('公開開始日時を更新しました。').count(), 0,
+      'a failed post-write readback must not be reported as verified success');
+    await publicationManagement.unroute('**/api/admin/nodes');
+    await publicationManagement.getByRole('button', { name: '再読込' }).click();
+    await managedRow.locator('input[type="datetime-local"]').fill('');
+    await managedRow.getByRole('button', { name: '日時を保存' }).click();
+    await publicationManagement.getByText('公開開始日時を更新しました。').waitFor();
     await publicationManagement.close();
     const afterScheduleClear = await reader.request.get(base + '/api/public/items/' + created.id);
     assert.equal(afterScheduleClear.status(), 200, 'clearing a schedule restores public access');
