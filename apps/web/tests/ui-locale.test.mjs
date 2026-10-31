@@ -279,3 +279,17 @@ test('structured author editors use typed Japanese fallback labels', () => {
     assert.equal(translateUiMessage(key, 'unknown'), expected, key + ' fallback');
   }
 });
+
+test('shared shell accessibility and navigation labels use Japanese fallback', () => {
+  const labels = {
+    "shellSearch": "検索",
+    "shellGlobalNav": "グローバルナビゲーション",
+    "shellAside": "補助情報",
+    "shellResourceTypes": "資料の種類",
+    "shellFooterDescription": "ストーリー・設定集・辞書・年表"
+};
+  for (const [key, expected] of Object.entries(labels)) {
+    assert.equal(translateUiMessage(key, 'ja'), expected, key);
+    assert.equal(translateUiMessage(key, 'unknown'), expected, key + ' fallback');
+  }
+});
