@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { t } = useUiLocale();
 interface Memo {
   id: string;
   title: string;
@@ -34,7 +35,7 @@ const visibleMemos = computed(() => memos.value.filter(memo =>
     .some(value => value.toLocaleLowerCase().includes(search.value.trim().toLocaleLowerCase())),
 ));
 function confirmDiscard() {
-  return !dirty.value || window.confirm('未保存のメモがあります。破棄しますか？');
+  return !dirty.value || window.confirm(t('memoDiscardConfirm'));
 }
 function applySelected() {
   title.value = newMemo.value ? '' : selected.value?.title ?? '';
@@ -70,7 +71,7 @@ async function load(): Promise<boolean> {
     applySelected();
     return true;
   } catch {
-    errorText.value = 'メモを取得できませんでした。';
+    errorText.value = t('memoLoadError');
     return false;
   } finally { loading.value = false; }
 }
@@ -79,7 +80,7 @@ function tags(): string[] {
 }
 async function save() {
   if (busy.value) return;
-  if (!title.value.trim()) { errorText.value = 'タイトルを入力してください。'; return; }
+  if (!title.value.trim()) { errorText.value = t('studioCreateTitleRequired'); return; }
   busy.value = true;
   errorText.value = '';
   statusText.value = '';
@@ -94,10 +95,10 @@ async function save() {
     newMemo.value = false;
     selectedId.value = result.id;
     // Do not acknowledge a verified save until the latest memo is readable.
-    if (await load()) statusText.value = 'メモを保存しました。';
+    if (await load()) statusText.value = t('memoSaved');
   } catch (error: unknown) {
     const message = (error as {data?:{message?:string}}).data?.message;
-    errorText.value = message ?? '保存に失敗しました。改訂番号の競合を確認してください。';
+    errorText.value = message ?? t('memoSaveFailed');
   } finally { busy.value = false; }
 }
 async function reload() {
@@ -119,13 +120,13 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload',beforeUnload));
 
 <template>
   <div>
-    <TopicPath :items="[{label:'ホーム',to:'/'},{label:'作者の書斎',to:'/studio'},{label:'メモ'}]" />
+    <TopicPath :items="[{label:t('home'),to:'/'},{label:t('studio'),to:'/studio'},{label:t('studioMemos')}]" />
     <ReaderPanel>
-      <h1>メモ</h1>
-      <p v-if="authPending" role="status">認証を確認しています。</p>
+      <h1>{{ t('studioMemos') }}</h1>
+      <p v-if="authPending" role="status">{{ t('memoAuthChecking') }}</p>
       <div v-else-if="!auth?.authenticated" role="alert">
-        <p>作者としてログインするとメモを編集できます。</p>
-        <a v-if="auth?.configured" href="/api/auth/discord">Discordでログイン</a>
+        <p>{{ t('memoLoginRequired') }}</p>
+        <a v-if="auth?.configured" href="/api/auth/discord">{{ t('studioDiscordLogin') }}</a>
       </div>
       <template v-else>
         <p v-if="errorText" class="error-text" role="alert">{{ errorText }}</p>
@@ -133,13 +134,13 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload',beforeUnload));
         <div class="memo-grid">
           <aside class="memo-sidebar">
             <div class="memo-actions">
-              <button type="button" class="inline-action" :disabled="busy || loading" @click="startNew">新規メモ</button>
-              <button type="button" class="inline-action" :disabled="loading || busy" @click="reload">再読込</button>
+              <button type="button" class="inline-action" :disabled="busy || loading" @click="startNew">{{ t('memoNew') }}</button>
+              <button type="button" class="inline-action" :disabled="loading || busy" @click="reload">{{ t('studioReload') }}</button>
             </div>
-            <label>メモを検索
-              <input v-model="search" type="search" placeholder="タイトル・本文・タグ" />
+            <label>{{ t('memoSearch') }}
+              <input v-model="search" type="search" :placeholder="t('memoSearchPlaceholder')" />
             </label>
-            <p v-if="loading" role="status">読み込み中です。</p>
+            <p v-if="loading" role="status">{{ t('loading') }}</p>
             <ul v-else class="memo-list">
               <li v-for="memo in visibleMemos" :key="memo.id">
                 <button type="button" :disabled="busy || loading" :aria-pressed="selectedId === memo.id && !newMemo" @click="selectMemo(memo.id)">
@@ -148,20 +149,20 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload',beforeUnload));
                 </button>
               </li>
             </ul>
-            <p v-if="!loading && !visibleMemos.length" class="note">該当するメモはありません。</p>
+            <p v-if="!loading && !visibleMemos.length" class="note">{{ t('memoEmpty') }}</p>
           </aside>
           <section class="memo-editor">
             <form v-if="newMemo || selected" @submit.prevent="save">
-              <h2>{{ newMemo ? '新規メモ' : 'メモを編集' }}</h2>
-              <label>タイトル <input v-model="title" maxlength="150" required /></label>
-              <label>本文 <textarea v-model="body" rows="14" maxlength="100000" /></label>
-              <label>タグ（カンマ区切り）
-                <input v-model="tagsText" placeholder="人物, 調査" />
+              <h2>{{ newMemo ? t('memoNew') : t('memoEdit') }}</h2>
+              <label>{{ t('studioTitleLabel') }} <input v-model="title" maxlength="150" required /></label>
+              <label>{{ t('memoBody') }} <textarea v-model="body" rows="14" maxlength="100000" /></label>
+              <label>{{ t('memoTags') }}
+                <input v-model="tagsText" :placeholder="t('memoTagsPlaceholder')" />
               </label>
-              <p v-if="selected && !newMemo" class="note">改訂 {{ selected.revision }}</p>
-              <button type="submit" class="primary" :disabled="busy">保存</button>
+              <p v-if="selected && !newMemo" class="note">{{ t('memoRevision') }} {{ selected.revision }}</p>
+              <button type="submit" class="primary" :disabled="busy">{{ t('memoSave') }}</button>
             </form>
-            <p v-else>左の一覧からメモを選ぶか、新しく作成してください。</p>
+            <p v-else>{{ t('memoChoose') }}</p>
           </section>
         </div>
       </template>
