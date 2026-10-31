@@ -1,0 +1,170 @@
+name: Alpha checks
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - 'feature/**'
+  pull_request:
+    branches:
+      - develop
+      - main
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: eternalia
+          POSTGRES_USER: eternalia
+          POSTGRES_PASSWORD: ci-temp-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U eternalia -d eternalia"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      DATABASE_URL: postgres://eternalia:ci-temp-password@127.0.0.1:5432/eternalia
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Exercise existing alpha domain and HTTP tests
+        run: npm run test:alpha
+      - name: Build contracts, Nest and Nuxt
+        run: npm run build
+      - name: Check Nuxt types
+        run: npm run typecheck -w @eternalia/web
+      - name: Apply PostgreSQL migrations
+        run: npm run db:migrate
+      - name: Exercise alpha PostgreSQL persistence and author guard tests
+        run: npm run test:db
+
+  compile-and-typecheck:
+    # Independent of the domain test job: compilation errors must remain visible
+    # even when a domain regression stops the other job early.
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Build contracts, Nest and Nuxt independently
+        run: npm run build
+      - name: Check Nuxt types independently
+        if: success() || failure()
+        run: npm run typecheck -w @eternalia/web
+
+  postgres-integration:
+    # A failing domain test must not hide persistence or author-guard failures.
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: eternalia
+          POSTGRES_USER: eternalia
+          POSTGRES_PASSWORD: ci-temp-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U eternalia -d eternalia"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      DATABASE_URL: postgres://eternalia:ci-temp-password@127.0.0.1:5432/eternalia
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Build shared domain contracts
+        run: npm run build:contracts
+      - name: Build Nest API for integration imports
+        run: npm run build -w @eternalia/api
+      - name: Apply PostgreSQL migrations
+        run: npm run db:migrate
+      - name: Verify PostgreSQL transactions and author guards
+        run: npm run test:db
+
+  http-ssr-acceptance:
+    # Real built NestJS + Nuxt HTTP/SSR paths against an ephemeral PostgreSQL service.
+    # Use a Playwright-supported runner rather than ubuntu-latest (26.04).
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: eternalia_http
+          POSTGRES_USER: eternalia
+          POSTGRES_PASSWORD: ci-temp-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U eternalia -d eternalia_http"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      DATABASE_URL: postgres://eternalia:ci-temp-password@127.0.0.1:5432/eternalia_http
+      NODE_ENV: test
+      HTTP_ACCEPTANCE_DISPOSABLE_DB: '1'
+      HTTP_BROWSER_ACCEPTANCE: '1'
+      HTTP_SCREENSHOT_DIR: artifacts/alpha-ui
+      HTTP_WEB_PORT: '34110'
+      HTTP_API_PORT: '34111'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Install pinned Chromium browser test tooling
+        run: |
+          npm install --no-save --package-lock=false playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Build contracts, API and Nuxt
+        run: npm run build
+      - name: Apply PostgreSQL migrations
+        run: npm run db:migrate
+      - name: Verify anonymous HTTP, SSR, publication and author protection
+        run: node scripts/check-http-acceptance.mjs
+      - name: Upload reproducible alpha UI screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: alpha-ui-screenshots
+          path: artifacts/alpha-ui
+          if-no-files-found: ignore
+          retention-days: 7

@@ -1,0 +1,25 @@
+{
+  "name": "@eternalia/api",
+  "private": true,
+  "version": "0.0.0-draft",
+  "scripts": {
+    "dev": "node --env-file-if-exists=../../.env ../../node_modules/@nestjs/cli/bin/nest.js start --watch",
+    "build": "nest build",
+    "start": "node --env-file-if-exists=../../.env dist/main.js"
+  },
+  "dependencies": {
+    "@eternalia/contracts": "0.0.0-draft",
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/core": "^11.0.0",
+    "@nestjs/platform-express": "^11.0.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.0",
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^11.0.0",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.9.0",
+    "@types/pg": "^8.23.1"
+  }
+}

@@ -1,0 +1,48 @@
+@use "sass:map";
+@use "./_pallet.scss" as *;
+
+$eternalia-color: (
+  "concept": (
+    "main": map.get($eternalia-pallet, "sky", "origin"),
+    "main-heavy": map.get($eternalia-pallet, "sky", "dark", "100"),
+    "main-bold": map.get($eternalia-pallet, "sky", "dark", "150"),
+    "main-soft": map.get($eternalia-pallet, "sky", "light", "50"),
+    "sub": map.get($eternalia-pallet, "void", "100"),
+    "sub-heavy": map.get($eternalia-pallet, "void", "40"),
+    "sub-bold": map.get($eternalia-pallet, "void", "70"),
+    "sub-soft": map.get($eternalia-pallet, "void", "130"),
+    "accent": map.get($eternalia-pallet, "grass", "origin"),
+    "accent-heavy": map.get($eternalia-pallet, "grass", "dark", "100"),
+    "accent-bold": map.get($eternalia-pallet, "grass", "dark", "150"),
+    "accent-soft": map.get($eternalia-pallet, "grass", "light", "50"),
+  ),
+  "background": (
+    "page": map.get($eternalia-pallet, "sky", "moss", "100"),
+    "page-bottom": map.get($eternalia-pallet, "grass", "dark", "50"),
+    "header": map.get($eternalia-pallet, "sky", "origin"),
+    "footer": map.get($eternalia-pallet, "sky", "moss", "50"),
+    "base": map.get($eternalia-pallet, "void", "30"),
+    "bold": map.get($eternalia-pallet, "void", "20"),
+    "soft": map.get($eternalia-pallet, "void", "40"),
+    "focus": map.get($eternalia-pallet, "flow", "moss", "40"),
+    "active": map.get($eternalia-pallet, "flow", "dark", "50"),
+    "input": map.get($eternalia-pallet, "void", "50"),
+    "input-focus": map.get($eternalia-pallet, "flow", "moss", "50"),
+    "error": map.get($eternalia-pallet, "flame", "moss", "50"),
+  ),
+  "text": (
+    "base": map.get($eternalia-pallet, "void", "180"),
+    "focus": map.get($eternalia-pallet, "flow", "moss", "150"),
+    "input": map.get($eternalia-pallet, "void", "190"),
+    "note": map.get($eternalia-pallet, "void", "140"),
+    "link": map.get($eternalia-pallet, "flow", "dark", "180"),
+    "link-visited": map.get($eternalia-pallet, "flow", "dark", "150"),
+    "link-focus": map.get($eternalia-pallet, "flow", "light", "100"),
+  ),
+  "border": (
+    "base": map.get($eternalia-pallet, "void", "80"),
+    "bold": map.get($eternalia-pallet, "void", "60"),
+    "soft": map.get($eternalia-pallet, "void", "100"),
+    "focus": map.get($eternalia-pallet, "flow", "moss", "100"),
+  ),
+);
