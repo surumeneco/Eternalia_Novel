@@ -54,7 +54,7 @@ const groups = computed(() => categories.value
     });
     return { category, tips };
   })
-  .filter(group => group.tips.length > 0 || (!normalizedQuery.value && !selectedTag.value));
+  .filter(group => group.tips.length > 0 || (!normalizedQuery.value && !selectedTag.value)));
 </script>
 
 <template>
