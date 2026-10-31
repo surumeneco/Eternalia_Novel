@@ -11,10 +11,10 @@ const { data: auth, pending: authPending, refresh: refreshAuth } =
   await useFetch<AuthState>('/api/auth/me');
 
 const kinds: Record<ReaderKind, string> = {
-  series: 'シリーズ', volume: '編', part: '部', chapter: '章',
-  category: 'カテゴリ', tip: '設定', tipSection: '設定項目',
-  language: '言語', word: '単語', grammar: '文法',
-  periodization: '年代区分', event: '出来事',
+  series: t('studioKindSeries'), volume: t('studioKindVolume'), part: t('studioKindPart'), chapter: t('chapter'),
+  category: t('studioKindCategory'), tip: t('tip'), tipSection: t('tipSection'),
+  language: t('studioKindLanguage'), word: t('word'), grammar: t('grammar'),
+  periodization: t('studioKindPeriodization'), event: t('event'),
 };
 const children: Record<ReaderKind | 'root', ReaderKind[]> = {
   root: ['series'],
@@ -25,11 +25,11 @@ const children: Record<ReaderKind | 'root', ReaderKind[]> = {
   periodization: ['event'], event: [],
 };
 const filters = {
-  all: { label: 'すべて', kinds: Object.keys(kinds) as ReaderKind[] },
-  stories: { label: '執筆', kinds: ['series','volume','part','chapter'] as ReaderKind[] },
-  tips: { label: '設定', kinds: ['series','category','tip','tipSection'] as ReaderKind[] },
-  dictionaries: { label: '辞書', kinds: ['series','language','word','grammar'] as ReaderKind[] },
-  timeline: { label: '年表', kinds: ['series','periodization','event'] as ReaderKind[] },
+  all: { label: t('studioFilterAll'), kinds: Object.keys(kinds) as ReaderKind[] },
+  stories: { label: t('studioFilterStories'), kinds: ['series','volume','part','chapter'] as ReaderKind[] },
+  tips: { label: t('studioFilterTips'), kinds: ['series','category','tip','tipSection'] as ReaderKind[] },
+  dictionaries: { label: t('studioFilterDictionaries'), kinds: ['series','language','word','grammar'] as ReaderKind[] },
+  timeline: { label: t('studioFilterTimeline'), kinds: ['series','periodization','event'] as ReaderKind[] },
 };
 type Filter = keyof typeof filters;
 
@@ -348,39 +348,39 @@ async function logout() {
 <template>
   <NuxtPage v-if="studioRoute.matched.length > 1" />
   <div v-else>
-    <TopicPath :items="[{label:'ホーム',to:'/'},{label:'作者の書斎'}]" />
+    <TopicPath :items="[{label:t('home'),to:'/'},{label:t('studio')}]" />
     <ReaderPanel>
       <div class="studio-title">
         <div>
-                     <h1>作者の書斎</h1>
-          <p>下書き保存と公開スナップショットの反映は別操作です。</p>
+                     <h1>{{ t('studio') }}</h1>
+          <p>{{ t('studioDraftVsPublication') }}</p>
         </div>
         <div v-if="auth?.authenticated" class="action-row">
-          <NuxtLink to="/studio/publication">公開管理</NuxtLink>
-          <NuxtLink to="/studio/order">並べ替え</NuxtLink>
-          <NuxtLink to="/studio/memos">メモ</NuxtLink>
-          <button class="inline-action" type="button" @click="logout">ログアウト</button>
+          <NuxtLink to="/studio/publication">{{ t('studioPublicationManagement') }}</NuxtLink>
+          <NuxtLink to="/studio/order">{{ t('studioReorder') }}</NuxtLink>
+          <NuxtLink to="/studio/memos">{{ t('studioMemos') }}</NuxtLink>
+          <button class="inline-action" type="button" @click="logout">{{ t('studioLogout') }}</button>
         </div>
       </div>
-      <p v-if="authPending" role="status">認証状態を確認しています。</p>
+      <p v-if="authPending" role="status">{{ t('studioAuthChecking') }}</p>
       <div v-else-if="!auth?.configured" role="alert">
-        <p>作者認証が設定されていません。サーバー側でDiscord OAuth2とPostgreSQLを設定してください。</p>
-        <p class="note">匿名閲覧は認証なしで利用できます。</p>
+        <p>{{ t('studioAuthNotConfigured') }}</p>
+        <p class="note">{{ t('studioAnonymousReadable') }}</p>
       </div>
       <div v-else-if="!auth.authenticated">
-        <p>編集するには、許可された作者のDiscordアカウントで認証してください。</p>
-        <a class="login-link" href="/api/auth/discord">Discordでログイン</a>
+        <p>{{ t('studioLoginRequired') }}</p>
+        <a class="login-link" href="/api/auth/discord">{{ t('studioDiscordLogin') }}</a>
       </div>
       <template v-else>
         <p v-if="statusText" class="status-success" role="status">{{ statusText }}</p>
         <p v-if="errorText" class="error-text" role="alert">{{ errorText }}</p>
         <div class="studio-grid">
-          <aside class="studio-sidebar" aria-label="作者ライブラリ">
+          <aside class="studio-sidebar" :aria-label="t('studioAuthorLibrary')">
             <div class="section-header">
-              <h2>ライブラリ</h2>
-              <button class="inline-action" type="button" :disabled="busy" @click="reloadNodes">再読込</button>
+              <h2>{{ t('studioLibrary') }}</h2>
+              <button class="inline-action" type="button" :disabled="busy" @click="reloadNodes">{{ t('studioReload') }}</button>
             </div>
-            <div class="filter-row" role="group" aria-label="資料種別">
+            <div class="filter-row" role="group" :aria-label="t('studioMaterialType')">
               <button v-for="(f, key) in filters" :key="key" class="inline-action"
                 type="button" :aria-pressed="filter === key" @click="filter = key">{{ f.label }}</button>
             </div>
@@ -394,40 +394,40 @@ async function logout() {
                 </button>
               </li>
             </ul>
-            <p v-if="!nodes.length" class="note">項目がありません。</p>
-            <button class="primary" type="button" :disabled="busy" @click="openCreate(null)">新規シリーズ</button>
+            <p v-if="!nodes.length" class="note">{{ t('studioEmpty') }}</p>
+            <button class="primary" type="button" :disabled="busy" @click="openCreate(null)">{{ t('studioNewSeries') }}</button>
             <button v-if="selected && children[selected.kind].length" class="inline-action" type="button"
-              :disabled="busy" @click="openCreate(selected.id)">子項目を追加</button>
+              :disabled="busy" @click="openCreate(selected.id)">{{ t('studioAddChild') }}</button>
           </aside>
-          <section class="studio-editor" aria-label="編集フォーム">
+          <section class="studio-editor" :aria-label="t('studioEditorForm')">
             <form v-if="createOpen" class="create-form" @submit.prevent="createItem">
-              <h2>項目を追加</h2>
-              <label>種類
+              <h2>{{ t('studioAddItem') }}</h2>
+              <label>{{ t('studioKindLabel') }}
                 <select v-model="createKind">
                   <option v-for="kind in creationChoices" :key="kind" :value="kind">{{ kinds[kind] }}</option>
                 </select>
               </label>
-              <label>タイトル<input v-model="createTitle" maxlength="150" required /></label>
+              <label>{{ t('studioTitleLabel') }}<input v-model="createTitle" maxlength="150" required /></label>
               <div class="action-row">
-                <button class="primary" type="submit" :disabled="busy">作成</button>
-                <button class="inline-action" type="button" :disabled="busy" @click="cancelCreate">キャンセル</button>
+                <button class="primary" type="submit" :disabled="busy">{{ t('studioCreate') }}</button>
+                <button class="inline-action" type="button" :disabled="busy" @click="cancelCreate">{{ t('studioCancel') }}</button>
               </div>
             </form>
             <template v-else-if="selected">
               <h2>{{ kinds[selected.kind] }}：{{ selected.draft.title }}</h2>
-              <p class="note">下書き改訂 {{ selected.revision }} ／ {{ selected.published ? '公開スナップショットあり' : '未公開' }}</p>
+              <p class="note">{{ t('studioDraftRevision') }} {{ selected.revision }} ／ {{ selected.published ? t('studioPublishedSnapshot') : t('studioUnpublished') }}</p>
               <form @submit.prevent="saveDraft">
-                <label>名称・見出し<input v-model="form.title" maxlength="150" required /></label>
-                <ul v-if="selected.kind === 'word' && spellingWarnings.length" class="spelling-warnings" aria-label="綴りに関する警告">
+                <label>{{ t('studioNameHeading') }}<input v-model="form.title" maxlength="150" required /></label>
+                <ul v-if="selected.kind === 'word' && spellingWarnings.length" class="spelling-warnings" :aria-label="t('studioSpellingWarnings')">
                   <li v-for="warning in spellingWarnings" :key="warning.code">{{ warning.message }}</li>
                 </ul>
                 <div v-if="selected.kind === 'chapter'" class="manuscript-toolbar" role="group" :aria-label="t('studioManuscriptToolbar')">
                   <button type="button" class="inline-action" :disabled="busy || composingBody" @mousedown.prevent @click="insertMarkup('ruby')">{{ t('studioRubyButton') }}</button>
                   <button type="button" class="inline-action" :disabled="busy || composingBody" @mousedown.prevent @click="insertMarkup('page')">{{ t('studioPageButton') }}</button>
                 </div>
-                <label>本文・説明<textarea ref="bodyTextarea" v-model="form.body" rows="14" maxlength="100000"
+                <label>{{ t('studioBodyLabel') }}<textarea ref="bodyTextarea" v-model="form.body" rows="14" maxlength="100000"
                   @compositionstart="composingBody = true" @compositionend="composingBody = false"
-                  placeholder="ページ区切り: [[page]] ／ ルビ: ｜漢字《かんじ》"></textarea></label>
+                  :placeholder="t('studioMarkupPlaceholder')"></textarea></label>
                 <CategoryPresetEditor v-if="selected.kind === 'category'" v-model="categoryPresets" />
                 <TipLinksEditor v-if="selected.kind === 'tip'"
                   v-model:tags="tipTags" v-model:related-tip-ids="tipRelatedTipIds"
@@ -437,37 +437,37 @@ async function logout() {
                 <LanguageStructureEditor v-if="selected.kind === 'language'"
                   v-model:characters="languageCharacters" v-model:word-classes="languageWordClasses" />
                 <label v-if="selected.kind === 'word' && !form.details.meanings && form.details.partOfSpeech">
-                  旧形式の品詞
+                  {{ t('studioLegacyWordClass') }}
                   <input v-model="form.details.partOfSpeech" maxlength="80" />
                 </label>
                 <WordMeaningsEditor v-if="selected.kind === 'word'" v-model="wordMeanings"
                   :languages="activeWordLanguages" :words="activeWordReferences" :word-classes="activeWordClasses" />
-                <label v-if="selected.kind === 'event'">相対年
+                <label v-if="selected.kind === 'event'">{{ t('studioRelativeYear') }}
                   <input v-model="form.details.year" maxlength="10000" />
                 </label>
-                <div class="action-row"><button class="primary" type="submit" :disabled="busy">下書きを保存</button></div>
+                <div class="action-row"><button class="primary" type="submit" :disabled="busy">{{ t('studioSaveDraft') }}</button></div>
               </form>
               <hr />
-              <h3>公開設定</h3>
-              <p class="note">公開版を更新しても、祖先の非公開・予約公開条件を満たさない項目は読者から見えません。</p>
+              <h3>{{ t('studioPublicationSettings') }}</h3>
+              <p class="note">{{ t('studioPublicationNote') }}</p>
               <div class="action-row">
-                <button class="primary" type="button" :disabled="busy" @click="publish">保存済み下書きを公開版へ反映</button>
+                <button class="primary" type="button" :disabled="busy" @click="publish">{{ t('studioApplyPublishedDraft') }}</button>
                 <button class="inline-action" type="button" :disabled="busy || !selected.published"
                   @click="changeVisibility(!selected.isPublic, selected.publicSince)">
-                  {{ selected.isPublic ? '非公開にする' : '公開に戻す' }}
+                  {{ selected.isPublic ? t('studioHide') : t('studioShow') }}
                 </button>
               </div>
-              <label>公開開始日時
+              <label>{{ t('studioPublicStartDate') }}
                 <input v-model="scheduledLocal" type="datetime-local" />
               </label>
-              <button class="inline-action" type="button" :disabled="busy || !selected.published" @click="schedule">日時を設定</button>
+              <button class="inline-action" type="button" :disabled="busy || !selected.published" @click="schedule">{{ t('studioSetDate') }}</button>
               <hr />
-              <h3>下書きプレビュー</h3>
+              <h3>{{ t('studioDraftPreview') }}</h3>
               <RichContent :source="form.body" />
             </template>
             <div v-else>
-              <h2>編集する項目を選択してください</h2>
-              <p class="note">左のライブラリから選ぶか、新しくシリーズを作成してください。</p>
+              <h2>{{ t('studioChooseItem') }}</h2>
+              <p class="note">{{ t('studioChooseItemHint') }}</p>
             </div>
           </section>
         </div>
