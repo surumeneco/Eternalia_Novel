@@ -43,3 +43,66 @@ test('studio editing and publication fixed messages have Japanese fallback keys'
     assert.equal(translateUiMessage(key, 'unknown'), expected, key + ' fallback');
   }
 });
+
+test('remaining author studio labels have typed Japanese fallback entries', () => {
+  const labels = {
+    "studioKindSeries": "シリーズ",
+    "studioKindVolume": "編",
+    "studioKindPart": "部",
+    "studioKindCategory": "カテゴリ",
+    "studioKindLanguage": "言語",
+    "studioKindPeriodization": "年代区分",
+    "studioFilterAll": "すべて",
+    "studioFilterStories": "執筆",
+    "studioFilterTips": "設定",
+    "studioFilterDictionaries": "辞書",
+    "studioFilterTimeline": "年表",
+    "studioPublicationManagement": "公開管理",
+    "studioReorder": "並べ替え",
+    "studioMemos": "メモ",
+    "studioLogout": "ログアウト",
+    "studioDraftVsPublication": "下書き保存と公開スナップショットの反映は別操作です。",
+    "studioAuthChecking": "認証状態を確認しています。",
+    "studioAuthNotConfigured": "作者認証が設定されていません。サーバー側でDiscord OAuth2とPostgreSQLを設定してください。",
+    "studioAnonymousReadable": "匿名閲覧は認証なしで利用できます。",
+    "studioLoginRequired": "編集するには、許可された作者のDiscordアカウントで認証してください。",
+    "studioDiscordLogin": "Discordでログイン",
+    "studioLibrary": "ライブラリ",
+    "studioReload": "再読込",
+    "studioMaterialType": "資料種別",
+    "studioEmpty": "項目がありません。",
+    "studioNewSeries": "新規シリーズ",
+    "studioAddChild": "子項目を追加",
+    "studioEditorForm": "編集フォーム",
+    "studioAddItem": "項目を追加",
+    "studioKindLabel": "種類",
+    "studioTitleLabel": "タイトル",
+    "studioCreate": "作成",
+    "studioCancel": "キャンセル",
+    "studioDraftRevision": "下書き改訂",
+    "studioPublishedSnapshot": "公開スナップショットあり",
+    "studioUnpublished": "未公開",
+    "studioNameHeading": "名称・見出し",
+    "studioSpellingWarnings": "綴りに関する警告",
+    "studioBodyLabel": "本文・説明",
+    "studioMarkupPlaceholder": "ページ区切り: [[page]] ／ ルビ: ｜漢字《かんじ》",
+    "studioLegacyWordClass": "旧形式の品詞",
+    "studioRelativeYear": "相対年",
+    "studioSaveDraft": "下書きを保存",
+    "studioPublicationSettings": "公開設定",
+    "studioPublicationNote": "公開版を更新しても、祖先の非公開・予約公開条件を満たさない項目は読者から見えません。",
+    "studioApplyPublishedDraft": "保存済み下書きを公開版へ反映",
+    "studioHide": "非公開にする",
+    "studioShow": "公開に戻す",
+    "studioPublicStartDate": "公開開始日時",
+    "studioSetDate": "日時を設定",
+    "studioDraftPreview": "下書きプレビュー",
+    "studioChooseItem": "編集する項目を選択してください",
+    "studioChooseItemHint": "左のライブラリから選ぶか、新しくシリーズを作成してください。",
+    "studioAuthorLibrary": "作者ライブラリ"
+};
+  for (const [key, expected] of Object.entries(labels)) {
+    assert.equal(translateUiMessage(key, 'ja'), expected, key);
+    assert.equal(translateUiMessage(key, 'unknown'), expected, key + ' fallback');
+  }
+});
