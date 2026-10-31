@@ -1,6 +1,8 @@
 <script setup lang="ts">
+const route = useRoute();
 const { t } = useUiLocale();
 </script>
 <template>
-  <PublicCollectionPage :title="t('stories')" :description="t('storiesCollectionDescription')" section="stories" />
+  <NuxtPage v-if="route.params.id" />
+  <PublicCollectionPage v-else :title="t('stories')" :description="t('storiesCollectionDescription')" section="stories" />
 </template>
