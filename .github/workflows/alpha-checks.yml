@@ -115,8 +115,8 @@ jobs:
 
   http-ssr-acceptance:
     # Real built NestJS + Nuxt HTTP/SSR paths against an ephemeral PostgreSQL service.
-    # This is not browser automation or a real Discord OAuth session.
-    runs-on: ubuntu-latest
+    # Use a Playwright-supported runner rather than ubuntu-latest (26.04).
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     services:
       postgres:
