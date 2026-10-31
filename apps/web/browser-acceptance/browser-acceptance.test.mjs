@@ -749,6 +749,14 @@ test('browser logout revokes synthetic author session and protected API access',
     assert.equal(denied.status(), 401, 'logout must reject protected writes');
     assert.equal((await author.cookies(base)).filter(cookie => cookie.name === 'eternalia_author').length, 0,
       'logout must remove the author cookie');
+    const otherSession = await browser.newContext();
+    await otherSession.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    assert.equal((await otherSession.request.get(base + '/api/admin/nodes')).status(), 200,
+      'logging out one device must not revoke an independent author session');
+    await otherSession.close();
     await author.close();
   } finally {
     await browser.close();
