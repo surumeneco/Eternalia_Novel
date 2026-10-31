@@ -585,6 +585,37 @@ test('unsaved manuscript survives cancelled navigation and is discarded only aft
   }
 });
 
+test('author manuscript editor fits narrow mobile viewports without horizontal overflow', { timeout: 60_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const page = await author.newPage();
+    await page.goto(base + '/studio?item=' + fixture.chapter);
+    const editor = page.getByRole('textbox', { name: '本文・説明', exact: true });
+    await editor.waitFor();
+    for (const width of [390, 320]) {
+      await page.setViewportSize({ width, height: 720 });
+      const dimensions = await page.evaluate(() => ({
+        viewport: document.documentElement.clientWidth,
+        content: document.documentElement.scrollWidth,
+      }));
+      assert.ok(dimensions.content <= dimensions.viewport,
+        'author editor must not overflow at ' + width + 'px: ' + JSON.stringify(dimensions));
+      assert.ok(await editor.isVisible(), 'body editor must remain visible at ' + width + 'px');
+      assert.ok(await page.getByRole('button', { name: '下書きを保存' }).isVisible(),
+        'save action must remain visible at ' + width + 'px');
+    }
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
+
 test('browser logout revokes synthetic author session and protected API access', { timeout: 60_000 }, async () => {
   assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
   const browser = await chromium.launch({ headless: true });
