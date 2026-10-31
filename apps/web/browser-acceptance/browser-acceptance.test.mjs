@@ -701,14 +701,14 @@ test('language editor persists character adjacency and word classes before publi
     const structure = page.locator('.language-structure');
     await structure.getByRole('button', { name: '文字を追加' }).click();
     await structure.getByRole('button', { name: '文字を追加' }).click();
-    const entries = structure.locator('fieldset').first().locator('.symbol-entry');
+    const entries = structure.locator(':scope > fieldset').first().locator('.symbol-entry');
     await entries.nth(0).locator('input').nth(0).fill('a');
     await entries.nth(0).locator('input').nth(1).fill('a');
     await entries.nth(1).locator('input').nth(0).fill('b');
     await entries.nth(1).locator('input').nth(1).fill('b');
     await entries.nth(0).locator('.following-grid input').nth(1).check();
     await structure.getByRole('button', { name: '品詞を追加' }).click();
-    const wordClass = structure.locator('fieldset').nth(1).locator('.symbol-entry');
+    const wordClass = structure.locator(':scope > fieldset').nth(1).locator('.symbol-entry');
     await wordClass.locator('input').fill('名詞');
     await wordClass.locator('textarea').fill('物事の名称');
     await page.getByRole('button', { name: '下書きを保存' }).click();
