@@ -27,6 +27,13 @@
 | MAN-10 / AC-60〜64,78 | PC・タブレット・390px・320pxで読者/作者UIを確認し、旧v0.3の公開UIと画像比較 | 青/黒/緑、石板風面、ナビ/パンくず/トークンの継承が説明でき、横スクロールや操作不能なし。作者キャンバスは未承認デザインを強制しない | not-run |
 | MAN-11 / AC-45,54,76,77 | 公開日時境界・削除・無効化の操作仕様を確認 | **仕様未決**。決定前は実装・合格を強制せず pending-decision として保留 | pending-decision |
 
+
+## 自動撮影した比較用スクリーンショット（人間の判定は未実施）
+
+[Actions #41213912611 の alpha-ui-screenshots（11枚）](https://github.com/surumeneco/Eternalia_Novel/actions/runs/41213912611/artifacts/13047567293) は `8a6f24d0cac82ef98c58fea80d404f3b06f420df` の実Chromium/一時DBで取得した。読者4領域の390px・1280px、作者のデスクトップ・390px・320pxを含み、4ジョブ成功、ブラウザ15件・HTTP6件成功。CI artifactは**7日間保持**で、期限後の再生成には該当feature HEADのCIを実行する。
+
+比較原典は `docs/legacy-ui-asset-map.md` に記載の旧 `Eternalia_frontend/develop@170fb60` と `forGPT/Eternalia_Novel/20_基本設計/220_ビジュアルデザイン・画面コンポーネント継承設計.md`。スクリーンショットの**取得成功は視覚的一致・利用者承認ではない**。MAN-10で旧UIとの画像対照を行い、差分と採否を記録する。
+
 ## 証跡記録テンプレート
 
 `test_id / AC-ID / 実施日時(JST) / OS・ブラウザ・画面幅 / feature HEAD / テストデータ（匿名化） / 操作 / 期待結果 / 実結果 / スクリーンショット・ログ参照 / pass・fail・not-run・pending-decision / 再現手順` を1件ごとに記録する。スクリーンショットは認証Cookie・OAuthコード・個人情報を隠す。実施していない項目をCIの成功でpassにしない。
