@@ -675,7 +675,7 @@ test('browser logout revokes synthetic author session and protected API access',
   try {
     const author = await browser.newContext({ viewport: { width: 1280, height: 800 } });
     await author.addCookies([{
-      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      name: 'eternalia_author', value: fixture.logoutAuthorToken, url: base,
       httpOnly: true, sameSite: 'Lax',
     }]);
     const page = await author.newPage();
