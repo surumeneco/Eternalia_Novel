@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { AuthorNode } from '~/types/author';
+const studioRoute = useRoute();
 import type { ReaderKind } from '~/types/reader';
 import { parseLanguageWordClasses, diagnoseWordSpelling } from '@eternalia/contracts';
 import { insertManuscriptMarkup, type ManuscriptInsertionKind } from '~/utils/manuscript-markup';
@@ -321,7 +322,8 @@ async function logout() {
 </script>
 
 <template>
-  <div>
+  <NuxtPage v-if="studioRoute.matched.length > 1" />
+  <div v-else>
     <TopicPath :items="[{label:'ホーム',to:'/'},{label:'作者の書斎'}]" />
     <ReaderPanel>
       <div class="studio-title">
