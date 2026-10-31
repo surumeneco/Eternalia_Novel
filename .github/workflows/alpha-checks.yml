@@ -112,3 +112,44 @@ jobs:
         run: npm run db:migrate
       - name: Verify PostgreSQL transactions and author guards
         run: npm run test:db
+
+  http-ssr-acceptance:
+    # Real built NestJS + Nuxt HTTP/SSR paths against an ephemeral PostgreSQL service.
+    # This is not browser automation or a real Discord OAuth session.
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: eternalia_http
+          POSTGRES_USER: eternalia
+          POSTGRES_PASSWORD: ci-temp-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U eternalia -d eternalia_http"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      DATABASE_URL: postgres://eternalia:ci-temp-password@127.0.0.1:5432/eternalia_http
+      NODE_ENV: test
+      HTTP_WEB_PORT: '34110'
+      HTTP_API_PORT: '34111'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Build contracts, API and Nuxt
+        run: npm run build
+      - name: Apply PostgreSQL migrations
+        run: npm run db:migrate
+      - name: Verify anonymous HTTP, SSR, publication and author protection
+        run: node scripts/check-http-acceptance.mjs
