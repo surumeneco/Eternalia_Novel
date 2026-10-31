@@ -437,3 +437,61 @@ test('author memo browser persists tags and handles failed post-write readback',
     await browser.close();
   }
 });
+
+test('author browser reorders only sibling chapters and protects unapplied changes', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const prefix = fixture.prefix + '-browser-order';
+    async function create(kind, parentId, suffix) {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base },
+        data: { kind, parentId, content: { title: prefix + '-' + suffix, body: '', details: {} } },
+      });
+      assert.equal(response.status(), 201, 'create ' + kind + ': ' + await response.text());
+      return (await response.json()).id;
+    }
+    const series = await create('series', null, 'series');
+    const volume = await create('volume', series, 'volume');
+    const part = await create('part', volume, 'part');
+    const first = await create('chapter', part, 'first');
+    const second = await create('chapter', part, 'second');
+    const page = await author.newPage();
+    await page.goto(base + '/studio/order');
+    await page.getByLabel('親となる項目').selectOption(part);
+    await page.getByLabel('項目の種類').selectOption('chapter');
+    const list = page.locator('.order-list li');
+    await list.first().waitFor();
+    assert.ok((await list.nth(0).innerText()).includes(prefix + '-first'));
+    assert.ok((await list.nth(1).innerText()).includes(prefix + '-second'));
+    await list.nth(0).getByRole('button', { name: '下へ' }).click();
+    assert.ok((await list.nth(0).innerText()).includes(prefix + '-second'));
+
+    page.once('dialog', dialog => dialog.dismiss());
+    await page.getByRole('link', { name: '執筆・編集に戻る' }).click();
+    assert.equal(new URL(page.url()).pathname, '/studio/order',
+      'cancelling the discard dialog must retain unapplied ordering');
+    assert.ok((await list.nth(0).innerText()).includes(prefix + '-second'));
+
+    page.once('dialog', dialog => dialog.accept());
+    await page.getByRole('button', { name: '表示順を反映' }).click();
+    await page.getByText('順序を反映しました。').waitFor();
+    const response = await author.request.get(base + '/api/admin/nodes');
+    assert.equal(response.status(), 200);
+    const nodes = await response.json();
+    const firstNode = nodes.find(node => node.id === first);
+    const secondNode = nodes.find(node => node.id === second);
+    assert.equal(firstNode?.order, 1);
+    assert.equal(secondNode?.order, 0);
+    assert.equal(firstNode?.draft.body, '');
+    assert.equal(secondNode?.draft.body, '');
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
