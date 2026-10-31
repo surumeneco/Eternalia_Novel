@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { t } = useUiLocale();
 interface Preset { title: string; body: string }
 
 const props = defineProps<{ modelValue: string }>();
@@ -45,29 +46,29 @@ function edit(index: number, field: keyof Preset, event: Event) {
 
 <template>
   <fieldset class="presets-editor">
-    <legend>設定項目のプリセット</legend>
-    <p class="note">新しく作る設定にのみ、この時点の項目名・順序・本文を複製します。既存の設定は変更されません。</p>
+    <legend>{{ t('presetLegend') }}</legend>
+    <p class="note">{{ t('presetNote') }}</p>
     <div v-if="rows === null">
-      <p role="alert" class="error-text">プリセットのデータ形式が正しくありません。JSONを修正してください。</p>
+      <p role="alert" class="error-text">{{ t('presetParseError') }}</p>
       <textarea :value="modelValue" rows="5" @input="emit('update:modelValue', ($event.target as HTMLTextAreaElement).value)" />
     </div>
     <template v-else>
       <ol class="preset-list">
         <li v-for="(preset, index) in rows" :key="index" class="preset-item">
-          <label>項目名
+          <label>{{ t('presetName') }}
             <input :value="preset.title" maxlength="150" @input="edit(index, 'title', $event)" />
           </label>
-          <label>テンプレート本文
+          <label>{{ t('presetBody') }}
             <textarea :value="preset.body" rows="3" maxlength="10000" @input="edit(index, 'body', $event)" />
           </label>
           <div class="preset-actions">
-            <button type="button" class="inline-action" :disabled="index === 0" @click="move(index, -1)">上へ</button>
-            <button type="button" class="inline-action" :disabled="index === rows.length - 1" @click="move(index, 1)">下へ</button>
-            <button type="button" class="inline-action" @click="remove(index)">削除</button>
+            <button type="button" class="inline-action" :disabled="index === 0" @click="move(index, -1)">{{ t('orderUp') }}</button>
+            <button type="button" class="inline-action" :disabled="index === rows.length - 1" @click="move(index, 1)">{{ t('orderDown') }}</button>
+            <button type="button" class="inline-action" @click="remove(index)">{{ t('presetDelete') }}</button>
           </div>
         </li>
       </ol>
-      <button type="button" class="inline-action" :disabled="rows.length >= 30" @click="add">項目を追加</button>
+      <button type="button" class="inline-action" :disabled="rows.length >= 30" @click="add">{{ t('studioAddItem') }}</button>
     </template>
   </fieldset>
 </template>
