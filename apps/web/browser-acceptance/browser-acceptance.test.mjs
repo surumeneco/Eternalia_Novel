@@ -375,3 +375,65 @@ test('author browser saves and explicitly publishes chapter, setting, word and e
     await browser.close();
   }
 });
+
+test('author memo browser persists tags and handles failed post-write readback', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const page = await author.newPage();
+    await page.goto(base + '/studio/memos');
+    await page.getByRole('button', { name: '新規メモ' }).click();
+    const title = fixture.prefix + '-browser-memo';
+    await page.locator('.memo-editor input').first().fill(title);
+    const editor = page.locator('.memo-editor textarea');
+    await editor.fill('メモ本文の初稿');
+    await page.locator('.memo-editor input').nth(1).fill('人物, 調査');
+    await page.getByRole('button', { name: '保存', exact: true }).click();
+    await page.getByText('メモを保存しました。').waitFor();
+
+    const listResponse = await author.request.get(base + '/api/admin/memos');
+    assert.equal(listResponse.status(), 200);
+    const created = (await listResponse.json()).find(memo => memo.title === title);
+    assert.ok(created?.id, 'memo must persist to PostgreSQL');
+    assert.deepEqual(created.tags, ['人物', '調査']);
+    await page.locator('.memo-sidebar input[type="search"]').fill('調査');
+    await page.getByRole('button', { name: new RegExp(title) }).waitFor();
+
+    await editor.fill('未保存のメモ変更');
+    page.once('dialog', dialog => dialog.dismiss());
+    await page.getByRole('link', { name: '作者の書斎' }).click();
+    assert.equal(new URL(page.url()).pathname, '/studio/memos');
+    assert.equal(await editor.inputValue(), '未保存のメモ変更');
+
+    await page.route('**/api/admin/memos', async route => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({ status: 503, contentType: 'application/json', body: '{"message":"test readback failure"}' });
+      } else {
+        await route.continue();
+      }
+    });
+    await page.getByRole('button', { name: '保存', exact: true }).click();
+    await page.getByText('メモを取得できませんでした。').waitFor();
+    assert.equal(await page.getByText('メモを保存しました。').count(), 0,
+      'memo save must not claim verified success after failed readback');
+
+    await page.unroute('**/api/admin/memos');
+    page.once('dialog', dialog => dialog.accept());
+    await page.getByRole('button', { name: '再読込' }).click();
+    assert.equal(await editor.inputValue(), '未保存のメモ変更',
+      'reloading after a successful write must recover the persisted edit');
+    const finalResponse = await author.request.get(base + '/api/admin/memos');
+    assert.equal(finalResponse.status(), 200);
+    const finalMemo = (await finalResponse.json()).find(memo => memo.id === created.id);
+    assert.equal(finalMemo.body, '未保存のメモ変更');
+    assert.ok(finalMemo.revision > created.revision);
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
