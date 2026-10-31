@@ -15,6 +15,23 @@ const { PostgresLibraryService } = require('../apps/api/dist/postgres-library.se
 if (!process.env.DATABASE_URL || !process.env.HTTP_FIXTURE_FILE) {
   throw new Error('DATABASE_URL and HTTP_FIXTURE_FILE are required');
 }
+if (process.env.HTTP_ACCEPTANCE_DISPOSABLE_DB !== '1' || process.env.NODE_ENV === 'production') {
+  throw new Error('Seeding requires explicit disposable test database opt-in');
+}
+// The fixture must not touch an existing application database, even if
+// someone accidentally supplies the test opt-in on a populated instance.
+const preflightPool = new pg.Pool({ connectionString: process.env.DATABASE_URL, max: 1 });
+try {
+  const result = await preflightPool.query(
+    'SELECT (SELECT COUNT(*)::int FROM content_nodes) AS nodes, ' +
+    '(SELECT COUNT(*)::int FROM author_sessions) AS sessions',
+  );
+  if (result.rows[0].nodes !== 0 || result.rows[0].sessions !== 0) {
+    throw new Error('Refusing to seed: disposable database is not empty');
+  }
+} finally {
+  await preflightPool.end();
+}
 const prefix = 'acceptance-' + randomUUID();
 const now = Date.now() - 10_000;
 let library = newLibrary();
