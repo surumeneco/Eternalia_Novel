@@ -771,3 +771,55 @@ test('anonymous search finds published words but never private or unpublished te
     await browser.close();
   }
 });
+
+test('reader renders semantic ruby and keyboard-operable page boundaries', { timeout: 60_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext();
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const anonymous = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const prefix = fixture.prefix + '-reader-ruby';
+    async function create(kind, parentId, suffix, body = '') {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base },
+        data: { kind, parentId, content: { title: prefix + '-' + suffix, body, details: {} } },
+      });
+      assert.equal(response.status(), 201);
+      return (await response.json()).id;
+    }
+    const series = await create('series', null, 'series');
+    const volume = await create('volume', series, 'volume');
+    const part = await create('part', volume, 'part');
+    const chapter = await create('chapter', part, 'chapter', '一頁｜漢字《かんじ》[[page]]二頁');
+    for (const id of [series, volume, part, chapter]) {
+      const response = await author.request.post(base + '/api/admin/nodes/' + id + '/publish', {
+        headers: { Origin: base }, data: { expectedRevision: 1 },
+      });
+      assert.equal(response.status(), 200);
+    }
+    const page = await anonymous.newPage();
+    await page.goto(base + '/read/' + chapter);
+    const body = page.locator('.rich-content .rich-body');
+    await page.locator('ruby rt').getByText('かんじ').waitFor();
+    assert.ok((await body.innerText()).includes('一頁'));
+    assert.ok(!(await body.innerText()).includes('二頁'));
+    const previous = page.getByRole('button', { name: '前のページ' });
+    const next = page.getByRole('button', { name: '次のページ' });
+    assert.equal(await previous.isDisabled(), true);
+    await next.focus();
+    await next.press('Enter');
+    assert.ok((await body.innerText()).includes('二頁'));
+    assert.ok(!(await body.innerText()).includes('一頁'));
+    assert.equal(await next.isDisabled(), true);
+    await previous.click();
+    assert.ok((await body.innerText()).includes('一頁'));
+    await anonymous.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
