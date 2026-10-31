@@ -373,6 +373,12 @@ test('author browser saves and explicitly publishes chapter, setting, word, gram
       await page.reload();
       await editor.waitFor();
       assert.equal(await editor.inputValue(), first, kind + ' saved draft must survive editor reload');
+      if (kind === 'word') {
+        assert.equal(await page.locator('.word-meaning textarea').first().inputValue(), '第一の意味',
+          'word meaning must survive editor reload');
+        assert.equal(await page.locator('.word-origin textarea').first().inputValue(), '語源は意味単位で保存',
+          'meaning-scoped etymology must survive editor reload');
+      }
       assert.equal((await publicItem(id)).status, 404, kind + ' reload must not publish the draft');
 
       page.once('dialog', dialog => dialog.accept());
