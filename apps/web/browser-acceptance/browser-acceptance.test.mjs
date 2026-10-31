@@ -804,7 +804,7 @@ test('reader renders semantic ruby and keyboard-operable page boundaries', { tim
     const page = await anonymous.newPage();
     await page.goto(base + '/read/' + chapter);
     const body = page.locator('.rich-content .rich-body');
-    await page.locator('ruby rt').getByText('かんじ').waitFor();
+    await page.locator('ruby rt', { hasText: 'かんじ' }).waitFor();
     assert.ok((await body.innerText()).includes('一頁'));
     assert.ok(!(await body.innerText()).includes('二頁'));
     const previous = page.getByRole('button', { name: '前のページ' });
