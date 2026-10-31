@@ -194,6 +194,39 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
       await adminViews.goto(base + path);
       await adminViews.getByRole('heading', { name: heading, exact: true }).waitFor();
     }
+    // A6/W6.1: exercise the actual studio visibility controls for one
+    // published item from each domain, then restore the original state.
+    // The later HTTP acceptance tests share these disposable fixtures.
+    const visibilityPage = await author.newPage();
+    for (const [kind, id, directPath] of [
+      ['chapter', fixture.chapter, '/read/'],
+      ['tipSection', fixture.section, '/items/'],
+      ['word', fixture.word, '/items/'],
+      ['event', fixture.event, '/items/'],
+    ]) {
+      const beforeResponse = await reader.request.get(base + '/api/public/items/' + id);
+      assert.equal(beforeResponse.status(), 200, kind + ' initially public');
+      const before = await beforeResponse.json();
+      await visibilityPage.goto(base + '/studio?item=' + id);
+      const hide = visibilityPage.getByRole('button', { name: '非公開にする' });
+      const restore = visibilityPage.getByRole('button', { name: '公開に戻す' });
+      await hide.waitFor();
+      await hide.click();
+      await restore.waitFor();
+      assert.equal((await reader.request.get(base + '/api/public/items/' + id)).status(), 404,
+        kind + ' must be inaccessible to anonymous readers while private');
+      await readerPage.goto(base + directPath + id);
+      assert.ok(!(await readerPage.locator('body').innerText()).includes(before.content.title),
+        kind + ' private title must not leak in the direct reader view');
+      await restore.click();
+      await hide.waitFor();
+      const reopenedResponse = await reader.request.get(base + '/api/public/items/' + id);
+      assert.equal(reopenedResponse.status(), 200, kind + ' should reopen');
+      const reopened = await reopenedResponse.json();
+      assert.deepEqual(reopened.content, before.content,
+        kind + ' visibility changes must preserve the published snapshot');
+    }
+    await visibilityPage.close();
     await author.close();
     await reader.close();
   } finally {
