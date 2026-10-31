@@ -5,7 +5,8 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readFile, mkdir } from 'node:fs/promises';
+import { join } from 'node:path';
 import { chromium } from 'playwright';
 
 const fixture = JSON.parse(await readFile(process.env.HTTP_FIXTURE_FILE, 'utf8'));
@@ -53,6 +54,8 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
 
     // AC-65: all four public domain pages must remain within the document
     // viewport on representative phone, tablet and desktop widths.
+    const screenshotDir = process.env.HTTP_SCREENSHOT_DIR;
+    if (screenshotDir) await mkdir(screenshotDir, { recursive: true });
     for (const width of [390, 768, 1280]) {
       await readerPage.setViewportSize({ width, height: 844 });
       for (const domain of ['stories', 'tips', 'dictionaries', 'timeline']) {
@@ -63,6 +66,9 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
         }));
         assert.ok(dimensions.content <= dimensions.viewport + 2,
           domain + ' horizontal overflow at ' + width + 'px: ' + JSON.stringify(dimensions));
+        if (screenshotDir && (width === 390 || width === 1280)) {
+          await readerPage.screenshot({ path: join(screenshotDir, domain + '-' + width + '.png'), fullPage: true });
+        }
       }
     }
     await readerPage.setViewportSize({ width: 390, height: 844 });
@@ -80,6 +86,7 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
     await studio.locator('.create-form input').fill(title);
     await studio.getByRole('button', { name: '作成', exact: true }).click();
     await studio.getByRole('heading', { name: 'シリーズ：' + title }).waitFor();
+    if (screenshotDir) await studio.screenshot({ path: join(screenshotDir, 'studio-desktop.png'), fullPage: true });
 
     const textarea = studio.locator('.studio-editor textarea');
     await textarea.fill('ブラウザから保存した公開用の説明');
