@@ -550,6 +550,38 @@ test('author browser reorders only sibling chapters and protects unapplied chang
   }
 });
 
+test('browser logout revokes synthetic author session and protected API access', { timeout: 60_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const page = await author.newPage();
+    page.on('dialog', dialog => dialog.accept());
+    await page.goto(base + '/studio');
+    await page.getByRole('button', { name: 'ログアウト', exact: true }).click();
+    await page.getByRole('link', { name: 'Discordでログイン' }).waitFor();
+    assert.equal((await author.request.get(base + '/api/admin/nodes')).status(), 401,
+      'logout must revoke access to the author collection');
+    const denied = await author.request.post(base + '/api/admin/nodes', {
+      headers: { Origin: base },
+      data: {
+        kind: 'series', parentId: null,
+        content: { title: fixture.prefix + '-logout-denied', body: '', details: {} },
+      },
+    });
+    assert.equal(denied.status(), 401, 'logout must reject protected writes');
+    assert.equal((await author.cookies(base)).filter(cookie => cookie.name === 'eternalia_author').length, 0,
+      'logout must remove the author cookie');
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
+
 test('anonymous browser cannot access author workspace data or editing controls', { timeout: 60_000 }, async () => {
   assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
   const browser = await chromium.launch({ headless: true });
