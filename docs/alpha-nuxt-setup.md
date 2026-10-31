@@ -53,4 +53,16 @@ DBは初期状態では空です。作者画面でシリーズを作成し、下
 
 `npm run test:alpha` は旧プレビューと純粋ドメインの探索的テスト。`npm run test:db` は**PostgreSQL起動・migration・APIビルドが完了した状態**で実行してください。CIはそれらをPostgreSQL 17の一時コンテナで検査します。
 
+### HTTP/SSR統合試験（データを投入するため、空の検証専用DBだけで実施）
+
+CIは一時PostgreSQLに対し、NestJSとNuxtの実HTTP、公開・非公開、4領域の作者作成→保存→公開、公開稿/下書き分離、作者以外の拒否、ログアウト後の失効を検証します。ブラウザ操作や実Discord OAuth2ログインの試験ではありません。
+
+ローカルでも試す場合は、既存の作品・作者セッションが一切入っていない、**破棄可能な専用DB**に `DATABASE_URL` を向け、`npm run build` と `npm run db:migrate` の後に実行してください。試験はDBに架空の作品とランダムな一時作者セッションを投入します。空でないDBへのシードは拒否します。
+
+```bash
+HTTP_ACCEPTANCE_DISPOSABLE_DB=1 NODE_ENV=test node --env-file-if-exists=.env scripts/check-http-acceptance.mjs
+```
+
+PowerShellでは実行前に `$env:HTTP_ACCEPTANCE_DISPOSABLE_DB='1'` と `$env:NODE_ENV='test'` を設定してください。実運用DBや普段の執筆DBには決して実行しないでください。
+
 この手順は実装コードから構成したものです。ユーザー端末でのDiscord認証・ブラウザ描画、CAT-TDDの規範Gate、実ユーザー認証付き管理APIの総合受入はまだ実測していません。エラーが出た場合はCIログと環境変数の不一致を切り分けてください。
