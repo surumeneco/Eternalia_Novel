@@ -123,6 +123,7 @@ export function createNode(library: Library, input: { id: string; kind: Kind; pa
   if (input.kind === 'word' && parent) validateMeaningReferences(library, parent.id, content);
   if (input.kind === 'tip' && parent) validateTipReferences(library, input.id, parent.id, content);
   if (input.kind === 'language') validateLanguageStructure(content);
+  if (input.kind === 'category' && content.details.presets !== undefined) parsePresets(content.details.presets);
   const next = clone(library);
   const siblings = next.nodes.filter(n => n.parentId === (parent?.id ?? null) && n.kind === input.kind);
   next.nodes.push({ id: input.id, kind: input.kind, parentId: parent?.id ?? null,
