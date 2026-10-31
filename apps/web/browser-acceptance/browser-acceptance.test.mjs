@@ -146,6 +146,16 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
     // screen. An empty date must be accepted as immediate publication.
     const publicationManagement = await author.newPage();
     await publicationManagement.goto(base + '/studio/publication');
+    const visibilityFilter = publicationManagement.getByLabel('公開状態');
+    await visibilityFilter.selectOption('visible');
+    await publicationManagement.getByRole('heading', { name: fixture.prefix + '-world-A', exact: true }).waitFor();
+    assert.equal(await publicationManagement.getByRole('heading', { name: title, exact: true }).count(), 0,
+      'future-scheduled series must not appear in the visible filter');
+    await visibilityFilter.selectOption('hidden');
+    await publicationManagement.getByRole('heading', { name: title, exact: true }).waitFor();
+    assert.equal(await publicationManagement.getByRole('heading', { name: fixture.prefix + '-world-A', exact: true }).count(), 0,
+      'already public series must not appear in the hidden filter');
+    await visibilityFilter.selectOption('all');
     const managedRow = publicationManagement.locator('.publication-row').filter({
       has: publicationManagement.getByRole('heading', { name: title, exact: true }),
     });
