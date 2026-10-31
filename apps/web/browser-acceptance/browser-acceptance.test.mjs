@@ -118,6 +118,23 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
     assert.equal((await restoredPublic.json()).content.body, 'ブラウザから保存した公開用の説明',
       'restoring visibility must not publish an unsaved draft');
 
+    // PB-05: a future start time hides the published snapshot even when the
+    // public flag remains enabled; clearing the date restores it unchanged.
+    const publishDate = studio.getByLabel('公開開始日時');
+    await publishDate.fill('2100-01-01T00:00');
+    await studio.getByRole('button', { name: '日時を設定' }).click();
+    await studio.getByText('公開条件を変更しました。').waitFor();
+    assert.equal((await reader.request.get(base + '/api/public/items/' + created.id)).status(), 404,
+      'future publication date must hide the direct anonymous endpoint');
+    await publishDate.fill('');
+    await studio.getByRole('button', { name: '日時を設定' }).click();
+    await studio.getByText('公開条件を変更しました。').waitFor();
+    const afterScheduleClear = await reader.request.get(base + '/api/public/items/' + created.id);
+    assert.equal(afterScheduleClear.status(), 200, 'clearing a schedule restores public access');
+    assert.equal((await afterScheduleClear.json()).content.body, 'ブラウザから保存した公開用の説明');
+    assert.equal(await textarea.inputValue(), unsavedBeforePublication,
+      'publication date changes must preserve the unsaved author buffer');
+
     // Cancelling the native discard warning must preserve unsaved text.
     await textarea.fill('下書き未保存の編集内容');
     studio.once('dialog', dialog => dialog.dismiss());
