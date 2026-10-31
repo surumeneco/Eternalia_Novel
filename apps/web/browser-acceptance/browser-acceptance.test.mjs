@@ -359,6 +359,12 @@ test('author browser saves and explicitly publishes chapter, setting, word and e
       const first = prefix + '-' + kind + '-first-publication';
       const second = prefix + '-' + kind + '-second-publication';
       await editor.fill(first);
+      if (kind === 'word') {
+        await page.getByRole('button', { name: '意味を追加' }).click();
+        await page.locator('.word-meaning textarea').first().fill('第一の意味');
+        await page.getByRole('button', { name: '語源を追加' }).click();
+        await page.locator('.word-origin textarea').first().fill('語源は意味単位で保存');
+      }
       await page.getByRole('button', { name: '下書きを保存' }).click();
       await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
       assert.equal((await publicItem(id)).status, 404, kind + ' saved draft must remain private');
@@ -366,7 +372,17 @@ test('author browser saves and explicitly publishes chapter, setting, word and e
       page.once('dialog', dialog => dialog.accept());
       await page.getByRole('button', { name: '保存済み下書きを公開版へ反映' }).click();
       await page.getByText('公開スナップショットを更新しました。').waitFor();
-      assert.equal((await publicItem(id)).value?.content.body, first, kind + ' first publication');
+      const firstPublic = await publicItem(id);
+      assert.equal(firstPublic.value?.content.body, first, kind + ' first publication');
+      if (kind === 'word') {
+        const meanings = JSON.parse(firstPublic.value.content.details.meanings);
+        assert.equal(meanings.length, 1);
+        assert.equal(meanings[0].definition, '第一の意味');
+        assert.equal(meanings[0].etymologies.length, 1);
+        assert.equal(meanings[0].etymologies[0].note, '語源は意味単位で保存');
+        assert.match(meanings[0].id, /^[0-9a-f-]{36}$/i);
+        assert.match(meanings[0].etymologies[0].id, /^[0-9a-f-]{36}$/i);
+      }
 
       await editor.fill(second);
       await page.getByRole('button', { name: '下書きを保存' }).click();
