@@ -165,6 +165,19 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
     assert.equal(await chapterBody.inputValue(), '東京',
       'Undo must revert only the ruby toolbar insertion');
 
+    await chapterBody.fill('');
+    await chapterBody.pressSequentially('甲乙');
+    await chapterBody.evaluate(element => {
+      element.focus();
+      element.setSelectionRange(1, 2);
+    });
+    await manuscript.getByRole('button', { name: 'ページ区切りを挿入' }).click();
+    assert.equal(await chapterBody.inputValue(), '甲[[page]]乙',
+      'page marker insertion must preserve the selected manuscript text');
+    await chapterBody.press('Control+z');
+    assert.equal(await chapterBody.inputValue(), '甲乙',
+      'Undo must revert only the page marker insertion');
+
     await chapterBody.dispatchEvent('compositionstart');
     assert.equal(await manuscript.getByRole('button', { name: '選択文字にルビを付ける' }).isDisabled(), true,
       'toolbar must not modify a composing IME buffer');
