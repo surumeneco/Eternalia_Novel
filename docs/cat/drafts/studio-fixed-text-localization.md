@@ -23,3 +23,7 @@ Status: **Draft, not Confirmed**. Task `TASK-20261031-001`. Candidate flow `spec
 - Existing browser acceptance retains identical Japanese text and author workflow.
 
 The implementation is a **partial migration** of fixed text, not a claim that every screen is fully internationalized. No CAT process-closure/TestModel/vectors/Queue/guard or official Red/Green pass is claimed.
+
+## Extended scope candidate (same Work)
+
+The remaining fixed text in the studio template (navigation, authentication, library filters, create/edit form, publication controls, empty states), plus the static kind/filter labels, should use the same typed Japanese catalog. Preserve existing Japanese strings exactly, including the distinction between `設定` and `設定集`. Keep user-authored data and backend-provided validation messages untouched. TCE: static catalog fallback assertions plus existing browser acceptance of unchanged Japanese labels.
