@@ -274,3 +274,84 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
     await browser.close();
   }
 });
+
+test('author browser saves and explicitly publishes chapter, setting, word and event', { timeout: 120_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const anonymous = await browser.newContext();
+    const page = await author.newPage();
+    const prefix = fixture.prefix + '-four-domain-browser';
+
+    async function create(kind, parentId, suffix, details = {}) {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base },
+        data: { kind, parentId, content: { title: prefix + '-' + suffix, body: '', details } },
+      });
+      assert.equal(response.status(), 201, 'create ' + kind + ': ' + await response.text());
+      return (await response.json()).id;
+    }
+    async function publish(id, revision = 1) {
+      const response = await author.request.post(base + '/api/admin/nodes/' + id + '/publish', {
+        headers: { Origin: base }, data: { expectedRevision: revision },
+      });
+      assert.equal(response.status(), 200, 'publish ancestor: ' + await response.text());
+    }
+    async function publicItem(id) {
+      const response = await anonymous.request.get(base + '/api/public/items/' + id);
+      return { status: response.status(), value: response.status() === 200 ? await response.json() : null };
+    }
+
+    const series = await create('series', null, 'series');
+    const volume = await create('volume', series, 'volume');
+    const part = await create('part', volume, 'part');
+    const chapter = await create('chapter', part, 'chapter');
+    const category = await create('category', series, 'category', { presets: '[]' });
+    const tip = await create('tip', category, 'tip');
+    const section = await create('tipSection', tip, 'section');
+    const language = await create('language', series, 'language', { characters: '[]', wordClasses: '[]' });
+    const word = await create('word', language, 'word', { meanings: '[]' });
+    const period = await create('periodization', series, 'period');
+    const event = await create('event', period, 'event', { year: '1' });
+    for (const id of [series, volume, part, category, tip, language, period]) await publish(id);
+
+    for (const [kind, id] of [
+      ['chapter', chapter], ['tipSection', section], ['word', word], ['event', event],
+    ]) {
+      await page.goto(base + '/studio?item=' + id);
+      const editor = page.locator('.studio-editor textarea');
+      await editor.waitFor();
+      const first = prefix + '-' + kind + '-first-publication';
+      const second = prefix + '-' + kind + '-second-publication';
+      await editor.fill(first);
+      await page.getByRole('button', { name: '下書きを保存' }).click();
+      await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
+      assert.equal((await publicItem(id)).status, 404, kind + ' saved draft must remain private');
+
+      page.once('dialog', dialog => dialog.accept());
+      await page.getByRole('button', { name: '保存済み下書きを公開版へ反映' }).click();
+      await page.getByText('公開スナップショットを更新しました。').waitFor();
+      assert.equal((await publicItem(id)).value?.content.body, first, kind + ' first publication');
+
+      await editor.fill(second);
+      await page.getByRole('button', { name: '下書きを保存' }).click();
+      await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
+      assert.equal((await publicItem(id)).value?.content.body, first,
+        kind + ' second draft must not change public snapshot');
+
+      page.once('dialog', dialog => dialog.accept());
+      await page.getByRole('button', { name: '保存済み下書きを公開版へ反映' }).click();
+      await page.getByText('公開スナップショットを更新しました。').waitFor();
+      assert.equal((await publicItem(id)).value?.content.body, second, kind + ' explicit republish');
+    }
+    await anonymous.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
