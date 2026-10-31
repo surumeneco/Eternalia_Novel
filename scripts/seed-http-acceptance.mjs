@@ -90,11 +90,13 @@ if (!/^\d{15,25}$/.test(testAuthorId)) {
   throw new Error('HTTP_ACCEPTANCE_TEST_AUTHOR_ID must be an isolated synthetic account ID');
 }
 const authorToken = randomBytes(32).toString('hex');
+const logoutAuthorToken = randomBytes(32).toString('hex');
 const outsiderToken = randomBytes(32).toString('hex');
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL, max: 1 });
 try {
   for (const [token, userId] of [
     [authorToken, testAuthorId],
+    [logoutAuthorToken, testAuthorId],
     [outsiderToken, '987654321098765432'],
   ]) {
     await pool.query(
@@ -106,7 +108,7 @@ try {
   await pool.end();
 }
 const fixture = {
-  authorToken, outsiderToken,
+  authorToken, logoutAuthorToken, outsiderToken,
   prefix, seriesA, seriesB, volume, part, chapter, scheduled, category,
   tip, section, hiddenCategory, hiddenTip, unpublishedTip, language, word,
   grammar, period, event, languageB,
