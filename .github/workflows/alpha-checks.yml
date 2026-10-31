@@ -137,6 +137,7 @@ jobs:
       NODE_ENV: test
       HTTP_ACCEPTANCE_DISPOSABLE_DB: '1'
       HTTP_BROWSER_ACCEPTANCE: '1'
+      HTTP_SCREENSHOT_DIR: ${{ runner.temp }}/eternalia-screenshots
       HTTP_WEB_PORT: '34110'
       HTTP_API_PORT: '34111'
     steps:
@@ -159,3 +160,11 @@ jobs:
         run: npm run db:migrate
       - name: Verify anonymous HTTP, SSR, publication and author protection
         run: node scripts/check-http-acceptance.mjs
+      - name: Upload reproducible alpha UI screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: alpha-ui-screenshots
+          path: ${{ runner.temp }}/eternalia-screenshots
+          if-no-files-found: ignore
+          retention-days: 7
