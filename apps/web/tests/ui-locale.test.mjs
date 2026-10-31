@@ -212,3 +212,70 @@ test('author ordering UI fixed text uses typed Japanese fallback keys', () => {
     assert.equal(translateUiMessage(key, 'unknown'), expected, key + ' fallback');
   }
 });
+
+test('structured author editors use typed Japanese fallback labels', () => {
+  const labels = {
+    "wordMeaningsLegend": "単語の意味と語源",
+    "wordMeaningsNote": "意味は品詞が同じでも別々に保持します。語源は意味ごとに登録できます。",
+    "wordMeaningParseError": "意味データを読み込めません。元データの確認が必要です。",
+    "wordMeaningTitle": "意味",
+    "wordMeaningDelete": "意味を削除",
+    "wordPartOfSpeech": "品詞",
+    "wordUnspecified": "未指定",
+    "wordLegacy": "旧値",
+    "wordPartOfSpeechPlaceholder": "名詞・動詞など",
+    "wordDefinition": "意味・説明",
+    "wordEtymologies": "この意味の語源",
+    "wordReferenceLanguage": "参照する言語",
+    "wordNoReference": "参照なし",
+    "wordReferenceWord": "参照する単語",
+    "wordOriginNote": "語源の説明",
+    "wordOriginDelete": "語源を削除",
+    "wordOriginAdd": "語源を追加",
+    "wordMeaningAdd": "意味を追加",
+    "presetLegend": "設定項目のプリセット",
+    "presetNote": "新しく作る設定にのみ、この時点の項目名・順序・本文を複製します。既存の設定は変更されません。",
+    "presetParseError": "プリセットのデータ形式が正しくありません。JSONを修正してください。",
+    "presetName": "項目名",
+    "presetBody": "テンプレート本文",
+    "presetDelete": "削除",
+    "tipLinksAria": "設定のタグと関連",
+    "tipTags": "タグ",
+    "tipTagName": "タグ名（カンマ区切り）",
+    "tipTagPlaceholder": "人物, 地名",
+    "tipTagNote": "カテゴリとは独立した分類です。入力を確定してから下書きを保存してください。",
+    "tipRelated": "関連する設定",
+    "tipSameSeries": "同じシリーズの設定",
+    "tipSelect": "選択してください",
+    "tipAddRelated": "関連に追加",
+    "tipNoRelated": "関連設定はありません。",
+    "tipUpSuffix": "を上へ",
+    "tipDownSuffix": "を下へ",
+    "tipRemoveSuffix": "を削除",
+    "tipRemove": "解除",
+    "tipPrivacyNote": "関連先の公開可否を確認し、読者には実効公開中の設定だけ表示します。",
+    "langCharactersLegend": "文字と発音",
+    "langCharactersNote": "各文字の発音、語頭・語末での許容、および後ろに置ける文字を登録します。",
+    "langCharacterParseError": "文字データを解析できません。保存前に元データを確認してください。",
+    "langCharacterTitle": "文字",
+    "langCharacterDelete": "文字を削除",
+    "langGlyph": "文字・表記",
+    "langPronunciation": "発音",
+    "langCanStart": "語頭に置ける",
+    "langCanEnd": "語末に置ける",
+    "langFollowing": "この文字の後に置ける文字",
+    "langEmptyGlyph": "未入力の文字",
+    "langAddCharacter": "文字を追加",
+    "langWordClassMaster": "品詞マスタ",
+    "langWordClassParseError": "品詞データを解析できません。",
+    "langWordClassTitle": "品詞",
+    "langWordClassDelete": "品詞を削除",
+    "langWordClassName": "品詞名",
+    "langDescription": "説明",
+    "langAddClass": "品詞を追加"
+};
+  for (const [key, expected] of Object.entries(labels)) {
+    assert.equal(translateUiMessage(key, 'ja'), expected, key);
+    assert.equal(translateUiMessage(key, 'unknown'), expected, key + ' fallback');
+  }
+});
