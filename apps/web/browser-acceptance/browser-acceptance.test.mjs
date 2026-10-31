@@ -90,6 +90,15 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
     studio.once('dialog', dialog => dialog.dismiss());
     await studio.getByRole('button', { name: '新規シリーズ' }).click();
     assert.equal(await textarea.inputValue(), '下書き未保存の編集内容');
+    studio.once('dialog', dialog => dialog.dismiss());
+    await studio.getByRole('link', { name: 'メモ', exact: true }).click();
+    assert.equal(new URL(studio.url()).pathname, '/studio',
+      'cancelled nested-route navigation must retain the editor');
+    assert.equal(await textarea.inputValue(), '下書き未保存の編集内容');
+
+    studio.once('dialog', dialog => dialog.accept());
+    await studio.getByRole('link', { name: 'メモ', exact: true }).click();
+    await studio.getByRole('heading', { name: 'メモ', exact: true }).waitFor();
 
     // The chapter editor must preserve the selected text and place the caret
     // inside the reading field when inserting ruby markup.
