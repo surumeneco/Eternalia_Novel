@@ -305,7 +305,7 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
   }
 });
 
-test('author browser saves and explicitly publishes chapter, setting, word, grammar and event', { timeout: 180_000 }, async () => {
+test('author browser drafts, publishes and hides chapter, setting, word, grammar and event', { timeout: 240_000 }, async () => {
   assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
   const browser = await chromium.launch({ headless: true });
   try {
@@ -411,6 +411,17 @@ test('author browser saves and explicitly publishes chapter, setting, word, gram
       await page.getByRole('button', { name: '保存済み下書きを公開版へ反映' }).click();
       await page.getByText('公開スナップショットを更新しました。').waitFor();
       assert.equal((await publicItem(id)).value?.content.body, second, kind + ' explicit republish');
+
+      await page.getByRole('button', { name: '非公開にする' }).click();
+      await page.getByText('公開条件を変更しました。').waitFor();
+      assert.equal((await publicItem(id)).status, 404, kind + ' hidden item must not be anonymously accessible');
+      await page.reload();
+      await editor.waitFor();
+      assert.equal((await publicItem(id)).status, 404, kind + ' hidden state must survive reload');
+      await page.getByRole('button', { name: '公開に戻す' }).click();
+      await page.getByText('公開条件を変更しました。').waitFor();
+      assert.equal((await publicItem(id)).value?.content.body, second,
+        kind + ' restoring visibility must retain the last published snapshot');
     }
     await anonymous.close();
     await author.close();
