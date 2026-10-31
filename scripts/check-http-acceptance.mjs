@@ -26,6 +26,13 @@ const env = {
   API_PORT: String(apiPort),
   NITRO_PORT: String(port),
   NUXT_API_INTERNAL_URL: 'http://127.0.0.1:' + apiPort,
+  // CI/local acceptance uses only synthetic sessions in an isolated database.
+  // Never pass real Discord OAuth credentials to the spawned test processes.
+  APP_ORIGIN: 'http://127.0.0.1:' + port,
+  DISCORD_CLIENT_ID: '123456789012345678',
+  DISCORD_CLIENT_SECRET: 'test-placeholder-not-a-discord-secret',
+  DISCORD_AUTHOR_USER_ID: '123456789012345678',
+  HTTP_ACCEPTANCE_TEST_AUTHOR_ID: '123456789012345678',
 };
 const processes = [];
 
