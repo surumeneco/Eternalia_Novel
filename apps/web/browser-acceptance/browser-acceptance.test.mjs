@@ -85,6 +85,39 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
     await readerPage.getByRole('heading', { name: title }).waitFor();
     assert.ok((await readerPage.locator('body').innerText()).includes('ブラウザから保存した公開用の説明'));
 
+    // Publishing and visibility changes must not overwrite the unsaved editor
+    // buffer or accidentally publish it. Verify the direct anonymous endpoint.
+    const unsavedBeforePublication = '公開操作をしても残す未保存の文章';
+    await textarea.fill(unsavedBeforePublication);
+    studio.once('dialog', dialog => dialog.accept());
+    await studio.getByRole('button', { name: '保存済み下書きを公開版へ反映' }).click();
+    await studio.getByText('公開スナップショットを更新しました。').waitFor();
+    assert.equal(await textarea.inputValue(), unsavedBeforePublication,
+      'publication must preserve the unsaved author buffer');
+    const unchangedPublic = await reader.request.get(base + '/api/public/items/' + created.id);
+    assert.equal(unchangedPublic.status(), 200);
+    assert.equal((await unchangedPublic.json()).content.body, 'ブラウザから保存した公開用の説明',
+      'unsaved author text must not enter the public snapshot');
+
+    await studio.getByRole('button', { name: '非公開にする' }).click();
+    await studio.getByRole('button', { name: '公開に戻す' }).waitFor();
+    assert.equal(await textarea.inputValue(), unsavedBeforePublication,
+      'hiding an item must preserve the unsaved author buffer');
+    assert.equal((await reader.request.get(base + '/api/public/items/' + created.id)).status(), 404,
+      'anonymous direct API access must be blocked after hiding');
+    await readerPage.goto(base + '/series/' + created.id);
+    assert.ok(!(await readerPage.locator('body').innerText()).includes(title),
+      'hidden series title must not appear in anonymous direct browser navigation');
+
+    await studio.getByRole('button', { name: '公開に戻す' }).click();
+    await studio.getByRole('button', { name: '非公開にする' }).waitFor();
+    assert.equal(await textarea.inputValue(), unsavedBeforePublication,
+      'restoring visibility must preserve the unsaved author buffer');
+    const restoredPublic = await reader.request.get(base + '/api/public/items/' + created.id);
+    assert.equal(restoredPublic.status(), 200);
+    assert.equal((await restoredPublic.json()).content.body, 'ブラウザから保存した公開用の説明',
+      'restoring visibility must not publish an unsaved draft');
+
     // Cancelling the native discard warning must preserve unsaved text.
     await textarea.fill('下書き未保存の編集内容');
     studio.once('dialog', dialog => dialog.dismiss());
