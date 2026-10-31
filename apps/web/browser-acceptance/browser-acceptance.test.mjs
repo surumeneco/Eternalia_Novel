@@ -604,3 +604,73 @@ test('category preset editor copies only into newly created setting children', {
     await browser.close();
   }
 });
+
+test('related setting links exclude hidden targets from public projection', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const anonymous = await browser.newContext();
+    const prefix = fixture.prefix + '-tip-links-browser';
+    async function create(kind, parentId, suffix, details = {}) {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base },
+        data: { kind, parentId, content: { title: prefix + '-' + suffix, body: '', details } },
+      });
+      assert.equal(response.status(), 201, 'create ' + kind + ': ' + await response.text());
+      return (await response.json()).id;
+    }
+    async function publish(id, revision = 1) {
+      const response = await author.request.post(base + '/api/admin/nodes/' + id + '/publish', {
+        headers: { Origin: base }, data: { expectedRevision: revision },
+      });
+      assert.equal(response.status(), 200);
+    }
+    const series = await create('series', null, 'series');
+    const category = await create('category', series, 'category', { presets: '[]' });
+    const source = await create('tip', category, 'source');
+    const target = await create('tip', category, 'target');
+    for (const id of [series, category, target]) await publish(id);
+    const page = await author.newPage();
+    await page.goto(base + '/studio?item=' + source);
+    const links = page.locator('.tip-links-editor');
+    await links.locator('input').fill('人物, 地名');
+    await links.locator('select').selectOption(target);
+    await links.getByRole('button', { name: '関連に追加' }).click();
+    await page.getByRole('button', { name: '下書きを保存' }).click();
+    await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
+    assert.equal((await anonymous.request.get(base + '/api/public/items/' + source)).status(), 404);
+    page.once('dialog', dialog => dialog.accept());
+    await page.getByRole('button', { name: '保存済み下書きを公開版へ反映' }).click();
+    await page.getByText('公開スナップショットを更新しました。').waitFor();
+
+    const visibleResponse = await anonymous.request.get(base + '/api/public/items/' + source);
+    assert.equal(visibleResponse.status(), 200);
+    const visible = (await visibleResponse.json()).content.details;
+    assert.deepEqual(JSON.parse(visible.tags), ['人物', '地名']);
+    assert.deepEqual(JSON.parse(visible.relatedTips).map(item => item.id), [target]);
+
+    const hideResponse = await author.request.post(base + '/api/admin/nodes/' + target + '/visibility', {
+      headers: { Origin: base },
+      data: { expectedRevision: 1, isPublic: false, publicSince: null },
+    });
+    assert.equal(hideResponse.status(), 200);
+    const hiddenResponse = await anonymous.request.get(base + '/api/public/items/' + source);
+    assert.equal(hiddenResponse.status(), 200);
+    assert.deepEqual(JSON.parse((await hiddenResponse.json()).content.details.relatedTips), [],
+      'private target must not leak through public related settings');
+    const adminResponse = await author.request.get(base + '/api/admin/nodes');
+    assert.equal(adminResponse.status(), 200);
+    const authorSource = (await adminResponse.json()).find(node => node.id === source);
+    assert.deepEqual(JSON.parse(authorSource.draft.details.relatedTipIds), [target],
+      'hiding the target must not delete the author relationship');
+    await anonymous.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
