@@ -7,7 +7,7 @@ const navigation = computed(() => [
   { to: '/tips', label: t('tips') },
   { to: '/dictionaries', label: t('dictionaries') },
   { to: '/timeline', label: t('timeline') },
-  { to: '/search', label: '検索' },
+  { to: '/search', label: t('shellSearch') },
 ] as const);
 </script>
 
@@ -18,7 +18,7 @@ const navigation = computed(() => [
         <NuxtLink class="brand" to="/">Eternalia</NuxtLink>
         <button type="button" class="nav-toggle" :aria-expanded="menuOpen" aria-controls="global-navigation"
           @click="menuOpen = !menuOpen">{{ menuOpen ? t('close') : t('menu') }}</button>
-        <nav id="global-navigation" aria-label="グローバルナビゲーション" class="header-nav" :class="{ 'is-open': menuOpen }">
+        <nav id="global-navigation" :aria-label="t('shellGlobalNav')" class="header-nav" :class="{ 'is-open': menuOpen }">
           <NuxtLink v-for="link in navigation" :key="link.to" :to="link.to" @click="menuOpen = false">
             {{ link.label }}
           </NuxtLink>
@@ -26,10 +26,10 @@ const navigation = computed(() => [
       </div>
     </header>
     <div class="site-content">
-      <aside class="site-aside" aria-label="補助情報">
+      <aside class="site-aside" :aria-label="t('shellAside')">
         <section class="stone-panel">
           <h2>{{ t('browse') }}</h2>
-          <nav aria-label="資料の種類">
+          <nav :aria-label="t('shellResourceTypes')">
             <ul>
               <li v-for="link in navigation.slice(1)" :key="link.to"><NuxtLink :to="link.to">{{ link.label }}</NuxtLink></li>
             </ul>
@@ -42,7 +42,7 @@ const navigation = computed(() => [
       </main>
     </div>
     <footer class="site-footer">
-      <small>Eternalia — ストーリー・設定集・辞書・年表 ／ <NuxtLink to="/studio">{{ t('studio') }}</NuxtLink></small>
+      <small>Eternalia — {{ t('shellFooterDescription') }} ／ <NuxtLink to="/studio">{{ t('studio') }}</NuxtLink></small>
     </footer>
   </div>
 </template>
