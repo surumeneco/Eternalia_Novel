@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { AuthorNode } from '~/types/author';
 import type { ReaderKind } from '~/types/reader';
+import { canReadPublished } from '@eternalia/contracts';
 const { t } = useUiLocale();
 
 interface AuthState { configured: boolean; authenticated: boolean }
@@ -51,9 +52,12 @@ function ancestry(node: AuthorNode): AuthorNode[] {
   return path;
 }
 function published(node: AuthorNode): boolean {
-  const now = Date.now();
-  return ancestry(node).every(item =>
-    item.published !== null && item.isPublic && item.publicSince !== null && item.publicSince <= now);
+  const path = ancestry(node);
+  // Keep author filters aligned with the domain gate used by public APIs.
+  return canReadPublished(
+    path.map(item => ({ isPublic: item.isPublic, publicSinceEpochMs: item.publicSince })),
+    path.every(item => item.published !== null), Date.now(),
+  );
 }
 function status(node: AuthorNode): string {
   if (!node.published) return t('pubNoSnapshot');
