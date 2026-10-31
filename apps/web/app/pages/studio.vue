@@ -48,7 +48,9 @@ const composingBody = ref(false);
 function insertMarkup(kind: ManuscriptInsertionKind) {
   const el = bodyTextarea.value;
   if (!el || composingBody.value || busy.value) return;
-  const result = insertManuscriptMarkup(form.body, el.selectionStart, el.selectionEnd, kind);
+  const start = el.selectionStart;
+  const end = el.selectionEnd;
+  const result = insertManuscriptMarkup(form.body, start, end, kind);
   if (!result) {
     errorText.value = t('studioRubyInvalid');
     return;
@@ -57,7 +59,19 @@ function insertMarkup(kind: ManuscriptInsertionKind) {
     errorText.value = t('studioBodyTooLong');
     return;
   }
-  form.body = result.value;
+  // A direct v-model assignment (and setRangeText) bypasses the browser's
+  // native Undo history. insertText preserves a single undoable edit in
+  // Chromium; retain a value fallback for browsers where it is unavailable.
+  // Page markers insert before the selection without replacing its text.
+  const replaceEnd = kind === 'page' ? start : end;
+  const insertedText = result.value.slice(start, result.value.length - (form.body.length - replaceEnd));
+  el.focus();
+  el.setSelectionRange(start, replaceEnd);
+  let nativeInserted = false;
+  try {
+    nativeInserted = document.execCommand('insertText', false, insertedText);
+  } catch { /* Unsupported editing command; use the model fallback below. */ }
+  form.body = nativeInserted && el.value === result.value ? el.value : result.value;
   errorText.value = '';
   nextTick(() => {
     const current = bodyTextarea.value;
