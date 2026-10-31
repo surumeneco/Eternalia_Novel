@@ -30,15 +30,18 @@ test('anonymous published series and all four content domains load through Nuxt 
     fixture.section, fixture.language, fixture.word, fixture.grammar, fixture.period, fixture.event,
   ]) assert.ok(ids.includes(id), 'missing published id ' + id);
   assert.ok(!ids.includes(fixture.languageB), 'other series must not appear');
-  for (const path of [
-    '/stories/' + fixture.seriesA,
-    '/tips/' + fixture.seriesA,
-    '/dictionaries/' + fixture.seriesA,
-    '/timeline/' + fixture.seriesA,
-  ]) {
+  const detailPages = [
+    ['/stories/' + fixture.seriesA, '目次'],
+    ['/tips/' + fixture.seriesA, '設定を検索'],
+    ['/dictionaries/' + fixture.seriesA, '単語を検索'],
+    ['/timeline/' + fixture.seriesA, '年代区分'],
+  ];
+  for (const [path, domainMarker] of detailPages) {
     const page = await get(path);
     assert.equal(page.status, 200, path);
     assert.ok(page.body.includes(fixture.prefix + '-world-A'), path);
+    assert.ok(page.body.includes(domainMarker),
+      path + ' must render its domain-specific nested route, not the parent collection');
   }
 });
 
