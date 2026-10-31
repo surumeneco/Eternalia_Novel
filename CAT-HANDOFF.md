@@ -93,3 +93,12 @@
 - 最終実装HEAD: `cf4eda352aec68606bbcc2bab64e45e3407ca79c`。Push Actions `40994135327`、PR Actions `40994140433` が双方 `completed/success`。既存単体/DBテスト、Nuxt/Nestビルド、Nuxt型検査が成功。
 - CAT規範の doctor/guards/process-closure/model/vectors/Queue/implementation-conformance は正規ランタイム未取得のため未実施。利用者が許可した代替手順に従い探索的Red/Green・CIと静的推論を開発上の進捗として採用するが、正規CAT Gate通過とは称さない。
 - **なお未実施**: 実ブラウザでのタグ編集・入力と読者検索、Discord本人/別人、長文IME、全4領域のE2E、年代換算・削除/無効化の未決仕様。PR #3はDraftを維持しα版の正式受入・mergeは保留。前節の「設定タグ・関連は未実装」という記述は本節の実装分に限り更新される。
+
+## 2026-10-31 継続実装: Nuxt CI修復・HTTP/SSR統合受入
+
+- 対象は既存 `feature/alpha-reimplementation-20261029` → Draft PR #3 → `develop`。新しいfeature/PRは作成せず、`develop` / `main` を変更していない。
+- 開始時HEAD `13500d4468a36fefbd8f005398fb3c1e14385752` のActions失敗をジョブログまで確認。原因は `apps/web/app/pages/tips/[id].vue` の `computed(...)` 閉じ括弧不足（Nuxt `Unexpected token` / TypeScript `TS1005`）。`ca3e0632960b23feb7d5f604fa0ecdc09a649ef1` で修正。Push/PR双方のCI成功（Push run `41167346631` / PR run `41167350099`）。
+- `308630cbdb2ffedd533e79a1a088f955b459ade9` でCI `http-ssr-acceptance` ジョブを新設。Node22、使い捨てPostgreSQL 17、NestJS/Nuxtビルド・DB migration・実HTTP/SSR受入試験をGitHub Actionsで実行。
+- `64225704` / `ecb8fbf4` で実Discord APIに接続しない**合成作者セッション／非作者セッション**をテストDBに作成する前提を追加。`71b25929a15d4cdc9af3453c7c447e48c5df7ee4` で管理APIの4領域作成→下書き→公開→匿名取得、下書き/公開稿分離、409改訂競合、誤Originの403、非作者401、祖先非公開/復帰、ログアウト後401のHTTP受入を追加。Push `41167620218` / PR `41167624669` は `completed/success`。
+- 誤って通常DBにテストレコードと一時セッションを投入しないため、`a43dfcc0` / `43f98256` で `HTTP_ACCEPTANCE_DISPOSABLE_DB=1` 明示指定と空DB確認を導入。`e3aa12a6` でCIにフラグを追加、`9b3316470e0249508361f8cf0c4176d38abb5f92` で `docs/alpha-nuxt-setup.md` に手順と禁止事項を追加。**このコードHEAD**でPush `41167766207`・PR `41167768149` とも `completed/success`、4ジョブ全成功。最終反映は本段落を加えたHEADで再照合すること。
+- **テストの限界**: CIの合成DBセッションはDiscord OAuth2実ログインの本人/他人確認を代替しない。ブラウザE2E、レスポンシブ画像比較、長文IME・ルビ編集操作、各ACの証跡、年代表の年代区分間換算（式未決）、独立した削除/無効化（作用契約未決）、正式CAT-TDD doctor/Guard/Queue/Red・Green/implementation-conformanceは未完了。従来の保留を勝手に仕様決定しない。α正式受入まではDraft PR #3を維持する。
