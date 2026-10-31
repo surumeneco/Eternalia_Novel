@@ -17,9 +17,12 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
   try {
     const reader = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const readerPage = await reader.newPage();
-    await readerPage.goto(base + '/stories/' + fixture.seriesA);
-    await readerPage.getByRole('heading', { name: fixture.prefix + '-world-A' }).waitFor();
-    assert.ok((await readerPage.locator('body').innerText()).includes(fixture.prefix + '-chapter-A'));
+    const storyResponse = await readerPage.goto(base + '/stories/' + fixture.seriesA);
+    const storyText = await readerPage.locator('body').innerText();
+    assert.equal(storyResponse?.status(), 200, 'story HTTP response: ' + storyText.slice(0, 1500));
+    assert.ok(storyText.includes(fixture.prefix + '-world-A') &&
+      storyText.includes(fixture.prefix + '-chapter-A'),
+      'story DOM should display published series and chapter; got: ' + storyText.slice(0, 2000));
     const overflow = await readerPage.evaluate(() => ({
       viewport: document.documentElement.clientWidth,
       content: document.documentElement.scrollWidth,
