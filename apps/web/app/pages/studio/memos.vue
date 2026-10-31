@@ -59,8 +59,8 @@ function startNew() {
   errorText.value = '';
   statusText.value = '';
 }
-async function load() {
-  if (!auth.value?.authenticated) return;
+async function load(): Promise<boolean> {
+  if (!auth.value?.authenticated) return false;
   loading.value = true;
   try {
     memos.value = await $fetch<Memo[]>('/api/admin/memos');
@@ -68,8 +68,10 @@ async function load() {
       selectedId.value = null;
     }
     applySelected();
+    return true;
   } catch {
     errorText.value = 'メモを取得できませんでした。';
+    return false;
   } finally { loading.value = false; }
 }
 function tags(): string[] {
@@ -91,8 +93,8 @@ async function save() {
       });
     newMemo.value = false;
     selectedId.value = result.id;
-    await load();
-    statusText.value = 'メモを保存しました。';
+    // Do not acknowledge a verified save until the latest memo is readable.
+    if (await load()) statusText.value = 'メモを保存しました。';
   } catch (error: unknown) {
     const message = (error as {data?:{message?:string}}).data?.message;
     errorText.value = message ?? '保存に失敗しました。改訂番号の競合を確認してください。';
