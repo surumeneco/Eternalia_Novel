@@ -674,3 +674,70 @@ test('related setting links exclude hidden targets from public projection', { ti
     await browser.close();
   }
 });
+
+test('language editor persists character adjacency and word classes before publication', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const anonymous = await browser.newContext();
+    const prefix = fixture.prefix + '-language-browser';
+    async function create(kind, parentId, suffix, details = {}) {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base },
+        data: { kind, parentId, content: { title: prefix + '-' + suffix, body: '', details } },
+      });
+      assert.equal(response.status(), 201, 'create ' + kind + ': ' + await response.text());
+      return (await response.json()).id;
+    }
+    const series = await create('series', null, 'series');
+    const language = await create('language', series, 'language', { characters: '[]', wordClasses: '[]' });
+    const page = await author.newPage();
+    await page.goto(base + '/studio?item=' + language);
+    const structure = page.locator('.language-structure');
+    await structure.getByRole('button', { name: '文字を追加' }).click();
+    await structure.getByRole('button', { name: '文字を追加' }).click();
+    const entries = structure.locator('fieldset').first().locator('.symbol-entry');
+    await entries.nth(0).locator('input').nth(0).fill('a');
+    await entries.nth(0).locator('input').nth(1).fill('a');
+    await entries.nth(1).locator('input').nth(0).fill('b');
+    await entries.nth(1).locator('input').nth(1).fill('b');
+    await entries.nth(0).locator('.following-grid input').nth(1).check();
+    await structure.getByRole('button', { name: '品詞を追加' }).click();
+    const wordClass = structure.locator('fieldset').nth(1).locator('.symbol-entry');
+    await wordClass.locator('input').fill('名詞');
+    await wordClass.locator('textarea').fill('物事の名称');
+    await page.getByRole('button', { name: '下書きを保存' }).click();
+    await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
+
+    const adminResponse = await author.request.get(base + '/api/admin/nodes');
+    assert.equal(adminResponse.status(), 200);
+    const draft = (await adminResponse.json()).find(node => node.id === language).draft.details;
+    const chars = JSON.parse(draft.characters);
+    const classes = JSON.parse(draft.wordClasses);
+    assert.deepEqual(chars.map(entry => entry.glyph), ['a', 'b']);
+    assert.deepEqual(chars[0].nextIds, [chars[1].id]);
+    assert.deepEqual(classes.map(entry => entry.name), ['名詞']);
+    assert.equal(classes[0].description, '物事の名称');
+
+    for (const [id, revision] of [[series, 1], [language, 2]]) {
+      const response = await author.request.post(base + '/api/admin/nodes/' + id + '/publish', {
+        headers: { Origin: base }, data: { expectedRevision: revision },
+      });
+      assert.equal(response.status(), 200);
+    }
+    const publicResponse = await anonymous.request.get(base + '/api/public/items/' + language);
+    assert.equal(publicResponse.status(), 200);
+    const published = (await publicResponse.json()).content.details;
+    assert.deepEqual(JSON.parse(published.characters), chars);
+    assert.deepEqual(JSON.parse(published.wordClasses), classes);
+    await anonymous.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
