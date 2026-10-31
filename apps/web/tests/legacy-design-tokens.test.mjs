@@ -8,6 +8,11 @@ const [paletteScss, colorScss, currentCss] = await Promise.all([
   readFile(new URL('legacy/variables/_color.scss', assets), 'utf8'),
   readFile(new URL('css/eternalia.css', assets), 'utf8'),
 ]);
+const [fontScss, marginScss, radiusScss] = await Promise.all([
+  readFile(new URL('legacy/variables/_font-size.scss', assets), 'utf8'),
+  readFile(new URL('legacy/variables/_margin.scss', assets), 'utf8'),
+  readFile(new URL('legacy/variables/_radius.scss', assets), 'utf8'),
+]);
 
 function parseLegacyPalette(source) {
   const entries = new Map();
@@ -59,4 +64,28 @@ test('active semantic color aliases preserve the v0.3 category/role mapping', ()
     assert.equal(legacy.get(match[1]), match[2],
       '--color-' + match[1] + ' must resolve to its legacy SCSS palette path');
   }
+});
+
+test('active font, radius and spacing tokens retain their v0.3 values', () => {
+  const cssValue = name => {
+    const match = currentCss.match(new RegExp('--' + name + ':\\s*([^;]+);'));
+    assert.ok(match, 'missing CSS token --' + name);
+    return match[1].trim();
+  };
+  for (const match of fontScss.matchAll(/"(xs|s|m|l|xl|xxl)":\s*(\d+px),/g)) {
+    assert.equal(cssValue('font-size-' + match[1]), match[2], 'legacy font size ' + match[1]);
+  }
+  for (const match of radiusScss.matchAll(/"(panel|input|button)":\s*(\d+px),/g)) {
+    assert.equal(cssValue('radius-' + match[1]), match[2], 'legacy radius ' + match[1]);
+  }
+  const legacyValue = (section, key) => {
+    const group = marginScss.match(new RegExp('\\$eternalia-' + section + ':\\s*\\(([\\s\\S]*?)\\);'));
+    assert.ok(group, 'missing legacy spacing section ' + section);
+    const value = group[1].match(new RegExp('"' + key + '":\\s*([^,]+),'));
+    assert.ok(value, 'missing legacy spacing key ' + key);
+    return value[1].trim();
+  };
+  assert.equal(cssValue('space-panel-margin'), legacyValue('margin', 'content'));
+  assert.equal(cssValue('space-panel-padding'), legacyValue('padding', 'content'));
+  assert.equal(cssValue('space-menu-item-padding'), legacyValue('padding', 'menu-item'));
 });
