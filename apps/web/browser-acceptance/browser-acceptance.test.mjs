@@ -416,7 +416,7 @@ test('author memo browser persists tags and handles failed post-write readback',
 
     await editor.fill('未保存のメモ変更');
     page.once('dialog', dialog => dialog.dismiss());
-    await page.getByRole('link', { name: '作者の書斎' }).click();
+    await page.getByLabel('パンくずリスト').getByRole('link', { name: '作者の書斎' }).click();
     assert.equal(new URL(page.url()).pathname, '/studio/memos');
     assert.equal(await editor.inputValue(), '未保存のメモ変更');
 
