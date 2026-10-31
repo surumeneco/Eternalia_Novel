@@ -132,6 +132,15 @@ function beforeUnload(event: BeforeUnloadEvent) {
   event.returnValue = '';
 }
 onBeforeRouteLeave(() => confirmDiscard());
+// /studio/child is a nested route: its parent stays mounted, so the leave
+// guard alone does not protect unsaved editor input on child navigation.
+onBeforeRouteUpdate((to, from) => {
+  if (from.path !== '/studio' || to.fullPath === from.fullPath) return;
+  if (!confirmDiscard()) return false;
+  createOpen.value = false;
+  createTitle.value = '';
+  restoreEditor();
+});
 onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload));
 
 const creationChoices = computed(() =>
