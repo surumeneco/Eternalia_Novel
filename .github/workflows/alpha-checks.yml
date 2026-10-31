@@ -135,6 +135,7 @@ jobs:
     env:
       DATABASE_URL: postgres://eternalia:ci-temp-password@127.0.0.1:5432/eternalia_http
       NODE_ENV: test
+      HTTP_ACCEPTANCE_DISPOSABLE_DB: '1'
       HTTP_WEB_PORT: '34110'
       HTTP_API_PORT: '34111'
     steps:
