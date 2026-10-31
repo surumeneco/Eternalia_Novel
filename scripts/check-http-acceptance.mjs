@@ -13,6 +13,9 @@ import { setTimeout as delay } from 'node:timers/promises';
 if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL must point to a migrated PostgreSQL database');
 }
+if (process.env.HTTP_ACCEPTANCE_DISPOSABLE_DB !== '1' || process.env.NODE_ENV === 'production') {
+  throw new Error('HTTP acceptance seeds data and synthetic sessions: explicitly allow an empty disposable test DB only');
+}
 
 const tmp = await mkdtemp(join(tmpdir(), 'eternalia-http-'));
 const port = Number(process.env.HTTP_WEB_PORT || 34110);
