@@ -150,6 +150,27 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
       element.value.slice(element.selectionStart, element.selectionEnd));
     assert.equal(readingSelection, 'よみ');
 
+    // AC-65: native keyboard Undo must remove only the toolbar insertion,
+    // not the manuscript typed before it. A direct textarea value assignment
+    // is not part of Chromium's native undo stack.
+    await chapterBody.fill('');
+    await chapterBody.pressSequentially('東京');
+    await chapterBody.evaluate(element => {
+      element.focus();
+      element.setSelectionRange(0, 2);
+    });
+    await manuscript.getByRole('button', { name: '選択文字にルビを付ける' }).click();
+    assert.equal(await chapterBody.inputValue(), '｜東京《よみ》');
+    await chapterBody.press('Control+z');
+    assert.equal(await chapterBody.inputValue(), '東京',
+      'Undo must revert only the ruby toolbar insertion');
+
+    await chapterBody.dispatchEvent('compositionstart');
+    assert.equal(await manuscript.getByRole('button', { name: '選択文字にルビを付ける' }).isDisabled(), true,
+      'toolbar must not modify a composing IME buffer');
+    await chapterBody.dispatchEvent('compositionend');
+    assert.equal(await manuscript.getByRole('button', { name: '選択文字にルビを付ける' }).isEnabled(), true);
+
     // Direct child routes of the author workspace must render their own pages.
     const adminViews = await author.newPage();
     for (const [path, heading] of [
