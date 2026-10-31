@@ -548,3 +548,59 @@ test('anonymous browser cannot access author workspace data or editing controls'
     await browser.close();
   }
 });
+
+test('category preset editor copies only into newly created setting children', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const prefix = fixture.prefix + '-preset-browser';
+    async function create(kind, parentId, suffix, details = {}) {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base },
+        data: { kind, parentId, content: { title: prefix + '-' + suffix, body: '', details } },
+      });
+      assert.equal(response.status(), 201, 'create ' + kind + ': ' + await response.text());
+      return (await response.json()).id;
+    }
+    async function nodes() {
+      const response = await author.request.get(base + '/api/admin/nodes');
+      assert.equal(response.status(), 200);
+      return response.json();
+    }
+    const series = await create('series', null, 'series');
+    const category = await create('category', series, 'category', { presets: '[]' });
+    const page = await author.newPage();
+    await page.goto(base + '/studio?item=' + category);
+    const presets = page.locator('.presets-editor');
+    await presets.getByRole('button', { name: '項目を追加' }).click();
+    await presets.locator('input').first().fill('最初の項目');
+    await presets.locator('textarea').first().fill('最初の本文');
+    await page.getByRole('button', { name: '下書きを保存' }).click();
+    await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
+
+    const firstTip = await create('tip', category, 'first-tip');
+    const firstSection = (await nodes()).find(node => node.kind === 'tipSection' && node.parentId === firstTip);
+    assert.equal(firstSection?.draft.title, '最初の項目');
+    assert.equal(firstSection?.draft.body, '最初の本文');
+
+    await presets.locator('input').first().fill('更新後の項目');
+    await page.getByRole('button', { name: '下書きを保存' }).click();
+    await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
+    const oldSection = (await nodes()).find(node => node.id === firstSection.id);
+    assert.equal(oldSection.draft.title, '最初の項目',
+      'existing setting sections must not inherit later preset changes');
+
+    const secondTip = await create('tip', category, 'second-tip');
+    const secondSection = (await nodes()).find(node => node.kind === 'tipSection' && node.parentId === secondTip);
+    assert.equal(secondSection?.draft.title, '更新後の項目');
+    assert.equal(secondSection?.draft.body, '最初の本文');
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
