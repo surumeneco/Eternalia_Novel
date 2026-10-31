@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { LanguageCharacter, LanguageWordClass } from '@eternalia/contracts';
+const { t } = useUiLocale();
 
 const props = defineProps<{ characters: string; wordClasses: string }>();
 const emit = defineEmits<{
@@ -61,49 +62,49 @@ function addClass() {
 <template>
   <div class="language-structure">
     <fieldset>
-      <legend>文字と発音</legend>
-      <p class="note">各文字の発音、語頭・語末での許容、および後ろに置ける文字を登録します。</p>
-      <p v-if="symbolsError" role="alert" class="error-text">文字データを解析できません。保存前に元データを確認してください。</p>
+      <legend>{{ t('langCharactersLegend') }}</legend>
+      <p class="note">{{ t('langCharactersNote') }}</p>
+      <p v-if="symbolsError" role="alert" class="error-text">{{ t('langCharacterParseError') }}</p>
       <template v-else>
         <section v-for="(symbol, index) in symbols" :key="symbol.id" class="symbol-entry">
           <div class="entry-heading">
-            <h3>文字 {{ index + 1 }}</h3>
-            <button type="button" class="inline-action" @click="removeSymbol(symbol.id)">文字を削除</button>
+            <h3>{{ t('langCharacterTitle') }} {{ index + 1 }}</h3>
+            <button type="button" class="inline-action" @click="removeSymbol(symbol.id)">{{ t('langCharacterDelete') }}</button>
           </div>
-          <label>文字・表記<input v-model="symbol.glyph" maxlength="40" required /></label>
-          <label>発音<input v-model="symbol.pronunciation" maxlength="100" /></label>
+          <label>{{ t('langGlyph') }}<input v-model="symbol.glyph" maxlength="40" required /></label>
+          <label>{{ t('langPronunciation') }}<input v-model="symbol.pronunciation" maxlength="100" /></label>
           <div class="flag-options">
-            <label><input v-model="symbol.canStart" type="checkbox" /> 語頭に置ける</label>
-            <label><input v-model="symbol.canEnd" type="checkbox" /> 語末に置ける</label>
+            <label><input v-model="symbol.canStart" type="checkbox" /> {{ t('langCanStart') }}</label>
+            <label><input v-model="symbol.canEnd" type="checkbox" /> {{ t('langCanEnd') }}</label>
           </div>
           <fieldset v-if="symbols.length" class="following">
-            <legend>この文字の後に置ける文字</legend>
+            <legend>{{ t('langFollowing') }}</legend>
             <div class="following-grid">
               <label v-for="target in symbols" :key="target.id">
                 <input type="checkbox" :checked="symbol.nextIds.includes(target.id)" @change="toggleFollowing(symbol, target.id)" />
-                {{ target.glyph || '未入力の文字' }}
+                {{ target.glyph || t('langEmptyGlyph') }}
               </label>
             </div>
           </fieldset>
         </section>
         <button type="button" class="inline-action" :disabled="symbols.length >= 120" @click="addSymbol">
-          文字を追加
+          {{ t('langAddCharacter') }}
         </button>
       </template>
     </fieldset>
     <fieldset>
-      <legend>品詞マスタ</legend>
-      <p v-if="classesError" role="alert" class="error-text">品詞データを解析できません。</p>
+      <legend>{{ t('langWordClassMaster') }}</legend>
+      <p v-if="classesError" role="alert" class="error-text">{{ t('langWordClassParseError') }}</p>
       <template v-else>
         <section v-for="(entry, index) in classes" :key="entry.id" class="symbol-entry">
           <div class="entry-heading">
-            <h3>品詞 {{ index + 1 }}</h3>
-            <button type="button" class="inline-action" @click="classes.splice(index, 1)">品詞を削除</button>
+            <h3>{{ t('langWordClassTitle') }} {{ index + 1 }}</h3>
+            <button type="button" class="inline-action" @click="classes.splice(index, 1)">{{ t('langWordClassDelete') }}</button>
           </div>
-          <label>品詞名<input v-model="entry.name" maxlength="80" required /></label>
-          <label>説明<textarea v-model="entry.description" maxlength="2000" rows="2" /></label>
+          <label>{{ t('langWordClassName') }}<input v-model="entry.name" maxlength="80" required /></label>
+          <label>{{ t('langDescription') }}<textarea v-model="entry.description" maxlength="2000" rows="2" /></label>
         </section>
-        <button type="button" class="inline-action" :disabled="classes.length >= 50" @click="addClass">品詞を追加</button>
+        <button type="button" class="inline-action" :disabled="classes.length >= 50" @click="addClass">{{ t('langAddClass') }}</button>
       </template>
     </fieldset>
   </div>
