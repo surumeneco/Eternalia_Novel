@@ -354,8 +354,9 @@ test('author browser saves and explicitly publishes chapter, setting, word and e
       ['chapter', chapter], ['tipSection', section], ['word', word], ['event', event],
     ]) {
       await page.goto(base + '/studio?item=' + id);
-      const editor = page.locator('.studio-editor textarea');
+      const editor = page.getByRole('textbox', { name: '本文・説明', exact: true });
       await editor.waitFor();
+      assert.equal(await editor.count(), 1, kind + ' must expose exactly one labeled body editor');
       const first = prefix + '-' + kind + '-first-publication';
       const second = prefix + '-' + kind + '-second-publication';
       await editor.fill(first);
