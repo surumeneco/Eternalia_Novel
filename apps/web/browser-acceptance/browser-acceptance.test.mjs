@@ -550,6 +550,41 @@ test('author browser reorders only sibling chapters and protects unapplied chang
   }
 });
 
+test('unsaved manuscript survives cancelled navigation and is discarded only after confirmation', { timeout: 60_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const page = await author.newPage();
+    await page.goto(base + '/studio?item=' + fixture.chapter);
+    const editor = page.getByRole('textbox', { name: '本文・説明', exact: true });
+    await editor.waitFor();
+    const persisted = await editor.inputValue();
+    const unsaved = persisted + '\n未保存の移動保護確認';
+    await editor.fill(unsaved);
+    page.once('dialog', dialog => dialog.dismiss());
+    await page.getByRole('link', { name: 'メモ', exact: true }).click();
+    assert.equal(new URL(page.url()).pathname, '/studio',
+      'cancelled navigation must stay in the manuscript editor');
+    assert.equal(await editor.inputValue(), unsaved,
+      'cancelled navigation must preserve unsaved manuscript input');
+    page.once('dialog', dialog => dialog.accept());
+    await page.getByRole('link', { name: 'メモ', exact: true }).click();
+    await page.getByRole('heading', { name: 'メモ', exact: true }).waitFor();
+    await page.goto(base + '/studio?item=' + fixture.chapter);
+    await editor.waitFor();
+    assert.equal(await editor.inputValue(), persisted,
+      'confirmed discard must not persist unsaved manuscript input');
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
+
 test('browser logout revokes synthetic author session and protected API access', { timeout: 60_000 }, async () => {
   assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
   const browser = await chromium.launch({ headless: true });
