@@ -39,6 +39,18 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
     assert.ok(!(await readerPage.locator('body').innerText())
       .includes(fixture.prefix + '-unpublished-draft-body'));
 
+    // These routes must show their actual per-series views, not collection parents.
+    for (const [path, marker] of [
+      ['/tips/', '設定を検索'],
+      ['/dictionaries/', '単語を検索'],
+      ['/timeline/', '年代区分'],
+    ]) {
+      await readerPage.goto(base + path + fixture.seriesA);
+      const content = await readerPage.locator('body').innerText();
+      assert.ok(content.includes(marker), 'missing nested domain UI at ' + path);
+      assert.ok(content.includes(fixture.prefix + '-world-A'), 'missing series at ' + path);
+    }
+
     const author = await browser.newContext({ viewport: { width: 1280, height: 800 } });
     await author.addCookies([{
       name: 'eternalia_author', value: fixture.authorToken, url: base,
@@ -78,6 +90,34 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
     studio.once('dialog', dialog => dialog.dismiss());
     await studio.getByRole('button', { name: '新規シリーズ' }).click();
     assert.equal(await textarea.inputValue(), '下書き未保存の編集内容');
+
+    // The chapter editor must preserve the selected text and place the caret
+    // inside the reading field when inserting ruby markup.
+    const manuscript = await author.newPage();
+    await manuscript.goto(base + '/studio?item=' + fixture.chapter);
+    const chapterBody = manuscript.locator('.studio-editor textarea');
+    await chapterBody.waitFor();
+    await chapterBody.fill('漢字');
+    await chapterBody.evaluate(element => {
+      element.focus();
+      element.setSelectionRange(0, 2);
+    });
+    await manuscript.getByRole('button', { name: '選択文字にルビを付ける' }).click();
+    assert.equal(await chapterBody.inputValue(), '｜漢字《よみ》');
+    const readingSelection = await chapterBody.evaluate(element =>
+      element.value.slice(element.selectionStart, element.selectionEnd));
+    assert.equal(readingSelection, 'よみ');
+
+    // Direct child routes of the author workspace must render their own pages.
+    const adminViews = await author.newPage();
+    for (const [path, heading] of [
+      ['/studio/memos', 'メモ'],
+      ['/studio/order', '並べ替え'],
+      ['/studio/publication', '公開管理'],
+    ]) {
+      await adminViews.goto(base + path);
+      await adminViews.getByRole('heading', { name: heading, exact: true }).waitFor();
+    }
     await author.close();
     await reader.close();
   } finally {
