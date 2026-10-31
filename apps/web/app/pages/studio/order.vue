@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { AuthorNode } from '~/types/author';
 import type { ReaderKind } from '~/types/reader';
+const { t } = useUiLocale();
 
 interface AuthState { configured: boolean; authenticated: boolean }
 const { data: auth, pending: authPending, refresh: refreshAuth } = await useFetch<AuthState>('/api/auth/me');
@@ -13,9 +14,9 @@ const busy = ref(false);
 const errorText = ref('');
 const statusText = ref('');
 const kinds: Record<ReaderKind, string> = {
-  series:'シリーズ',volume:'編',part:'部',chapter:'章',category:'カテゴリ',
-  tip:'設定',tipSection:'設定項目',language:'言語',word:'単語',
-  grammar:'文法',periodization:'年代区分',event:'出来事',
+  series:t('studioKindSeries'),volume:t('studioKindVolume'),part:t('studioKindPart'),chapter:t('chapter'),category:t('studioKindCategory'),
+  tip:t('tip'),tipSection:t('tipSection'),language:t('studioKindLanguage'),word:t('word'),
+  grammar:t('grammar'),periodization:t('studioKindPeriodization'),event:t('event'),
 };
 const kindsByParent: Record<ReaderKind | 'root', ReaderKind[]> = {
   root:['series'],series:['volume','category','language','periodization'],
@@ -25,7 +26,7 @@ const kindsByParent: Record<ReaderKind | 'root', ReaderKind[]> = {
 };
 const byId = computed(() => new Map(nodes.value.map(n => [n.id,n])));
 const parents = computed(() => [
-  { id:'root', title:'全シリーズ', kind:'root' as const },
+  { id:'root', title:t('orderAllSeries'), kind:'root' as const },
   ...nodes.value.filter(node => kindsByParent[node.kind].length).map(node => ({
     id:node.id,title:node.draft.title,kind:node.kind,
   })),
@@ -61,13 +62,13 @@ async function load(): Promise<boolean> {
     restore();
     return true;
   } catch {
-    errorText.value='項目を取得できませんでした。';
+    errorText.value=t('orderLoadError');
     return false;
   } finally {loading.value=false;}
 }
 async function save() {
   if (!changed.value || busy.value) return;
-  if (!window.confirm('この操作は公開中の項目の表示順にも反映されます。並べ替えますか？')) return;
+  if (!window.confirm(t('orderConfirm'))) return;
   busy.value=true;
   errorText.value='';
   statusText.value='';
@@ -81,15 +82,15 @@ async function save() {
         expectedRevisions:Object.fromEntries(siblings.value.map(node=>[node.id,node.revision])),
       },
     });
-    if (await load()) statusText.value='順序を反映しました。';
-    else errorText.value='順序変更の送信後、最新状態を取得できませんでした。再読込して確認してください。';
+    if (await load()) statusText.value=t('orderSaved');
+    else errorText.value=t('orderReloadFailed');
   } catch (error:unknown) {
     const response=error as {data?:{message?:string}};
-    errorText.value=response.data?.message ?? '並べ替えに失敗しました。競合の可能性があります。再読込してください。';
+    errorText.value=response.data?.message ?? t('orderSaveFailed');
   } finally {busy.value=false;}
 }
 function confirmDiscard() {
-  return !changed.value || window.confirm('未反映の並べ替えを破棄しますか？');
+  return !changed.value || window.confirm(t('orderDiscard'));
 }
 function changeParent(event: Event) {
   const select = event.target as HTMLSelectElement;
@@ -126,24 +127,24 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload));
 
 <template>
   <div>
-    <TopicPath :items="[{label:'ホーム',to:'/'},{label:'作者の書斎',to:'/studio'},{label:'並べ替え'}]"/>
+    <TopicPath :items="[{label:t('home'),to:'/'},{label:t('studio'),to:'/studio'},{label:t('studioReorder')}]"/>
     <ReaderPanel>
-      <h1>並べ替え</h1>
-      <p class="note">同じ親・同じ種類の項目を並べ替えます。反映すると公開中の表示順も変更されます。</p>
-      <p v-if="authPending" role="status">認証状態を確認しています。</p>
-      <div v-else-if="!auth?.configured" role="alert">作者認証が設定されていません。</div>
+      <h1>{{ t('studioReorder') }}</h1>
+      <p class="note">{{ t('orderDescription') }}</p>
+      <p v-if="authPending" role="status">{{ t('studioAuthChecking') }}</p>
+      <div v-else-if="!auth?.configured" role="alert">{{ t('orderAuthNotConfigured') }}</div>
       <div v-else-if="!auth.authenticated" role="alert">
-        <p>作者としてログインしてください。</p>
-        <a href="/api/auth/discord">Discordでログイン</a>
+        <p>{{ t('orderLoginRequired') }}</p>
+        <a href="/api/auth/discord">{{ t('studioDiscordLogin') }}</a>
       </div>
       <template v-else>
         <div class="order-filters">
-          <label>親となる項目
+          <label>{{ t('orderParentLabel') }}
             <select :value="selectedParent" :disabled="loading||busy" @change="changeParent">
-              <option v-for="parent in parents" :key="parent.id" :value="parent.id">{{ parent.title }}（{{ parent.kind==='root'?'全体':kinds[parent.kind] }}）</option>
+              <option v-for="parent in parents" :key="parent.id" :value="parent.id">{{ parent.title }}（{{ parent.kind==='root'?t('orderAll'):kinds[parent.kind] }}）</option>
             </select>
           </label>
-          <label>項目の種類
+          <label>{{ t('orderKindLabel') }}
             <select :value="selectedKind" :disabled="loading||busy" @change="changeKind">
               <option v-for="kind in choices" :key="kind" :value="kind">{{ kinds[kind] }}</option>
             </select>
@@ -151,22 +152,22 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload));
         </div>
         <p v-if="errorText" class="error-text" role="alert">{{ errorText }}</p>
         <p v-if="statusText" role="status">{{ statusText }}</p>
-        <p v-if="loading">項目を取得しています。</p>
-        <p v-else-if="!ordered.length">この階層に項目はありません。</p>
+        <p v-if="loading">{{ t('orderLoading') }}</p>
+        <p v-else-if="!ordered.length">{{ t('orderEmpty') }}</p>
         <ol v-else class="order-list">
           <li v-for="(node,index) in ordered" :key="node.id">
             <span>{{ node.draft.title }}</span>
             <div class="order-actions">
-              <button type="button" class="inline-action" :disabled="index===0||busy" :aria-label="node.draft.title+'を上へ移動'" @click="move(index,-1)">上へ</button>
-              <button type="button" class="inline-action" :disabled="index===ordered.length-1||busy" :aria-label="node.draft.title+'を下へ移動'" @click="move(index,1)">下へ</button>
+              <button type="button" class="inline-action" :disabled="index===0||busy" :aria-label="node.draft.title + t('orderMoveUpSuffix')" @click="move(index,-1)">{{ t('orderUp') }}</button>
+              <button type="button" class="inline-action" :disabled="index===ordered.length-1||busy" :aria-label="node.draft.title + t('orderMoveDownSuffix')" @click="move(index,1)">{{ t('orderDown') }}</button>
             </div>
           </li>
         </ol>
         <div class="order-toolbar">
-          <button type="button" class="inline-action" :disabled="busy||loading||!changed" @click="restore">変更を取り消す</button>
-          <button type="button" class="inline-action" :disabled="busy||loading" @click="reload">サーバーから再読込</button>
-          <button type="button" class="order-save" :disabled="busy||loading||!changed" @click="save">表示順を反映</button>
-          <NuxtLink to="/studio">執筆・編集に戻る</NuxtLink>
+          <button type="button" class="inline-action" :disabled="busy||loading||!changed" @click="restore">{{ t('orderUndo') }}</button>
+          <button type="button" class="inline-action" :disabled="busy||loading" @click="reload">{{ t('orderReload') }}</button>
+          <button type="button" class="order-save" :disabled="busy||loading||!changed" @click="save">{{ t('orderApply') }}</button>
+          <NuxtLink to="/studio">{{ t('orderBack') }}</NuxtLink>
         </div>
       </template>
     </ReaderPanel>
