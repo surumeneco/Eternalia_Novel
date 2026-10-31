@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { AuthorNode } from '~/types/author';
 import { parseTipTags, parseTipRelationIds } from '@eternalia/contracts';
+const { t } = useUiLocale();
 
 const props = defineProps<{
   selectedId: string;
@@ -74,34 +75,34 @@ function removeRelated(id: string) {
 </script>
 
 <template>
-  <section class="tip-links-editor" aria-label="設定のタグと関連">
-    <h3>タグ</h3>
-    <label>タグ名（カンマ区切り）
-      <input v-model="tagText" type="text" maxlength="1600" placeholder="人物, 地名" @change="updateTags" @blur="updateTags" />
+  <section class="tip-links-editor" :aria-label="t('tipLinksAria')">
+    <h3>{{ t('tipTags') }}</h3>
+    <label>{{ t('tipTagName') }}
+      <input v-model="tagText" type="text" maxlength="1600" :placeholder="t('tipTagPlaceholder')" @change="updateTags" @blur="updateTags" />
     </label>
-    <p class="note">カテゴリとは独立した分類です。入力を確定してから下書きを保存してください。</p>
-    <h3>関連する設定</h3>
+    <p class="note">{{ t('tipTagNote') }}</p>
+    <h3>{{ t('tipRelated') }}</h3>
     <div class="related-add">
-      <label>同じシリーズの設定
+      <label>{{ t('tipSameSeries') }}
         <select v-model="selectedRelatedId">
-          <option value="">選択してください</option>
+          <option value="">{{ t('tipSelect') }}</option>
           <option v-for="node in choices" :key="node.id" :value="node.id">{{ node.draft.title }}</option>
         </select>
       </label>
-      <button class="inline-action" type="button" :disabled="!selectedRelatedId" @click="addRelated">関連に追加</button>
+      <button class="inline-action" type="button" :disabled="!selectedRelatedId" @click="addRelated">{{ t('tipAddRelated') }}</button>
     </div>
-    <p v-if="!relatedNodes.length" class="note">関連設定はありません。</p>
+    <p v-if="!relatedNodes.length" class="note">{{ t('tipNoRelated') }}</p>
     <ol v-else class="related-list">
       <li v-for="(node, index) in relatedNodes" :key="node.id">
         <span>{{ node.draft.title }}</span>
         <div class="action-row">
-          <button class="inline-action" type="button" :disabled="index === 0" :aria-label="node.draft.title + 'を上へ'" @click="moveRelated(index, -1)">↑</button>
-          <button class="inline-action" type="button" :disabled="index === relatedNodes.length - 1" :aria-label="node.draft.title + 'を下へ'" @click="moveRelated(index, 1)">↓</button>
-          <button class="inline-action" type="button" :aria-label="node.draft.title + 'を削除'" @click="removeRelated(node.id)">解除</button>
+          <button class="inline-action" type="button" :disabled="index === 0" :aria-label="node.draft.title + t('tipUpSuffix')" @click="moveRelated(index, -1)">↑</button>
+          <button class="inline-action" type="button" :disabled="index === relatedNodes.length - 1" :aria-label="node.draft.title + t('tipDownSuffix')" @click="moveRelated(index, 1)">↓</button>
+          <button class="inline-action" type="button" :aria-label="node.draft.title + t('tipRemoveSuffix')" @click="removeRelated(node.id)">{{ t('tipRemove') }}</button>
         </div>
       </li>
     </ol>
-    <p class="note">関連先の公開可否を確認し、読者には実効公開中の設定だけ表示します。</p>
+    <p class="note">{{ t('tipPrivacyNote') }}</p>
   </section>
 </template>
 
