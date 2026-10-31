@@ -616,6 +616,59 @@ test('author manuscript editor fits narrow mobile viewports without horizontal o
   }
 });
 
+test('stale author editor reports revision conflict without overwriting the saved draft', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    async function create(kind, parentId, suffix) {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base },
+        data: {
+          kind, parentId,
+          content: { title: fixture.prefix + '-conflict-' + suffix, body: '', details: {} },
+        },
+      });
+      assert.equal(response.status(), 201, 'create ' + kind + ': ' + await response.text());
+      return (await response.json()).id;
+    }
+    const series = await create('series', null, 'series');
+    const volume = await create('volume', series, 'volume');
+    const part = await create('part', volume, 'part');
+    const chapter = await create('chapter', part, 'chapter');
+    const firstPage = await author.newPage();
+    const stalePage = await author.newPage();
+    await firstPage.goto(base + '/studio?item=' + chapter);
+    await stalePage.goto(base + '/studio?item=' + chapter);
+    const firstEditor = firstPage.getByRole('textbox', { name: '本文・説明', exact: true });
+    const staleEditor = stalePage.getByRole('textbox', { name: '本文・説明', exact: true });
+    await firstEditor.waitFor();
+    await staleEditor.waitFor();
+    await firstEditor.fill('先に保存された本文');
+    await firstPage.getByRole('button', { name: '下書きを保存' }).click();
+    await firstPage.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
+    await staleEditor.fill('競合して保存できない本文');
+    await stalePage.getByRole('button', { name: '下書きを保存' }).click();
+    await stalePage.getByRole('alert').waitFor();
+    assert.equal(await stalePage.getByText('下書きを保存しました。公開版は変更されていません。').count(), 0,
+      'stale editor must not claim a successful save');
+    assert.equal(await staleEditor.inputValue(), '競合して保存できない本文',
+      'failed save must retain the local text for conflict resolution');
+    const response = await author.request.get(base + '/api/admin/nodes');
+    assert.equal(response.status(), 200);
+    const saved = (await response.json()).find(node => node.id === chapter);
+    assert.equal(saved?.draft.body, '先に保存された本文',
+      'revision conflict must not silently overwrite the first author save');
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
+
 test('browser logout revokes synthetic author session and protected API access', { timeout: 60_000 }, async () => {
   assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
   const browser = await chromium.launch({ headless: true });
