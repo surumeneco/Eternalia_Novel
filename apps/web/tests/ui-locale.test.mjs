@@ -180,3 +180,35 @@ test('author memo UI fixed text uses typed Japanese fallback keys', () => {
     assert.equal(translateUiMessage(key, 'unknown'), expected, key + ' fallback');
   }
 });
+
+test('author ordering UI fixed text uses typed Japanese fallback keys', () => {
+  const labels = {
+    "orderAllSeries": "全シリーズ",
+    "orderAll": "全体",
+    "orderLoadError": "項目を取得できませんでした。",
+    "orderConfirm": "この操作は公開中の項目の表示順にも反映されます。並べ替えますか？",
+    "orderSaved": "順序を反映しました。",
+    "orderReloadFailed": "順序変更の送信後、最新状態を取得できませんでした。再読込して確認してください。",
+    "orderSaveFailed": "並べ替えに失敗しました。競合の可能性があります。再読込してください。",
+    "orderDiscard": "未反映の並べ替えを破棄しますか？",
+    "orderDescription": "同じ親・同じ種類の項目を並べ替えます。反映すると公開中の表示順も変更されます。",
+    "orderAuthNotConfigured": "作者認証が設定されていません。",
+    "orderLoginRequired": "作者としてログインしてください。",
+    "orderParentLabel": "親となる項目",
+    "orderKindLabel": "項目の種類",
+    "orderLoading": "項目を取得しています。",
+    "orderEmpty": "この階層に項目はありません。",
+    "orderMoveUpSuffix": "を上へ移動",
+    "orderMoveDownSuffix": "を下へ移動",
+    "orderUp": "上へ",
+    "orderDown": "下へ",
+    "orderUndo": "変更を取り消す",
+    "orderReload": "サーバーから再読込",
+    "orderApply": "表示順を反映",
+    "orderBack": "執筆・編集に戻る"
+};
+  for (const [key, expected] of Object.entries(labels)) {
+    assert.equal(translateUiMessage(key, 'ja'), expected, key);
+    assert.equal(translateUiMessage(key, 'unknown'), expected, key + ' fallback');
+  }
+});
