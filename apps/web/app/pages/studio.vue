@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { AuthorNode } from '~/types/author';
+const { t } = useUiLocale();
 const studioRoute = useRoute();
 import type { ReaderKind } from '~/types/reader';
 import { parseLanguageWordClasses, diagnoseWordSpelling } from '@eternalia/contracts';
@@ -49,11 +50,11 @@ function insertMarkup(kind: ManuscriptInsertionKind) {
   if (!el || composingBody.value || busy.value) return;
   const result = insertManuscriptMarkup(form.body, el.selectionStart, el.selectionEnd, kind);
   if (!result) {
-    errorText.value = 'ルビ記号または改行を含む選択範囲にはルビを付けられません。';
+    errorText.value = t('studioRubyInvalid');
     return;
   }
   if (result.value.length > 100000) {
-    errorText.value = '本文の文字数上限を超えています。';
+    errorText.value = t('studioBodyTooLong');
     return;
   }
   form.body = result.value;
@@ -105,7 +106,7 @@ const editorDirty = computed(() => {
 const creationDirty = computed(() => createOpen.value && createTitle.value.trim().length > 0);
 const hasUnsavedChanges = computed(() => editorDirty.value || creationDirty.value);
 function confirmDiscard(): boolean {
-  return !hasUnsavedChanges.value || window.confirm('未保存の変更があります。破棄して移動しますか？');
+  return !hasUnsavedChanges.value || window.confirm(t('studioUnsavedDiscard'));
 }
 function restoreEditor() {
   form.title = selected.value?.draft.title ?? '';
@@ -122,7 +123,7 @@ function selectNode(nodeId: string) {
 }
 function cancelCreate() {
   if (busy.value) return;
-  if (creationDirty.value && !window.confirm('未保存の新規項目を破棄しますか？')) return;
+  if (creationDirty.value && !window.confirm(t('studioNewItemDiscard'))) return;
   createOpen.value = false;
   createTitle.value = '';
 }
@@ -217,7 +218,7 @@ async function load(): Promise<boolean> {
     errorText.value = '';
     return true;
   } catch (e: unknown) {
-    errorText.value = 'ライブラリを取得できませんでした。認証・DB設定を確認してください。';
+    errorText.value = t('studioLibraryLoadError');
     return false;
   }
 }
@@ -245,13 +246,13 @@ async function runChange(work: () => Promise<void>, okText:string, reloadAfter =
     if (!reloadAfter || await load()) {
       statusText.value = okText;
     } else {
-      errorText.value = '更新の送信後に最新の状態を取得できませんでした。再読込して内容を確認してください。';
+      errorText.value = t('studioPostUpdateRefreshError');
     }
   } catch (e: unknown) {
     const info = e as { data?: { message?: string | string[] } };
     errorText.value = Array.isArray(info.data?.message)
       ? info.data.message.join(' / ')
-      : info.data?.message || '保存に失敗しました。再読込して競合状態を確認してください。';
+      : info.data?.message || t('studioSaveError');
   } finally { busy.value = false; }
 }
 function openCreate(parentId: string | null) {
@@ -264,7 +265,7 @@ function openCreate(parentId: string | null) {
   createOpen.value = true;
 }
 async function createItem() {
-  if (!createTitle.value.trim()) { errorText.value='タイトルを入力してください。'; return; }
+  if (!createTitle.value.trim()) { errorText.value=t('studioCreateTitleRequired'); return; }
   await runChange(async () => {
     const response = await $fetch<{id:string}>('/api/admin/nodes',{
       method:'POST',
@@ -280,7 +281,7 @@ async function createItem() {
     });
     createOpen.value=false;
     selectedId.value=response.id;
-  }, '項目を作成しました。');
+  }, t('studioCreated'));
 }
 async function saveDraft() {
   const node = selected.value;
@@ -292,16 +293,16 @@ async function saveDraft() {
         title:form.title,body:form.body,details:{...form.details},
       }},
     });
-  }, '下書きを保存しました。公開版は変更されていません。');
+  }, t('studioDraftSaved'));
 }
 async function publish() {
   const node=selected.value;
-  if (!node || !confirm('保存済みの下書きを公開版へ反映します。未保存の変更は含みません。続行しますか？')) return;
+  if (!node || !confirm(t('studioPublishConfirm'))) return;
   await runChange(async () => {
     await $fetch('/api/admin/nodes/' + node.id + '/publish',{
       method:'POST',body:{expectedRevision:node.revision},
     });
-  }, '公開スナップショットを更新しました。');
+  }, t('studioPublished'));
 }
 async function changeVisibility(isPublic:boolean,publicSince:number | null) {
   const node=selected.value;
@@ -310,11 +311,11 @@ async function changeVisibility(isPublic:boolean,publicSince:number | null) {
     await $fetch('/api/admin/nodes/' + node.id + '/visibility',{
       method:'POST',body:{expectedRevision:node.revision,isPublic,publicSince},
     });
-  }, '公開条件を変更しました。');
+  }, t('studioVisibilityChanged'));
 }
 async function schedule() {
   if (scheduledLocal.value && !Number.isFinite(new Date(scheduledLocal.value).getTime())) {
-    errorText.value='日時が不正です。'; return;
+    errorText.value=t('studioInvalidDate'); return;
   }
   await changeVisibility(selected.value?.isPublic ?? false,
     scheduledLocal.value ? new Date(scheduledLocal.value).getTime() : null);
@@ -326,7 +327,7 @@ async function logout() {
     selectedId.value=null;
     nodes.value=[];
     await refreshAuth();
-  }, 'ログアウトしました。', false);
+  }, t('studioLoggedOut'), false);
 }
 </script>
 
@@ -406,9 +407,9 @@ async function logout() {
                 <ul v-if="selected.kind === 'word' && spellingWarnings.length" class="spelling-warnings" aria-label="綴りに関する警告">
                   <li v-for="warning in spellingWarnings" :key="warning.code">{{ warning.message }}</li>
                 </ul>
-                <div v-if="selected.kind === 'chapter'" class="manuscript-toolbar" role="group" aria-label="本文の記法を挿入">
-                  <button type="button" class="inline-action" :disabled="busy || composingBody" @mousedown.prevent @click="insertMarkup('ruby')">選択文字にルビを付ける</button>
-                  <button type="button" class="inline-action" :disabled="busy || composingBody" @mousedown.prevent @click="insertMarkup('page')">ページ区切りを挿入</button>
+                <div v-if="selected.kind === 'chapter'" class="manuscript-toolbar" role="group" :aria-label="t('studioManuscriptToolbar')">
+                  <button type="button" class="inline-action" :disabled="busy || composingBody" @mousedown.prevent @click="insertMarkup('ruby')">{{ t('studioRubyButton') }}</button>
+                  <button type="button" class="inline-action" :disabled="busy || composingBody" @mousedown.prevent @click="insertMarkup('page')">{{ t('studioPageButton') }}</button>
                 </div>
                 <label>本文・説明<textarea ref="bodyTextarea" v-model="form.body" rows="14" maxlength="100000"
                   @compositionstart="composingBody = true" @compositionend="composingBody = false"
