@@ -741,3 +741,33 @@ test('language editor persists character adjacency and word classes before publi
     await browser.close();
   }
 });
+
+test('anonymous search finds published words but never private or unpublished text', { timeout: 60_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const anonymous = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const page = await anonymous.newPage();
+    await page.goto(base + '/search?series=' + fixture.seriesA);
+    const query = page.getByLabel('検索語');
+    const domain = page.locator('.search-filters select').nth(1);
+    await query.fill(fixture.prefix + '-visible-word-body');
+    const wordLink = page.getByRole('link', { name: fixture.prefix + '-visible-word', exact: true });
+    await wordLink.waitFor();
+    await domain.selectOption('tips');
+    assert.equal(await wordLink.count(), 0, 'dictionary word must be excluded from settings filter');
+    await domain.selectOption('dictionaries');
+    await wordLink.waitFor();
+    await domain.selectOption('all');
+
+    await query.fill(fixture.prefix + '-private-content');
+    await page.getByText('条件に一致する公開資料はありません。').waitFor();
+    assert.ok(!(await page.locator('body').innerText()).includes(fixture.prefix + '-private-tip'));
+    await query.fill(fixture.prefix + '-unpublished');
+    await page.getByText('条件に一致する公開資料はありません。').waitFor();
+    assert.ok(!(await page.locator('body').innerText()).includes(fixture.prefix + '-unpublished-tip'));
+    await anonymous.close();
+  } finally {
+    await browser.close();
+  }
+});
