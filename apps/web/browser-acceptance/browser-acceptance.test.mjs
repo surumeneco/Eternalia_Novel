@@ -24,6 +24,10 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
     assert.ok(storyText.includes(fixture.prefix + '-world-A') &&
       storyText.includes(fixture.prefix + '-chapter-A'),
       'story DOM should display published series and chapter; got: ' + storyText.slice(0, 2000));
+    for (const selector of ['.site-header', '.site-aside', '.site-main', '.site-footer', '.topic-path']) {
+      assert.equal(await readerPage.locator(selector).count(), 1,
+        'legacy reader shell must preserve ' + selector + ' on the story page');
+    }
     const overflow = await readerPage.evaluate(() => ({
       viewport: document.documentElement.clientWidth,
       content: document.documentElement.scrollWidth,
