@@ -102,3 +102,14 @@
 - `64225704` / `ecb8fbf4` で実Discord APIに接続しない**合成作者セッション／非作者セッション**をテストDBに作成する前提を追加。`71b25929a15d4cdc9af3453c7c447e48c5df7ee4` で管理APIの4領域作成→下書き→公開→匿名取得、下書き/公開稿分離、409改訂競合、誤Originの403、非作者401、祖先非公開/復帰、ログアウト後401のHTTP受入を追加。Push `41167620218` / PR `41167624669` は `completed/success`。
 - 誤って通常DBにテストレコードと一時セッションを投入しないため、`a43dfcc0` / `43f98256` で `HTTP_ACCEPTANCE_DISPOSABLE_DB=1` 明示指定と空DB確認を導入。`e3aa12a6` でCIにフラグを追加、`9b3316470e0249508361f8cf0c4176d38abb5f92` で `docs/alpha-nuxt-setup.md` に手順と禁止事項を追加。**このコードHEAD**でPush `41167766207`・PR `41167768149` とも `completed/success`、4ジョブ全成功。最終反映は本段落を加えたHEADで再照合すること。
 - **テストの限界**: CIの合成DBセッションはDiscord OAuth2実ログインの本人/他人確認を代替しない。ブラウザE2E、レスポンシブ画像比較、長文IME・ルビ編集操作、各ACの証跡、年代表の年代区分間換算（式未決）、独立した削除/無効化（作用契約未決）、正式CAT-TDD doctor/Guard/Queue/Red・Green/implementation-conformanceは未完了。従来の保留を勝手に仕様決定しない。α正式受入まではDraft PR #3を維持する。
+
+## 2026-10-31 継続: 実ブラウザ受入とNuxtネストルート復旧
+
+- 作業開始時のfeature HEAD `bbc5bd330e53b16ac59d9b8f47eac4bf4c5c3fec` とPR #3（feature → develop、Draft/open）、Push/PR CI成功を再取得した。
+- `apps/web/browser-acceptance/browser-acceptance.test.mjs` を新規実装。使い捨てPostgreSQL+ビルド済みNest/Nuxtを実Chromiumで操作。匿名モバイルの目次・章本文ページ送り、全4領域の詳細画面、合成作者セッションでのシリーズ作成→下書き保存→未公開検証→公開、未保存編集の破棄確認、章ルビ挿入・選択範囲、作者のメモ/並べ替え/公開管理サブルートを検証する。日本語IMEの実変換・実Discord OAuth2とは独立。
+- `scripts/check-http-acceptance.mjs` に `HTTP_BROWSER_ACCEPTANCE=1` 指定時のみブラウザ試験起動を追加。ブラウザで作者セッションを使い終えた後、HTTP試験がそのセッションのログアウト失効を検証する。テストDBの明示opt-inと空DB確認は維持。
+- `.github/workflows/alpha-checks.yml` の既存 `http-ssr-acceptance` にPlaywright 1.56.1/Chromiumインストールを追加。Ubuntu26.04上ではPlaywright 1.56.1が未対応（run `41169643771` の実ログ）であったため、ジョブ単独でUbuntu24.04へ固定。
+- Chromiumで `/stories/:id` を開いた際に、専用目次ではなく親コレクションだけが描画される不具合を実測。Nuxtネストルートで親 `stories.vue` に `NuxtPage` がなかったことが原因。同構造の `tips.vue`/`dictionaries.vue`/`timeline.vue` と `studio.vue` も修正。作者親ページは子ルートへ移動する際の `onBeforeRouteUpdate` を追加して未保存編集の破棄確認と保持を検証。
+- `apps/api/http-acceptance/http-acceptance.test.mjs` へ4領域の実専用画面マーカーを確認する退行試験を追加し、単にシリーズ名がHTMLに含まれるだけの偽陽性を排除。
+- `d5782936cb1c08266eeff3984aedf4d4e6b58a8a`（実装＋試験）でPush `41170398589` / PR `41170403421` がともに completed/success。実Chromiumブラウザ試験1/1、HTTP統合試験6/6、ビルド・型チェック・DB結合試験成功をジョブログから確認。`c8e59069f2c19a17749db98c20bfa6ed13a42376` にローカルブラウザ検証手順を追記。以後の最終HEAD/CIは再照合する。
+- 残件：実Discord本人・非本人・ログイン/ログアウト検証、実日本語IME/長文/複数デバイス、旧v0.3 UI画像比較、年表の年代区分間換算（規則未確定）、削除・無効化（状態遷移契約未確定）、AC-01〜78の網羅証跡、CAT規範Runtime/Gate、実環境デプロイ。これらは未達のまま。Draft PR #3を維持し、`develop`/`main` にマージしない。
