@@ -84,8 +84,8 @@ const filtered = computed(() => nodes.value.filter(node => {
 function pathTitle(node: AuthorNode): string {
   return ancestry(node).map(item => item.draft.title).join(' / ');
 }
-async function load() {
-  if (!auth.value?.authenticated) return;
+async function load(): Promise<boolean> {
+  if (!auth.value?.authenticated) return false;
   loading.value = true;
   errorText.value = '';
   try {
@@ -93,8 +93,10 @@ async function load() {
     for (const node of nodes.value) {
       scheduled[node.id] = node.publicSince === null ? '' : localDateTime(node.publicSince);
     }
+    return true;
   } catch {
     errorText.value = '公開管理データを取得できません。';
+    return false;
   } finally {
     loading.value = false;
   }
@@ -121,8 +123,8 @@ async function saveSchedule(node: AuthorNode) {
       method: 'POST',
       body: { expectedRevision: node.revision, isPublic: node.isPublic, publicSince: time },
     });
-    await load();
-    successText.value = '公開開始日時を更新しました。';
+    // A successful POST is not a verified final state if the readback fails.
+    if (await load()) successText.value = '公開開始日時を更新しました。';
   } catch {
     errorText.value = '日時の変更に失敗しました。競合の可能性があるため再読込してください。';
   } finally {
@@ -151,8 +153,7 @@ async function action(node: AuthorNode, kind: 'publish' | 'visibility') {
         body: { expectedRevision: node.revision, isPublic: nextVisibility, publicSince: node.publicSince },
       });
     }
-    await load();
-    successText.value = '公開設定を更新しました。';
+    if (await load()) successText.value = '公開設定を更新しました。';
   } catch (error: unknown) {
     const response = error as { data?: { message?: string | string[] }; statusCode?: number };
     const message = response.data?.message;
