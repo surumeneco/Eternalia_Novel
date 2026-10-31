@@ -154,3 +154,29 @@ test('publication management fixed text uses typed Japanese fallback keys', () =
     assert.equal(translateUiMessage(key, 'unknown'), expected, key + ' fallback');
   }
 });
+
+test('author memo UI fixed text uses typed Japanese fallback keys', () => {
+  const labels = {
+    "memoDiscardConfirm": "未保存のメモがあります。破棄しますか？",
+    "memoLoadError": "メモを取得できませんでした。",
+    "memoSaved": "メモを保存しました。",
+    "memoSaveFailed": "保存に失敗しました。改訂番号の競合を確認してください。",
+    "memoAuthChecking": "認証を確認しています。",
+    "memoLoginRequired": "作者としてログインするとメモを編集できます。",
+    "memoNew": "新規メモ",
+    "memoSearch": "メモを検索",
+    "memoSearchPlaceholder": "タイトル・本文・タグ",
+    "memoEmpty": "該当するメモはありません。",
+    "memoEdit": "メモを編集",
+    "memoBody": "本文",
+    "memoTags": "タグ（カンマ区切り）",
+    "memoTagsPlaceholder": "人物, 調査",
+    "memoRevision": "改訂",
+    "memoSave": "保存",
+    "memoChoose": "左の一覧からメモを選ぶか、新しく作成してください。"
+};
+  for (const [key, expected] of Object.entries(labels)) {
+    assert.equal(translateUiMessage(key, 'ja'), expected, key);
+    assert.equal(translateUiMessage(key, 'unknown'), expected, key + ' fallback');
+  }
+});
