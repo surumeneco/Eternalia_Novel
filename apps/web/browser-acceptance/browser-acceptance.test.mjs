@@ -51,6 +51,22 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
       assert.ok(content.includes(fixture.prefix + '-world-A'), 'missing series at ' + path);
     }
 
+    // AC-65: all four public domain pages must remain within the document
+    // viewport on representative phone, tablet and desktop widths.
+    for (const width of [390, 768, 1280]) {
+      await readerPage.setViewportSize({ width, height: 844 });
+      for (const domain of ['stories', 'tips', 'dictionaries', 'timeline']) {
+        await readerPage.goto(base + '/' + domain + '/' + fixture.seriesA);
+        const dimensions = await readerPage.evaluate(() => ({
+          viewport: document.documentElement.clientWidth,
+          content: document.documentElement.scrollWidth,
+        }));
+        assert.ok(dimensions.content <= dimensions.viewport + 2,
+          domain + ' horizontal overflow at ' + width + 'px: ' + JSON.stringify(dimensions));
+      }
+    }
+    await readerPage.setViewportSize({ width: 390, height: 844 });
+
     const author = await browser.newContext({ viewport: { width: 1280, height: 800 } });
     await author.addCookies([{
       name: 'eternalia_author', value: fixture.authorToken, url: base,
