@@ -80,3 +80,7 @@ HTTP_ACCEPTANCE_DISPOSABLE_DB=1 HTTP_BROWSER_ACCEPTANCE=1 NODE_ENV=test node --e
 PowerShellでは最後の実行前に `$env:HTTP_ACCEPTANCE_DISPOSABLE_DB='1'`、`$env:HTTP_BROWSER_ACCEPTANCE='1'`、`$env:NODE_ENV='test'` を設定します。Nuxtの `stories/tips/dictionaries/timeline` と `studio` は子ルートを描画する必要があり、SSR・ブラウザ試験がその退行を検出します。
 
 この手順は実装コードから構成したものです。ユーザー端末でのDiscord認証・ブラウザ描画、CAT-TDDの規範Gate、実ユーザー認証付き管理APIの総合受入はまだ実測していません。エラーが出た場合はCIログと環境変数の不一致を切り分けてください。
+
+## 5. 人間による実機受入
+
+Discord本人・非本人のOAuth2、ログアウト、実日本語IME、長文、端末幅、旧v0.3のデザイン比較は、[α版 実機受入チェックリスト](./alpha-manual-acceptance.md)に手順と記録欄を分離しました。未実施の項目をCIのGreenで代用しません。全ACの追跡状況は[AC-01〜AC-78証拠台帳](./alpha-ac-traceability.md)を参照してください。
