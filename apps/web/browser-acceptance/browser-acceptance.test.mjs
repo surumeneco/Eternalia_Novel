@@ -305,7 +305,7 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
   }
 });
 
-test('author browser saves and explicitly publishes chapter, setting, word and event', { timeout: 120_000 }, async () => {
+test('author browser saves and explicitly publishes chapter, setting, word, grammar and event', { timeout: 180_000 }, async () => {
   assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
   const browser = await chromium.launch({ headless: true });
   try {
@@ -346,12 +346,13 @@ test('author browser saves and explicitly publishes chapter, setting, word and e
     const section = await create('tipSection', tip, 'section');
     const language = await create('language', series, 'language', { characters: '[]', wordClasses: '[]' });
     const word = await create('word', language, 'word', { meanings: '[]' });
+    const grammar = await create('grammar', language, 'grammar');
     const period = await create('periodization', series, 'period');
     const event = await create('event', period, 'event', { year: '1' });
     for (const id of [series, volume, part, category, tip, language, period]) await publish(id);
 
     for (const [kind, id] of [
-      ['chapter', chapter], ['tipSection', section], ['word', word], ['event', event],
+      ['chapter', chapter], ['tipSection', section], ['word', word], ['grammar', grammar], ['event', event],
     ]) {
       await page.goto(base + '/studio?item=' + id);
       const editor = page.getByRole('textbox', { name: '本文・説明', exact: true });
