@@ -505,3 +505,30 @@ test('author browser reorders only sibling chapters and protects unapplied chang
     await browser.close();
   }
 });
+
+test('anonymous browser cannot access author workspace data or editing controls', { timeout: 60_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const anonymous = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const page = await anonymous.newPage();
+    for (const [path, privateSelector] of [
+      ['/studio', '.studio-editor textarea'],
+      ['/studio/memos', '.memo-editor'],
+      ['/studio/order', '.order-list'],
+      ['/studio/publication', '.publication-list'],
+    ]) {
+      await page.goto(base + path);
+      await page.getByRole('link', { name: 'Discordでログイン' }).waitFor();
+      assert.equal(await page.locator(privateSelector).count(), 0,
+        path + ' must not render private author controls without a session');
+    }
+    for (const path of ['/api/admin/nodes', '/api/admin/memos']) {
+      assert.equal((await anonymous.request.get(base + path)).status(), 401,
+        path + ' must not expose private data');
+    }
+    await anonymous.close();
+  } finally {
+    await browser.close();
+  }
+});
