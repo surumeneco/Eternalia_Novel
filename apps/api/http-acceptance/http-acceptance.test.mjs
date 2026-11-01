@@ -208,3 +208,59 @@ test('synthetic author completes four-domain HTTP publication and privacy cycle'
   assert.equal((await request('GET', '/api/admin/nodes')).status, 401,
     'revoked author session must no longer work');
 });
+
+
+test('invalid word meanings reject atomically without changing the published snapshot', async () => {
+  const cookie = 'eternalia_author=' + fixture.authorToken;
+  async function request(method, path, body) {
+    const response = await fetch(base + path, {
+      method,
+      headers: { Cookie: cookie, Origin: base, 'Content-Type': 'application/json' },
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    });
+    return { status: response.status, value: await response.text() };
+  }
+  async function create(kind, parentId, title, body = '', details = {}) {
+    const response = await request('POST', '/api/admin/nodes', {
+      kind, parentId, content: { title, body, details },
+    });
+    assert.equal(response.status, 201, response.value);
+    return JSON.parse(response.value).id;
+  }
+  const series = await create('series', null, fixture.prefix + '-invalid-word-series');
+  const language = await create('language', series, fixture.prefix + '-invalid-word-language');
+  const word = await create('word', language, fixture.prefix + '-invalid-word', '公開語', { meanings: '[]' });
+  for (const id of [series, language, word]) {
+    const result = await request('POST', '/api/admin/nodes/' + id + '/publish', { expectedRevision: 1 });
+    assert.equal(result.status, 200, result.value);
+  }
+  assert.equal((await json('/api/public/items/' + word)).value.content.body, '公開語');
+
+  const rejected = await request('PATCH', '/api/admin/nodes/' + word, {
+    expectedRevision: 1,
+    content: { title: fixture.prefix + '-invalid-word', body: '漏洩する失敗稿',
+      details: { meanings: '[malformed-json' } },
+  });
+  assert.equal(rejected.status, 400, 'malformed word meanings must be rejected, not persisted');
+  const authorNodes = await request('GET', '/api/admin/nodes');
+  assert.equal(authorNodes.status, 200);
+  const stored = JSON.parse(authorNodes.value).find(node => node.id === word);
+  assert.equal(stored?.revision, 1, 'failed validation must not increment revision');
+  assert.equal(stored?.draft.body, '公開語', 'failed validation must not change the saved draft');
+  assert.equal((await json('/api/public/items/' + word)).value.content.body, '公開語',
+    'failed validation must not leak a rejected draft');
+
+  const saved = await request('PATCH', '/api/admin/nodes/' + word, {
+    expectedRevision: 1,
+    content: { title: fixture.prefix + '-invalid-word', body: '承認された新稿',
+      details: { meanings: '[]' } },
+  });
+  assert.equal(saved.status, 200, saved.value);
+  assert.equal((await json('/api/public/items/' + word)).value.content.body, '公開語',
+    'valid draft save must still require explicit publication');
+  const published = await request('POST', '/api/admin/nodes/' + word + '/publish', {
+    expectedRevision: 2,
+  });
+  assert.equal(published.status, 200, published.value);
+  assert.equal((await json('/api/public/items/' + word)).value.content.body, '承認された新稿');
+});
