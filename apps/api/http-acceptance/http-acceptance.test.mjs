@@ -83,22 +83,46 @@ test('published chapter body survives an unpublished draft edit across direct re
 });
 
 test('anonymous requests cannot read or mutate author library or memos', async () => {
-  for (const path of ['/api/admin/nodes', '/api/admin/memos']) {
-    const response = await get(path);
-    assert.equal(response.status, 401, path + ' must require author');
+  // AC-23: exercise both Nuxt proxy and direct Nest HTTP boundaries.
+  const before = await get('/api/public/items/' + fixture.chapter);
+  assert.equal(before.status, 200);
+  const attempts = [
+    ['GET', '/api/admin/nodes'],
+    ['GET', '/api/admin/memos'],
+    ['POST', '/api/admin/nodes', {
+      kind: 'series', content: { title: 'intrusion', body: '', details: {} },
+    }],
+    ['POST', '/api/admin/memos', { title: 'intrusion', body: '', tags: [] }],
+    ['PATCH', '/api/admin/nodes/' + fixture.chapter, {
+      expectedRevision: 2,
+      content: { title: 'intrusion', body: 'intrusion', details: {} },
+    }],
+    ['POST', '/api/admin/nodes/' + fixture.chapter + '/publish', {
+      expectedRevision: 2,
+    }],
+    ['POST', '/api/admin/nodes/' + fixture.chapter + '/visibility', {
+      expectedRevision: 2, isPublic: false, publicSince: null,
+    }],
+    ['POST', '/api/admin/order', {
+      parentId: fixture.seriesA, kind: 'volume', orderedIds: [fixture.volume],
+      expectedRevisions: { [fixture.volume]: 1 },
+    }],
+  ];
+  for (const root of [base, api]) {
+    for (const [method, path, body] of attempts) {
+      const response = await fetch(root + path, {
+        method,
+        headers: { 'Content-Type': 'application/json', Origin: base },
+        ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+      });
+      assert.equal(response.status, 401,
+        'anonymous request must not access ' + method + ' ' + root + path);
+    }
   }
-  const response = await fetch(base + '/api/admin/nodes', {
-    method: 'POST',
-    headers: { 'Content-Type':'application/json', Origin:base },
-    body: JSON.stringify({ kind:'series', content:{title:'intrusion',body:'',details:{}} }),
-  });
-  assert.equal(response.status, 401);
-  const forbidden = await fetch(base + '/api/admin/memos', {
-    method: 'POST',
-    headers: { 'Content-Type':'application/json', Origin:base },
-    body: JSON.stringify({title:'intrusion',body:'',tags:[]}),
-  });
-  assert.equal(forbidden.status, 401);
+  const after = await get('/api/public/items/' + fixture.chapter);
+  assert.equal(after.status, 200);
+  assert.equal(after.body, before.body,
+    'anonymous mutation attempts must not change the public snapshot');
 });
 
 test('authenticated non-author session cannot mutate author resources', async () => {
