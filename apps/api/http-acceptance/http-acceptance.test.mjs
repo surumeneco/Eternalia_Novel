@@ -101,6 +101,71 @@ test('anonymous requests cannot read or mutate author library or memos', async (
   assert.equal(forbidden.status, 401);
 });
 
+test('authenticated non-author session cannot mutate author resources', async () => {
+  // AC-19/22: this uses a valid synthetic session for a different Discord
+  // identity, not a malformed/expired cookie or real Discord OAuth exchange.
+  async function request(token, method, path, body) {
+    const response = await fetch(base + path, {
+      method,
+      headers: {
+        Cookie: 'eternalia_author=' + token,
+        Origin: base,
+        'Content-Type': 'application/json',
+      },
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    });
+    return { status: response.status, body: await response.text() };
+  }
+
+  const authorToken = fixture.authorToken;
+  const outsiderToken = fixture.outsiderToken;
+  assert.ok(authorToken && outsiderToken && authorToken !== outsiderToken);
+  const beforeNodes = await request(authorToken, 'GET', '/api/admin/nodes');
+  const beforeMemos = await request(authorToken, 'GET', '/api/admin/memos');
+  const beforePublic = await get('/api/public/items/' + fixture.chapter);
+  assert.equal(beforeNodes.status, 200);
+  assert.equal(beforeMemos.status, 200);
+  assert.equal(beforePublic.status, 200);
+  const chapter = JSON.parse(beforeNodes.body).find(node => node.id === fixture.chapter);
+  assert.ok(chapter, 'seeded chapter must be present for the author');
+
+  const denied = [
+    ['GET', '/api/admin/nodes'],
+    ['GET', '/api/admin/memos'],
+    ['POST', '/api/admin/nodes', {
+      kind: 'series', content: { title: 'non-author-create', body: '', details: {} },
+    }],
+    ['POST', '/api/admin/memos', {
+      title: 'non-author-memo', body: '', tags: [],
+    }],
+    ['PATCH', '/api/admin/nodes/' + fixture.chapter, {
+      expectedRevision: chapter.revision,
+      content: { ...chapter.draft, body: 'non-author-overwrite' },
+    }],
+    ['POST', '/api/admin/nodes/' + fixture.chapter + '/publish', {
+      expectedRevision: chapter.revision,
+    }],
+  ];
+  for (const [method, path, body] of denied) {
+    const response = await request(outsiderToken, method, path, body);
+    assert.equal(response.status, 401,
+      'a valid non-author session must not access ' + method + ' ' + path);
+  }
+
+  const afterNodes = await request(authorToken, 'GET', '/api/admin/nodes');
+  const afterMemos = await request(authorToken, 'GET', '/api/admin/memos');
+  const afterPublic = await get('/api/public/items/' + fixture.chapter);
+  assert.equal(afterNodes.status, 200);
+  assert.equal(afterMemos.status, 200);
+  assert.equal(afterPublic.status, 200);
+  assert.deepEqual(JSON.parse(afterNodes.body), JSON.parse(beforeNodes.body),
+    'denied writes must not alter author library data or revisions');
+  assert.deepEqual(JSON.parse(afterMemos.body), JSON.parse(beforeMemos.body),
+    'denied writes must not create an author memo');
+  assert.equal(afterPublic.body, beforePublic.body,
+    'denied publication must not change the anonymous snapshot');
+});
+
 test('real API returns no-store responses and unauthenticated session', async () => {
   const response = await get('/api/public/series', api);
   assert.equal(response.status, 200);
