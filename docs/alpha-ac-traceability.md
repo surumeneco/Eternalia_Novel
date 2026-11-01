@@ -6,6 +6,7 @@
 - 検証済み基準: `e6299061f3445207a599d9d1fbde7e1b397f5829` の [CI #41213396614](https://github.com/surumeneco/Eternalia_Novel/actions/runs/41213396614) は4ジョブsuccess、Chromiumブラウザ15件・HTTP/SSR6件が全件成功。後続のスクリーンショット収集/実機確認/CAT Gateは別証拠。
 - 追加の実測証拠: `e49e7ab` の [CI #41275393712](https://github.com/surumeneco/Eternalia_Novel/actions/runs/41275393712) は4ジョブsuccess、Chromium 17/17・HTTP 6/6・PostgreSQL統合10/10。後続HEADの新規試験は別途CI照合が必要。
 - 追加の実測証拠: `f44425d3` の [CI #41275713765](https://github.com/surumeneco/Eternalia_Novel/actions/runs/41275713765) は4ジョブsuccess、Chromium 20/20・HTTP 7/7。後続HEADのタグ横断試験は別途CI照合が必要。
+- 追加の実測証拠: `77a6b99e` の [CI #41276226834](https://github.com/surumeneco/Eternalia_Novel/actions/runs/41276226834) は4ジョブsuccess、Chromium 21/21・HTTP 7/7・PostgreSQL統合10/10。これはCAT正式Gateや人間の受入を代替しない。
 - 判定: `not-run` は**AC全体を受け入れるだけの網羅的証拠がまだない**ことを示す。右欄のB/H/DB/CIは探索的な**部分証拠候補**であり、該当ACのpassを意味しない。`pending-decision` は設計決定が必要。`scope-excluded` は明示除外。失敗は実測した場合のみ `fail` にする。
 - 各ACのpassへ更新する前に `テストID / コード箇所 / 環境 / 同一HEAD / CI run / 手動証拠 / 判定` を照合する。現在の本表はACを欠落させないための基線であり、CAT正式Gateやユーザー受入ではない。
 
@@ -58,7 +59,7 @@
 | AC-45 | 年代区分・出来事の公開日時を設定し、時刻境界の前後で取得する | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 年代区分の未来公開日時による配下Event遮断（CI #41275713765 success・境界値未検証） | pending-decision |
 | AC-46 | 一つのカテゴリに複数の設定を登録し、ある設定の所属先を変更する | 未特定 | — | not-run |
 | AC-47 | カテゴリを作成・編集し、カテゴリの中へさらにカテゴリを追加しようとする | 未特定 | — | not-run |
-| AC-48 | 異なるカテゴリの設定に同一のタグを付け、タグに基づいて横断的に分類する | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 同タグの公開Tipを複数カテゴリ横断検索し個別非公開を検証（新規ブラウザ試験、CI待ち） | not-run |
+| AC-48 | 異なるカテゴリの設定に同一のタグを付け、タグに基づいて横断的に分類する | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 同タグの公開Tipを複数カテゴリ横断検索し個別非公開を検証（CI #41276226834 success） | not-run |
 | AC-49 | カテゴリに項目プリセットの見出し・表示順・テンプレートテキストを登録・変更し設定作成に利用する | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: category preset editor（全変更系列未検証） | not-run |
 | AC-50 | 既存設定AをプリセットP1で作成・編集した後、カテゴリ側プリセットをP2へ変更し新規設定Bを作成する | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: category preset editor（P1→P2の全条件未検証） | not-run |
 | AC-51 | 公開中の設定で一部TipSectionだけを非公開にする | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: TipSection個別非公開・兄弟公開のUI/API確認（CI #41275269669 success） | not-run |
