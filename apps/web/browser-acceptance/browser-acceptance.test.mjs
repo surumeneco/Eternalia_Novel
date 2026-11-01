@@ -2118,3 +2118,54 @@ test('AC-25: settings, dictionary and timeline remain isolated across two publis
     await browser.close();
   }
 });
+
+test('AC-56: shared author navigation works while anonymous editor and API writes stay guarded', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext();
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const anonymous = await browser.newContext();
+    const title = fixture.prefix + '-author-nav-series';
+    const create = await author.request.post(base + '/api/admin/nodes', {
+      headers: { Origin: base },
+      data: { kind: 'series', parentId: null, content: { title, body: '', details: {} } },
+    });
+    assert.equal(create.status(), 201, await create.text());
+    const series = (await create.json()).id;
+    const publish = await author.request.post(base + '/api/admin/nodes/' + series + '/publish', {
+      headers: { Origin: base }, data: { expectedRevision: 1 },
+    });
+    assert.equal(publish.status(), 200, await publish.text());
+
+    const page = await author.newPage();
+    for (const route of ['/', '/stories', '/series/' + series]) {
+      await page.goto(base + route);
+      await page.getByRole('contentinfo').getByRole('link', { name: '作者の書斎' }).click();
+      await page.getByRole('heading', { name: '作者の書斎' }).waitFor();
+      await page.getByRole('button', { name: '新規シリーズ' }).waitFor();
+    }
+
+    const readerPage = await anonymous.newPage();
+    await readerPage.goto(base + '/studio');
+    await readerPage.getByText('編集するには、許可された作者のDiscordアカウントで認証してください。').waitFor();
+    assert.equal(await readerPage.getByRole('button', { name: '新規シリーズ' }).count(), 0);
+    const unauthorized = await anonymous.request.post(base + '/api/admin/nodes', {
+      headers: { Origin: base },
+      data: { kind: 'series', parentId: null,
+        content: { title: title + '-unauthorized', body: '', details: {} } },
+    });
+    assert.equal(unauthorized.status(), 401);
+    const nodes = await (await author.request.get(base + '/api/admin/nodes')).json();
+    assert.ok(!nodes.some(node => node.draft.title === title + '-unauthorized'));
+    await readerPage.close();
+    await page.close();
+    await anonymous.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
