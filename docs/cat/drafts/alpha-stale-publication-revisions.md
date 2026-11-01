@@ -14,3 +14,5 @@ With a valid synthetic author session, publication and visibility writes must en
 - SC-PUBLIC-REV-04: all mutations use the seeded synthetic author session; anonymous and non-author denial remain independently tested.
 
 Formal CAT machine Gates: **not-run**. Real Discord account/PKCE E2E: **not-run**. No merge or deployment.
+
+Additional guard TCE: authenticated PATCH and DELETE requests must call the write-origin policy; GET and HEAD must not. This is a synthetic guard unit test, not a real OAuth2 test.
