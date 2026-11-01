@@ -77,7 +77,7 @@
 | AC-62 | DS-02、旧FE `_font-size/_margin/_radius.scss` | apps/web/tests/legacy-design-tokens.test.mjs | CI: v0.3の文字サイズ6段階・余白・角丸を稼働CSSと照合（画面幅別の視覚確認は未実施） | not-run |
 | AC-63 | DS-03、旧FE `layouts/default.vue` と `components/app/common` | apps/web/browser-acceptance/browser-acceptance.test.mjs | CI: 11枚の読者/作者スクリーンショット取得（旧Header/SideMenu等との画像比較は未実施） | not-run |
 | AC-64 | DS-04、CM-01/05/08 | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 競合アラート・未保存保護・読者ルート（全状態と多言語は未検証） | not-run |
-| AC-65 | DS-05、WR-02/05 | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 読者390/768/1280px・作者320/390px・ルビ選択範囲（実IME未検証） | not-run |
+| AC-65 | DS-05、WR-02/05 | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 4公開領域を320/390/768/1280pxで実ブラウザ検証し水平はみ出しなし、320/390/1280pxのスクリーンショットを保存。作者Studioは320/390pxで検証（CI #41294267990 success）。実IME・人間の視覚評価は未検証 | not-run |
 | AC-66 | v0.3共通、PB-06、CM-09 | 未特定 | — | not-run |
 | AC-67 | v0.3設定・辞書、ST-03/05/06/09、LG-05〜08 | 未特定 | — | not-run |
 | AC-68 | v0.3 Timeline、TL-01〜06 | 未特定 | — | not-run |
