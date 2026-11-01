@@ -149,8 +149,12 @@ export class DiscordAuthService implements OnModuleDestroy {
   assertWriteOrigin(headers: RequestHeaders): void {
     // Media type matching is exact; JSONP/JSON-seq prefix lookalikes are not
     // acceptable for state-changing author requests. Parameters are allowed.
-    const mediaType = headers['content-type']?.split(';', 1)[0].trim().toLowerCase();
+    const rawMediaType = headers['content-type'];
+    const mediaType = rawMediaType?.split(';', 1)[0].trim().toLowerCase();
+    // Content-Type is not a list header. Reject combined/ambiguous values
+    // instead of accepting a JSON prefix with a second media type appended.
     if (!this.configured || headers.origin !== this.origin ||
+        !rawMediaType || rawMediaType.includes(',') ||
         mediaType !== 'application/json') {
       throw new ForbiddenException('許可されていない変更要求です。');
     }
