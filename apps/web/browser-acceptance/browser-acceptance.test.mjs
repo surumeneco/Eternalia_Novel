@@ -2200,6 +2200,13 @@ test('AC-56: shared author navigation works while anonymous editor and API write
       && url.searchParams.get('item') === fixture.chapter);
     await page.getByRole('textbox', { name: '本文・説明', exact: true }).waitFor();
 
+    // The series detail page must also link directly to the exact series editor.
+    await page.goto(base + '/stories/' + series);
+    await page.getByRole('link', { name: 'この項目を編集' }).click();
+    await page.waitForURL(url => url.pathname === '/studio'
+      && url.searchParams.get('item') === series);
+    await page.getByRole('heading', { name: 'シリーズ：' + title }).waitFor();
+
     const readerPage = await anonymous.newPage();
     await readerPage.goto(base + '/read/' + fixture.chapter);
     await readerPage.locator('.author-edit-link').waitFor({ state: 'hidden' });
