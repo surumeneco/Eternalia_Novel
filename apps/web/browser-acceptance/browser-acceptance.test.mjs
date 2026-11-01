@@ -1239,6 +1239,15 @@ test('published descendants are hidden by private ancestors across all four doma
     for (const id of leaves) {
       await expectPublic(id, true, 'clearing ancestor schedule restores published descendant ' + id);
     }
+
+    // AC-45: a future-scheduled period must block its events but not the story.
+    await visibility(period, true, Date.UTC(2100, 0, 1));
+    await expectPublic(event, false, 'scheduled period blocks its first event');
+    await expectPublic(eventSibling, false, 'scheduled period blocks its second event');
+    await expectPublic(chapter, true, 'scheduled period must not hide unrelated story');
+    await visibility(period, true);
+    await expectPublic(event, true, 'clearing period schedule restores first event');
+    await expectPublic(eventSibling, true, 'clearing period schedule restores second event');
     await page.close();
     await anonymous.close();
     await author.close();
