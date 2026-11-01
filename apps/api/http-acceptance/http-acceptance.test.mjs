@@ -104,8 +104,8 @@ test('anonymous requests cannot read or mutate author library or memos', async (
 test('authenticated non-author session cannot mutate author resources', async () => {
   // AC-19/22: this uses a valid synthetic session for a different Discord
   // identity, not a malformed/expired cookie or real Discord OAuth exchange.
-  async function request(token, method, path, body) {
-    const response = await fetch(base + path, {
+  async function request(token, method, path, body, root = base) {
+    const response = await fetch(root + path, {
       method,
       headers: {
         Cookie: 'eternalia_author=' + token,
@@ -145,11 +145,20 @@ test('authenticated non-author session cannot mutate author resources', async ()
     ['POST', '/api/admin/nodes/' + fixture.chapter + '/publish', {
       expectedRevision: chapter.revision,
     }],
+    ['POST', '/api/admin/nodes/' + fixture.chapter + '/visibility', {
+      expectedRevision: chapter.revision, isPublic: false, publicSince: null,
+    }],
+    ['POST', '/api/admin/order', {
+      parentId: fixture.seriesA, kind: 'volume', orderedIds: [fixture.volume],
+      expectedRevisions: { [fixture.volume]: 1 },
+    }],
   ];
   for (const [method, path, body] of denied) {
-    const response = await request(outsiderToken, method, path, body);
-    assert.equal(response.status, 401,
-      'a valid non-author session must not access ' + method + ' ' + path);
+    for (const root of [base, api]) {
+      const response = await request(outsiderToken, method, path, body, root);
+      assert.equal(response.status, 401,
+        'a valid non-author session must not access ' + method + ' ' + root + path);
+    }
   }
 
   const afterNodes = await request(authorToken, 'GET', '/api/admin/nodes');
