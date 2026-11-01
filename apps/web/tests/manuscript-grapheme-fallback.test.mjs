@@ -92,3 +92,20 @@ test('fallback preserves Hangul Jamo syllable clusters', () => {
     Intl.Segmenter = original;
   }
 });
+
+test('fallback preserves extended Hangul Jamo L/V/T grapheme boundaries', () => {
+  const original = Intl.Segmenter;
+  try {
+    Intl.Segmenter = undefined;
+    const cluster = String.fromCodePoint(0xA960, 0xD7B0, 0xD7CB);
+    const source = '前' + cluster + '後';
+    for (const index of [2, 3]) {
+      assert.equal(insert(source, index, index, 'page'), null, 'extended Jamo ' + index);
+      assert.equal(insert(source, index, index, 'ruby'), null, 'extended Jamo ' + index);
+    }
+    assert.equal(insert(source, 4, 4, 'page')?.value, '前' + cluster + '[[page]]後');
+    assert.equal(insert(source, 1, 4, 'ruby')?.value, '前｜' + cluster + '《よみ》後');
+  } finally {
+    Intl.Segmenter = original;
+  }
+});
