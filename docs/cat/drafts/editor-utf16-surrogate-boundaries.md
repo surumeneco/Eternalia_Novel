@@ -9,5 +9,7 @@ TCE:
 - Ruby selection containing only one surrogate half returns null.
 - Ruby around the complete `𠮷` remains valid.
 - Page marker before or after the complete character remains valid.
+- Ruby selection spanning CR, LF, CRLF, Unicode line separator (U+2028), paragraph separator (U+2029), or next-line (U+0085) is rejected rather than converted into invalid inline ruby.
+- Page marker insertion at valid UTF-16 boundaries remains unaffected by line-break normalization.
 
 Formal CAT machine Gates and real browser/IME/Android tests: **not-run**. No merge or deployment.
