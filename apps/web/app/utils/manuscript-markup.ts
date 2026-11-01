@@ -34,6 +34,18 @@ export function insertManuscriptMarkup(
     return last;
   };
   const isRegionalIndicator = (cp: number) => cp >= 0x1F1E6 && cp <= 0x1F1FF;
+  // Unicode grapheme rules GB6-GB8 for conjoining Hangul Jamo.
+  const isHangulL = (cp: number) =>
+    (cp >= 0x1100 && cp <= 0x115F) || (cp >= 0xA960 && cp <= 0xA97C);
+  const isHangulV = (cp: number) =>
+    (cp >= 0x1160 && cp <= 0x11A7) || (cp >= 0xD7B0 && cp <= 0xD7C6);
+  const isHangulT = (cp: number) =>
+    (cp >= 0x11A8 && cp <= 0x11FF) || (cp >= 0xD7CB && cp <= 0xD7FB);
+  const isHangulLV = (cp: number) =>
+    cp >= 0xAC00 && cp <= 0xD7A3 && (cp - 0xAC00) % 28 === 0;
+  const isHangulLVT = (cp: number) =>
+    cp >= 0xAC00 && cp <= 0xD7A3 && (cp - 0xAC00) % 28 !== 0;
+
   const fallbackSplitsGrapheme = (index: number): boolean => {
     if (index <= 0 || index >= source.length) return false;
     const previous = codePointBefore(index);
@@ -47,6 +59,12 @@ export function insertManuscriptMarkup(
         // Emoji subdivision flags use supplementary tag code points that
         // are neither combining marks nor ZWJ. Keep the tag run attached.
         (next >= 0xE0020 && next <= 0xE007F)) return true;
+    if ((isHangulL(previous) &&
+          (isHangulL(next) || isHangulV(next) || isHangulLV(next) || isHangulLVT(next))) ||
+        ((isHangulLV(previous) || isHangulV(previous)) &&
+          (isHangulV(next) || isHangulT(next))) ||
+        ((isHangulLVT(previous) || isHangulT(previous)) && isHangulT(next)))
+      return true;
     if (!isRegionalIndicator(previous) || !isRegionalIndicator(next)) return false;
     // Pair consecutive regional indicators from the start of their run.
     // The boundary after an odd count is inside a flag, after an even count is valid.
