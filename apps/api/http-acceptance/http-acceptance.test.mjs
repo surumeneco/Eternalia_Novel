@@ -697,6 +697,14 @@ test('stale publish and visibility writes return 409 without changing public con
     { expectedRevision: 1, isPublic: false, publicSince: null });
   assert.equal(staleVisibility.status, 409);
   assert.equal((await json('/api/public/items/' + chapter)).value.content.body, '改訂後本文');
+
+  const futurePublish = await write('POST', '/api/admin/nodes/' + chapter + '/publish',
+    { expectedRevision: 999999 });
+  assert.equal(futurePublish.status, 409, 'future revision cannot publish');
+  const futureVisibility = await write('POST', '/api/admin/nodes/' + chapter + '/visibility',
+    { expectedRevision: 999999, isPublic: false, publicSince: null });
+  assert.equal(futureVisibility.status, 409, 'future revision cannot hide public content');
+  assert.equal((await json('/api/public/items/' + chapter)).value.content.body, '改訂後本文');
 });
 
 test('synthetic author completes four-domain HTTP publication and privacy cycle', async () => {
