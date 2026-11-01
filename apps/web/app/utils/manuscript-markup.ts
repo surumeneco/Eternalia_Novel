@@ -16,12 +16,19 @@ export function insertManuscriptMarkup(
     source.charCodeAt(index) >= 0xDC00 && source.charCodeAt(index) <= 0xDFFF;
   const splitsCrlf = (index: number) => index > 0 && index < source.length &&
     source[index - 1] === '\r' && source[index] === '\n';
+  // Textarea offsets can also split combining kana, emoji ZWJ or flag clusters.
+  const graphemes = typeof Intl.Segmenter === 'function'
+    ? new Intl.Segmenter('ja', { granularity: 'grapheme' }).segment(source)
+    : null;
+  const splitsGrapheme = (index: number) => graphemes !== null &&
+    index > 0 && index < source.length && graphemes.containing(index)?.index !== index;
   const marker = '[[page]]';
   const splitsMarker = (index: number) => {
     const at = source.lastIndexOf(marker, index);
     return at >= 0 && index > at && index < at + marker.length;
   };
-  if (splitsPair(start) || splitsPair(end) || splitsCrlf(start) || splitsCrlf(end) ||
+  if (splitsPair(start) || splitsPair(end) || splitsGrapheme(start) || splitsGrapheme(end) ||
+      splitsCrlf(start) || splitsCrlf(end) ||
       splitsMarker(start) || splitsMarker(end)) return null;
   // Match the reader's inline ruby grammar before editing an existing token.
   const rubyTokens = /｜([^｜《》\r\n\u0085\u2028\u2029]+)《([^｜《》\r\n\u0085\u2028\u2029]+)》/g;
