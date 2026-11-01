@@ -24,7 +24,7 @@ export function insertManuscriptMarkup(
   if (splitsPair(start) || splitsPair(end) || splitsCrlf(start) || splitsCrlf(end) ||
       splitsMarker(start) || splitsMarker(end)) return null;
   // Match the reader's inline ruby grammar before editing an existing token.
-  const rubyTokens = /｜([^《\r\n\u0085\u2028\u2029]+)《([^》\r\n\u0085\u2028\u2029]+)》/g;
+  const rubyTokens = /｜([^｜《》\r\n\u0085\u2028\u2029]+)《([^｜《》\r\n\u0085\u2028\u2029]+)》/g;
   for (const match of source.matchAll(rubyTokens)) {
     const inside = (index: number) => index > match.index && index < match.index + match[0].length;
     if (inside(start) || inside(end)) return null;
