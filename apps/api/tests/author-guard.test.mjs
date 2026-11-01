@@ -61,3 +61,24 @@ test('actual DiscordAuthService requires exact JSON media type and matching Orig
     origin: 'https://attacker.test', 'content-type': 'application/json',
   }));
 });
+
+test('Discord author configuration accepts only canonical HTTP origins', () => {
+  const { DiscordAuthService } = require('../dist/discord-auth.service.js');
+  const auth = Object.create(DiscordAuthService.prototype);
+  Object.assign(auth, {
+    pool: {}, clientId: 'test-client', clientSecret: 'test-secret',
+    authorId: '123456789012345678', origin: '',
+  });
+  for (const origin of ['https://example.test', 'http://127.0.0.1:3000']) {
+    auth.origin = origin;
+    assert.equal(auth.configured, true, origin);
+  }
+  for (const origin of [
+    'https://example.test?next=evil', 'https://example.test#fragment',
+    'https://user@example.test', 'https://example.test/path',
+    'https://example.test/',
+  ]) {
+    auth.origin = origin;
+    assert.equal(auth.configured, false, origin);
+  }
+});
