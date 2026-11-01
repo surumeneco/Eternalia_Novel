@@ -11,6 +11,7 @@ Status: Draft, not Confirmed. Scope: a published chapter reader page offers a di
 ## Exploratory tests
 
 1. Authenticated synthetic author visits a published chapter, clicks `この項目を編集`, and lands in the editor for that exact chapter ID.
+1b. Authenticated synthetic author visits a published series detail page and follows the item-specific edit link to the editor for that exact series ID; anonymous readers see no such link.
 2. Anonymous reader visits the same chapter and sees no item-specific author edit link.
 3. Existing shared footer author navigation and anonymous Studio/API protections remain green.
 
