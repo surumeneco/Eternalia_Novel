@@ -135,3 +135,55 @@ test('PostgreSQL persists explicitly reordered sibling order and detects stale b
     },now+2)),e=>e.code==='conflict');
   } finally { await repository.onModuleDestroy(); }
 });
+
+
+test('PostgreSQL keeps homographic words distinct across languages and series', async () => {
+  const repository = new PostgresLibraryService();
+  const [seriesA, seriesB, languageA1, languageA2, languageB1, wordA1, wordA2, wordB1] =
+    Array.from({ length: 8 }, () => randomUUID());
+  const now = Date.UTC(2026, 9, 29);
+  const nodes = [
+    [seriesA, 'series', null, '世界A', ''],
+    [seriesB, 'series', null, '世界B', ''],
+    [languageA1, 'language', seriesA, '言語1', ''],
+    [languageA2, 'language', seriesA, '言語2', ''],
+    [languageB1, 'language', seriesB, '言語1', ''],
+    [wordA1, 'word', languageA1, '同綴語', '言語A1の意味'],
+    [wordA2, 'word', languageA2, '同綴語', '言語A2の意味'],
+    [wordB1, 'word', languageB1, '同綴語', '言語B1の意味'],
+  ];
+  try {
+    for (const [id, kind, parentId, title, body] of nodes) {
+      await repository.mutate(db => createNode(db, {
+        id, kind, parentId, content: { title, body, details: {} }, now,
+      }));
+    }
+    for (const [id] of nodes) {
+      await repository.mutate(db => publishNode(db, id, 1, now));
+    }
+    const library = await repository.read();
+    const wordsA = publicTree(library, seriesA, now + 1).filter(node => node.kind === 'word');
+    const wordsB = publicTree(library, seriesB, now + 1).filter(node => node.kind === 'word');
+    assert.deepEqual(new Set(wordsA.map(node => node.id)), new Set([wordA1, wordA2]),
+      'same spelling must not merge distinct words in a series');
+    assert.deepEqual(new Set(wordsB.map(node => node.id)), new Set([wordB1]),
+      'series filtering must not import a homograph from another series');
+    for (const [id, parentId, body] of [
+      [wordA1, languageA1, '言語A1の意味'],
+      [wordA2, languageA2, '言語A2の意味'],
+      [wordB1, languageB1, '言語B1の意味'],
+    ]) {
+      const word = toReader(library, id, now + 1);
+      assert.equal(word?.parentId, parentId);
+      assert.equal(word?.content.title, '同綴語');
+      assert.equal(word?.content.body, body);
+    }
+    await repository.mutate(db => setVisibility(db, seriesB, 1, false, null, now + 2));
+    const hidden = await repository.read();
+    assert.deepEqual(publicTree(hidden, seriesB, now + 3), []);
+    assert.deepEqual(new Set(publicTree(hidden, seriesA, now + 3)
+      .filter(node => node.kind === 'word').map(node => node.id)), new Set([wordA1, wordA2]));
+  } finally {
+    await repository.onModuleDestroy();
+  }
+});
