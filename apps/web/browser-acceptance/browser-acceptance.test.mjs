@@ -1726,3 +1726,71 @@ test('AC-01: author creates series, volume, part and chapter through studio and 
     await browser.close();
   }
 });
+
+test('AC-02: author reorders sibling volumes and renames one without changing identity', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const prefix = fixture.prefix + '-ui-order';
+    async function create(kind, parentId, title) {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base },
+        data: { kind, parentId, content: { title, body: '', details: {} } },
+      });
+      assert.equal(response.status(), 201, await response.text());
+      return (await response.json()).id;
+    }
+    const series = await create('series', null, prefix + '-series');
+    const firstTitle = prefix + '-volume-A';
+    const secondTitle = prefix + '-volume-B';
+    const first = await create('volume', series, firstTitle);
+    const second = await create('volume', series, secondTitle);
+    const page = await author.newPage();
+    await page.goto(base + '/studio/order');
+    await page.getByRole('combobox', { name: '親となる項目' }).selectOption(series);
+    await page.locator('.order-list li').first().waitFor();
+    assert.deepEqual(await page.locator('.order-list li > span').allInnerTexts(), [firstTitle, secondTitle]);
+    await page.getByRole('button', { name: firstTitle + 'を下へ移動' }).click();
+    assert.deepEqual(await page.locator('.order-list li > span').allInnerTexts(), [secondTitle, firstTitle]);
+    page.once('dialog', dialog => dialog.accept());
+    await page.getByRole('button', { name: '表示順を反映' }).click();
+    await page.getByRole('status').getByText('順序を反映しました。').waitFor();
+
+    let nodes = await (await author.request.get(base + '/api/admin/nodes')).json();
+    let firstNode = nodes.find(node => node.id === first);
+    let secondNode = nodes.find(node => node.id === second);
+    assert.equal(firstNode.order, 1);
+    assert.equal(secondNode.order, 0);
+    assert.equal(firstNode.parentId, series);
+    assert.equal(secondNode.parentId, series);
+    await page.reload();
+    await page.getByRole('combobox', { name: '親となる項目' }).selectOption(series);
+    assert.deepEqual(await page.locator('.order-list li > span').allInnerTexts(), [secondTitle, firstTitle]);
+
+    await page.goto(base + '/studio?item=' + first);
+    await page.getByRole('textbox', { name: '名称・見出し', exact: true }).fill(prefix + '-volume-A-renamed');
+    await page.getByRole('button', { name: '下書きを保存' }).click();
+    await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
+    await page.reload();
+    assert.equal(await page.getByRole('textbox', { name: '名称・見出し', exact: true }).inputValue(),
+      prefix + '-volume-A-renamed');
+    nodes = await (await author.request.get(base + '/api/admin/nodes')).json();
+    firstNode = nodes.find(node => node.id === first);
+    secondNode = nodes.find(node => node.id === second);
+    assert.equal(firstNode.draft.title, prefix + '-volume-A-renamed');
+    assert.equal(secondNode.draft.title, secondTitle);
+    assert.equal(firstNode.order, 1);
+    assert.equal(secondNode.order, 0);
+    assert.equal(firstNode.parentId, series);
+    assert.equal(secondNode.parentId, series);
+    await page.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
