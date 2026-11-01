@@ -2355,3 +2355,82 @@ test('related Tip projection respects a hidden category ancestor and restores on
     await browser.close();
   }
 });
+
+
+test('AC-02: part ordering and part/chapter renames preserve identity and ancestry', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const prefix = fixture.prefix + '-part-order';
+    async function create(kind, parentId, suffix) {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base },
+        data: { kind, parentId, content: { title: prefix + '-' + suffix, body: suffix, details: {} } },
+      });
+      assert.equal(response.status(), 201, 'create ' + kind + ': ' + await response.text());
+      return (await response.json()).id;
+    }
+    const series = await create('series', null, 'series');
+    const volume = await create('volume', series, 'volume');
+    const first = await create('part', volume, 'part-A');
+    const second = await create('part', volume, 'part-B');
+    const chapter = await create('chapter', first, 'chapter');
+    const page = await author.newPage();
+    await page.goto(base + '/studio/order');
+    await page.getByRole('combobox', { name: '親となる項目' }).selectOption(volume);
+    await page.getByRole('combobox', { name: '項目の種類' }).selectOption('part');
+    const list = page.locator('.order-list li > span');
+    await page.getByRole('button', { name: prefix + '-part-Aを下へ移動' }).waitFor();
+    assert.deepEqual(await list.allInnerTexts(), [prefix + '-part-A', prefix + '-part-B']);
+    await page.getByRole('button', { name: prefix + '-part-Aを下へ移動' }).click();
+    page.once('dialog', dialog => dialog.accept());
+    await page.getByRole('button', { name: '表示順を反映' }).click();
+    await page.getByRole('status').getByText('順序を反映しました。').waitFor();
+    await page.reload();
+    await page.getByRole('combobox', { name: '親となる項目' }).selectOption(volume);
+    await page.getByRole('combobox', { name: '項目の種類' }).selectOption('part');
+    await page.getByRole('button', { name: prefix + '-part-Bを下へ移動' }).waitFor();
+    assert.deepEqual(await list.allInnerTexts(), [prefix + '-part-B', prefix + '-part-A']);
+
+    await page.goto(base + '/studio?item=' + first);
+    await page.getByRole('textbox', { name: '名称・見出し', exact: true }).fill(prefix + '-part-A-renamed');
+    await page.getByRole('button', { name: '下書きを保存' }).click();
+    await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
+    await page.reload();
+    assert.equal(await page.getByRole('textbox', { name: '名称・見出し', exact: true }).inputValue(),
+      prefix + '-part-A-renamed');
+
+    await page.goto(base + '/studio?item=' + chapter);
+    await page.getByRole('textbox', { name: '名称・見出し', exact: true }).fill(prefix + '-chapter-renamed');
+    await page.getByRole('button', { name: '下書きを保存' }).click();
+    await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
+    await page.reload();
+    assert.equal(await page.getByRole('textbox', { name: '名称・見出し', exact: true }).inputValue(),
+      prefix + '-chapter-renamed');
+
+    const response = await author.request.get(base + '/api/admin/nodes');
+    assert.equal(response.status(), 200);
+    const nodes = await response.json();
+    const a = nodes.find(node => node.id === first);
+    const b = nodes.find(node => node.id === second);
+    const c = nodes.find(node => node.id === chapter);
+    assert.equal(a?.order, 1);
+    assert.equal(b?.order, 0);
+    assert.equal(a?.parentId, volume);
+    assert.equal(b?.parentId, volume);
+    assert.equal(a?.draft.title, prefix + '-part-A-renamed');
+    assert.equal(b?.draft.title, prefix + '-part-B');
+    assert.equal(c?.parentId, first);
+    assert.equal(c?.draft.title, prefix + '-chapter-renamed');
+    assert.equal(c?.draft.body, 'chapter');
+    await page.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
