@@ -60,6 +60,7 @@ export const uiMessages = {
     studioKindLabel: "種類",
     studioTitleLabel: "タイトル",
     studioCreate: "作成",
+    studioWordInitialVisibility: '新規単語を公開設定で作成',
     studioCancel: "キャンセル",
     studioDraftRevision: "下書き改訂",
     studioPublishedSnapshot: "公開スナップショットあり",
