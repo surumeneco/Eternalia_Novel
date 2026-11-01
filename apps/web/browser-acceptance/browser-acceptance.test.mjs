@@ -1624,6 +1624,7 @@ test('AC-37/38: new word defaults public but supports private creation without r
     await page.getByRole('button', { name: '子項目を追加' }).click();
     const initialVisibility = page.getByRole('checkbox', { name: '新規単語を公開設定で作成' });
     assert.equal(await initialVisibility.isChecked(), true, 'new word should default to public');
+    await page.getByText('公開設定でも、公開版を反映するまでは読者に表示されません。').waitFor();
     await initialVisibility.uncheck();
     await page.getByRole('textbox', { name: 'タイトル', exact: true }).fill(prefix + '-private');
     await page.getByRole('button', { name: '作成', exact: true }).click();
