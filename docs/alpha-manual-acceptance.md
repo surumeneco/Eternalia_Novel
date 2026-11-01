@@ -1,6 +1,6 @@
 # α版 実機受入チェックリスト（未実施）
 
-対象: `surumeneco/Eternalia_Novel` / PR #3 / `feature/alpha-reimplementation-20261029`。正本は `forGPT/Creating/Projects/Websites/Eternalia_Novel/40_開発・検証/400_受入検証計画.md`。本書は実機検証の手順と記録欄であり、実施済み証拠ではない。
+対象: `surumeneco/Eternalia_Novel` のα版。旧基盤PR #3（`feature/alpha-reimplementation-20261029`）に加え、作者認証・公開境界の検証対象はDraft PR #7（`feature/alpha-auth-stale-publication-20261101-queue-b`）、編集・IME・モバイル境界はDraft PR #6（`feature/alpha-editor-surrogate-boundaries-20261101-queue-b`）。**別々のfeatureブランチであり、両PRの成果が同一デプロイに統合済みとは扱わない。** MAN-01〜07はPR #7、MAN-08〜10はPR #6を中心に、実際に配備したcommit SHAと差分を記録する。両者を横断するE2Eは明示的に統合した検証用ビルドで別途実施する。正本は `forGPT/Creating/Projects/Websites/Eternalia_Novel/40_開発・検証/400_受入検証計画.md`。本書は実機検証の手順と記録欄であり、実施済み証拠ではない。
 
 **現在の判定: 全件 not-run（人間による実機検証）。** GitHub Actionsの合成セッション/一時PostgreSQL/Chromium成功はDiscord本人認証、実IME、端末、旧v0.3デザイン承認を代替しない。
 
@@ -9,7 +9,7 @@
 1. `docs/alpha-nuxt-setup.md` に従い、Node.js 22以上、Docker PostgreSQL、`npm ci`、`npm run db:migrate`、`npm run dev:api` と `npm run dev:web` を準備。作業用の**検証専用DB**を使用し、既存の執筆データを保護する。CIシード用 `scripts/check-http-acceptance.mjs` は既存データ入りDBに対して実行しない。
 2. Discord Developer PortalでOAuth2 Redirect URLを `http://localhost:3000/api/auth/discord/callback` に登録。`.env` に `APP_ORIGIN=http://localhost:3000`、`DISCORD_CLIENT_ID`、`DISCORD_CLIENT_SECRET`、`DISCORD_AUTHOR_USER_ID`、`DATABASE_URL` を設定。秘密値、Cookie、認証コード、実ユーザーIDを証跡へ転記しない。
 3. **本人のDiscordアカウント**と、作者allowlistに含まれない**別の検証アカウント**を使う。別人の認証情報を共有しない。作者認可とログイン成功を別々に判定する。
-4. ブラウザの通常ウィンドウ（作者）とプライベートウィンドウ（匿名読者）を分ける。各検証の開始時刻、ブラウザ/OS、feature HEAD、観測結果を記録する。
+4. ブラウザの通常ウィンドウ（作者）とプライベートウィンドウ（匿名読者）を分ける。各検証の開始時刻、ブラウザ/OS、**シナリオに対応する配備済みfeature HEAD**、観測結果を記録する。
 
 ## 実操作シナリオ
 
@@ -30,7 +30,7 @@
 
 ## 自動撮影した比較用スクリーンショット（人間の判定は未実施）
 
-[Actions #41213912611 の alpha-ui-screenshots（11枚）](https://github.com/surumeneco/Eternalia_Novel/actions/runs/41213912611/artifacts/13047567293) は `8a6f24d0cac82ef98c58fea80d404f3b06f420df` の実Chromium/一時DBで取得した。読者4領域の390px・1280px、作者のデスクトップ・390px・320pxを含み、4ジョブ成功、ブラウザ15件・HTTP6件成功。CI artifactは**7日間保持**で、期限後の再生成には該当feature HEADのCIを実行する。
+[Actions #41213912611 の alpha-ui-screenshots（11枚）](https://github.com/surumeneco/Eternalia_Novel/actions/runs/41213912611/artifacts/13047567293) は旧PR #3系の `8a6f24d0cac82ef98c58fea80d404f3b06f420df` の実Chromium/一時DBで取得した**過去の比較資料**であり、PR #6/#7の現行画面を示すものではない。読者4領域の390px・1280px、作者のデスクトップ・390px・320pxを含み、4ジョブ成功、ブラウザ15件・HTTP6件成功。CI artifactは**7日間保持**で、期限後の再生成には該当feature HEADのCIを実行する。
 
 比較原典は `docs/legacy-ui-asset-map.md` に記載の旧 `Eternalia_frontend/develop@170fb60` と `forGPT/Creating/Projects/Websites/Eternalia_Novel/20_基本設計/220_ビジュアルデザイン・画面コンポーネント継承設計.md`。スクリーンショットの**取得成功は視覚的一致・利用者承認ではない**。MAN-10で旧UIとの画像対照を行い、差分と採否を記録する。
 
