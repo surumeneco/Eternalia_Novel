@@ -800,6 +800,34 @@ test('anonymous browser cannot access author workspace data or editing controls'
   }
 });
 
+test('authenticated non-author reader cannot enter the author workspace', { timeout: 90_000 }, async () => {
+  // AC-19/22: valid synthetic session belongs to a different Discord identity.
+  // This is not a real Discord OAuth2 login test.
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const reader = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    await reader.addCookies([{
+      name: 'eternalia_author', value: fixture.outsiderToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const page = await reader.newPage();
+    await page.goto(base + '/studio');
+    await page.getByRole('link', { name: 'Discordでログイン' }).waitFor();
+    assert.equal(await page.locator('.studio-editor').count(), 0,
+      'a signed-in reader must not receive author editing controls');
+    assert.equal((await reader.request.get(base + '/api/admin/nodes')).status(), 401,
+      'a signed-in reader must not read private author data');
+    const publicPage = await page.goto(base + '/stories/' + fixture.seriesA);
+    assert.equal(publicPage?.status(), 200,
+      'non-author login must not prevent reading public content');
+    assert.ok((await page.locator('body').innerText()).includes(fixture.prefix + '-world-A'));
+    await reader.close();
+  } finally {
+    await browser.close();
+  }
+});
+
 test('category preset editor copies only into newly created setting children', { timeout: 90_000 }, async () => {
   assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
   const browser = await chromium.launch({ headless: true });
