@@ -1163,9 +1163,14 @@ test('published descendants are hidden by private ancestors across all four doma
     }
     await page.goto(base + '/search?series=' + series);
     await page.getByLabel('検索語').fill(prefix + '-word');
-    await page.getByText('条件に一致する公開資料はありません。').waitFor();
+    // A private series is absent from the public series selector; the search
+    // page may show a generic unavailable-series alert rather than an empty
+    // results message. Both are safe provided the private title never leaks.
+    await page.getByRole('alert').waitFor();
     assert.equal(await page.getByRole('link', { name: prefix + '-word', exact: true }).count(), 0,
       'private ancestor must hide word from anonymous search');
+    assert.ok(!(await page.locator('body').innerText()).includes(prefix + '-word'),
+      'private ancestor must not leak word title in anonymous search');
 
     await visibility(series, true);
     for (const id of leaves) await expectPublic(id, true, 'series restoration must preserve snapshots');
