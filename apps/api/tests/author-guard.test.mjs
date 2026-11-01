@@ -37,3 +37,25 @@ test('PATCH and DELETE require write Origin while HEAD does not', async () => {
   await guard.canActivate(context('HEAD', {}));
   assert.equal(checks, 2);
 });
+
+test('actual DiscordAuthService requires exact JSON media type and matching Origin', () => {
+  const { DiscordAuthService } = require('../dist/discord-auth.service.js');
+  // Use the real production method without opening a DB connection.
+  const auth = Object.create(DiscordAuthService.prototype);
+  Object.assign(auth, {
+    pool: {}, clientId: 'test-client', clientSecret: 'test-secret',
+    authorId: '123456789012345678', origin: 'https://example.test',
+  });
+  assert.equal(auth.configured, true);
+  const headers = value => ({ origin: 'https://example.test', 'content-type': value });
+  for (const invalid of [
+    'application/jsonp', 'application/json-seq',
+    'application/json-malformed', 'text/plain', '', undefined,
+  ]) assert.throws(() => auth.assertWriteOrigin(headers(invalid)),
+    undefined, 'unexpectedly accepted ' + invalid);
+  for (const valid of ['application/json', 'Application/JSON; charset=utf-8'])
+    assert.doesNotThrow(() => auth.assertWriteOrigin(headers(valid)), valid);
+  assert.throws(() => auth.assertWriteOrigin({
+    origin: 'https://attacker.test', 'content-type': 'application/json',
+  }));
+});
