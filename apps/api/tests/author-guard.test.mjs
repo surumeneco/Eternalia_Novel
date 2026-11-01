@@ -24,3 +24,16 @@ test('author mutations must be subject to the origin policy', async () => {
   await guard.canActivate(context('POST',{}));
   assert.equal(checked,1);
 });
+
+test('PATCH and DELETE require write Origin while HEAD does not', async () => {
+  let checks = 0;
+  const guard = new AuthorGuard({
+    isAuthor: async () => true,
+    assertWriteOrigin: () => { checks++; },
+  });
+  await guard.canActivate(context('PATCH', {}));
+  await guard.canActivate(context('DELETE', {}));
+  assert.equal(checks, 2);
+  await guard.canActivate(context('HEAD', {}));
+  assert.equal(checks, 2);
+});
