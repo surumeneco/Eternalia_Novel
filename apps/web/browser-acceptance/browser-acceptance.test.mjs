@@ -60,7 +60,7 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
     // viewport on representative phone, tablet and desktop widths.
     const screenshotDir = process.env.HTTP_SCREENSHOT_DIR;
     if (screenshotDir) await mkdir(screenshotDir, { recursive: true });
-    for (const width of [390, 768, 1280]) {
+    for (const width of [320, 390, 768, 1280]) {
       await readerPage.setViewportSize({ width, height: 844 });
       for (const domain of ['stories', 'tips', 'dictionaries', 'timeline']) {
         await readerPage.goto(base + '/' + domain + '/' + fixture.seriesA);
@@ -70,7 +70,7 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
         }));
         assert.ok(dimensions.content <= dimensions.viewport + 2,
           domain + ' horizontal overflow at ' + width + 'px: ' + JSON.stringify(dimensions));
-        if (screenshotDir && (width === 390 || width === 1280)) {
+        if (screenshotDir && (width === 320 || width === 390 || width === 1280)) {
           await readerPage.screenshot({ path: join(screenshotDir, domain + '-' + width + '.png'), fullPage: true });
         }
       }
