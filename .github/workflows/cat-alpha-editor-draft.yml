@@ -6,6 +6,7 @@ on:
       - feature/alpha-editor-surrogate-boundaries-20261101-queue-b
     paths:
       - 'docs/cat/drafts/editor-*.md'
+      - 'docs/cat/drafts/manuscript-keyboard-undo.md'
       - '.github/workflows/cat-alpha-editor-draft.yml'
 
 permissions:
@@ -29,7 +30,8 @@ jobs:
             docs/cat/drafts/editor-grapheme-fallback.md \
             docs/cat/drafts/editor-halfwidth-kana-grapheme-fallback.md \
             docs/cat/drafts/editor-hangul-jamo-grapheme-fallback.md \
-            docs/cat/drafts/editor-utf16-surrogate-boundaries.md
+            docs/cat/drafts/editor-utf16-surrogate-boundaries.md \
+            docs/cat/drafts/manuscript-keyboard-undo.md
       - name: Declare evidence boundary
         run: |
           echo 'Draft syntax only. No normative CAT Gate, Android/Gboard/IME or visual acceptance.' >> "$GITHUB_STEP_SUMMARY"
