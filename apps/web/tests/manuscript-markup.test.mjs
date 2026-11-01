@@ -69,3 +69,21 @@ test('existing ruby token boundaries are protected from nested insertion', () =>
   assert.equal(insert(source, 6, 6, 'ruby'), null);
   assert.equal(insert(source, 9, 9, 'page')?.value, '前｜漢字《かんじ》[[page]]後');
 });
+
+
+test('insertion preserves complete Unicode grapheme clusters', () => {
+  if (typeof Intl.Segmenter !== 'function') return;
+  for (const cluster of ['か\u3099', '👩‍💻', '🇯🇵']) {
+    const source = '前' + cluster + '後';
+    for (let offset = 2; offset < 1 + cluster.length; offset++) {
+      if (new Intl.Segmenter('ja', { granularity: 'grapheme' })
+        .segment(source).containing(offset)?.index === offset) continue;
+      assert.equal(insert(source, offset, offset, 'page'), null, cluster);
+      assert.equal(insert(source, offset, offset, 'ruby'), null, cluster);
+    }
+    assert.equal(insert(source, 1 + cluster.length, 1 + cluster.length, 'page')?.value,
+      '前' + cluster + '[[page]]後');
+    assert.equal(insert(source, 1, 1 + cluster.length, 'ruby')?.value,
+      '前｜' + cluster + '《よみ》後');
+  }
+});
