@@ -1453,3 +1453,65 @@ test('two same-class word meanings retain independent etymologies through draft 
     await browser.close();
   }
 });
+
+
+test('author references unpublished settings and words without losing unsaved manuscript', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext();
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const anonymous = await browser.newContext();
+    const prefix = fixture.prefix + '-reference-during-writing';
+    async function create(kind, parentId, suffix, body = '') {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base },
+        data: { kind, parentId, content: { title: prefix + '-' + suffix, body, details: {} } },
+      });
+      assert.equal(response.status(), 201, await response.text());
+      return (await response.json()).id;
+    }
+    const series = await create('series', null, 'series');
+    const volume = await create('volume', series, 'volume');
+    const part = await create('part', volume, 'part');
+    const chapter = await create('chapter', part, 'chapter');
+    const category = await create('category', series, 'category');
+    const tip = await create('tip', category, 'tip', '作者限定の設定本文');
+    const language = await create('language', series, 'language');
+    const word = await create('word', language, 'word', '作者限定の単語本文');
+
+    const page = await author.newPage();
+    await page.goto(base + '/studio?item=' + chapter);
+    const manuscript = page.getByRole('textbox', { name: '本文・説明', exact: true });
+    const unsaved = prefix + '-まだ保存していない原稿';
+    await manuscript.fill(unsaved);
+    const reference = page.locator('.author-reference');
+    await reference.getByLabel('検索').fill(prefix + '-tip');
+    await reference.getByRole('button', { name: '設定：' + prefix + '-tip', exact: true }).click();
+    assert.ok((await reference.locator('.reference-detail').innerText()).includes('作者限定の設定本文'));
+    assert.equal(await manuscript.inputValue(), unsaved, 'setting lookup must not replace manuscript buffer');
+
+    await reference.getByLabel('種類').selectOption('word');
+    await reference.getByLabel('検索').fill(prefix + '-word');
+    await reference.getByRole('button', { name: '単語：' + prefix + '-word', exact: true }).click();
+    assert.ok((await reference.locator('.reference-detail').innerText()).includes('作者限定の単語本文'));
+    assert.equal(await manuscript.inputValue(), unsaved, 'dictionary lookup must not replace manuscript buffer');
+    for (const id of [tip, word]) {
+      assert.equal((await anonymous.request.get(base + '/api/public/items/' + id)).status(), 404,
+        'author reference must not expose unpublished data to anonymous readers');
+    }
+    await page.getByRole('button', { name: '下書きを保存' }).click();
+    await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
+    await page.reload();
+    await manuscript.waitFor();
+    assert.equal(await manuscript.inputValue(), unsaved, 'saved manuscript must survive reload after reference lookup');
+    await page.close();
+    await anonymous.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
