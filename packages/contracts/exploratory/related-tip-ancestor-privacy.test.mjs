@@ -90,3 +90,21 @@ test('AC-06: cross-series Tip relationship is rejected without mutating the sour
   assert.deepEqual(publicRelated(db, 3004), [ids.target],
     'rejected cross-series relation must not change the public snapshot');
 });
+
+
+test('AC-06/69: a related Tip title changes publicly only after explicit publication', () => {
+  let db = setupPublishedRelatedTips();
+  const publicLinks = () => JSON.parse(toReader(db, ids.source, 4000).content.details.relatedTips);
+  assert.deepEqual(publicLinks(), [{ id: ids.target, title: 'Target' }]);
+
+  db = editNode(db, ids.target, 1, contentOf('Unpublished target title'), 3001);
+  assert.equal(byId(db, ids.target).draft.title, 'Unpublished target title');
+  assert.deepEqual(publicLinks(), [{ id: ids.target, title: 'Target' }],
+    'related links must not expose an unpublished title revision');
+
+  db = publishNode(db, ids.target, 2, 3002);
+  assert.deepEqual(publicLinks(), [{ id: ids.target, title: 'Unpublished target title' }],
+    'the related link must reflect the explicitly published target revision');
+  assert.deepEqual(JSON.parse(byId(db, ids.source).draft.details.relatedTipIds), [ids.target],
+    'publishing a related target must not mutate the source draft');
+});
