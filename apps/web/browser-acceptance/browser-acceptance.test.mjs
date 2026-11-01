@@ -1364,3 +1364,92 @@ test('word editor shows and clears same-language duplicate spelling warnings', {
     await browser.close();
   }
 });
+
+
+test('two same-class word meanings retain independent etymologies through draft and publication', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext();
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const anonymous = await browser.newContext();
+    const prefix = fixture.prefix + '-two-meanings';
+    async function create(kind, parentId, title, details = {}) {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base },
+        data: { kind, parentId, content: { title, body: '', details } },
+      });
+      assert.equal(response.status(), 201, await response.text());
+      return (await response.json()).id;
+    }
+    async function publish(id) {
+      const response = await author.request.post(base + '/api/admin/nodes/' + id + '/publish', {
+        headers: { Origin: base }, data: { expectedRevision: 1 },
+      });
+      assert.equal(response.status(), 200, await response.text());
+    }
+    async function publicMeanings(word) {
+      const response = await anonymous.request.get(base + '/api/public/items/' + word);
+      assert.equal(response.status(), 200);
+      return JSON.parse((await response.json()).content.details.meanings);
+    }
+    const series = await create('series', null, prefix + '-series');
+    const language = await create('language', series, prefix + '-language');
+    const word = await create('word', language, prefix + '-word', { meanings: '[]' });
+    for (const id of [series, language]) await publish(id);
+    const page = await author.newPage();
+    await page.goto(base + '/studio?item=' + word);
+    await page.getByRole('button', { name: '意味を追加' }).click();
+    await page.getByRole('button', { name: '意味を追加' }).click();
+    const meanings = page.locator('.word-meaning');
+    assert.equal(await meanings.count(), 2);
+    for (const [index, definition, origin] of [
+      [0, '第一の意味', '第一の語源'],
+      [1, '第二の意味', '第二の語源'],
+    ]) {
+      const meaning = meanings.nth(index);
+      await meaning.getByRole('textbox', { name: '品詞' }).fill('名詞');
+      await meaning.getByRole('textbox', { name: '意味・説明' }).fill(definition);
+      await meaning.getByRole('button', { name: '語源を追加' }).click();
+      await meaning.getByRole('textbox', { name: '語源の説明' }).fill(origin);
+    }
+    await page.getByRole('button', { name: '下書きを保存' }).click();
+    await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
+    assert.equal((await anonymous.request.get(base + '/api/public/items/' + word)).status(), 404);
+    await page.reload();
+    await meanings.nth(1).waitFor();
+    assert.equal(await meanings.nth(0).getByRole('textbox', { name: '意味・説明' }).inputValue(), '第一の意味');
+    assert.equal(await meanings.nth(1).getByRole('textbox', { name: '語源の説明' }).inputValue(), '第二の語源');
+    page.once('dialog', dialog => dialog.accept());
+    await page.getByRole('button', { name: '保存済み下書きを公開版へ反映' }).click();
+    await page.getByText('公開スナップショットを更新しました。').waitFor();
+    const first = await publicMeanings(word);
+    assert.equal(first.length, 2);
+    assert.deepEqual(first.map(item => item.partOfSpeech), ['名詞', '名詞']);
+    assert.deepEqual(first.map(item => item.definition), ['第一の意味', '第二の意味']);
+    assert.deepEqual(first.map(item => item.etymologies[0].note), ['第一の語源', '第二の語源']);
+    assert.notEqual(first[0].id, first[1].id);
+    assert.notEqual(first[0].etymologies[0].id, first[1].etymologies[0].id);
+
+    await meanings.nth(0).getByRole('textbox', { name: '意味・説明' }).fill('更新後の第一義');
+    await page.getByRole('button', { name: '下書きを保存' }).click();
+    await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
+    assert.deepEqual(await publicMeanings(word), first, 'unpublished edit must not affect public meanings');
+    page.once('dialog', dialog => dialog.accept());
+    await page.getByRole('button', { name: '保存済み下書きを公開版へ反映' }).click();
+    await page.getByText('公開スナップショットを更新しました。').waitFor();
+    const second = await publicMeanings(word);
+    assert.equal(second[0].definition, '更新後の第一義');
+    assert.deepEqual(second[1], first[1], 'second sense and its etymology must remain unchanged');
+    assert.equal(second[0].id, first[0].id);
+    assert.deepEqual(second[0].etymologies, first[0].etymologies);
+    await page.close();
+    await anonymous.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
