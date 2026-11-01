@@ -511,6 +511,78 @@ test('invalid category preset edits are atomic and future tips use the latest va
   assert.equal(afterSuccess.find(node => node.id === category)?.revision, 2);
 });
 
+test('recent publications retain cross-domain privacy after hiding an ancestor', async () => {
+  // AC-55 exploratory API/PostgreSQL verification for settings, words, events.
+  const cookie = 'eternalia_author=' + fixture.authorToken;
+  async function write(method, path, body) {
+    const response = await fetch(base + path, {
+      method,
+      headers: { Cookie: cookie, Origin: base, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    return { status: response.status, body: await response.text() };
+  }
+  async function create(kind, parentId, title, body = '', details = {}) {
+    const response = await write('POST', '/api/admin/nodes', {
+      kind, parentId, content: { title, body, details },
+    });
+    assert.equal(response.status, 201, response.body);
+    return JSON.parse(response.body).id;
+  }
+  async function publish(id) {
+    const response = await write('POST', '/api/admin/nodes/' + id + '/publish',
+      { expectedRevision: 1 });
+    assert.equal(response.status, 200, response.body);
+  }
+  async function recent() {
+    const response = await json('/api/public/recent');
+    assert.equal(response.status, 200);
+    return response.value;
+  }
+  const series = await create('series', null, fixture.prefix + '-recent-multidomain');
+  const category = await create('category', series, '公開カテゴリ', '',
+    { presets: '[]' });
+  const tip = await create('tip', category, '新着設定', '公開設定本文');
+  const language = await create('language', series, '公開言語', '',
+    { characters: '[]', wordClasses: '[]' });
+  const word = await create('word', language, '新着単語', '公開単語本文',
+    { meanings: '[]' });
+  const period = await create('periodization', series, '公開年代区分');
+  const event = await create('event', period, '新着出来事', '公開出来事本文',
+    { year: '1' });
+  for (const id of [series, category, tip, language, word, period, event]) await publish(id);
+  const initial = await recent();
+  for (const id of [tip, word, event]) {
+    assert.ok(initial.some(node => node.id === id), 'missing public recent entry ' + id);
+  }
+
+  const draft = await write('PATCH', '/api/admin/nodes/' + word, {
+    expectedRevision: 1,
+    content: { title: '非公開の単語改訂', body: '未公開の本文',
+      details: { meanings: '[]' } },
+  });
+  assert.equal(draft.status, 200, draft.body);
+  const afterDraft = await recent();
+  assert.equal(afterDraft.find(node => node.id === word)?.content.body, '公開単語本文',
+    'recent must show published snapshot rather than the latest draft');
+
+  const hiddenCategory = await write('POST', '/api/admin/nodes/' + category + '/visibility',
+    { expectedRevision: 1, isPublic: false, publicSince: null });
+  assert.equal(hiddenCategory.status, 200, hiddenCategory.body);
+  const afterCategory = await recent();
+  assert.ok(!afterCategory.some(node => node.id === tip));
+  for (const id of [word, event]) assert.ok(afterCategory.some(node => node.id === id));
+
+  const hiddenSeries = await write('POST', '/api/admin/nodes/' + series + '/visibility',
+    { expectedRevision: 1, isPublic: false, publicSince: null });
+  assert.equal(hiddenSeries.status, 200, hiddenSeries.body);
+  const afterSeries = await recent();
+  for (const id of [tip, word, event]) {
+    assert.ok(!afterSeries.some(node => node.id === id),
+      'private series must hide recent descendant ' + id);
+  }
+});
+
 /**
  * A synthetic database session exercises the full Nest guard and persistence
  * boundary. This intentionally does NOT test Discord's real OAuth2 exchange.
