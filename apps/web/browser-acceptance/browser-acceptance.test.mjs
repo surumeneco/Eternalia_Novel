@@ -827,6 +827,13 @@ test('category preset editor copies only into newly created setting children', {
     const category = await create('category', series, 'category', { presets: '[]' });
     const page = await author.newPage();
     await page.goto(base + '/studio?item=' + category);
+    // AC-47: category nesting is disallowed in the author UI as well as the API.
+    await page.getByRole('button', { name: '子項目を追加' }).click();
+    assert.deepEqual(
+      await page.locator('.create-form select option').evaluateAll(options =>
+        options.map(option => option.value)),
+      ['tip'], 'a category must only offer tip children, never nested categories');
+    await page.getByRole('button', { name: 'キャンセル', exact: true }).click();
     const presets = page.locator('.presets-editor');
     await presets.getByRole('button', { name: '項目を追加' }).click();
     await presets.locator('input').first().fill('最初の項目');
