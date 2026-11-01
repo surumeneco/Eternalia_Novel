@@ -16,3 +16,5 @@ TCE:
 Formal CAT machine Gates and real browser/IME/Android tests: **not-run**. No merge or deployment.
 
 Reader parity: the public RichContent ruby tokenizer must not interpret a ruby token whose base or reading spans CR, LF, U+0085, U+2028, or U+2029. Previously stored malformed inline ruby is rendered as literal text instead. Ordinary ruby and page markers remain valid. This parser check is independent of the author editor's insertion guard.
+
+Reserved page marker integrity: a caret within an existing `[[page]]` token must not insert ruby or another page marker into its interior. A ruby selection spanning a complete page marker must be rejected. Insertion immediately before or after the marker remains valid.
