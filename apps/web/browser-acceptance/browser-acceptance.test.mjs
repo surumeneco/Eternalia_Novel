@@ -1552,19 +1552,19 @@ test('published tags search across categories without changing ownership or priv
 
     const page = await anonymous.newPage();
     await page.goto(base + '/tips/' + series);
-    await page.getByLabel('タグ').selectOption(tag);
+    await page.getByRole('combobox', { name: 'タグ', exact: true }).selectOption(tag);
     await page.getByRole('link', { name: prefix + '-tip-B', exact: true }).waitFor();
     const groups = page.locator('.tip-category');
     assert.equal(await groups.count(), 2, 'tag filter should span both categories');
     assert.equal(await page.getByRole('link', { name: prefix + '-tip-A', exact: true }).count(), 1);
     assert.equal(await page.getByRole('link', { name: prefix + '-tip-B', exact: true }).count(), 1);
 
-    await page.getByLabel('カテゴリ').selectOption(categoryA);
+    await page.getByRole('combobox', { name: 'カテゴリ', exact: true }).selectOption(categoryA);
     await page.getByRole('link', { name: prefix + '-tip-B', exact: true }).waitFor({ state: 'hidden' });
     assert.equal(await groups.count(), 1);
     assert.ok((await groups.innerText()).includes(prefix + '-tip-A'));
     assert.ok(!(await groups.innerText()).includes(prefix + '-tip-B'));
-    await page.getByLabel('カテゴリ').selectOption(categoryB);
+    await page.getByRole('combobox', { name: 'カテゴリ', exact: true }).selectOption(categoryB);
     await page.getByRole('link', { name: prefix + '-tip-A', exact: true }).waitFor({ state: 'hidden' });
     assert.equal(await groups.count(), 1);
     assert.ok((await groups.innerText()).includes(prefix + '-tip-B'));
@@ -1575,7 +1575,7 @@ test('published tags search across categories without changing ownership or priv
     });
     assert.equal(hidden.status(), 200);
     await page.reload();
-    await page.getByLabel('タグ').selectOption(tag);
+    await page.getByRole('combobox', { name: 'タグ', exact: true }).selectOption(tag);
     await page.getByRole('link', { name: prefix + '-tip-B', exact: true }).waitFor();
     assert.equal(await page.getByRole('link', { name: prefix + '-tip-A', exact: true }).count(), 0);
     assert.equal(await page.getByRole('link', { name: prefix + '-tip-B', exact: true }).count(), 1);
