@@ -1917,3 +1917,72 @@ test('AC-55: anonymous recent listing links published chapter and removes it aft
     await browser.close();
   }
 });
+
+test('AC-24/27: two same-named story hierarchies remain isolated when one series is hidden', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext();
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const reader = await browser.newContext();
+    const prefix = fixture.prefix + '-cross-series-story';
+    async function create(kind, parentId, title, body = '') {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base },
+        data: { kind, parentId, content: { title, body, details: {} } },
+      });
+      assert.equal(response.status(), 201, await response.text());
+      return (await response.json()).id;
+    }
+    async function publish(id) {
+      const response = await author.request.post(base + '/api/admin/nodes/' + id + '/publish', {
+        headers: { Origin: base }, data: { expectedRevision: 1 },
+      });
+      assert.equal(response.status(), 200, await response.text());
+    }
+    async function createStory(suffix) {
+      const series = await create('series', null, prefix + '-series-' + suffix);
+      const volume = await create('volume', series, prefix + '-same-volume');
+      const part = await create('part', volume, prefix + '-same-part');
+      const chapter = await create('chapter', part, prefix + '-same-chapter', prefix + '-body-' + suffix);
+      for (const id of [series, volume, part, chapter]) await publish(id);
+      return { series, volume, part, chapter };
+    }
+    const a = await createStory('A');
+    const b = await createStory('B');
+    assert.notEqual(a.chapter, b.chapter);
+    const treeAResponse = await reader.request.get(base + '/api/public/series/' + a.series + '/tree');
+    const treeBResponse = await reader.request.get(base + '/api/public/series/' + b.series + '/tree');
+    assert.equal(treeAResponse.status(), 200);
+    assert.equal(treeBResponse.status(), 200);
+    const treeA = await treeAResponse.json();
+    const treeB = await treeBResponse.json();
+    assert.ok(treeA.some(node => node.id === a.chapter && node.content.body === prefix + '-body-A'));
+    assert.ok(treeB.some(node => node.id === b.chapter && node.content.body === prefix + '-body-B'));
+    assert.ok(!treeA.some(node => node.id === b.chapter));
+    assert.ok(!treeB.some(node => node.id === a.chapter));
+
+    const page = await reader.newPage();
+    await page.goto(base + '/read/' + a.chapter);
+    const body = await page.locator('.rich-body').innerText();
+    assert.ok(body.includes(prefix + '-body-A'));
+    assert.ok(!body.includes(prefix + '-body-B'));
+
+    const hide = await author.request.post(base + '/api/admin/nodes/' + b.series + '/visibility', {
+      headers: { Origin: base },
+      data: { expectedRevision: 1, isPublic: false, publicSince: null },
+    });
+    assert.equal(hide.status(), 200, await hide.text());
+    assert.equal((await reader.request.get(base + '/api/public/series/' + b.series + '/tree')).status(), 404);
+    assert.equal((await reader.request.get(base + '/api/public/items/' + b.chapter)).status(), 404);
+    assert.equal((await reader.request.get(base + '/api/public/items/' + a.chapter)).status(), 200);
+    await page.close();
+    await reader.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
