@@ -1795,3 +1795,57 @@ test('AC-02: author reorders sibling volumes and renames one without changing id
     await browser.close();
   }
 });
+
+test('AC-11: interrupted draft save retains unsaved input and succeeds after retry', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext();
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const title = fixture.prefix + '-network-retry';
+    const createResponse = await author.request.post(base + '/api/admin/nodes', {
+      headers: { Origin: base },
+      data: { kind: 'series', parentId: null,
+        content: { title, body: 'original saved draft', details: {} } },
+    });
+    assert.equal(createResponse.status(), 201, await createResponse.text());
+    const id = (await createResponse.json()).id;
+    const page = await author.newPage();
+    await page.goto(base + '/studio?item=' + id);
+    const editor = page.getByRole('textbox', { name: '本文・説明', exact: true });
+    const unsaved = '通信断の間も保持すべき原稿。\n再試行後に永続化する。';
+    await editor.fill(unsaved);
+    const path = '**/api/admin/nodes/' + id;
+    let interrupted = false;
+    await page.route(path, async route => {
+      if (!interrupted && route.request().method() === 'PATCH') {
+        interrupted = true;
+        await route.abort('failed');
+      } else {
+        await route.continue();
+      }
+    });
+    await page.getByRole('button', { name: '下書きを保存' }).click();
+    await page.getByRole('alert').getByText('保存に失敗しました。再読込して競合状態を確認してください。').waitFor();
+    assert.equal(interrupted, true);
+    assert.equal(await editor.inputValue(), unsaved, 'network failure must retain the unsaved buffer');
+    let nodes = await (await author.request.get(base + '/api/admin/nodes')).json();
+    assert.equal(nodes.find(node => node.id === id).draft.body, 'original saved draft');
+
+    await page.unroute(path);
+    await page.getByRole('button', { name: '下書きを保存' }).click();
+    await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
+    nodes = await (await author.request.get(base + '/api/admin/nodes')).json();
+    assert.equal(nodes.find(node => node.id === id).draft.body, unsaved);
+    assert.equal(nodes.find(node => node.id === id).published, null);
+    await page.reload();
+    assert.equal(await page.getByRole('textbox', { name: '本文・説明', exact: true }).inputValue(), unsaved);
+    await page.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
