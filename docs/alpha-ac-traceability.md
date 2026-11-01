@@ -5,6 +5,7 @@
 - 環境: GitHub Actions の Node 22 / PostgreSQL 17 / Nuxt+Nest / Chromium (ubuntu-24.04)。本番・実Discord OAuth・実端末の成功を含まない。
 - 検証済み基準: `e6299061f3445207a599d9d1fbde7e1b397f5829` の [CI #41213396614](https://github.com/surumeneco/Eternalia_Novel/actions/runs/41213396614) は4ジョブsuccess、Chromiumブラウザ15件・HTTP/SSR6件が全件成功。後続のスクリーンショット収集/実機確認/CAT Gateは別証拠。
 - 追加の実測証拠: `e49e7ab` の [CI #41275393712](https://github.com/surumeneco/Eternalia_Novel/actions/runs/41275393712) は4ジョブsuccess、Chromium 17/17・HTTP 6/6・PostgreSQL統合10/10。後続HEADの新規試験は別途CI照合が必要。
+- 追加の実測証拠: `f44425d3` の [CI #41275713765](https://github.com/surumeneco/Eternalia_Novel/actions/runs/41275713765) は4ジョブsuccess、Chromium 20/20・HTTP 7/7。後続HEADのタグ横断試験は別途CI照合が必要。
 - 判定: `not-run` は**AC全体を受け入れるだけの網羅的証拠がまだない**ことを示す。右欄のB/H/DB/CIは探索的な**部分証拠候補**であり、該当ACのpassを意味しない。`pending-decision` は設計決定が必要。`scope-excluded` は明示除外。失敗は実測した場合のみ `fail` にする。
 - 各ACのpassへ更新する前に `テストID / コード箇所 / 環境 / 同一HEAD / CI run / 手動証拠 / 判定` を照合する。現在の本表はACを欠落させないための基線であり、CAT正式Gateやユーザー受入ではない。
 
@@ -13,17 +14,17 @@
 | AC-01 | シリーズ内で編・部・章を作成し本文を書いて保存・再読込 | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 章の下書き保存・再読込（階層全体のUI操作は未検証） | not-run |
 | AC-02 | シリーズ内の編・部・章の名称・表示順を変更 | 未特定 | — | not-run |
 | AC-03 | 本文にルビ等の書式を付して保存 | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: semantic ruby/page boundary; IME実機未検証 | not-run |
-| AC-04 | 本文編集中に設定・辞書を検索・参照 | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 同一シリーズの未公開設定・単語を参照中も未保存原稿を保持（新規ブラウザ試験、CI待ち） | not-run |
+| AC-04 | 本文編集中に設定・辞書を検索・参照 | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 同一シリーズの未公開設定・単語を参照中も未保存原稿を保持（CI #41275713765 success） | not-run |
 | AC-05 | カテゴリ・設定・項目・プリセット・タグを作成・編集 | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: category preset editor; タグ・所属変更の全件未検証 | not-run |
 | AC-06 | 設定を相互参照し、改名・削除する | 未特定 | — | not-run |
 | AC-07 | 同じスペルを異なる言語に登録 | apps/web/browser-acceptance/browser-acceptance.test.mjs、apps/api/tests/postgres-alpha.test.mjs | B/DB: 同綴語の言語別選択・固有ID/本文分離（CI #41275393712 success） | not-run |
-| AC-08 | 複数の意味・品詞・語源を登録・辿る | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 同品詞2意味・意味別語源の独立保存と明示公開（新規ブラウザ試験、CI待ち） | not-run |
-| AC-09 | 音韻規則・重複規則に違反する単語を入力 | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 同言語重複綴り警告の表示/消去/再表示（新規ブラウザ試験、CI待ち） | not-run |
+| AC-08 | 複数の意味・品詞・語源を登録・辿る | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 同品詞2意味・意味別語源の独立保存と明示公開（CI #41275713765 success） | not-run |
+| AC-09 | 音韻規則・重複規則に違反する単語を入力 | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 同言語重複綴り警告の表示/消去/再表示（CI #41275713765 success） | not-run |
 | AC-10 | 異なる年代区分で同じ出来事を表示 | 未特定 | — | pending-decision |
 | AC-11 | 編集失敗・通信切断・再接続を発生させる | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: メモ読戻し失敗・未保存遷移（通信断の全条件未検証） | not-run |
 | AC-12 | 同一レコードを複数編集元から更新 | apps/web/browser-acceptance/browser-acceptance.test.mjs、apps/api/tests/postgres-alpha.test.mjs | B/DB: 2タブ競合、保存済み本文維持、未保存入力保持（実端末は未検証） | not-run |
 | AC-13 | 保留：ゴミ箱・ゴミ箱からの復元（当面実装・受入試験の対象外） | 未特定 | — | scope-excluded |
-| AC-14 | 検証エラー・API失敗・権限不足を発生させる | apps/api/http-acceptance/http-acceptance.test.mjs | H: 不正意味JSONの400拒否・下書き/公開稿非破壊（新規HTTP試験、CI待ち） | not-run |
+| AC-14 | 検証エラー・API失敗・権限不足を発生させる | apps/api/http-acceptance/http-acceptance.test.mjs | H: 不正意味JSONの400拒否・下書き/公開稿非破壊（CI #41275713765 success） | not-run |
 | AC-15 | 非ASCII文字、長文、特殊文字、改行、多言語テキストを編集 | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 長文・日本語・アクセント・異体字・絵文字・改行を保存/再読込/公開（正規化全件未検証） | not-run |
 | AC-16 | 作者が本文・設定・辞書・年表の公開対象を指定して公開する | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 5種の明示公開（最新CI待ち、全画面表示未検証） | not-run |
 | AC-17 | 各領域の公開対象を非公開へ戻し、匿名読者が再取得する | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 章/TipSection/単語/文法/出来事の非公開→再公開を検証（検索/直URL全経路は未網羅） | not-run |
@@ -54,15 +55,15 @@
 | AC-42 | 同じシリーズに複数年代区分と出来事を登録し、区分ごと／統合表示を切り替える | 未特定 | — | pending-decision |
 | AC-43 | 年代区分を非公開にし、所属出来事が公開のまま読者アクセスする | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 年代区分非公開時に配下Eventが匿名404（CI #41275269669 success） | not-run |
 | AC-44 | 公開年代区分で一部出来事のみ非公開にする | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: Event A非公開でも兄弟Event Bは公開（CI #41275269669 success） | not-run |
-| AC-45 | 年代区分・出来事の公開日時を設定し、時刻境界の前後で取得する | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 年代区分の未来公開日時による配下Event遮断（新規ブラウザ試験、CI待ち・境界値未検証） | pending-decision |
+| AC-45 | 年代区分・出来事の公開日時を設定し、時刻境界の前後で取得する | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 年代区分の未来公開日時による配下Event遮断（CI #41275713765 success・境界値未検証） | pending-decision |
 | AC-46 | 一つのカテゴリに複数の設定を登録し、ある設定の所属先を変更する | 未特定 | — | not-run |
 | AC-47 | カテゴリを作成・編集し、カテゴリの中へさらにカテゴリを追加しようとする | 未特定 | — | not-run |
-| AC-48 | 異なるカテゴリの設定に同一のタグを付け、タグに基づいて横断的に分類する | 未特定 | — | not-run |
+| AC-48 | 異なるカテゴリの設定に同一のタグを付け、タグに基づいて横断的に分類する | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 同タグの公開Tipを複数カテゴリ横断検索し個別非公開を検証（新規ブラウザ試験、CI待ち） | not-run |
 | AC-49 | カテゴリに項目プリセットの見出し・表示順・テンプレートテキストを登録・変更し設定作成に利用する | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: category preset editor（全変更系列未検証） | not-run |
 | AC-50 | 既存設定AをプリセットP1で作成・編集した後、カテゴリ側プリセットをP2へ変更し新規設定Bを作成する | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: category preset editor（P1→P2の全条件未検証） | not-run |
 | AC-51 | 公開中の設定で一部TipSectionだけを非公開にする | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: TipSection個別非公開・兄弟公開のUI/API確認（CI #41275269669 success） | not-run |
 | AC-52 | 公開言語の文法項目Aだけ公開・文法項目Bを非公開にし、その後に親の言語を非公開にする | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 文法個別非公開/兄弟公開と親言語の非公開伝播（CI #41275269669 success） | not-run |
-| AC-53 | 同一単語に同じ品詞の異なる複数意味を登録し、意味ごとに語源を関連付ける | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 同品詞の複数意味・意味別語源の独立IDと公開稿（新規ブラウザ試験、CI待ち） | not-run |
+| AC-53 | 同一単語に同じ品詞の異なる複数意味を登録し、意味ごとに語源を関連付ける | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 同品詞の複数意味・意味別語源の独立IDと公開稿（CI #41275713765 success） | not-run |
 | AC-54 | 各領域で未来公開日時を指定し、指定時刻の前後に匿名閲覧する | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: シリーズ未来公開日時による全4領域遮断（CI #41275269669 success、時刻境界未検証） | pending-decision |
 | AC-55 | 新着投稿表示・ジャンプ・公開管理の一覧を匿名読者で使う | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: anonymous search excludes unpublished text（新着全件未検証） | not-run |
 | AC-56 | 作者がホーム・一覧・詳細・管理トップから作成・編集画面へ移動する | 未特定 | — | not-run |
