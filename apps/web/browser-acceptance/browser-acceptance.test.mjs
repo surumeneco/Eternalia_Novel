@@ -2191,7 +2191,19 @@ test('AC-56: shared author navigation works while anonymous editor and API write
       await page.getByRole('button', { name: '新規シリーズ' }).waitFor();
     }
 
+    // Item-specific author navigation must select the exact published chapter.
+    await page.goto(base + '/read/' + fixture.chapter);
+    const editLink = page.getByRole('link', { name: 'この項目を編集' });
+    await editLink.waitFor();
+    await editLink.click();
+    await page.waitForURL(url => url.pathname === '/studio'
+      && url.searchParams.get('item') === fixture.chapter);
+    await page.getByRole('textbox', { name: '本文・説明', exact: true }).waitFor();
+
     const readerPage = await anonymous.newPage();
+    await readerPage.goto(base + '/read/' + fixture.chapter);
+    await readerPage.locator('.author-edit-link').waitFor({ state: 'hidden' });
+    assert.equal(await readerPage.getByRole('link', { name: 'この項目を編集' }).count(), 0);
     await readerPage.goto(base + '/studio');
     await readerPage.getByText('編集するには、許可された作者のDiscordアカウントで認証してください。').waitFor();
     assert.equal(await readerPage.getByRole('button', { name: '新規シリーズ' }).count(), 0);
