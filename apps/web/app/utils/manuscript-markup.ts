@@ -8,6 +8,8 @@ export interface ManuscriptInsertion {
 export function insertManuscriptMarkup(
   source: string, start: number, end: number, kind: ManuscriptInsertionKind,
 ): ManuscriptInsertion | null {
+  // Runtime callers may bypass TypeScript's erased union discriminator.
+  if (kind !== 'page' && kind !== 'ruby') return null;
   if (!Number.isInteger(start) || !Number.isInteger(end) ||
       start < 0 || end < start || end > source.length) return null;
   // Textarea offsets are UTF-16 code units. Never split a surrogate pair.
