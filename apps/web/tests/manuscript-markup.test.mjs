@@ -55,3 +55,10 @@ test('markup cannot split CRLF but remains valid immediately after it', () => {
   assert.equal(insert('甲\r\n乙', 2, 2, 'ruby'), null);
   assert.equal(insert('甲\r\n乙', 3, 3, 'page')?.value, '甲\r\n[[page]]乙');
 });
+
+test('reserved page marker is never split or wrapped by ruby', () => {
+  assert.equal(insert('甲[[page]]乙', 1, 9, 'ruby'), null);
+  assert.equal(insert('甲[[page]]乙', 3, 3, 'ruby'), null);
+  assert.equal(insert('甲[[page]]乙', 4, 4, 'page'), null);
+  assert.equal(insert('甲[[page]]乙', 9, 9, 'page')?.value, '甲[[page]][[page]]乙');
+});
