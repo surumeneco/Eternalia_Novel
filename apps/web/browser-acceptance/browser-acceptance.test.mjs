@@ -1644,7 +1644,7 @@ test('AC-37/38: new word defaults public but supports private creation without r
       'publishing the snapshot must not override an explicitly private word');
     assert.equal((await reader.request.get(base + '/api/public/items/' + privateWord.id)).status(), 404);
     await page.getByRole('button', { name: '公開に戻す' }).click();
-    await page.getByText('公開設定を変更しました。').waitFor();
+    await page.getByText('公開条件を変更しました。').waitFor();
     assert.equal((await reader.request.get(base + '/api/public/items/' + privateWord.id)).status(), 200);
 
     await page.goto(base + '/studio?item=' + language);
