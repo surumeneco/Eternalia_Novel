@@ -2169,3 +2169,65 @@ test('AC-56: shared author navigation works while anonymous editor and API write
     await browser.close();
   }
 });
+
+test('AC-34: hiding and reshowing a published chapter preserves its public snapshot', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext();
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const reader = await browser.newContext();
+    const prefix = fixture.prefix + '-chapter-hide-reshow';
+    async function create(kind, parentId, title, body = '') {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base },
+        data: { kind, parentId, content: { title, body, details: {} } },
+      });
+      assert.equal(response.status(), 201, await response.text());
+      return (await response.json()).id;
+    }
+    async function publish(id) {
+      const response = await author.request.post(base + '/api/admin/nodes/' + id + '/publish', {
+        headers: { Origin: base }, data: { expectedRevision: 1 },
+      });
+      assert.equal(response.status(), 200, await response.text());
+    }
+    const series = await create('series', null, prefix + '-series');
+    const volume = await create('volume', series, prefix + '-volume');
+    const part = await create('part', volume, prefix + '-part');
+    const chapter = await create('chapter', part, prefix + '-chapter', '公開版として保持する章本文');
+    for (const id of [series, volume, part, chapter]) await publish(id);
+    let publicResponse = await reader.request.get(base + '/api/public/items/' + chapter);
+    assert.equal(publicResponse.status(), 200);
+    assert.equal((await publicResponse.json()).content.body, '公開版として保持する章本文');
+
+    const hide = await author.request.post(base + '/api/admin/nodes/' + chapter + '/visibility', {
+      headers: { Origin: base },
+      data: { expectedRevision: 1, isPublic: false, publicSince: null },
+    });
+    assert.equal(hide.status(), 200, await hide.text());
+    assert.equal((await reader.request.get(base + '/api/public/items/' + chapter)).status(), 404);
+    const tree = await (await reader.request.get(base + '/api/public/series/' + series + '/tree')).json();
+    assert.ok(!tree.some(node => node.id === chapter));
+    const hiddenNode = (await (await author.request.get(base + '/api/admin/nodes')).json())
+      .find(node => node.id === chapter);
+    assert.equal(hiddenNode.isPublic, false);
+    assert.equal(hiddenNode.published.value.body, '公開版として保持する章本文');
+
+    const show = await author.request.post(base + '/api/admin/nodes/' + chapter + '/visibility', {
+      headers: { Origin: base },
+      data: { expectedRevision: 2, isPublic: true, publicSince: null },
+    });
+    assert.equal(show.status(), 200, await show.text());
+    publicResponse = await reader.request.get(base + '/api/public/items/' + chapter);
+    assert.equal(publicResponse.status(), 200);
+    assert.equal((await publicResponse.json()).content.body, '公開版として保持する章本文');
+    await reader.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
