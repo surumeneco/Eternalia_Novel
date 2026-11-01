@@ -62,3 +62,10 @@ test('reserved page marker is never split or wrapped by ruby', () => {
   assert.equal(insert('甲[[page]]乙', 4, 4, 'page'), null);
   assert.equal(insert('甲[[page]]乙', 9, 9, 'page')?.value, '甲[[page]][[page]]乙');
 });
+
+test('existing ruby token boundaries are protected from nested insertion', () => {
+  const source = '前｜漢字《かんじ》後';
+  assert.equal(insert(source, 3, 3, 'page'), null);
+  assert.equal(insert(source, 6, 6, 'ruby'), null);
+  assert.equal(insert(source, 9, 9, 'page')?.value, '前｜漢字《かんじ》[[page]]後');
+});
