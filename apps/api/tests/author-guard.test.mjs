@@ -69,7 +69,9 @@ test('Discord author configuration accepts only canonical HTTP origins', () => {
     pool: {}, clientId: 'test-client', clientSecret: 'test-secret',
     authorId: '123456789012345678', origin: '',
   });
-  for (const origin of ['https://example.test', 'http://127.0.0.1:3000']) {
+  for (const origin of [
+    'https://example.test', 'http://127.0.0.1:3000', 'http://[::1]:3000',
+  ]) {
     auth.origin = origin;
     assert.equal(auth.configured, true, origin);
   }
@@ -77,6 +79,10 @@ test('Discord author configuration accepts only canonical HTTP origins', () => {
     'https://example.test?next=evil', 'https://example.test#fragment',
     'https://user@example.test', 'https://example.test/path',
     'https://example.test/',
+    // URL.origin canonicalizes host case and strips default ports.
+    // APP_ORIGIN must be the exact canonical value, not a normalized alias.
+    'https://EXAMPLE.test', 'https://example.test:443',
+    'http://127.0.0.1:80',
   ]) {
     auth.origin = origin;
     assert.equal(auth.configured, false, origin);
