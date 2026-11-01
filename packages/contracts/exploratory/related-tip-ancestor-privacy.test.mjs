@@ -66,3 +66,27 @@ test('AC-06: unpublished target category snapshot cannot leak via a published re
   assert.equal(toReader(db, ids.target, 3000), null);
   assert.deepEqual(publicRelated(db, 3000), []);
 });
+
+
+test('AC-06: cross-series Tip relationship is rejected without mutating the source', () => {
+  let db = setupPublishedRelatedTips();
+  const otherSeries = '82000000-0000-0000-0000-000000000001';
+  const otherCategory = '82000000-0000-0000-0000-000000000002';
+  const otherTip = '82000000-0000-0000-0000-000000000003';
+  db = createNode(db, { id: otherSeries, kind: 'series',
+    content: contentOf('Other series'), now: 3000 });
+  db = createNode(db, { id: otherCategory, kind: 'category', parentId: otherSeries,
+    content: contentOf('Other category'), now: 3001 });
+  db = createNode(db, { id: otherTip, kind: 'tip', parentId: otherCategory,
+    content: contentOf('Other tip'), now: 3002 });
+  const previousDraft = structuredClone(byId(db, ids.source).draft);
+  assert.throws(
+    () => editNode(db, ids.source, 2,
+      contentOf('Source', { relatedTipIds: JSON.stringify([otherTip]) }), 3003),
+    /関連設定は同一シリーズ/,
+  );
+  assert.deepEqual(byId(db, ids.source).draft, previousDraft,
+    'rejected cross-series relation must not change the author draft');
+  assert.deepEqual(publicRelated(db, 3004), [ids.target],
+    'rejected cross-series relation must not change the public snapshot');
+});
