@@ -13,7 +13,8 @@ When `Intl.Segmenter` is unavailable, conservatively reject boundaries adjacent 
 - EDIT-GRAPHEME-FALLBACK-01 (Red): without Segmenter, page/ruby insertion cannot split decomposed Japanese `か\u3099`.
 - EDIT-GRAPHEME-FALLBACK-02 (Red): without Segmenter, insertion cannot split `👩‍💻` or skin-tone-modified emoji.
 - EDIT-GRAPHEME-FALLBACK-03 (Red): without Segmenter, insertion cannot split a two-indicator flag, but may occur between two complete flags.
-- EDIT-GRAPHEME-FALLBACK-04 (Regression): ordinary text, CRLF and supplementary surrogate boundaries retain existing behavior.
+- EDIT-GRAPHEME-FALLBACK-04 (Red): without Segmenter, subdivision-flag emoji tag characters (U+E0020–U+E007F) must not be split by markup insertion; the boundary after the complete flag remains valid.
+- EDIT-GRAPHEME-FALLBACK-05 (Regression): ordinary text, CRLF and supplementary surrogate boundaries retain existing behavior.
 
 ## Gate status
 
