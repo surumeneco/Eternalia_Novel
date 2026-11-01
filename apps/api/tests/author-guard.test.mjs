@@ -51,6 +51,8 @@ test('actual DiscordAuthService requires exact JSON media type and matching Orig
   for (const invalid of [
     'application/jsonp', 'application/json-seq',
     'application/json-malformed', 'text/plain', '', undefined,
+    'application/json; charset=utf-8, text/plain',
+    'application/json; charset=utf-8, application/x-www-form-urlencoded',
   ]) assert.throws(() => auth.assertWriteOrigin(headers(invalid)),
     undefined, 'unexpectedly accepted ' + invalid);
   for (const valid of ['application/json', 'Application/JSON; charset=utf-8'])
