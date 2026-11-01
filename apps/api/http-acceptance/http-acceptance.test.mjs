@@ -232,6 +232,71 @@ test('invalid word meanings reject atomically without changing the published sna
   assert.equal((await json('/api/public/items/' + word)).value.content.body, '承認された新稿');
 });
 
+test('chapter visibility toggle preserves a newer unpublished draft and public sibling', async () => {
+  // AC-34 exploratory HTTP verification; a synthetic author session is not
+  // a real Discord OAuth2 acceptance test or a canonical CAT-generated test.
+  const cookie = 'eternalia_author=' + fixture.authorToken;
+  async function write(method, path, body) {
+    const response = await fetch(base + path, {
+      method,
+      headers: { Cookie: cookie, Origin: base, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    return { status: response.status, body: await response.text() };
+  }
+  async function create(kind, parentId, title, body = '') {
+    const result = await write('POST', '/api/admin/nodes', {
+      kind, parentId, content: { title, body, details: {} },
+    });
+    assert.equal(result.status, 201, result.body);
+    return JSON.parse(result.body).id;
+  }
+  const series = await create('series', null, fixture.prefix + '-ac34-series');
+  const volume = await create('volume', series, 'AC34編');
+  const part = await create('part', volume, 'AC34部');
+  const chapter = await create('chapter', part, 'AC34章', '旧公開本文');
+  const sibling = await create('chapter', part, '公開中の兄弟章', '兄弟本文');
+  for (const id of [series, volume, part, chapter, sibling]) {
+    const published = await write('POST', '/api/admin/nodes/' + id + '/publish',
+      { expectedRevision: 1 });
+    assert.equal(published.status, 200, published.body);
+  }
+  assert.equal((await json('/api/public/items/' + chapter)).value.content.body, '旧公開本文');
+
+  const newerDraft = await write('PATCH', '/api/admin/nodes/' + chapter, {
+    expectedRevision: 1,
+    content: { title: 'AC34章', body: '公開前の新稿', details: {} },
+  });
+  assert.equal(newerDraft.status, 200, newerDraft.body);
+  assert.equal((await json('/api/public/items/' + chapter)).value.content.body, '旧公開本文');
+
+  const hidden = await write('POST', '/api/admin/nodes/' + chapter + '/visibility', {
+    expectedRevision: 2, isPublic: false, publicSince: null,
+  });
+  assert.equal(hidden.status, 200, hidden.body);
+  assert.equal((await get('/api/public/items/' + chapter)).status, 404);
+  assert.equal((await get('/api/public/items/' + sibling)).status, 200,
+    'hiding a chapter must not hide its public sibling');
+  const hiddenTree = await json('/api/public/series/' + series + '/tree');
+  assert.equal(hiddenTree.status, 200);
+  assert.ok(!hiddenTree.value.some(node => node.id === chapter));
+  assert.ok(hiddenTree.value.some(node => node.id === sibling));
+
+  const restored = await write('POST', '/api/admin/nodes/' + chapter + '/visibility', {
+    expectedRevision: 3, isPublic: true, publicSince: null,
+  });
+  assert.equal(restored.status, 200, restored.body);
+  const reopened = await json('/api/public/items/' + chapter);
+  assert.equal(reopened.status, 200);
+  assert.equal(reopened.value.content.body, '旧公開本文',
+    'reopening visibility must not implicitly publish the newer draft');
+  const nodes = await fetch(base + '/api/admin/nodes', { headers: { Cookie: cookie } });
+  assert.equal(nodes.status, 200);
+  const stored = (await nodes.json()).find(node => node.id === chapter);
+  assert.equal(stored?.draft.body, '公開前の新稿',
+    'visibility changes must preserve the author draft');
+});
+
 /**
  * A synthetic database session exercises the full Nest guard and persistence
  * boundary. This intentionally does NOT test Discord's real OAuth2 exchange.
