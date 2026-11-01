@@ -1246,3 +1246,66 @@ test('published descendants are hidden by private ancestors across all four doma
     await browser.close();
   }
 });
+
+
+test('dictionary browser keeps identical spellings separate by language filter', { timeout: 60_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext();
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const anonymous = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const prefix = fixture.prefix + '-homographs';
+    const wordTitle = prefix + '-同綴語';
+    async function create(kind, parentId, title, body = '') {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base },
+        data: { kind, parentId, content: { title, body, details: {} } },
+      });
+      assert.equal(response.status(), 201, await response.text());
+      return (await response.json()).id;
+    }
+    async function publish(id) {
+      const response = await author.request.post(base + '/api/admin/nodes/' + id + '/publish', {
+        headers: { Origin: base }, data: { expectedRevision: 1 },
+      });
+      assert.equal(response.status(), 200, await response.text());
+    }
+    const series = await create('series', null, prefix + '-series');
+    const languageA = await create('language', series, prefix + '-language-A');
+    const languageB = await create('language', series, prefix + '-language-B');
+    const wordA = await create('word', languageA, wordTitle, prefix + '-meaning-A');
+    const wordB = await create('word', languageB, wordTitle, prefix + '-meaning-B');
+    for (const id of [series, languageA, languageB, wordA, wordB]) await publish(id);
+
+    const page = await anonymous.newPage();
+    await page.goto(base + '/dictionaries/' + series);
+    await page.getByLabel('単語を検索').fill(wordTitle);
+    const words = page.getByRole('link', { name: wordTitle, exact: true });
+    assert.equal(await words.count(), 2, 'same spelling must appear under both public languages');
+
+    const language = page.getByLabel('言語');
+    await language.selectOption(languageA);
+    assert.equal(await words.count(), 1);
+    assert.ok((await page.locator('.dictionary-language').innerText()).includes(prefix + '-meaning-A'));
+    assert.ok(!(await page.locator('.dictionary-language').innerText()).includes(prefix + '-meaning-B'));
+    assert.ok((await words.first().getAttribute('href')).endsWith('/items/' + wordA));
+
+    await language.selectOption(languageB);
+    assert.equal(await words.count(), 1);
+    assert.ok((await page.locator('.dictionary-language').innerText()).includes(prefix + '-meaning-B'));
+    assert.ok(!(await page.locator('.dictionary-language').innerText()).includes(prefix + '-meaning-A'));
+    assert.ok((await words.first().getAttribute('href')).endsWith('/items/' + wordB));
+
+    await language.selectOption('');
+    assert.equal(await words.count(), 2, 'removing language filter restores both distinct words');
+    await page.close();
+    await anonymous.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
