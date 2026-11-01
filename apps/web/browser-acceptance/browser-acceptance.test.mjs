@@ -2037,7 +2037,8 @@ test('AC-47: category editing works but nested categories are blocked in UI and 
     assert.equal(nested.status(), 400);
     const after = await (await author.request.get(base + '/api/admin/nodes')).json();
     assert.ok(!after.some(node => node.draft.title === prefix + '-invalid-nested'));
-    await page.reload();
+    await page.goto(base + '/studio?item=' + category.id);
+    await page.getByRole('heading', { name: 'カテゴリ：' + categoryTitle }).waitFor();
     assert.equal(await page.getByRole('textbox', { name: '本文・説明', exact: true }).inputValue(), body);
     await page.close();
     await author.close();
