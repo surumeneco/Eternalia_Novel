@@ -14,3 +14,5 @@ TCE:
 - A collapsed caret between CR and LF must not split the CRLF sequence for either ruby or page insertion; the caret immediately after CRLF remains valid.
 
 Formal CAT machine Gates and real browser/IME/Android tests: **not-run**. No merge or deployment.
+
+Reader parity: the public RichContent ruby tokenizer must not interpret a ruby token whose base or reading spans CR, LF, U+0085, U+2028, or U+2029. Previously stored malformed inline ruby is rendered as literal text instead. Ordinary ruby and page markers remain valid. This parser check is independent of the author editor's insertion guard.
