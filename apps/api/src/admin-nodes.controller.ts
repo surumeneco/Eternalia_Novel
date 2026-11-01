@@ -56,7 +56,7 @@ export class AdminNodesController {
       await this.storage.mutate(db => createNode(db, {
         id, kind: input.kind as Kind,
         parentId: input.parentId as string | null | undefined,
-        content, now: Date.now(),
+        content, isPublic: input.isPublic as boolean | undefined, now: Date.now(),
       }));
       return { id };
     });
