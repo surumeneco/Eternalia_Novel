@@ -30,6 +30,8 @@ Scope: α版の既存公開判定に対する実DB・HTTP・Chromium受入回帰
 | V10 | 公開言語の文法Aのみ非公開、兄弟文法Bは公開 | Aのみ404、Bは200（AC-52） |
 | V11 | 公開年代区分の出来事Aのみ非公開、兄弟出来事Bは公開 | Aのみ404、Bは200（AC-44） |
 
+| V12 | 公開済み年代区分を未来公開日時に変更 | 出来事2件のみ404、他領域は200、日時解除後に復帰（AC-45の開始前部分） |
+
 ## Evidence contract
 
 実DB・実HTTP・Chromiumで独立したフィクスチャを作成する。テストコードの追加とCI実行を実証し、Red/Greenの実測・CAT機械Gateの未実行は別々に記録する。機械的 process-closure、TestModel生成、model-conformance、implementation-conformance は未実行であり、上記は正規生成物ではない。
