@@ -1105,14 +1105,14 @@ test('published descendants are hidden by private ancestors across all four doma
       });
       assert.equal(response.status(), 200, 'publish ' + id + ': ' + await response.text());
     }
-    async function visibility(id, isPublic) {
+    async function visibility(id, isPublic, publicSince = null) {
       const list = await author.request.get(base + '/api/admin/nodes');
       assert.equal(list.status(), 200);
       const node = (await list.json()).find(item => item.id === id);
       assert.ok(node, 'author must retain access to hidden node ' + id);
       const response = await author.request.post(base + '/api/admin/nodes/' + id + '/visibility', {
         headers: { Origin: base },
-        data: { expectedRevision: node.revision, isPublic, publicSince: null },
+        data: { expectedRevision: node.revision, isPublic, publicSince },
       });
       assert.equal(response.status(), 200, 'set visibility ' + id + ': ' + await response.text());
     }
@@ -1198,6 +1198,17 @@ test('published descendants are hidden by private ancestors across all four doma
     await expectPublic(grammar, true, 'public sibling remains visible after parent restoration');
     await visibility(word, true);
     await expectPublic(word, true, 'explicitly restored child retains published content');
+
+    // PB-05: a future publication date on a published ancestor must hide
+    // all descendants until the ancestor becomes effective again.
+    await visibility(series, true, Date.UTC(2100, 0, 1));
+    for (const id of leaves) {
+      await expectPublic(id, false, 'future-scheduled ancestor blocks descendant ' + id);
+    }
+    await visibility(series, true);
+    for (const id of leaves) {
+      await expectPublic(id, true, 'clearing ancestor schedule restores published descendant ' + id);
+    }
     await page.close();
     await anonymous.close();
     await author.close();
