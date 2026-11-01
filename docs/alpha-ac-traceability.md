@@ -14,7 +14,7 @@
 | AC | 受入シナリオ | コード/テスト箇所（部分証拠のみ） | 現在の部分証拠・未検証境界 | AC全体の判定 |
 | --- | --- | --- | --- | --- |
 | AC-01 | シリーズ内で編・部・章を作成し本文を書いて保存・再読込 | apps/web/browser-acceptance/browser-acceptance.test.mjs; docs/cat/ac01-author-hierarchy-draft.md | B: 作者UIでシリーズ→編→部→章を作成し日本語本文の下書き保存・再読込を検証（CI #41286577405 success、正式CAT Gate/人間受入は未実施） | not-run |
-| AC-02 | シリーズ内の編・部・章の名称・表示順を変更 | apps/web/browser-acceptance/browser-acceptance.test.mjs; docs/cat/ac02-volume-order-and-rename-draft.md | B: 同一シリーズの編2件で表示順変更・改名・再読込を検証（CI #41286577405 success、部/章の全条件は未検証） | not-run |
+| AC-02 | シリーズ内の編・部・章の名称・表示順を変更 | apps/web/browser-acceptance/browser-acceptance.test.mjs; docs/cat/ac02-volume-order-and-rename-draft.md; docs/cat/ac02-part-chapter-order-rename-draft.md | B: 編の順序・改名・再読込はCI #41286577405成功。部の順序・改名、章の改名・親ID保持を追加試験（現行HEADのCI待ち）。章の兄弟順序変更は既存ブラウザー試験で検証。正式CAT Gate・全公開稿境界は未検証 | not-run |
 | AC-03 | 本文にルビ等の書式を付して保存 | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: semantic ruby/page boundary; IME実機未検証 | not-run |
 | AC-04 | 本文編集中に設定・辞書を検索・参照 | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 同一シリーズの未公開設定・単語を参照中も未保存原稿を保持（CI #41275713765 success） | not-run |
 | AC-05 | カテゴリ・設定・項目・プリセット・タグを作成・編集 | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: category preset editor; タグ・所属変更の全件未検証 | not-run |
