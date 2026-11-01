@@ -427,6 +427,66 @@ test('nested settings category creation is rejected without altering its parent'
     'rejected nesting must not change the parent or create any node');
 });
 
+test('invalid category preset edits are atomic and future tips use the latest valid preset', async () => {
+  // ST-03/AC-49/50 exploratory PostgreSQL HTTP boundary verification.
+  const cookie = 'eternalia_author=' + fixture.authorToken;
+  async function request(method, path, body) {
+    const response = await fetch(base + path, {
+      method,
+      headers: { Cookie: cookie, Origin: base, 'Content-Type': 'application/json' },
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    });
+    return { status: response.status, body: await response.text() };
+  }
+  async function create(kind, parentId, title, details = {}) {
+    const result = await request('POST', '/api/admin/nodes', {
+      kind, parentId, content: { title, body: '', details },
+    });
+    assert.equal(result.status, 201, result.body);
+    return JSON.parse(result.body).id;
+  }
+  async function nodes() {
+    const response = await request('GET', '/api/admin/nodes');
+    assert.equal(response.status, 200);
+    return JSON.parse(response.body);
+  }
+  const preset = (title, body) => JSON.stringify([{ title, body }]);
+  const series = await create('series', null, fixture.prefix + '-preset-atomic');
+  const category = await create('category', series, 'カテゴリ',
+    { presets: preset('初期見出し', '初期本文') });
+  const oldTip = await create('tip', category, '既存設定');
+  const before = await nodes();
+  const oldSection = before.find(node => node.kind === 'tipSection' && node.parentId === oldTip);
+  assert.ok(oldSection);
+  assert.equal(oldSection.draft.title, '初期見出し');
+
+  const invalid = await request('PATCH', '/api/admin/nodes/' + category, {
+    expectedRevision: 1,
+    content: { title: '変更してはいけないカテゴリ', body: '失敗本文',
+      details: { presets: '{invalid-json' } },
+  });
+  assert.equal(invalid.status, 400);
+  const afterFailure = await nodes();
+  assert.deepEqual(afterFailure, before,
+    'invalid category presets must not change the saved category or existing sections');
+
+  const valid = await request('PATCH', '/api/admin/nodes/' + category, {
+    expectedRevision: 1,
+    content: { title: 'カテゴリ', body: '',
+      details: { presets: preset('更新後の見出し', '更新後の本文') } },
+  });
+  assert.equal(valid.status, 200, valid.body);
+  const newTip = await create('tip', category, '新規設定');
+  const afterSuccess = await nodes();
+  const originalSection = afterSuccess.find(node => node.id === oldSection.id);
+  const newSection = afterSuccess.find(node => node.kind === 'tipSection' && node.parentId === newTip);
+  assert.deepEqual(originalSection, oldSection,
+    'a successful preset change must not rewrite existing TipSections');
+  assert.equal(newSection?.draft.title, '更新後の見出し');
+  assert.equal(newSection?.draft.body, '更新後の本文');
+  assert.equal(afterSuccess.find(node => node.id === category)?.revision, 2);
+});
+
 /**
  * A synthetic database session exercises the full Nest guard and persistence
  * boundary. This intentionally does NOT test Discord's real OAuth2 exchange.
