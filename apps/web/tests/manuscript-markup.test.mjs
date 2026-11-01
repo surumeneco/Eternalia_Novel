@@ -49,3 +49,9 @@ test('ruby rejects CR, CRLF and Unicode line/paragraph separators', () => {
     assert.equal(insert(manuscript, 0, manuscript.length, 'ruby'), null);
   }
 });
+
+test('markup cannot split CRLF but remains valid immediately after it', () => {
+  assert.equal(insert('甲\r\n乙', 2, 2, 'page'), null);
+  assert.equal(insert('甲\r\n乙', 2, 2, 'ruby'), null);
+  assert.equal(insert('甲\r\n乙', 3, 3, 'page')?.value, '甲\r\n[[page]]乙');
+});
