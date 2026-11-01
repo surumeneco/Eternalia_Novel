@@ -31,7 +31,7 @@
 | AC-16 | 作者が本文・設定・辞書・年表の公開対象を指定して公開する | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 5種の明示公開（最新CI待ち、全画面表示未検証） | not-run |
 | AC-17 | 各領域の公開対象を非公開へ戻し、匿名読者が再取得する | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 章/TipSection/単語/文法/出来事の非公開→再公開を検証（検索/直URL全経路は未網羅） | not-run |
 | AC-18 | Discord連携でログイン・ログアウトを行う | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 合成作者セッションのログアウトと独立セッション維持（実Discord OAuthは未検証） | not-run |
-| AC-19 | Discord認証済みだが権限のない利用者が編集・公開操作を行う | apps/api/http-acceptance/http-acceptance.test.mjs; docs/cat/ac19-22-non-author-guard-draft.md | H: 合成された別Discord主体の有効セッションで管理GET/POST/PATCH・公開・可視性・並べ替えをNuxt/Nest両経路から401拒否し、作者データ・公開稿の不変を確認（CI #41293650480 success）。実Discord本人/非本人OAuthは未実施 | not-run |
+| AC-19 | Discord認証済みだが権限のない利用者が編集・公開操作を行う | apps/api/http-acceptance/http-acceptance.test.mjs; apps/web/browser-acceptance/browser-acceptance.test.mjs; docs/cat/ac19-22-non-author-guard-draft.md | B+H: 別Discord主体の有効な合成セッションで作者画面を開いても編集UIは表示されず公開閲覧は可能（CI #41294000373 success）。管理GET/POST/PATCH・公開・可視性・並べ替えはNuxt/Nest両経路から401拒否し、DB/公開稿不変（CI #41293650480 success）。実Discord OAuthは未実施 | not-run |
 | AC-20 | 未ログイン読者が本文・設定集・辞書・年表の公開・未公開データを取得する | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 匿名公開API・非公開拒否（全経路未網羅） | not-run |
 | AC-21 | Discordログインしていない状態で公開データを閲覧する | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: anonymous mobile reading | not-run |
 | AC-22 | 読者がDiscordログイン後に編集・公開APIを呼び出す | apps/api/http-acceptance/http-acceptance.test.mjs; docs/cat/ac19-22-non-author-guard-draft.md | H: 合成された非作者セッションで8種類の管理要求をNuxt proxy・Nest直接APIの両方から401拒否（CI #41293650480 success）。実Discord OAuthでの受入は未実施 | not-run |
@@ -67,7 +67,7 @@
 | AC-52 | 公開言語の文法項目Aだけ公開・文法項目Bを非公開にし、その後に親の言語を非公開にする | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 文法個別非公開/兄弟公開と親言語の非公開伝播（CI #41275269669 success） | not-run |
 | AC-53 | 同一単語に同じ品詞の異なる複数意味を登録し、意味ごとに語源を関連付ける | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 同品詞の複数意味・意味別語源の独立IDと公開稿（CI #41275713765 success） | not-run |
 | AC-54 | 各領域で未来公開日時を指定し、指定時刻の前後に匿名閲覧する | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: シリーズ未来公開日時による全4領域遮断（CI #41275269669 success、時刻境界未検証） | pending-decision |
-| AC-55 | 新着投稿表示・ジャンプ・公開管理の一覧を匿名読者で使う | apps/web/browser-acceptance/browser-acceptance.test.mjs; apps/api/http-acceptance/http-acceptance.test.mjs; packages/contracts/exploratory/public-recent-privacy.test.mjs; docs/cat/ac55-public-recent-privacy-draft.md | B+H+Domain: 公開章リンク・非公開後除外に加えTip/Word/Eventの新着を確認。非公開祖先・未公開下書きが新着を汚染しない（CI #41293919427 success）。予約日時境界・全ジャンプ導線は未網羅 | not-run |
+| AC-55 | 新着投稿表示・ジャンプ・公開管理の一覧を匿名読者で使う | apps/web/browser-acceptance/browser-acceptance.test.mjs; apps/api/http-acceptance/http-acceptance.test.mjs; packages/contracts/exploratory/public-recent-privacy.test.mjs; docs/cat/ac55-public-recent-privacy-draft.md | B+H+Domain: 公開章リンク・非公開後除外、Tip/Word/Eventの新着、非公開祖先・未公開下書きの遮断を確認（CI #41293919427 success）。未来公開日時のWordは新着から除外、解除後は旧公開稿が復帰（CI #41294048995 success）。予約時刻の厳密境界・全ジャンプ導線は未網羅 | not-run |
 | AC-56 | 作者がホーム・一覧・詳細・管理トップから作成・編集画面へ移動する | apps/web/browser-acceptance/browser-acceptance.test.mjs; docs/cat/ac56-author-navigation-boundary-draft.md | B: 公開ページの共通作者導線から書斎へ遷移し、匿名では作者UIと管理APIを拒否（CI #41287408802 success）。全画面/項目直編集リンクは未網羅 | not-run |
 | AC-57 | 章本文・TipSection・単語意味と語源を編集し保存して再取得する | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 意味別語源と長文の下書き保存/再読込（他領域の全フィールド未検証） | not-run |
 | AC-58 | 公開情報一覧・新着表示・タグ・区分マスタ・作者用メモを確認する | 未特定 | — | not-run |
