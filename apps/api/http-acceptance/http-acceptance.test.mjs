@@ -650,6 +650,55 @@ test('AC-06: cross-series related Tip PATCH is rejected atomically at the HTTP b
     'rejected cross-series relation must not mutate any author node or revision');
 });
 
+test('stale publish and visibility writes return 409 without changing public content', async () => {
+  // Synthetic author session; real Discord OAuth2 remains a separate gate.
+  const cookie = 'eternalia_author=' + fixture.authorToken;
+  async function write(method, path, body) {
+    const response = await fetch(base + path, {
+      method,
+      headers: { Cookie: cookie, Origin: base, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    return { status: response.status, body: await response.text() };
+  }
+  async function create(kind, parentId, title, body = '') {
+    const response = await write('POST', '/api/admin/nodes', {
+      kind, parentId, content: { title, body, details: {} },
+    });
+    assert.equal(response.status, 201, response.body);
+    return JSON.parse(response.body).id;
+  }
+
+  const series = await create('series', null, fixture.prefix + '-revision-series');
+  const volume = await create('volume', series, '改訂巻');
+  const part = await create('part', volume, '改訂部');
+  const chapter = await create('chapter', part, '改訂章', '公開済み本文');
+  for (const id of [series, volume, part, chapter]) {
+    const published = await write('POST', '/api/admin/nodes/' + id + '/publish',
+      { expectedRevision: 1 });
+    assert.equal(published.status, 200, published.body);
+  }
+  assert.equal((await json('/api/public/items/' + chapter)).value.content.body, '公開済み本文');
+
+  const saved = await write('PATCH', '/api/admin/nodes/' + chapter, {
+    expectedRevision: 1,
+    content: { title: '改訂章', body: '改訂後本文', details: {} },
+  });
+  assert.equal(saved.status, 200, saved.body);
+  const stalePublish = await write('POST', '/api/admin/nodes/' + chapter + '/publish',
+    { expectedRevision: 1 });
+  assert.equal(stalePublish.status, 409);
+  assert.equal((await json('/api/public/items/' + chapter)).value.content.body, '公開済み本文');
+
+  const currentPublish = await write('POST', '/api/admin/nodes/' + chapter + '/publish',
+    { expectedRevision: 2 });
+  assert.equal(currentPublish.status, 200, currentPublish.body);
+  const staleVisibility = await write('POST', '/api/admin/nodes/' + chapter + '/visibility',
+    { expectedRevision: 1, isPublic: false, publicSince: null });
+  assert.equal(staleVisibility.status, 409);
+  assert.equal((await json('/api/public/items/' + chapter)).value.content.body, '改訂後本文');
+});
+
 test('synthetic author completes four-domain HTTP publication and privacy cycle', async () => {
   const session = fixture.authorToken;
   async function request(method, path, body, token = session, origin = base) {
@@ -744,51 +793,3 @@ test('synthetic author completes four-domain HTTP publication and privacy cycle'
     'revoked author session must no longer work');
 });
 
-test('stale publish and visibility writes return 409 without changing public content', async () => {
-  // Synthetic author session; real Discord OAuth2 remains a separate gate.
-  const cookie = 'eternalia_author=' + fixture.authorToken;
-  async function write(method, path, body) {
-    const response = await fetch(base + path, {
-      method,
-      headers: { Cookie: cookie, Origin: base, 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    return { status: response.status, body: await response.text() };
-  }
-  async function create(kind, parentId, title, body = '') {
-    const response = await write('POST', '/api/admin/nodes', {
-      kind, parentId, content: { title, body, details: {} },
-    });
-    assert.equal(response.status, 201, response.body);
-    return JSON.parse(response.body).id;
-  }
-
-  const series = await create('series', null, fixture.prefix + '-revision-series');
-  const volume = await create('volume', series, '改訂巻');
-  const part = await create('part', volume, '改訂部');
-  const chapter = await create('chapter', part, '改訂章', '公開済み本文');
-  for (const id of [series, volume, part, chapter]) {
-    const published = await write('POST', '/api/admin/nodes/' + id + '/publish',
-      { expectedRevision: 1 });
-    assert.equal(published.status, 200, published.body);
-  }
-  assert.equal((await json('/api/public/items/' + chapter)).value.content.body, '公開済み本文');
-
-  const saved = await write('PATCH', '/api/admin/nodes/' + chapter, {
-    expectedRevision: 1,
-    content: { title: '改訂章', body: '改訂後本文', details: {} },
-  });
-  assert.equal(saved.status, 200, saved.body);
-  const stalePublish = await write('POST', '/api/admin/nodes/' + chapter + '/publish',
-    { expectedRevision: 1 });
-  assert.equal(stalePublish.status, 409);
-  assert.equal((await json('/api/public/items/' + chapter)).value.content.body, '公開済み本文');
-
-  const currentPublish = await write('POST', '/api/admin/nodes/' + chapter + '/publish',
-    { expectedRevision: 2 });
-  assert.equal(currentPublish.status, 200, currentPublish.body);
-  const staleVisibility = await write('POST', '/api/admin/nodes/' + chapter + '/visibility',
-    { expectedRevision: 1, isPublic: false, publicSince: null });
-  assert.equal(staleVisibility.status, 409);
-  assert.equal((await json('/api/public/items/' + chapter)).value.content.body, '改訂後本文');
-});
