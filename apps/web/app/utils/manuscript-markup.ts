@@ -16,10 +16,15 @@ export function insertManuscriptMarkup(
     source.charCodeAt(index) >= 0xDC00 && source.charCodeAt(index) <= 0xDFFF;
   const splitsCrlf = (index: number) => index > 0 && index < source.length &&
     source[index - 1] === '\r' && source[index] === '\n';
-  if (splitsPair(start) || splitsPair(end) || splitsCrlf(start) || splitsCrlf(end)) return null;
+  const marker = '[[page]]';
+  const splitsMarker = (index: number) => {
+    const at = source.lastIndexOf(marker, index);
+    return at >= 0 && index > at && index < at + marker.length;
+  };
+  if (splitsPair(start) || splitsPair(end) || splitsCrlf(start) || splitsCrlf(end) ||
+      splitsMarker(start) || splitsMarker(end)) return null;
   const selected = source.slice(start, end);
   if (kind === 'page') {
-    const marker = '[[page]]';
     return {
       value: source.slice(0, start) + marker + source.slice(start),
       selectionStart: start + marker.length,
@@ -27,7 +32,7 @@ export function insertManuscriptMarkup(
     };
   }
   // Ruby markup is a single inline text token. Do not silently rewrite multiline selections.
-  if (/[\r\n\u0085\u2028\u2029｜《》]/u.test(selected)) return null;
+  if (selected.includes(marker) || /[\r\n\u0085\u2028\u2029｜《》]/u.test(selected)) return null;
   const base = selected || '文字';
   const reading = 'よみ';
   const markup = '｜' + base + '《' + reading + '》';
