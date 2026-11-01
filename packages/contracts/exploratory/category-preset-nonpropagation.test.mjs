@@ -3,13 +3,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { createNode, editNode, newLibrary } from '../dist/index.js';
+import { createNode, editNode, newLibrary, publishNode } from '../dist/index.js';
 
 const contentOf = (title, details = {}) => ({ title, body: '', details });
 const preset = (title, body) => JSON.stringify([{ title, body }]);
 const sectionsOf = (db, tipId) => db.nodes
   .filter(node => node.kind === 'tipSection' && node.parentId === tipId)
-  .map(node => ({ id: node.id, order: node.order, title: node.draft.title, body: node.draft.body }));
+  .map(node => ({ id: node.id, order: node.order, title: node.draft.title, body: node.draft.body,
+    isPublic: node.isPublic, published: node.published }));
 
 test('AC-50: changing category presets affects only future Tips, never existing sections', () => {
   const seriesId = randomUUID();
@@ -23,10 +24,15 @@ test('AC-50: changing category presets affects only future Tips, never existing 
     content: contentOf('Category', { presets: preset('P1 heading', 'P1 template') }), now: 1001 });
   db = createNode(db, { id: tipA, kind: 'tip', parentId: categoryId,
     content: contentOf('Tip A'), now: 1002 });
+  const sectionAId = db.nodes.find(node => node.kind === 'tipSection' && node.parentId === tipA)?.id;
+  assert.ok(sectionAId);
+  db = publishNode(db, sectionAId, 1, 1003);
   const initialA = sectionsOf(db, tipA);
   assert.equal(initialA.length, 1);
   assert.equal(initialA[0].title, 'P1 heading');
   assert.equal(initialA[0].body, 'P1 template');
+  assert.equal(initialA[0].isPublic, true);
+  assert.equal(initialA[0].published.value.title, 'P1 heading');
 
   db = editNode(db, categoryId, 1,
     contentOf('Category', { presets: preset('P2 heading', 'P2 template') }), 1003);
