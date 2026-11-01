@@ -87,3 +87,9 @@ test('insertion preserves complete Unicode grapheme clusters', () => {
       '前｜' + cluster + '《よみ》後');
   }
 });
+
+test('unknown runtime insertion kind does not silently create ruby', () => {
+  assert.equal(insert('本文', 1, 1, 'unsupported'), null);
+  assert.equal(insert('本文', 1, 1, 'page')?.value, '本[[page]]文');
+  assert.equal(insert('本文', 1, 1, 'ruby')?.value, '本｜文字《よみ》文');
+});
