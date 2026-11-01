@@ -16,3 +16,4 @@ With a valid synthetic author session, publication and visibility writes must en
 Formal CAT machine Gates: **not-run**. Real Discord account/PKCE E2E: **not-run**. No merge or deployment.
 
 Additional guard TCE: authenticated PATCH and DELETE requests must call the write-origin policy; GET and HEAD must not. This is a synthetic guard unit test, not a real OAuth2 test.
+- SC-PUBLIC-REV-05: an impossible future expectedRevision must also return HTTP 409 for both publish and visibility, leaving the public snapshot and visibility unchanged; mismatch is not limited to stale lower revisions.
