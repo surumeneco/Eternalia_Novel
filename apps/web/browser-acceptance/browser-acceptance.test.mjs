@@ -2434,3 +2434,89 @@ test('AC-02: part ordering and part/chapter renames preserve identity and ancest
     await browser.close();
   }
 });
+
+
+test('AC-06: related Tip reorder and removal affect readers only after explicit publication', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const anonymous = await browser.newContext();
+    const prefix = fixture.prefix + '-related-order';
+    async function create(kind, parentId, suffix) {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base },
+        data: { kind, parentId, content: { title: prefix + '-' + suffix, body: suffix, details: {} } },
+      });
+      assert.equal(response.status(), 201, 'create ' + kind + ': ' + await response.text());
+      return (await response.json()).id;
+    }
+    async function publish(id) {
+      const response = await author.request.post(base + '/api/admin/nodes/' + id + '/publish', {
+        headers: { Origin: base }, data: { expectedRevision: 1 },
+      });
+      assert.equal(response.status(), 200, 'publish ' + id + ': ' + await response.text());
+    }
+    const series = await create('series', null, 'series');
+    const category = await create('category', series, 'category');
+    const source = await create('tip', category, 'source');
+    const targetA = await create('tip', category, 'target-A');
+    const targetB = await create('tip', category, 'target-B');
+    for (const id of [series, category, targetA, targetB]) await publish(id);
+
+    const page = await author.newPage();
+    await page.goto(base + '/studio?item=' + source);
+    const links = page.locator('.tip-links-editor');
+    for (const target of [targetA, targetB]) {
+      await links.locator('select').selectOption(target);
+      await links.getByRole('button', { name: '関連に追加' }).click();
+    }
+    const titles = links.locator('.related-list li > span');
+    assert.deepEqual(await titles.allInnerTexts(), [prefix + '-target-A', prefix + '-target-B']);
+    await links.getByRole('button', { name: prefix + '-target-Bを上へ' }).click();
+    assert.deepEqual(await titles.allInnerTexts(), [prefix + '-target-B', prefix + '-target-A']);
+
+    async function saveDraft() {
+      const saved = page.waitForResponse(response =>
+        response.url().includes('/api/admin/nodes/' + source) &&
+        response.request().method() === 'PATCH');
+      await page.getByRole('button', { name: '下書きを保存' }).click();
+      assert.equal((await saved).status(), 200);
+    }
+    async function publishDraft() {
+      page.once('dialog', dialog => dialog.accept());
+      await page.getByRole('button', { name: '保存済み下書きを公開版へ反映' }).click();
+      await page.getByText('公開スナップショットを更新しました。').waitFor();
+    }
+    async function publicRelated() {
+      const response = await anonymous.request.get(base + '/api/public/items/' + source);
+      assert.equal(response.status(), 200);
+      return JSON.parse((await response.json()).content.details.relatedTips).map(item => item.id);
+    }
+    await saveDraft();
+    assert.equal((await anonymous.request.get(base + '/api/public/items/' + source)).status(), 404,
+      'saving the first draft must not publish the source');
+    await publishDraft();
+    assert.deepEqual(await publicRelated(), [targetB, targetA]);
+
+    await links.getByRole('button', { name: prefix + '-target-Aを削除' }).click();
+    assert.deepEqual(await titles.allInnerTexts(), [prefix + '-target-B']);
+    await saveDraft();
+    assert.deepEqual(await publicRelated(), [targetB, targetA],
+      'saving a changed relation list must not alter the old public snapshot');
+    await publishDraft();
+    assert.deepEqual(await publicRelated(), [targetB],
+      'explicit publication must update the related-link projection');
+    const nodes = await (await author.request.get(base + '/api/admin/nodes')).json();
+    assert.deepEqual(JSON.parse(nodes.find(node => node.id === source).draft.details.relatedTipIds), [targetB]);
+    await page.close();
+    await anonymous.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
