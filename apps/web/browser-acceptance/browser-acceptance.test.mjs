@@ -1588,3 +1588,80 @@ test('published tags search across categories without changing ownership or priv
     await browser.close();
   }
 });
+
+test('AC-37/38: new word defaults public but supports private creation without reader exposure', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext();
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const reader = await browser.newContext();
+    const prefix = fixture.prefix + '-word-initial-visibility';
+    async function create(kind, parentId, title) {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base },
+        data: { kind, parentId, content: { title, body: '', details: {} } },
+      });
+      assert.equal(response.status(), 201, await response.text());
+      return (await response.json()).id;
+    }
+    async function publish(id) {
+      const response = await author.request.post(base + '/api/admin/nodes/' + id + '/publish', {
+        headers: { Origin: base }, data: { expectedRevision: 1 },
+      });
+      assert.equal(response.status(), 200, await response.text());
+    }
+    const series = await create('series', null, prefix + '-series');
+    const language = await create('language', series, prefix + '-language');
+    await publish(series);
+    await publish(language);
+
+    const page = await author.newPage();
+    await page.goto(base + '/studio?item=' + language);
+    await page.getByRole('button', { name: '子項目を追加' }).click();
+    const initialVisibility = page.getByRole('checkbox', { name: '新規単語を公開設定で作成' });
+    assert.equal(await initialVisibility.isChecked(), true, 'new word should default to public');
+    await initialVisibility.uncheck();
+    await page.getByRole('textbox', { name: 'タイトル', exact: true }).fill(prefix + '-private');
+    await page.getByRole('button', { name: '作成', exact: true }).click();
+    await page.getByRole('heading', { name: '単語：' + prefix + '-private' }).waitFor();
+
+    let nodes = await (await author.request.get(base + '/api/admin/nodes')).json();
+    const privateWord = nodes.find(node => node.kind === 'word' && node.draft.title === prefix + '-private');
+    assert.ok(privateWord?.id);
+    assert.equal(privateWord.isPublic, false);
+    assert.equal(privateWord.published, null);
+    assert.equal((await reader.request.get(base + '/api/public/items/' + privateWord.id)).status(), 404);
+
+    page.once('dialog', dialog => dialog.accept());
+    await page.getByRole('button', { name: '保存済み下書きを公開版へ反映' }).click();
+    await page.getByText('公開スナップショットを更新しました。').waitFor();
+    nodes = await (await author.request.get(base + '/api/admin/nodes')).json();
+    assert.equal(nodes.find(node => node.id === privateWord.id).isPublic, false,
+      'publishing the snapshot must not override an explicitly private word');
+    assert.equal((await reader.request.get(base + '/api/public/items/' + privateWord.id)).status(), 404);
+    await page.getByRole('button', { name: '公開に戻す' }).click();
+    await page.getByText('公開設定を変更しました。').waitFor();
+    assert.equal((await reader.request.get(base + '/api/public/items/' + privateWord.id)).status(), 200);
+
+    await page.goto(base + '/studio?item=' + language);
+    await page.getByRole('button', { name: '子項目を追加' }).click();
+    assert.equal(await page.getByRole('checkbox', { name: '新規単語を公開設定で作成' }).isChecked(), true,
+      'new creation form must reset to the public default');
+    await page.getByRole('textbox', { name: 'タイトル', exact: true }).fill(prefix + '-default');
+    await page.getByRole('button', { name: '作成', exact: true }).click();
+    nodes = await (await author.request.get(base + '/api/admin/nodes')).json();
+    const defaultWord = nodes.find(node => node.kind === 'word' && node.draft.title === prefix + '-default');
+    assert.equal(defaultWord?.isPublic, true);
+    assert.equal(defaultWord.published, null);
+    assert.equal((await reader.request.get(base + '/api/public/items/' + defaultWord.id)).status(), 404);
+    await page.close();
+    await reader.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
