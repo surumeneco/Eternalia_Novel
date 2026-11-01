@@ -14,7 +14,9 @@ export function insertManuscriptMarkup(
   const splitsPair = (index: number) => index > 0 && index < source.length &&
     source.charCodeAt(index - 1) >= 0xD800 && source.charCodeAt(index - 1) <= 0xDBFF &&
     source.charCodeAt(index) >= 0xDC00 && source.charCodeAt(index) <= 0xDFFF;
-  if (splitsPair(start) || splitsPair(end)) return null;
+  const splitsCrlf = (index: number) => index > 0 && index < source.length &&
+    source[index - 1] === '\r' && source[index] === '\n';
+  if (splitsPair(start) || splitsPair(end) || splitsCrlf(start) || splitsCrlf(end)) return null;
   const selected = source.slice(start, end);
   if (kind === 'page') {
     const marker = '[[page]]';
