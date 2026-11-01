@@ -70,7 +70,7 @@
 | AC-55 | 新着投稿表示・ジャンプ・公開管理の一覧を匿名読者で使う | apps/web/browser-acceptance/browser-acceptance.test.mjs; apps/api/http-acceptance/http-acceptance.test.mjs; packages/contracts/exploratory/public-recent-privacy.test.mjs; docs/cat/ac55-public-recent-privacy-draft.md | B+H+Domain: 公開章リンク・非公開後除外、Tip/Word/Eventの新着、非公開祖先・未公開下書きの遮断を確認（CI #41293919427 success）。未来公開日時のWordは新着から除外、解除後は旧公開稿が復帰（CI #41294048995 success）。予約時刻の厳密境界・全ジャンプ導線は未網羅 | not-run |
 | AC-56 | 作者がホーム・一覧・詳細・管理トップから作成・編集画面へ移動する | apps/web/browser-acceptance/browser-acceptance.test.mjs; docs/cat/ac56-author-navigation-boundary-draft.md | B: 公開ページの共通作者導線から書斎へ遷移し、匿名では作者UIと管理APIを拒否（CI #41287408802 success）。全画面/項目直編集リンクは未網羅 | not-run |
 | AC-57 | 章本文・TipSection・単語意味と語源を編集し保存して再取得する | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 意味別語源と長文の下書き保存/再読込（他領域の全フィールド未検証） | not-run |
-| AC-58 | 公開情報一覧・新着表示・タグ・区分マスタ・作者用メモを確認する | 未特定 | — | not-run |
+| AC-58 | 公開情報一覧・新着表示・タグ・区分マスタ・作者用メモを確認する | apps/web/browser-acceptance/browser-acceptance.test.mjs; apps/api/http-acceptance/http-acceptance.test.mjs; apps/api/tests/author-memos.test.mjs | B/H/DB: 公開新着、カテゴリ横断タグ検索、作者メモのタグ保存・再取得と読み戻し障害時の表示を個別に試験。区分マスタ・全画面導線・実Discord本人認可を含むAC全体は未検証 | not-run |
 | AC-59 | 画面の読込中とローカライズ対象の固定文言を確認する | 未特定 | — | pending-decision |
 | AC-60 | DS-01、v0.3 VisualDesignConcept、200/220 | apps/web/app/assets/css/eternalia.css、apps/web/tests/legacy-design-tokens.test.mjs | CI: 11枚の画面撮影・旧色トークン照合（旧v0.3画像との人間の比較は未実施） | not-run |
 | AC-61 | DS-02、旧FE `_pallet/_color.scss` | apps/web/tests/legacy-design-tokens.test.mjs | CI: v0.3 palette SCSSの色値・意味ロールを稼働CSSと照合（旧UI実画面の比較は未実施） | not-run |
