@@ -1322,3 +1322,45 @@ test('dictionary browser keeps identical spellings separate by language filter',
     await browser.close();
   }
 });
+
+
+test('word editor shows and clears same-language duplicate spelling warnings', { timeout: 60_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext();
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const prefix = fixture.prefix + '-duplicate-spelling';
+    async function create(kind, parentId, title) {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base },
+        data: { kind, parentId, content: { title, body: '', details: {} } },
+      });
+      assert.equal(response.status(), 201, await response.text());
+      return (await response.json()).id;
+    }
+    const series = await create('series', null, prefix + '-series');
+    const language = await create('language', series, prefix + '-language');
+    await create('word', language, prefix + '-same');
+    const second = await create('word', language, prefix + '-same');
+    const page = await author.newPage();
+    await page.goto(base + '/studio?item=' + second);
+    const warnings = page.locator('.spelling-warnings');
+    await warnings.getByText('同じ言語内に同じ綴りの単語があります。意味と登録対象を確認してください。').waitFor();
+    assert.equal(await warnings.locator('li').count(), 1, 'one duplicate warning should be displayed');
+
+    const title = page.getByRole('textbox', { name: '名称・見出し', exact: true });
+    await title.fill(prefix + '-unique');
+    await warnings.waitFor({ state: 'hidden' });
+    await title.fill(prefix + '-same');
+    await warnings.waitFor({ state: 'visible' });
+    assert.equal(await warnings.locator('li').count(), 1, 'warning should return for duplicate spelling');
+    await page.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
