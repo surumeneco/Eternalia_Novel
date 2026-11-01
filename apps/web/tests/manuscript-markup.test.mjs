@@ -42,3 +42,10 @@ test('ruby selection cannot split a surrogate pair', () => {
 test('page marker outside the surrogate pair remains valid', () => {
   assert.equal(insert('前𠮷後', 3, 3, 'page')?.value, '前𠮷[[page]]後');
 });
+
+test('ruby rejects CR, CRLF and Unicode line/paragraph separators', () => {
+  for (const separator of ['\r', '\r\n', '\u0085', '\u2028', '\u2029']) {
+    const manuscript = '甲' + separator + '乙';
+    assert.equal(insert(manuscript, 0, manuscript.length, 'ruby'), null);
+  }
+});
