@@ -2046,3 +2046,75 @@ test('AC-47: category editing works but nested categories are blocked in UI and 
     await browser.close();
   }
 });
+
+test('AC-25: settings, dictionary and timeline remain isolated across two published series', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext();
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const reader = await browser.newContext();
+    const prefix = fixture.prefix + '-multi-domain';
+    async function create(kind, parentId, title, details = {}) {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base },
+        data: { kind, parentId, content: { title, body: '', details } },
+      });
+      assert.equal(response.status(), 201, await response.text());
+      return (await response.json()).id;
+    }
+    async function publish(id) {
+      const response = await author.request.post(base + '/api/admin/nodes/' + id + '/publish', {
+        headers: { Origin: base }, data: { expectedRevision: 1 },
+      });
+      assert.equal(response.status(), 200, await response.text());
+    }
+    async function createDomainSeries(suffix) {
+      const series = await create('series', null, prefix + '-series-' + suffix);
+      const category = await create('category', series, prefix + '-same-category', { presets: '[]' });
+      const tip = await create('tip', category, prefix + '-same-tip');
+      const language = await create('language', series, prefix + '-same-language');
+      const word = await create('word', language, prefix + '-same-word', { meanings: '[]' });
+      const periodization = await create('periodization', series, prefix + '-same-period');
+      const event = await create('event', periodization, prefix + '-same-event');
+      for (const id of [series, category, tip, language, word, periodization, event]) await publish(id);
+      return { series, category, tip, language, word, periodization, event };
+    }
+    async function tree(id) {
+      const response = await reader.request.get(base + '/api/public/series/' + id + '/tree');
+      assert.equal(response.status(), 200, await response.text());
+      return response.json();
+    }
+    const a = await createDomainSeries('A');
+    const b = await createDomainSeries('B');
+    const aIds = new Set(Object.values(a));
+    const bIds = new Set(Object.values(b));
+    const treeA = await tree(a.series);
+    const treeB = await tree(b.series);
+    for (const id of aIds) assert.ok(treeA.some(node => node.id === id), 'A missing ' + id);
+    for (const id of bIds) assert.ok(treeB.some(node => node.id === id), 'B missing ' + id);
+    assert.ok(!treeA.some(node => bIds.has(node.id)), 'series A must not contain B');
+    assert.ok(!treeB.some(node => aIds.has(node.id)), 'series B must not contain A');
+
+    const hide = await author.request.post(base + '/api/admin/nodes/' + b.category + '/visibility', {
+      headers: { Origin: base },
+      data: { expectedRevision: 1, isPublic: false, publicSince: null },
+    });
+    assert.equal(hide.status(), 200, await hide.text());
+    const afterB = await tree(b.series);
+    assert.ok(!afterB.some(node => node.id === b.category || node.id === b.tip),
+      'hidden B category must hide its Tip');
+    for (const id of [b.language, b.word, b.periodization, b.event]) {
+      assert.ok(afterB.some(node => node.id === id), 'unrelated B domain must remain visible: ' + id);
+    }
+    const afterA = await tree(a.series);
+    for (const id of aIds) assert.ok(afterA.some(node => node.id === id), 'A changed when B was hidden');
+    await reader.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
