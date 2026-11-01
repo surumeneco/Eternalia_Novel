@@ -1689,6 +1689,7 @@ test('AC-37/38: new word defaults public but supports private creation without r
       'new creation form must reset to the public default');
     await page.getByRole('textbox', { name: 'タイトル', exact: true }).fill(prefix + '-default');
     await page.getByRole('button', { name: '作成', exact: true }).click();
+    await page.getByRole('heading', { name: '単語：' + prefix + '-default' }).waitFor();
     nodes = await (await author.request.get(base + '/api/admin/nodes')).json();
     const defaultWord = nodes.find(node => node.kind === 'word' && node.draft.title === prefix + '-default');
     assert.equal(defaultWord?.isPublic, true);
