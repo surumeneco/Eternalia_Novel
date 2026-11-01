@@ -2178,7 +2178,13 @@ test('AC-56: shared author navigation works while anonymous editor and API write
     assert.equal(publish.status(), 200, await publish.text());
 
     const page = await author.newPage();
-    for (const route of ['/', '/stories', '/series/' + series]) {
+    for (const route of [
+      '/', '/stories', '/series/' + series,
+      '/read/' + fixture.chapter + '?series=' + fixture.seriesA,
+      '/tips/' + fixture.seriesA,
+      '/dictionaries/' + fixture.seriesA,
+      '/timeline/' + fixture.seriesA,
+    ]) {
       await page.goto(base + route);
       await page.getByRole('contentinfo').getByRole('link', { name: '作者の書斎' }).click();
       await page.getByRole('heading', { name: '作者の書斎' }).waitFor();
