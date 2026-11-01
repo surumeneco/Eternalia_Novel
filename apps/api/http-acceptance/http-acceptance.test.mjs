@@ -566,6 +566,25 @@ test('recent publications retain cross-domain privacy after hiding an ancestor',
   assert.equal(afterDraft.find(node => node.id === word)?.content.body, '公開単語本文',
     'recent must show published snapshot rather than the latest draft');
 
+  // PB-05/AC-54 partial: scheduling a future word must hide it from recent
+  // without changing the published snapshot; boundary-second semantics remain undecided.
+  const scheduled = await write('POST', '/api/admin/nodes/' + word + '/visibility', {
+    expectedRevision: 2, isPublic: true, publicSince: Date.now() + 86_400_000,
+  });
+  assert.equal(scheduled.status, 200, scheduled.body);
+  const scheduledRecent = await recent();
+  assert.ok(!scheduledRecent.some(node => node.id === word),
+    'a future-scheduled word must be absent from recent');
+  assert.ok(scheduledRecent.some(node => node.id === event),
+    'scheduling a word must not hide an unrelated event');
+  const unscheduled = await write('POST', '/api/admin/nodes/' + word + '/visibility', {
+    expectedRevision: 3, isPublic: true, publicSince: null,
+  });
+  assert.equal(unscheduled.status, 200, unscheduled.body);
+  const restoredRecent = await recent();
+  assert.equal(restoredRecent.find(node => node.id === word)?.content.body, '公開単語本文',
+    'clearing a future schedule must restore the old published version');
+
   const hiddenCategory = await write('POST', '/api/admin/nodes/' + category + '/visibility',
     { expectedRevision: 1, isPublic: false, publicSince: null });
   assert.equal(hiddenCategory.status, 200, hiddenCategory.body);
