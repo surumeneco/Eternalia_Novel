@@ -1515,3 +1515,72 @@ test('author references unpublished settings and words without losing unsaved ma
     await browser.close();
   }
 });
+
+
+test('published tags search across categories without changing ownership or privacy', { timeout: 60_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext();
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const anonymous = await browser.newContext();
+    const prefix = fixture.prefix + '-cross-category-tags';
+    const tag = prefix + '-shared-tag';
+    async function create(kind, parentId, suffix, details = {}) {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base },
+        data: { kind, parentId, content: { title: prefix + '-' + suffix, body: '', details } },
+      });
+      assert.equal(response.status(), 201, await response.text());
+      return (await response.json()).id;
+    }
+    async function publish(id) {
+      const response = await author.request.post(base + '/api/admin/nodes/' + id + '/publish', {
+        headers: { Origin: base }, data: { expectedRevision: 1 },
+      });
+      assert.equal(response.status(), 200, await response.text());
+    }
+    const series = await create('series', null, 'series');
+    const categoryA = await create('category', series, 'category-A');
+    const categoryB = await create('category', series, 'category-B');
+    const tipA = await create('tip', categoryA, 'tip-A', { tags: JSON.stringify([tag]) });
+    const tipB = await create('tip', categoryB, 'tip-B', { tags: JSON.stringify([tag]) });
+    for (const id of [series, categoryA, categoryB, tipA, tipB]) await publish(id);
+
+    const page = await anonymous.newPage();
+    await page.goto(base + '/tips/' + series);
+    await page.getByLabel('タグ').selectOption(tag);
+    const groups = page.locator('.tip-category');
+    assert.equal(await groups.count(), 2, 'tag filter should span both categories');
+    assert.equal(await page.getByRole('link', { name: prefix + '-tip-A', exact: true }).count(), 1);
+    assert.equal(await page.getByRole('link', { name: prefix + '-tip-B', exact: true }).count(), 1);
+
+    await page.getByLabel('カテゴリ').selectOption(categoryA);
+    assert.equal(await groups.count(), 1);
+    assert.ok((await groups.innerText()).includes(prefix + '-tip-A'));
+    assert.ok(!(await groups.innerText()).includes(prefix + '-tip-B'));
+    await page.getByLabel('カテゴリ').selectOption(categoryB);
+    assert.equal(await groups.count(), 1);
+    assert.ok((await groups.innerText()).includes(prefix + '-tip-B'));
+
+    const hidden = await author.request.post(base + '/api/admin/nodes/' + tipA + '/visibility', {
+      headers: { Origin: base },
+      data: { expectedRevision: 1, isPublic: false, publicSince: null },
+    });
+    assert.equal(hidden.status(), 200);
+    await page.reload();
+    await page.getByLabel('タグ').selectOption(tag);
+    assert.equal(await page.getByRole('link', { name: prefix + '-tip-A', exact: true }).count(), 0);
+    assert.equal(await page.getByRole('link', { name: prefix + '-tip-B', exact: true }).count(), 1);
+    assert.equal((await anonymous.request.get(base + '/api/public/items/' + tipA)).status(), 404);
+    assert.equal((await anonymous.request.get(base + '/api/public/items/' + tipB)).status(), 200);
+    await page.close();
+    await anonymous.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
