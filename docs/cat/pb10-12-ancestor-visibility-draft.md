@@ -24,6 +24,8 @@ Scope: α版の既存公開判定に対する実DB・HTTP・Chromium受入回帰
 | V6 | 年代区分を非公開 | Eventのみ404 |
 | V7 | 単語自身を非公開→言語を非公開→言語を再公開 | 単語は404のまま、他の言語子孫は公開可能 |
 
+| V8 | 公開済みシリーズに未来の公開開始日時を指定 | 4領域末端が匿名APIで404、公開日時を現在に戻すと公開版が復帰 |
+
 ## Evidence contract
 
 実DB・実HTTP・Chromiumで独立したフィクスチャを作成する。テストコードの追加とCI実行を実証し、Red/Greenの実測・CAT機械Gateの未実行は別々に記録する。機械的 process-closure、TestModel生成、model-conformance、implementation-conformance は未実行であり、上記は正規生成物ではない。
