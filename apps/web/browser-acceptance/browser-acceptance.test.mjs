@@ -1849,3 +1849,71 @@ test('AC-11: interrupted draft save retains unsaved input and succeeds after ret
     await browser.close();
   }
 });
+
+test('AC-55: anonymous recent listing links published chapter and removes it after hiding', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext();
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const reader = await browser.newContext();
+    const prefix = fixture.prefix + '-recent-privacy';
+    async function create(kind, parentId, title, body = '') {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base },
+        data: { kind, parentId, content: { title, body, details: {} } },
+      });
+      assert.equal(response.status(), 201, await response.text());
+      return (await response.json()).id;
+    }
+    async function publish(id) {
+      const response = await author.request.post(base + '/api/admin/nodes/' + id + '/publish', {
+        headers: { Origin: base }, data: { expectedRevision: 1 },
+      });
+      assert.equal(response.status(), 200, await response.text());
+    }
+    async function recent() {
+      const response = await reader.request.get(base + '/api/public/recent');
+      assert.equal(response.status(), 200);
+      return response.json();
+    }
+    const series = await create('series', null, prefix + '-series');
+    const volume = await create('volume', series, prefix + '-volume');
+    const part = await create('part', volume, prefix + '-part');
+    const chapterTitle = prefix + '-chapter';
+    const chapter = await create('chapter', part, chapterTitle, '新着から開ける公開章本文');
+    assert.ok(!(await recent()).some(item => item.id === chapter),
+      'unpublished draft must not appear in recent list');
+    for (const id of [series, volume, part, chapter]) await publish(id);
+
+    const items = await recent();
+    assert.ok(items.some(item => item.id === chapter && item.content.title === chapterTitle));
+    const page = await reader.newPage();
+    await page.goto(base + '/');
+    const link = page.getByRole('link', { name: chapterTitle, exact: true });
+    await link.waitFor();
+    assert.equal(await link.getAttribute('href'), '/read/' + chapter);
+    await link.click();
+    await page.locator('.rich-body').getByText('新着から開ける公開章本文').waitFor();
+
+    const hide = await author.request.post(base + '/api/admin/nodes/' + chapter + '/visibility', {
+      headers: { Origin: base },
+      data: { expectedRevision: 1, isPublic: false, publicSince: null },
+    });
+    assert.equal(hide.status(), 200, await hide.text());
+    assert.ok(!(await recent()).some(item => item.id === chapter),
+      'hidden chapter must not appear in anonymous recent API');
+    assert.equal((await reader.request.get(base + '/api/public/items/' + chapter)).status(), 404);
+    await page.goto(base + '/');
+    assert.equal(await page.getByRole('link', { name: chapterTitle, exact: true }).count(), 0,
+      'hidden chapter must not appear in recent home links');
+    await page.close();
+    await reader.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
