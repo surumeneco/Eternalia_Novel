@@ -56,3 +56,19 @@ test('fallback does not split a subdivision-flag emoji tag sequence', () => {
     Intl.Segmenter = original;
   }
 });
+
+test('fallback preserves halfwidth kana voiced and semi-voiced clusters', () => {
+  const original = Intl.Segmenter;
+  try {
+    Intl.Segmenter = undefined;
+    for (const cluster of ['ｶﾞ', 'ﾊﾟ']) {
+      const source = '前' + cluster + '後';
+      assert.equal(insert(source, 2, 2, 'page'), null, cluster);
+      assert.equal(insert(source, 2, 2, 'ruby'), null, cluster);
+      assert.equal(insert(source, 3, 3, 'page')?.value,
+        '前' + cluster + '[[page]]後');
+    }
+  } finally {
+    Intl.Segmenter = original;
+  }
+});
