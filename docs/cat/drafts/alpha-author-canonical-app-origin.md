@@ -1,18 +1,35 @@
-# Alpha Discord author configuration: canonical APP_ORIGIN (CAT Draft)
+---
+cat_version: '0.3'
+kind: domain-spec
+id: eternalia.author.app-origin
+status: draft
+process: eternalia.author
+source_refs:
+  - https://drive.google.com/file/d/1nFaATrccBmk965tp5qx_mJnZgjctZZNa/view
+refs: []
+semantic_contract: markdown-v2
+language: ja
+---
 
-Status: **Draft**, not Confirmed. Leaf: `TASK-20261101-008`.
+# DomainSpec: author APP_ORIGIN canonical configuration
 
-## Process / PI
+## 対象
+| Ref | Aspect |
+| --- | --- |
+| eternalia.author.oauth | OAuth2 redirectの基点とブラウザOrigin |
+| eternalia.author.config | 不完全設定時の認証境界 |
 
-The configured application origin is an exact browser Origin and the base of the OAuth2 redirect URI. A permissive `http(s)://` prefix check can accept a string containing URL userinfo, query, fragment, or noncanonical authority text, which is not an origin and may construct an incorrect redirect.
+## 規則
+| ID | 条件 | 要求 | 検証 |
+| --- | --- | --- | --- |
+| origin.exact | APP_ORIGINが設定されたとき | HTTP(S) URLとしてparseでき、入力文字列がcanonical URL.originと完全一致し、userinfoがない場合だけ有効 | AUTH-ORIGIN-01 |
+| origin.query | queryまたはfragmentを含むとき | 認証構成を無効とし、部分的に有効なOriginとして扱わない | AUTH-ORIGIN-02 |
+| origin.userinfo | usernameまたはpasswordを含むとき | 認証構成を無効とする | AUTH-ORIGIN-02 |
+| origin.path | slashで終わるものを含むpathを持つとき | 入力をtrim/正規化して黙認せず、canonical originとの不一致として拒否する | AUTH-ORIGIN-03 |
+| origin.incomplete | Originが有効でも他の必須作者認証設定が欠けるとき | 作者認証は利用不能のまま | AUTH-ORIGIN-04 |
 
-Treat `APP_ORIGIN` as configured only when it parses as an HTTP(S) URL whose canonical `URL.origin` equals the supplied string, with no username or password. Do not silently trim or rewrite configuration. A missing or malformed origin leaves author authentication unavailable, not partially configured.
+## 検証境界
 
-## TCE / acceptance vectors
+有効例: `https://example.test`, `http://127.0.0.1:3000`。無効例: `https://example.test?next=evil`, `https://example.test#fragment`, `https://user@example.test`, `https://example.test/path`, `https://example.test/`。
 
-- AUTH-ORIGIN-01: `https://example.test` and `http://127.0.0.1:3000` are valid.
-- AUTH-ORIGIN-02: `https://example.test?next=evil`, `https://example.test#fragment`, `https://user@example.test` are invalid.
-- AUTH-ORIGIN-03: `https://example.test/path` and `https://example.test/` are invalid as exact configured origins.
-- AUTH-ORIGIN-04: a valid origin still requires the other author configuration fields.
-
-This does not replace a real Discord OAuth2/PKCE integration test or validate deployment proxy headers.
+本書はCAT **Draft**。既存Node/CIテストは実装証拠であり、正式CAT規範確認・process-closure・model-conformance・vectors・Queueの合格証拠ではない。Discord OAuth2/PKCE実認証、ブラウザcookie、reverse proxy headerの実機受入は未検証である。
