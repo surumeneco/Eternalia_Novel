@@ -1,6 +1,6 @@
 # α版 実機受入チェックリスト（未実施）
 
-対象: `surumeneco/Eternalia_Novel` / PR #3 / `feature/alpha-reimplementation-20261029`。正本は `forGPT/Eternalia_Novel/40_開発・検証/400_受入検証計画.md`。本書は実機検証の手順と記録欄であり、実施済み証拠ではない。
+対象: `surumeneco/Eternalia_Novel` / PR #3 / `feature/alpha-reimplementation-20261029`。正本は `forGPT/Creating/Projects/Websites/Eternalia_Novel/40_開発・検証/400_受入検証計画.md`。本書は実機検証の手順と記録欄であり、実施済み証拠ではない。
 
 **現在の判定: 全件 not-run（人間による実機検証）。** GitHub Actionsの合成セッション/一時PostgreSQL/Chromium成功はDiscord本人認証、実IME、端末、旧v0.3デザイン承認を代替しない。
 
@@ -32,7 +32,7 @@
 
 [Actions #41213912611 の alpha-ui-screenshots（11枚）](https://github.com/surumeneco/Eternalia_Novel/actions/runs/41213912611/artifacts/13047567293) は `8a6f24d0cac82ef98c58fea80d404f3b06f420df` の実Chromium/一時DBで取得した。読者4領域の390px・1280px、作者のデスクトップ・390px・320pxを含み、4ジョブ成功、ブラウザ15件・HTTP6件成功。CI artifactは**7日間保持**で、期限後の再生成には該当feature HEADのCIを実行する。
 
-比較原典は `docs/legacy-ui-asset-map.md` に記載の旧 `Eternalia_frontend/develop@170fb60` と `forGPT/Eternalia_Novel/20_基本設計/220_ビジュアルデザイン・画面コンポーネント継承設計.md`。スクリーンショットの**取得成功は視覚的一致・利用者承認ではない**。MAN-10で旧UIとの画像対照を行い、差分と採否を記録する。
+比較原典は `docs/legacy-ui-asset-map.md` に記載の旧 `Eternalia_frontend/develop@170fb60` と `forGPT/Creating/Projects/Websites/Eternalia_Novel/20_基本設計/220_ビジュアルデザイン・画面コンポーネント継承設計.md`。スクリーンショットの**取得成功は視覚的一致・利用者承認ではない**。MAN-10で旧UIとの画像対照を行い、差分と採否を記録する。
 
 ## 証跡記録テンプレート
 
