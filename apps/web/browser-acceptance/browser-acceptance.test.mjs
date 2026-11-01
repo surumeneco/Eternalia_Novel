@@ -1665,3 +1665,64 @@ test('AC-37/38: new word defaults public but supports private creation without r
     await browser.close();
   }
 });
+
+test('AC-01: author creates series, volume, part and chapter through studio and reloads draft', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const page = await author.newPage();
+    await page.goto(base + '/studio');
+    const prefix = fixture.prefix + '-ui-hierarchy';
+    const seriesTitle = prefix + '-series';
+    await page.getByRole('button', { name: '新規シリーズ' }).click();
+    await page.getByRole('textbox', { name: 'タイトル', exact: true }).fill(seriesTitle);
+    await page.getByRole('button', { name: '作成', exact: true }).click();
+    await page.getByRole('heading', { name: 'シリーズ：' + seriesTitle }).waitFor();
+
+    const children = [
+      { kind: 'volume', label: '編', title: prefix + '-volume' },
+      { kind: 'part', label: '部', title: prefix + '-part' },
+      { kind: 'chapter', label: '章', title: prefix + '-chapter' },
+    ];
+    for (const child of children) {
+      await page.getByRole('button', { name: '子項目を追加' }).click();
+      assert.equal(await page.getByRole('combobox', { name: '種類' }).inputValue(), child.kind);
+      await page.getByRole('textbox', { name: 'タイトル', exact: true }).fill(child.title);
+      await page.getByRole('button', { name: '作成', exact: true }).click();
+      await page.getByRole('heading', { name: child.label + '：' + child.title }).waitFor();
+    }
+
+    const chapterBody = '階層UIから保存した章本文。\n改行を含む日本語の原稿。';
+    await page.getByRole('textbox', { name: '本文・説明', exact: true }).fill(chapterBody);
+    await page.getByRole('button', { name: '下書きを保存' }).click();
+    await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
+
+    const response = await author.request.get(base + '/api/admin/nodes');
+    assert.equal(response.status(), 200);
+    const nodes = await response.json();
+    const series = nodes.find(node => node.kind === 'series' && node.draft.title === seriesTitle);
+    assert.ok(series?.id);
+    let parentId = series.id;
+    for (const child of children) {
+      const node = nodes.find(item => item.kind === child.kind && item.draft.title === child.title);
+      assert.ok(node?.id, 'missing UI-created ' + child.kind);
+      assert.equal(node.parentId, parentId, 'incorrect parent for ' + child.kind);
+      assert.equal(node.published, null, 'draft creation must not publish ' + child.kind);
+      parentId = node.id;
+    }
+    const chapter = nodes.find(node => node.id === parentId);
+    assert.equal(chapter.draft.body, chapterBody);
+    await page.goto(base + '/studio?item=' + chapter.id);
+    await page.getByRole('heading', { name: '章：' + children[2].title }).waitFor();
+    assert.equal(await page.getByRole('textbox', { name: '本文・説明', exact: true }).inputValue(), chapterBody);
+    await page.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
