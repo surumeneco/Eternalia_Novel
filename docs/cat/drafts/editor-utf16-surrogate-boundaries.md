@@ -29,3 +29,9 @@ TCE:
 - A caret between `か` and combining dakuten U+3099 rejects page/ruby insertion.
 - A caret inside `👩‍💻` or between the regional indicators of `🇯🇵` rejects insertion.
 - A caret immediately after each complete grapheme and a ruby selection spanning the whole grapheme remain valid.
+
+Runtime insertion-kind integrity: TypeScript's `'page' | 'ruby'` union is erased for JavaScript/browser callers. An unsupported runtime discriminator must return null without silently treating the request as ruby. The two supported kinds retain their existing semantics.
+
+TCE:
+- `insertManuscriptMarkup('本文', 1, 1, 'unsupported')` returns null, not an inserted ruby placeholder.
+- `page` and `ruby` still produce the expected markup at a valid boundary.
