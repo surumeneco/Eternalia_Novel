@@ -30,6 +30,16 @@ function matchSecret(left: string, right: string): boolean {
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
+function canonicalHttpOrigin(raw: string): boolean {
+  try {
+    const parsed = new URL(raw);
+    return (parsed.protocol === 'https:' || parsed.protocol === 'http:') &&
+      !parsed.username && !parsed.password && parsed.origin === raw;
+  } catch {
+    return false;
+  }
+}
+
 @Injectable()
 export class DiscordAuthService implements OnModuleDestroy {
   private readonly pool = process.env.DATABASE_URL ? new Pool({
@@ -42,7 +52,7 @@ export class DiscordAuthService implements OnModuleDestroy {
 
   get configured(): boolean {
     return !!(this.pool && this.clientId && this.clientSecret &&
-      /^\d{15,25}$/.test(this.authorId) && /^https?:\/\/[^/]+$/.test(this.origin));
+      /^\d{15,25}$/.test(this.authorId) && canonicalHttpOrigin(this.origin));
   }
   private requirePool(): Pool {
     if (!this.configured || !this.pool) throw new ServiceUnavailableException('Discord認証が設定されていません。');
