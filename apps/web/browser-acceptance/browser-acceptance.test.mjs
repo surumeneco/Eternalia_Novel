@@ -2267,3 +2267,91 @@ test('AC-34: hiding and reshowing a published chapter preserves its public snaps
     await browser.close();
   }
 });
+
+
+test('related Tip projection respects a hidden category ancestor and restores on republish', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const anonymous = await browser.newContext();
+    const prefix = fixture.prefix + '-related-ancestor';
+    async function create(kind, parentId, suffix) {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base },
+        data: { kind, parentId, content: { title: prefix + '-' + suffix, body: suffix, details: {} } },
+      });
+      assert.equal(response.status(), 201, 'create ' + kind + ': ' + await response.text());
+      return (await response.json()).id;
+    }
+    async function publish(id, revision = 1) {
+      const response = await author.request.post(base + '/api/admin/nodes/' + id + '/publish', {
+        headers: { Origin: base }, data: { expectedRevision: revision },
+      });
+      assert.equal(response.status(), 200, 'publish ' + id + ': ' + await response.text());
+    }
+    const series = await create('series', null, 'series');
+    const sourceCategory = await create('category', series, 'source-category');
+    const targetCategory = await create('category', series, 'target-category');
+    const source = await create('tip', sourceCategory, 'source-tip');
+    const target = await create('tip', targetCategory, 'target-tip');
+    for (const id of [series, sourceCategory, targetCategory, target]) await publish(id);
+
+    const page = await author.newPage();
+    await page.goto(base + '/studio?item=' + source);
+    const links = page.locator('.tip-links-editor');
+    await links.locator('select').selectOption(target);
+    await links.getByRole('button', { name: '関連に追加' }).click();
+    await page.getByRole('button', { name: '下書きを保存' }).click();
+    await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
+    page.once('dialog', dialog => dialog.accept());
+    await page.getByRole('button', { name: '保存済み下書きを公開版へ反映' }).click();
+    await page.getByText('公開スナップショットを更新しました。').waitFor();
+
+    async function relatedIds() {
+      const response = await anonymous.request.get(base + '/api/public/items/' + source);
+      assert.equal(response.status(), 200, 'source Tip must remain public');
+      const content = (await response.json()).content;
+      assert.equal(content.body, 'source-tip', 'source published body must remain unchanged');
+      return JSON.parse(content.details.relatedTips).map(item => item.id);
+    }
+    assert.deepEqual(await relatedIds(), [target], 'public cross-category related Tip must be visible');
+
+    const hide = await author.request.post(base + '/api/admin/nodes/' + targetCategory + '/visibility', {
+      headers: { Origin: base },
+      data: { expectedRevision: 1, isPublic: false, publicSince: null },
+    });
+    assert.equal(hide.status(), 200, 'hide target category: ' + await hide.text());
+    assert.equal((await anonymous.request.get(base + '/api/public/items/' + target)).status(), 404,
+      'target Tip must be hidden by its category ancestor');
+    assert.deepEqual(await relatedIds(), [],
+      'source must not leak a related Tip whose category ancestor is hidden');
+
+    const nodesResponse = await author.request.get(base + '/api/admin/nodes');
+    assert.equal(nodesResponse.status(), 200);
+    const nodes = await nodesResponse.json();
+    const authorSource = nodes.find(node => node.id === source);
+    const authorTarget = nodes.find(node => node.id === target);
+    assert.deepEqual(JSON.parse(authorSource.draft.details.relatedTipIds), [target],
+      'author relationship must survive an ancestor visibility change');
+    assert.equal(authorTarget.isPublic, true, 'target stored visibility must not be overwritten');
+
+    const show = await author.request.post(base + '/api/admin/nodes/' + targetCategory + '/visibility', {
+      headers: { Origin: base },
+      data: { expectedRevision: 2, isPublic: true, publicSince: null },
+    });
+    assert.equal(show.status(), 200, 'republish target category: ' + await show.text());
+    assert.equal((await anonymous.request.get(base + '/api/public/items/' + target)).status(), 200);
+    assert.deepEqual(await relatedIds(), [target],
+      'republishing an ancestor should restore the related link without rewriting the source');
+    await page.close();
+    await anonymous.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
