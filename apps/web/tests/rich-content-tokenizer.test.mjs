@@ -16,3 +16,11 @@ test('reader does not parse ruby spanning any supported line separator', () => {
     assert.deepEqual(tokenizeRichContent(reading), [{ base: reading }]);
   }
 });
+
+test('nested ruby delimiters are not consumed as part of a token', () => {
+  assert.deepEqual(tokenizeRichContent('前｜甲｜乙《よみ》後'), [
+    { base: '前｜甲' }, { base: '乙', reading: 'よみ' }, { base: '後' },
+  ]);
+  const invalid = '前｜漢字《よ｜み》後';
+  assert.deepEqual(tokenizeRichContent(invalid), [{ base: invalid }]);
+});
