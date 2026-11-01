@@ -72,3 +72,23 @@ test('fallback preserves halfwidth kana voiced and semi-voiced clusters', () => 
     Intl.Segmenter = original;
   }
 });
+
+test('fallback preserves Hangul Jamo syllable clusters', () => {
+  const original = Intl.Segmenter;
+  try {
+    Intl.Segmenter = undefined;
+    const jamo = '前각後';
+    for (const index of [2, 3]) {
+      assert.equal(insert(jamo, index, index, 'page'), null, 'Jamo ' + index);
+      assert.equal(insert(jamo, index, index, 'ruby'), null, 'Jamo ' + index);
+    }
+    assert.equal(insert(jamo, 4, 4, 'page')?.value, '前각[[page]]後');
+    const lv = '前각後';
+    assert.equal(insert(lv, 2, 2, 'page'), null, 'LV + T');
+    assert.equal(insert(lv, 3, 3, 'page')?.value, '前각[[page]]後');
+    const adjacent = '前각나後';
+    assert.equal(insert(adjacent, 4, 4, 'page')?.value, '前각[[page]]나後');
+  } finally {
+    Intl.Segmenter = original;
+  }
+});
