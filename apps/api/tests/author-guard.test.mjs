@@ -88,3 +88,30 @@ test('Discord author configuration accepts only canonical HTTP origins', () => {
     assert.equal(auth.configured, false, origin);
   }
 });
+
+test('OAuth callback rejects invalid state, issuer and code before consuming DB state', async () => {
+  const { DiscordAuthService } = require('../dist/discord-auth.service.js');
+  let consumed = 0;
+  const auth = Object.create(DiscordAuthService.prototype);
+  Object.assign(auth, {
+    pool: { query: async () => { consumed++; return { rows: [] }; } },
+    clientId: 'test-client', clientSecret: 'test-secret',
+    authorId: '123456789012345678', origin: 'https://example.test',
+  });
+  const state = 'a'.repeat(64);
+  const validHeaders = { cookie: 'eternalia_oauth_state=' + state };
+  const validQuery = { state, code: 'one-time-code', iss: 'https://discord.com' };
+  const cases = [
+    [{}, validQuery],
+    [{ cookie: 'eternalia_oauth_state=' + 'b'.repeat(64) }, validQuery],
+    [validHeaders, { ...validQuery, state: 'A'.repeat(64) }],
+    [validHeaders, { ...validQuery, state: [state] }],
+    [validHeaders, { ...validQuery, code: '' }],
+    [validHeaders, { ...validQuery, code: 'x'.repeat(2049) }],
+    [validHeaders, { ...validQuery, iss: 'https://attacker.test' }],
+  ];
+  for (const [headers, query] of cases) {
+    await assert.rejects(auth.complete(headers, query), /OAuth認可応答が不正/);
+    assert.equal(consumed, 0, 'invalid callback must not consume a one-time state');
+  }
+});
