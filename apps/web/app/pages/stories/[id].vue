@@ -25,6 +25,7 @@ const chaptersOf = (partId: string) => sorted(partId, 'chapter');
       </div>
       <template v-else>
         <h1>{{ series.content.title }}</h1>
+        <AuthorEditLink :item-id="series.id" />
         <RichContent v-if="series.content.body" :source="series.content.body" />
         <h2 class="section-heading">目次</h2>
         <p v-if="!volumes.length">公開中の編はありません。</p>
