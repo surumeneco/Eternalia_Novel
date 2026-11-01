@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createNode, newLibrary, publishNode, setVisibility } from '../dist/index.js';
+import { createNode, editNode, newLibrary, publishNode, setVisibility } from '../dist/index.js';
 
 const contentOf = title => ({ title, body: '', details: {} });
 const ids = {
@@ -43,4 +43,26 @@ test('PB-16: creation visibility rejects non-boolean values and non-word overrid
     parentId: ids.language, content: contentOf('Invalid'), isPublic: 'false', now: 1002 }));
   assert.throws(() => createNode(db, { id: ids.defaultWord, kind: 'language',
     parentId: ids.series, content: contentOf('Invalid'), isPublic: true, now: 1003 }));
+});
+
+test('PB-16: republishing an edited private word retains its private setting', () => {
+  let db = setup();
+  db = createNode(db, { id: ids.privateWord, kind: 'word', parentId: ids.language,
+    content: contentOf('Initial'), now: 1002 });
+  db = publishNode(db, ids.privateWord, 1, 1003);
+  assert.equal(byId(db, ids.privateWord).isPublic, true);
+  db = setVisibility(db, ids.privateWord, 1, false, null, 1004);
+  assert.equal(byId(db, ids.privateWord).isPublic, false);
+  db = editNode(db, ids.privateWord, 2, contentOf('Revised private draft'), 1005);
+  db = publishNode(db, ids.privateWord, 3, 1006);
+  assert.equal(byId(db, ids.privateWord).isPublic, false);
+  assert.equal(byId(db, ids.privateWord).published.value.title, 'Revised private draft');
+});
+
+test('PB-16: publishing non-word nodes retains established visibility behavior', () => {
+  let db = setup();
+  assert.equal(byId(db, ids.series).isPublic, false);
+  db = publishNode(db, ids.series, 1, 1002);
+  assert.equal(byId(db, ids.series).isPublic, true);
+  assert.equal(byId(db, ids.series).published.value.title, 'Series');
 });
