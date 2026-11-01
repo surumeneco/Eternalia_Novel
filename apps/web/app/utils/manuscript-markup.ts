@@ -22,8 +22,41 @@ export function insertManuscriptMarkup(
   const graphemes = typeof Intl.Segmenter === 'function'
     ? new Intl.Segmenter('ja', { granularity: 'grapheme' }).segment(source)
     : null;
-  const splitsGrapheme = (index: number) => graphemes !== null &&
-    index > 0 && index < source.length && graphemes.containing(index)?.index !== index;
+  // Older WebViews may lack Intl.Segmenter. Preserve common Japanese/emoji
+  // clusters conservatively without changing textarea's UTF-16 offsets.
+  const codePointBefore = (index: number): number => {
+    const last = source.charCodeAt(index - 1);
+    if (last >= 0xDC00 && last <= 0xDFFF && index > 1) {
+      const first = source.charCodeAt(index - 2);
+      if (first >= 0xD800 && first <= 0xDBFF)
+        return 0x10000 + ((first - 0xD800) << 10) + last - 0xDC00;
+    }
+    return last;
+  };
+  const isRegionalIndicator = (cp: number) => cp >= 0x1F1E6 && cp <= 0x1F1FF;
+  const fallbackSplitsGrapheme = (index: number): boolean => {
+    if (index <= 0 || index >= source.length) return false;
+    const previous = codePointBefore(index);
+    const next = source.codePointAt(index)!;
+    if (previous === 0x200D || next === 0x200D ||
+        /\\p{M}/u.test(String.fromCodePoint(next)) ||
+        (next >= 0x1F3FB && next <= 0x1F3FF)) return true;
+    if (!isRegionalIndicator(previous) || !isRegionalIndicator(next)) return false;
+    // Pair consecutive regional indicators from the start of their run.
+    // The boundary after an odd count is inside a flag, after an even count is valid.
+    let count = 0;
+    let cursor = index;
+    while (cursor > 0) {
+      const cp = codePointBefore(cursor);
+      if (!isRegionalIndicator(cp)) break;
+      count++;
+      cursor -= cp > 0xFFFF ? 2 : 1;
+    }
+    return count % 2 === 1;
+  };
+  const splitsGrapheme = (index: number) => graphemes !== null
+    ? index > 0 && index < source.length && graphemes.containing(index)?.index !== index
+    : fallbackSplitsGrapheme(index);
   const marker = '[[page]]';
   const splitsMarker = (index: number) => {
     const at = source.lastIndexOf(marker, index);
