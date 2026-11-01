@@ -40,7 +40,10 @@ export function insertManuscriptMarkup(
     const next = source.codePointAt(index)!;
     if (previous === 0x200D || next === 0x200D ||
         /\p{M}/u.test(String.fromCodePoint(next)) ||
-        (next >= 0x1F3FB && next <= 0x1F3FF)) return true;
+        (next >= 0x1F3FB && next <= 0x1F3FF) ||
+        // Emoji subdivision flags use supplementary tag code points that
+        // are neither combining marks nor ZWJ. Keep the tag run attached.
+        (next >= 0xE0020 && next <= 0xE007F)) return true;
     if (!isRegionalIndicator(previous) || !isRegionalIndicator(next)) return false;
     // Pair consecutive regional indicators from the start of their run.
     // The boundary after an odd count is inside a flag, after an even count is valid.
