@@ -31,3 +31,14 @@ test('unsupported inline markup and invalid selection are not silently rewritten
   assert.equal(insert('文', -1, 0, 'page'), null);
   assert.equal(insert('文', 0, 2, 'page'), null);
 });
+
+test('page marker cannot split a supplementary character', () => {
+  assert.equal(insert('前𠮷後', 2, 2, 'page'), null);
+});
+test('ruby selection cannot split a surrogate pair', () => {
+  assert.equal(insert('前𠮷後', 1, 2, 'ruby'), null);
+  assert.equal(insert('前𠮷後', 2, 3, 'ruby'), null);
+});
+test('page marker outside the surrogate pair remains valid', () => {
+  assert.equal(insert('前𠮷後', 3, 3, 'page')?.value, '前𠮷[[page]]後');
+});
