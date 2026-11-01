@@ -25,7 +25,7 @@ export function insertManuscriptMarkup(
     };
   }
   // Ruby markup is a single inline text token. Do not silently rewrite multiline selections.
-  if (selected.includes('\n') || /[｜《》]/.test(selected)) return null;
+  if (/[\r\n\u0085\u2028\u2029｜《》]/u.test(selected)) return null;
   const base = selected || '文字';
   const reading = 'よみ';
   const markup = '｜' + base + '《' + reading + '》';
