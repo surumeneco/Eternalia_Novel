@@ -1528,7 +1528,7 @@ test('published tags search across categories without changing ownership or priv
     }]);
     const anonymous = await browser.newContext();
     const prefix = fixture.prefix + '-cross-category-tags';
-    const tag = prefix + '-shared-tag';
+    const tag = '共有-' + fixture.prefix.slice(-18); // domain tags are limited to 50 characters
     async function create(kind, parentId, suffix, details = {}) {
       const response = await author.request.post(base + '/api/admin/nodes', {
         headers: { Origin: base },
