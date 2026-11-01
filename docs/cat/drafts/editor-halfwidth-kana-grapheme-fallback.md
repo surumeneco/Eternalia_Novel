@@ -1,18 +1,34 @@
-# Editor grapheme fallback: halfwidth kana dakuten (CAT Draft)
+---
+cat_version: '0.3'
+kind: domain-spec
+id: eternalia.editor.halfwidth-kana
+status: draft
+process: eternalia.editor
+source_refs:
+  - https://drive.google.com/file/d/1HjDxCgsLOPP0Q4PSqEFxHNYpvABdYyNx/view
+refs: []
+semantic_contract: markdown-v2
+language: ja
+---
 
-Status: **Draft**, not Confirmed. Leaf: `TASK-20261101-009`.
+# DomainSpec: halfwidth kana grapheme fallback
 
-## Process / PI
+## 対象
+| Ref | Aspect |
+| --- | --- |
+| eternalia.editor.markup | textarea UTF-16選択offsetとruby/page挿入 |
+| eternalia.editor.fallback | Intl.Segmenter非対応時の書記素境界 |
 
-Textarea selection positions are UTF-16 code-unit offsets. When `Intl.Segmenter` is unavailable, the fallback must not insert page/ruby markup between a halfwidth katakana base and its voiced or semi-voiced sound mark (`U+FF9E`, `U+FF9F`). These marks are Unicode modifier letters, not `\p{M}`, so the existing combining-mark fallback alone misses the cluster boundary.
+## 規則
+| ID | 条件 | 要求 | 検証 |
+| --- | --- | --- | --- |
+| kana.voiced | Segmenterがなく半角カナbaseとU+FF9Eの間にcaretがあるとき | ruby/page markupを内部境界に挿入しない | EDIT-GRAPHEME-14 |
+| kana.semivoiced | Segmenterがなく半角カナbaseとU+FF9Fの間にcaretがあるとき | ruby/page markupを内部境界に挿入しない | EDIT-GRAPHEME-15 |
+| kana.complete | 半角カナと濁点/半濁点の完全なcluster直後にcaretがあるとき | 通常の挿入可能境界を維持する | EDIT-GRAPHEME-16 |
+| kana.segmenter | Intl.Segmenterが利用可能なとき | 既存のSegmenter判定とUTF-16 offset契約を維持する | EDIT-GRAPHEME-17 |
 
-Treat a boundary immediately before either mark as internal to a grapheme. Preserve normal insertion at the end of the complete cluster. Do not change the UTF-16 selection-offset contract.
+## 検証境界
 
-## TCE / acceptance vectors
+`ｶﾞ`、`ﾊﾟ` の半角濁点/半濁点はUnicode modifier letterであり、結合記号`\\p{M}`だけでは内部境界を検出できない。既存の日本語IMEイベント、native Undo、Android Gboard、長文レイアウトの実機受入は別の検証条件。
 
-- EDIT-GRAPHEME-14: `ｶﾞ` between base and `ﾞ` rejects page and ruby insertion without Segmenter.
-- EDIT-GRAPHEME-15: `ﾊﾟ` between base and `ﾟ` rejects page and ruby insertion without Segmenter.
-- EDIT-GRAPHEME-16: insertion immediately after each complete cluster succeeds.
-- EDIT-GRAPHEME-17: behavior with `Intl.Segmenter` present remains unchanged.
-
-Real Android/Gboard IME composition and Undo remain separate manual acceptance conditions. Formal CAT machine Gates are not-run.
+CAT状態は**Draft**。正式なProcess/PI/TCE確認、機械Gate、実Android/IME/Undo受入はnot-run。既存Nodeテスト/CIを規範Confirmedと混同しない。
