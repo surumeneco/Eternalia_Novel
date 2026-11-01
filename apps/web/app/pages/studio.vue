@@ -108,6 +108,7 @@ const createOpen = ref(false);
 const createParentId = ref<string | null>(null);
 const createKind = ref<ReaderKind>('series');
 const createTitle = ref('');
+const createWordIsPublic = ref(true);
 const editorDirty = computed(() => {
   const draft = selected.value?.draft;
   if (!draft) return false;
@@ -117,7 +118,8 @@ const editorDirty = computed(() => {
   return form.title !== draft.title || form.body !== draft.body ||
     [...detailKeys].some(key => (currentDetails[key] ?? '') !== (originalDetails[key] ?? ''));
 });
-const creationDirty = computed(() => createOpen.value && createTitle.value.trim().length > 0);
+const creationDirty = computed(() => createOpen.value &&
+  (createTitle.value.trim().length > 0 || (createKind.value === 'word' && !createWordIsPublic.value)));
 const hasUnsavedChanges = computed(() => editorDirty.value || creationDirty.value);
 function confirmDiscard(): boolean {
   return !hasUnsavedChanges.value || window.confirm(t('studioUnsavedDiscard'));
@@ -276,6 +278,7 @@ function openCreate(parentId: string | null) {
   const parent = parentId ? byId.value.get(parentId) : null;
   createKind.value = children[parent?.kind || 'root'][0] || 'series';
   createTitle.value = '';
+  createWordIsPublic.value = true;
   createOpen.value = true;
 }
 async function createItem() {
@@ -285,6 +288,7 @@ async function createItem() {
       method:'POST',
       body:{
         kind: createKind.value, parentId:createParentId.value,
+        ...(createKind.value === 'word' ? { isPublic: createWordIsPublic.value } : {}),
         content:{
           title:createTitle.value.trim(), body:'',
           details:createKind.value === 'category' ? {presets:'[]'} :
@@ -408,6 +412,10 @@ async function logout() {
                 </select>
               </label>
               <label>{{ t('studioTitleLabel') }}<input v-model="createTitle" maxlength="150" required /></label>
+              <label v-if="createKind === 'word'" class="create-visibility-option">
+                <input v-model="createWordIsPublic" type="checkbox" />
+                {{ t('studioWordInitialVisibility') }}
+              </label>
               <div class="action-row">
                 <button class="primary" type="submit" :disabled="busy">{{ t('studioCreate') }}</button>
                 <button class="inline-action" type="button" :disabled="busy" @click="cancelCreate">{{ t('studioCancel') }}</button>
@@ -494,6 +502,8 @@ async function logout() {
 label { display:block;margin:1rem 0;font-weight:650; }
 input,select,textarea { display:block;width:100%;margin-top:.45rem;padding:.6rem .7rem;background:var(--color-background-input);color:var(--color-text-base);border:1px solid var(--color-border-base);border-radius:var(--radius-input); }
 textarea { min-height:6rem;resize:vertical;line-height:1.7; }
+.create-visibility-option { display:flex;align-items:center;gap:.6rem; }
+.create-visibility-option input { display:inline-block;width:auto;margin:0; }
 .action-row { display:flex;flex-wrap:wrap;gap:.6rem;margin:1rem 0; }
 .manuscript-toolbar { display:flex;flex-wrap:wrap;gap:.4rem;margin:1rem 0 .4rem; }
 .primary,.login-link { display:inline-block;background:#00698c;border:1px solid var(--color-concept-main);color:#fff;padding:.45rem .8rem;text-decoration:none; }
