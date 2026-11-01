@@ -416,6 +416,7 @@ async function logout() {
                 <input v-model="createWordIsPublic" type="checkbox" />
                 {{ t('studioWordInitialVisibility') }}
               </label>
+              <p v-if="createKind === 'word'" class="note">{{ t('studioWordInitialVisibilityNote') }}</p>
               <div class="action-row">
                 <button class="primary" type="submit" :disabled="busy">{{ t('studioCreate') }}</button>
                 <button class="inline-action" type="button" :disabled="busy" @click="cancelCreate">{{ t('studioCancel') }}</button>
