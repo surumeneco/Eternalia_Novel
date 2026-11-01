@@ -8,17 +8,18 @@
 - 追加の実測証拠: `f44425d3` の [CI #41275713765](https://github.com/surumeneco/Eternalia_Novel/actions/runs/41275713765) は4ジョブsuccess、Chromium 20/20・HTTP 7/7。後続HEADのタグ横断試験は別途CI照合が必要。
 - 2026-11-01追加の探索的受入証拠: `7039a5aaf` の [CI #41293650480](https://github.com/surumeneco/Eternalia_Novel/actions/runs/41293650480)、`eaea98d1c` の [CI #41293701037](https://github.com/surumeneco/Eternalia_Novel/actions/runs/41293701037)、`048698945` の [CI #41293843303](https://github.com/surumeneco/Eternalia_Novel/actions/runs/41293843303)、`3e3d6e589` の [CI #41293919427](https://github.com/surumeneco/Eternalia_Novel/actions/runs/41293919427) はそれぞれ4ジョブ成功。個別ACの全体passや正式CAT Gateを意味しない。
 - 追加の実測証拠: `77a6b99e` の [CI #41276226834](https://github.com/surumeneco/Eternalia_Novel/actions/runs/41276226834) は4ジョブsuccess、Chromium 21/21・HTTP 7/7・PostgreSQL統合10/10。これはCAT正式Gateや人間の受入を代替しない。
+- 追加の実測証拠: `93ddf22d3ccd9549f47d583040da2c1b3d72363c` の [CI #41296684451](https://github.com/surumeneco/Eternalia_Novel/actions/runs/41296684451) は4ジョブsuccess、Chromium 35/35・HTTP 14/14・探索的Domain 72/72。AC-02の部順序/部章改名、AC-06の関連Tip祖先秘匿・順序/削除・別シリーズ拒否の部分証拠。正式CAT Gate、実Discord OAuth、人間受入は含まない。
 - 判定: `not-run` は**AC全体を受け入れるだけの網羅的証拠がまだない**ことを示す。右欄のB/H/DB/CIは探索的な**部分証拠候補**であり、該当ACのpassを意味しない。`pending-decision` は設計決定が必要。`scope-excluded` は明示除外。失敗は実測した場合のみ `fail` にする。
 - 各ACのpassへ更新する前に `テストID / コード箇所 / 環境 / 同一HEAD / CI run / 手動証拠 / 判定` を照合する。現在の本表はACを欠落させないための基線であり、CAT正式Gateやユーザー受入ではない。
 
 | AC | 受入シナリオ | コード/テスト箇所（部分証拠のみ） | 現在の部分証拠・未検証境界 | AC全体の判定 |
 | --- | --- | --- | --- | --- |
 | AC-01 | シリーズ内で編・部・章を作成し本文を書いて保存・再読込 | apps/web/browser-acceptance/browser-acceptance.test.mjs; docs/cat/ac01-author-hierarchy-draft.md | B: 作者UIでシリーズ→編→部→章を作成し日本語本文の下書き保存・再読込を検証（CI #41286577405 success、正式CAT Gate/人間受入は未実施） | not-run |
-| AC-02 | シリーズ内の編・部・章の名称・表示順を変更 | apps/web/browser-acceptance/browser-acceptance.test.mjs; docs/cat/ac02-volume-order-and-rename-draft.md; docs/cat/ac02-part-chapter-order-rename-draft.md | B: 編の順序・改名・再読込はCI #41286577405成功。部の順序・改名、章の改名・親ID保持を追加試験（現行HEADのCI待ち）。章の兄弟順序変更は既存ブラウザー試験で検証。正式CAT Gate・全公開稿境界は未検証 | not-run |
+| AC-02 | シリーズ内の編・部・章の名称・表示順を変更 | apps/web/browser-acceptance/browser-acceptance.test.mjs; docs/cat/ac02-volume-order-and-rename-draft.md; docs/cat/ac02-part-chapter-order-rename-draft.md | B: 編の順序・改名・再読込はCI #41286577405成功。部の順序・改名、章の改名・親ID保持をChromiumで検証（CI #41296684451 success）。章の兄弟順序変更は既存ブラウザー試験で検証。正式CAT Gate・全公開稿境界は未検証 | not-run |
 | AC-03 | 本文にルビ等の書式を付して保存 | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: semantic ruby/page boundary; IME実機未検証 | not-run |
 | AC-04 | 本文編集中に設定・辞書を検索・参照 | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 同一シリーズの未公開設定・単語を参照中も未保存原稿を保持（CI #41275713765 success） | not-run |
 | AC-05 | カテゴリ・設定・項目・プリセット・タグを作成・編集 | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: category preset editor; タグ・所属変更の全件未検証 | not-run |
-| AC-06 | 設定を相互参照し、改名・削除する | packages/contracts/exploratory/related-tip-ancestor-privacy.test.mjs; apps/web/browser-acceptance/browser-acceptance.test.mjs; apps/api/http-acceptance/http-acceptance.test.mjs; docs/cat/ac06-related-ancestor-privacy-draft.md | Domain/B/H: 同一シリーズ・異カテゴリの関連Tip、祖先非公開時の参照秘匿、別シリーズ参照拒否、未公開改名の秘匿を検証するテストを追加（現行HEADのCI結果確認待ち）。削除操作・正式CAT Gate・人間受入は未検証 | not-run |
+| AC-06 | 設定を相互参照し、改名・削除する | packages/contracts/exploratory/related-tip-ancestor-privacy.test.mjs; apps/web/browser-acceptance/browser-acceptance.test.mjs; apps/api/http-acceptance/http-acceptance.test.mjs; docs/cat/ac06-related-ancestor-privacy-draft.md | Domain/B/H: 同一シリーズ・異カテゴリの関連Tip、祖先非公開時の参照秘匿、別シリーズ参照拒否、未公開改名の秘匿、関連順序/除去後の明示公開を検証（CI #41296684451 success）。設定そのものの削除操作・正式CAT Gate・人間受入は未検証 | not-run |
 | AC-07 | 同じスペルを異なる言語に登録 | apps/web/browser-acceptance/browser-acceptance.test.mjs、apps/api/tests/postgres-alpha.test.mjs | B/DB: 同綴語の言語別選択・固有ID/本文分離（CI #41275393712 success） | not-run |
 | AC-08 | 複数の意味・品詞・語源を登録・辿る | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 同品詞2意味・意味別語源の独立保存と明示公開（CI #41275713765 success） | not-run |
 | AC-09 | 音韻規則・重複規則に違反する単語を入力 | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 同言語重複綴り警告の表示/消去/再表示（CI #41275713765 success） | not-run |
