@@ -606,6 +606,50 @@ test('recent publications retain cross-domain privacy after hiding an ancestor',
  * A synthetic database session exercises the full Nest guard and persistence
  * boundary. This intentionally does NOT test Discord's real OAuth2 exchange.
  */
+test('AC-06: cross-series related Tip PATCH is rejected atomically at the HTTP boundary', async () => {
+  const cookie = 'eternalia_author=' + fixture.authorToken;
+  async function request(method, path, body) {
+    const response = await fetch(base + path, {
+      method,
+      headers: { Cookie: cookie, Origin: base, 'Content-Type': 'application/json' },
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    });
+    return { status: response.status, body: await response.text() };
+  }
+  async function create(kind, parentId, suffix) {
+    const response = await request('POST', '/api/admin/nodes', {
+      kind, parentId,
+      content: { title: fixture.prefix + '-related-http-' + suffix, body: suffix, details: {} },
+    });
+    assert.equal(response.status, 201, response.body);
+    return JSON.parse(response.body).id;
+  }
+  const seriesA = await create('series', null, 'series-A');
+  const seriesB = await create('series', null, 'series-B');
+  const categoryA = await create('category', seriesA, 'category-A');
+  const categoryB = await create('category', seriesB, 'category-B');
+  const source = await create('tip', categoryA, 'source');
+  const foreignTarget = await create('tip', categoryB, 'foreign-target');
+  const before = await request('GET', '/api/admin/nodes');
+  assert.equal(before.status, 200);
+  const beforeNodes = JSON.parse(before.body);
+  assert.equal(beforeNodes.find(node => node.id === source)?.revision, 1);
+
+  const rejected = await request('PATCH', '/api/admin/nodes/' + source, {
+    expectedRevision: 1,
+    content: {
+      title: fixture.prefix + '-related-http-source',
+      body: 'must-not-persist',
+      details: { relatedTipIds: JSON.stringify([foreignTarget]) },
+    },
+  });
+  assert.equal(rejected.status, 400, 'a cross-series Tip relation must fail through Nuxt/Nest');
+  const after = await request('GET', '/api/admin/nodes');
+  assert.equal(after.status, 200);
+  assert.deepEqual(JSON.parse(after.body), beforeNodes,
+    'rejected cross-series relation must not mutate any author node or revision');
+});
+
 test('synthetic author completes four-domain HTTP publication and privacy cycle', async () => {
   const session = fixture.authorToken;
   async function request(method, path, body, token = session, origin = base) {
@@ -698,49 +742,4 @@ test('synthetic author completes four-domain HTTP publication and privacy cycle'
   assert.equal(logout.status, 201, logout.body);
   assert.equal((await request('GET', '/api/admin/nodes')).status, 401,
     'revoked author session must no longer work');
-});
-
-
-test('AC-06: cross-series related Tip PATCH is rejected atomically at the HTTP boundary', async () => {
-  const cookie = 'eternalia_author=' + fixture.authorToken;
-  async function request(method, path, body) {
-    const response = await fetch(base + path, {
-      method,
-      headers: { Cookie: cookie, Origin: base, 'Content-Type': 'application/json' },
-      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-    });
-    return { status: response.status, body: await response.text() };
-  }
-  async function create(kind, parentId, suffix) {
-    const response = await request('POST', '/api/admin/nodes', {
-      kind, parentId,
-      content: { title: fixture.prefix + '-related-http-' + suffix, body: suffix, details: {} },
-    });
-    assert.equal(response.status, 201, response.body);
-    return JSON.parse(response.body).id;
-  }
-  const seriesA = await create('series', null, 'series-A');
-  const seriesB = await create('series', null, 'series-B');
-  const categoryA = await create('category', seriesA, 'category-A');
-  const categoryB = await create('category', seriesB, 'category-B');
-  const source = await create('tip', categoryA, 'source');
-  const foreignTarget = await create('tip', categoryB, 'foreign-target');
-  const before = await request('GET', '/api/admin/nodes');
-  assert.equal(before.status, 200);
-  const beforeNodes = JSON.parse(before.body);
-  assert.equal(beforeNodes.find(node => node.id === source)?.revision, 1);
-
-  const rejected = await request('PATCH', '/api/admin/nodes/' + source, {
-    expectedRevision: 1,
-    content: {
-      title: fixture.prefix + '-related-http-source',
-      body: 'must-not-persist',
-      details: { relatedTipIds: JSON.stringify([foreignTarget]) },
-    },
-  });
-  assert.equal(rejected.status, 400, 'a cross-series Tip relation must fail through Nuxt/Nest');
-  const after = await request('GET', '/api/admin/nodes');
-  assert.equal(after.status, 200);
-  assert.deepEqual(JSON.parse(after.body), beforeNodes,
-    'rejected cross-series relation must not mutate any author node or revision');
 });
