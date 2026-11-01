@@ -112,9 +112,12 @@ function assertLibrary(library: Library): void {
   if (!library || !Array.isArray(library.nodes)) domainError('bad-request', 'データベース形式が不正です。');
 }
 export function newLibrary(): Library { return { nodes: [] }; }
-export function createNode(library: Library, input: { id: string; kind: Kind; parentId?: string | null; content: Content; now: number }): Library {
+export function createNode(library: Library, input: { id: string; kind: Kind; parentId?: string | null; content: Content; isPublic?: boolean; now: number }): Library {
   assertLibrary(library);
   if (!isKind(input.kind)) domainError('bad-request', '種類が不正です。');
+  if (input.isPublic !== undefined && (input.kind !== 'word' || typeof input.isPublic !== 'boolean')) {
+    domainError('bad-request', '単語の初期公開設定が不正です。');
+  }
   if (!/^[0-9a-f-]{36}$/.test(input.id) || library.nodes.some(n => n.id === input.id)) domainError('bad-request', 'IDが不正です。');
   const parentKind = parentKinds[input.kind];
   const parent = input.parentId ? find(library, input.parentId) : null;
@@ -128,7 +131,8 @@ export function createNode(library: Library, input: { id: string; kind: Kind; pa
   const siblings = next.nodes.filter(n => n.parentId === (parent?.id ?? null) && n.kind === input.kind);
   next.nodes.push({ id: input.id, kind: input.kind, parentId: parent?.id ?? null,
     order: siblings.length, draft: content, revision: 1, published: null,
-    isPublic: input.kind === 'word', publicSince: null, updatedAt: input.now });
+    isPublic: input.kind === 'word' ? (input.isPublic ?? true) : false,
+    publicSince: null, updatedAt: input.now });
   // New Tip copies category presets once, with no future propagation.
   if (input.kind === 'tip' && parent) {
     const presets = parsePresets(parent.draft.details.presets ?? '[]');
@@ -172,7 +176,9 @@ export function publishNode(library: Library, id: string, expectedRevision: numb
   const item = find(next, id);
   if (expectedRevision !== item.revision) domainError('conflict', '変更が競合しています。');
   item.published = { value: clone(item.draft), sourceRevision: item.revision, publishedAt: now };
-  item.isPublic = true;
+  // Publishing a word snapshot must not override an explicitly private word.
+  // Other kinds retain their established publish-to-visible behavior.
+  if (item.kind !== 'word') item.isPublic = true;
   if (item.publicSince === null) item.publicSince = now;
   item.updatedAt = now;
   return next;
