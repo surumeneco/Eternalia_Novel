@@ -381,6 +381,52 @@ test('two published series isolate settings dictionary and timeline descendants'
   assert.equal((await get('/api/public/items/' + a.tip)).status, 200);
 });
 
+test('nested settings category creation is rejected without altering its parent', async () => {
+  // AC-47 exploratory API verification. The author UI's disabled option
+  // remains a separate browser acceptance condition.
+  const cookie = 'eternalia_author=' + fixture.authorToken;
+  async function request(method, path, body) {
+    const response = await fetch(base + path, {
+      method,
+      headers: { Cookie: cookie, Origin: base, 'Content-Type': 'application/json' },
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    });
+    return { status: response.status, body: await response.text() };
+  }
+  const seriesResponse = await request('POST', '/api/admin/nodes', {
+    kind: 'series', content: { title: fixture.prefix + '-ac47-series', body: '', details: {} },
+  });
+  assert.equal(seriesResponse.status, 201, seriesResponse.body);
+  const series = JSON.parse(seriesResponse.body).id;
+  const categoryResponse = await request('POST', '/api/admin/nodes', {
+    kind: 'category', parentId: series,
+    content: { title: '元のカテゴリ', body: '旧説明', details: { presets: '[]' } },
+  });
+  assert.equal(categoryResponse.status, 201, categoryResponse.body);
+  const category = JSON.parse(categoryResponse.body).id;
+  const edited = await request('PATCH', '/api/admin/nodes/' + category, {
+    expectedRevision: 1,
+    content: { title: '更新済みカテゴリ', body: '保存された説明',
+      details: { presets: '[]' } },
+  });
+  assert.equal(edited.status, 200, edited.body);
+  const before = await request('GET', '/api/admin/nodes');
+  assert.equal(before.status, 200);
+  const stored = JSON.parse(before.body).find(node => node.id === category);
+  assert.equal(stored?.revision, 2);
+  assert.equal(stored?.draft.body, '保存された説明');
+
+  const rejected = await request('POST', '/api/admin/nodes', {
+    kind: 'category', parentId: category,
+    content: { title: '作成してはいけない子カテゴリ', body: '', details: { presets: '[]' } },
+  });
+  assert.equal(rejected.status, 400, 'category nesting must fail at the real HTTP boundary');
+  const after = await request('GET', '/api/admin/nodes');
+  assert.equal(after.status, 200);
+  assert.deepEqual(JSON.parse(after.body), JSON.parse(before.body),
+    'rejected nesting must not change the parent or create any node');
+});
+
 /**
  * A synthetic database session exercises the full Nest guard and persistence
  * boundary. This intentionally does NOT test Discord's real OAuth2 exchange.
