@@ -40,6 +40,9 @@ export function insertManuscriptMarkup(
     const next = source.codePointAt(index)!;
     if (previous === 0x200D || next === 0x200D ||
         /\p{M}/u.test(String.fromCodePoint(next)) ||
+        // Halfwidth kana voicing marks are modifier letters, not \p{M},
+        // but Unicode grapheme segmentation joins them to the base kana.
+        next === 0xFF9E || next === 0xFF9F ||
         (next >= 0x1F3FB && next <= 0x1F3FF) ||
         // Emoji subdivision flags use supplementary tag code points that
         // are neither combining marks nor ZWJ. Keep the tag run attached.
