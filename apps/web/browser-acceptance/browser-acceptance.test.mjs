@@ -1074,3 +1074,134 @@ test('reader renders semantic ruby and keyboard-operable page boundaries', { tim
     await browser.close();
   }
 });
+
+
+test('published descendants are hidden by private ancestors across all four domains', { timeout: 120_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext();
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const anonymous = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const prefix = fixture.prefix + '-ancestor-visibility';
+
+    async function create(kind, parentId, suffix, details = {}) {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base },
+        data: {
+          kind, parentId,
+          content: { title: prefix + '-' + suffix, body: prefix + '-body-' + suffix, details },
+        },
+      });
+      assert.equal(response.status(), 201, 'create ' + kind + ': ' + await response.text());
+      return (await response.json()).id;
+    }
+    async function publish(id) {
+      const response = await author.request.post(base + '/api/admin/nodes/' + id + '/publish', {
+        headers: { Origin: base }, data: { expectedRevision: 1 },
+      });
+      assert.equal(response.status(), 200, 'publish ' + id + ': ' + await response.text());
+    }
+    async function visibility(id, isPublic) {
+      const list = await author.request.get(base + '/api/admin/nodes');
+      assert.equal(list.status(), 200);
+      const node = (await list.json()).find(item => item.id === id);
+      assert.ok(node, 'author must retain access to hidden node ' + id);
+      const response = await author.request.post(base + '/api/admin/nodes/' + id + '/visibility', {
+        headers: { Origin: base },
+        data: { expectedRevision: node.revision, isPublic, publicSince: null },
+      });
+      assert.equal(response.status(), 200, 'set visibility ' + id + ': ' + await response.text());
+    }
+    async function expectPublic(id, expected, context) {
+      const response = await anonymous.request.get(base + '/api/public/items/' + id);
+      assert.equal(response.status(), expected ? 200 : 404, context);
+      if (expected) {
+        const item = await response.json();
+        assert.ok(item.content.body.startsWith(prefix + '-body-'),
+          context + ': published snapshot must remain intact');
+      }
+    }
+
+    const series = await create('series', null, 'series');
+    const volume = await create('volume', series, 'volume');
+    const part = await create('part', volume, 'part');
+    const chapter = await create('chapter', part, 'chapter');
+    const category = await create('category', series, 'category', { presets: '[]' });
+    const tip = await create('tip', category, 'tip');
+    const section = await create('tipSection', tip, 'section');
+    const language = await create('language', series, 'language', {
+      characters: '[]', wordClasses: '[]',
+    });
+    const word = await create('word', language, 'word', { meanings: '[]' });
+    const grammar = await create('grammar', language, 'grammar');
+    const period = await create('periodization', series, 'period');
+    const event = await create('event', period, 'event', { year: '1' });
+    const nodes = [series, volume, part, chapter, category, tip, section,
+      language, word, grammar, period, event];
+    for (const id of nodes) await publish(id);
+    const leaves = [chapter, section, word, grammar, event];
+    for (const id of leaves) await expectPublic(id, true, 'all ancestors initially published');
+
+    // PB-10/11: one private series must hide every descendant, regardless of
+    // its own public flag and previously published snapshot.
+    await visibility(series, false);
+    for (const id of leaves) await expectPublic(id, false, 'private series blocks descendant ' + id);
+    const page = await anonymous.newPage();
+    for (const [id, route, suffix] of [
+      [chapter, '/read/', 'chapter'],
+      [section, '/items/', 'section'],
+      [word, '/items/', 'word'],
+      [event, '/items/', 'event'],
+    ]) {
+      await page.goto(base + route + id);
+      assert.ok(!(await page.locator('body').innerText()).includes(prefix + '-' + suffix),
+        'private ancestor must not leak ' + suffix + ' in direct reader page');
+    }
+    await page.goto(base + '/search?series=' + series);
+    await page.getByLabel('検索語').fill(prefix + '-word');
+    await page.getByText('条件に一致する公開資料はありません。').waitFor();
+    assert.equal(await page.getByRole('link', { name: prefix + '-word', exact: true }).count(), 0,
+      'private ancestor must hide word from anonymous search');
+
+    await visibility(series, true);
+    for (const id of leaves) await expectPublic(id, true, 'series restoration must preserve snapshots');
+
+    // Intermediate ancestors must hide only their own subtree.
+    await visibility(language, false);
+    await expectPublic(word, false, 'private language blocks word');
+    await expectPublic(grammar, false, 'private language blocks grammar');
+    await expectPublic(chapter, true, 'private language must not affect story');
+    await visibility(language, true);
+    await expectPublic(word, true, 'word reappears when language is restored');
+
+    await visibility(tip, false);
+    await expectPublic(section, false, 'private setting blocks its section');
+    await expectPublic(event, true, 'private setting must not affect timeline');
+    await visibility(tip, true);
+    await expectPublic(section, true, 'setting section reappears');
+
+    await visibility(period, false);
+    await expectPublic(event, false, 'private period blocks event');
+    await expectPublic(chapter, true, 'private period must not affect story');
+    await visibility(period, true);
+    await expectPublic(event, true, 'event reappears when period is restored');
+
+    // PB-12: restoring a parent must never override a child's own private flag.
+    await visibility(word, false);
+    await visibility(language, false);
+    await visibility(language, true);
+    await expectPublic(word, false, 'private child remains hidden after parent restoration');
+    await expectPublic(grammar, true, 'public sibling remains visible after parent restoration');
+    await visibility(word, true);
+    await expectPublic(word, true, 'explicitly restored child retains published content');
+    await page.close();
+    await anonymous.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
