@@ -355,6 +355,7 @@ test('author browser drafts, publishes and hides chapter, setting, word, grammar
     const category = await create('category', series, 'category', { presets: '[]' });
     const tip = await create('tip', category, 'tip');
     const section = await create('tipSection', tip, 'section');
+    const sectionSibling = await create('tipSection', tip, 'section-sibling');
     const language = await create('language', series, 'language', { characters: '[]', wordClasses: '[]' });
     const word = await create('word', language, 'word', { meanings: '[]' });
     const authorNodesResponse = await author.request.get(base + '/api/admin/nodes');
@@ -362,6 +363,7 @@ test('author browser drafts, publishes and hides chapter, setting, word, grammar
     const newWord = (await authorNodesResponse.json()).find(node => node.id === word);
     assert.equal(newWord?.isPublic, true, 'new words must default to public visibility');
     const grammar = await create('grammar', language, 'grammar');
+    const grammarSibling = await create('grammar', language, 'grammar-sibling');
     const period = await create('periodization', series, 'period');
     const event = await create('event', period, 'event', { year: '1' });
     for (const id of [series, volume, part, category, tip, language, period]) await publish(id);
@@ -1140,10 +1142,11 @@ test('published descendants are hidden by private ancestors across all four doma
     const grammar = await create('grammar', language, 'grammar');
     const period = await create('periodization', series, 'period');
     const event = await create('event', period, 'event', { year: '1' });
-    const nodes = [series, volume, part, chapter, category, tip, section,
-      language, word, grammar, period, event];
+    const eventSibling = await create('event', period, 'event-sibling', { year: '2' });
+    const nodes = [series, volume, part, chapter, category, tip, section, sectionSibling,
+      language, word, grammar, grammarSibling, period, event, eventSibling];
     for (const id of nodes) await publish(id);
-    const leaves = [chapter, section, word, grammar, event];
+    const leaves = [chapter, section, sectionSibling, word, grammar, grammarSibling, event, eventSibling];
     for (const id of leaves) await expectPublic(id, true, 'all ancestors initially published');
 
     // PB-10/11: one private series must hide every descendant, regardless of
@@ -1179,18 +1182,21 @@ test('published descendants are hidden by private ancestors across all four doma
     await visibility(language, false);
     await expectPublic(word, false, 'private language blocks word');
     await expectPublic(grammar, false, 'private language blocks grammar');
+    await expectPublic(grammarSibling, false, 'private language blocks sibling grammar');
     await expectPublic(chapter, true, 'private language must not affect story');
     await visibility(language, true);
     await expectPublic(word, true, 'word reappears when language is restored');
 
     await visibility(tip, false);
     await expectPublic(section, false, 'private setting blocks its section');
+    await expectPublic(sectionSibling, false, 'private setting blocks sibling section');
     await expectPublic(event, true, 'private setting must not affect timeline');
     await visibility(tip, true);
     await expectPublic(section, true, 'setting section reappears');
 
     await visibility(period, false);
     await expectPublic(event, false, 'private period blocks event');
+    await expectPublic(eventSibling, false, 'private period blocks sibling event');
     await expectPublic(chapter, true, 'private period must not affect story');
     await visibility(period, true);
     await expectPublic(event, true, 'event reappears when period is restored');
@@ -1203,6 +1209,25 @@ test('published descendants are hidden by private ancestors across all four doma
     await expectPublic(grammar, true, 'public sibling remains visible after parent restoration');
     await visibility(word, true);
     await expectPublic(word, true, 'explicitly restored child retains published content');
+
+    // AC-35/51, AC-52, AC-44: individual privacy must not hide public siblings.
+    await visibility(section, false);
+    await expectPublic(section, false, 'private setting section stays hidden');
+    await expectPublic(sectionSibling, true, 'public setting section sibling remains readable');
+    await visibility(section, true);
+    await expectPublic(section, true, 'setting section can be restored independently');
+
+    await visibility(grammar, false);
+    await expectPublic(grammar, false, 'private grammar stays hidden');
+    await expectPublic(grammarSibling, true, 'public grammar sibling remains readable');
+    await visibility(grammar, true);
+    await expectPublic(grammar, true, 'grammar can be restored independently');
+
+    await visibility(event, false);
+    await expectPublic(event, false, 'private event stays hidden');
+    await expectPublic(eventSibling, true, 'public event sibling remains readable');
+    await visibility(event, true);
+    await expectPublic(event, true, 'event can be restored independently');
 
     // PB-05: a future publication date on a published ancestor must hide
     // all descendants until the ancestor becomes effective again.
