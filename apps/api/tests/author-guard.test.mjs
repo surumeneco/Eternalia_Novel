@@ -115,3 +115,54 @@ test('OAuth callback rejects invalid state, issuer and code before consuming DB 
     assert.equal(consumed, 0, 'invalid callback must not consume a one-time state');
   }
 });
+
+test('OAuth state is consumed exactly once before an author session is issued', async () => {
+  const { DiscordAuthService } = require('../dist/discord-auth.service.js');
+  const originalFetch = globalThis.fetch;
+  const state = 'c'.repeat(64);
+  const authorId = '123456789012345678';
+  let deletes = 0;
+  let sessions = 0;
+  let tokenRequests = 0;
+  const auth = Object.create(DiscordAuthService.prototype);
+  Object.assign(auth, {
+    pool: { query: async (sql) => {
+      if (sql.startsWith('DELETE FROM oauth_states')) {
+        deletes++;
+        return { rows: deletes === 1 ? [{ code_verifier: 'test-verifier' }] : [] };
+      }
+      if (sql.startsWith('INSERT INTO author_sessions')) {
+        sessions++;
+        return { rowCount: 1 };
+      }
+      throw new Error('Unexpected query: ' + sql);
+    } },
+    clientId: 'test-client', clientSecret: 'test-secret',
+    authorId, origin: 'https://example.test',
+  });
+  globalThis.fetch = async (url) => {
+    if (url === 'https://discord.com/api/oauth2/token') {
+      tokenRequests++;
+      return { ok: true, json: async () => ({ access_token: 'synthetic-token' }) };
+    }
+    if (url === 'https://discord.com/api/users/@me')
+      return { ok: true, json: async () => ({ id: authorId }) };
+    throw new Error('Unexpected OAuth endpoint');
+  };
+  try {
+    const headers = { cookie: 'eternalia_oauth_state=' + state };
+    const query = { state, code: 'one-time-code', iss: 'https://discord.com' };
+    const result = await auth.complete(headers, query);
+    assert.match(result.setCookie, /^eternalia_author=[0-9a-f]{64};/);
+    assert.match(result.setCookie, /; HttpOnly; SameSite=Lax; Max-Age=604800; Secure$/);
+    assert.equal(deletes, 1);
+    assert.equal(sessions, 1);
+    assert.equal(tokenRequests, 1);
+    await assert.rejects(auth.complete(headers, query), /OAuth認可状態が失効/);
+    assert.equal(deletes, 2);
+    assert.equal(sessions, 1, 'replayed callback must not create another session');
+    assert.equal(tokenRequests, 1, 'replayed callback must not exchange another token');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
