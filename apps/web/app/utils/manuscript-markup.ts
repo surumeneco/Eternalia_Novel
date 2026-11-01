@@ -39,7 +39,7 @@ export function insertManuscriptMarkup(
     const previous = codePointBefore(index);
     const next = source.codePointAt(index)!;
     if (previous === 0x200D || next === 0x200D ||
-        /\\p{M}/u.test(String.fromCodePoint(next)) ||
+        /\p{M}/u.test(String.fromCodePoint(next)) ||
         (next >= 0x1F3FB && next <= 0x1F3FF)) return true;
     if (!isRegionalIndicator(previous) || !isRegionalIndicator(next)) return false;
     // Pair consecutive regional indicators from the start of their run.
