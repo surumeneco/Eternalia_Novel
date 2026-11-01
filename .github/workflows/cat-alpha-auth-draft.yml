@@ -7,6 +7,7 @@ on:
     paths:
       - 'docs/cat/drafts/alpha-author-*.md'
       - 'docs/cat/drafts/alpha-stale-publication-revisions.md'
+      - 'docs/cat/drafts/anonymous-author-route-protection.md'
       - '.github/workflows/cat-alpha-auth-draft.yml'
 
 permissions:
@@ -30,7 +31,8 @@ jobs:
             docs/cat/drafts/alpha-author-ambiguous-content-type.md \
             docs/cat/drafts/alpha-author-canonical-app-origin.md \
             docs/cat/drafts/alpha-author-json-content-type.md \
-            docs/cat/drafts/alpha-stale-publication-revisions.md
+            docs/cat/drafts/alpha-stale-publication-revisions.md \
+            docs/cat/drafts/anonymous-author-route-protection.md
       - name: Declare evidence boundary
         run: |
           echo 'Draft syntax only. No normative CAT confirmation, real Discord OAuth2/PKCE or browser acceptance.' >> "$GITHUB_STEP_SUMMARY"
