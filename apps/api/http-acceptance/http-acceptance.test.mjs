@@ -306,6 +306,81 @@ test('chapter visibility toggle preserves a newer unpublished draft and public s
     'visibility changes must preserve the author draft');
 });
 
+test('two published series isolate settings dictionary and timeline descendants', async () => {
+  // AC-25 exploratory HTTP/PostgreSQL verification; no year-conversion or
+  // real Discord identity semantics are inferred from this test.
+  const cookie = 'eternalia_author=' + fixture.authorToken;
+  async function write(method, path, body) {
+    const response = await fetch(base + path, {
+      method,
+      headers: { Cookie: cookie, Origin: base, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    return { status: response.status, body: await response.text() };
+  }
+  async function create(kind, parentId, title, body = '', details = {}) {
+    const response = await write('POST', '/api/admin/nodes', {
+      kind, parentId, content: { title, body, details },
+    });
+    assert.equal(response.status, 201, response.body);
+    return JSON.parse(response.body).id;
+  }
+  async function publish(id) {
+    const response = await write('POST', '/api/admin/nodes/' + id + '/publish',
+      { expectedRevision: 1 });
+    assert.equal(response.status, 200, response.body);
+  }
+  const worlds = [];
+  for (const label of ['A', 'B']) {
+    const series = await create('series', null, fixture.prefix + '-ac25-' + label);
+    const category = await create('category', series, '同名カテゴリ', '', { presets: '[]' });
+    const tip = await create('tip', category, '同名設定', label + '-setting');
+    const language = await create('language', series, '同名言語', '',
+      { characters: '[]', wordClasses: '[]' });
+    const word = await create('word', language, '同名単語', label + '-word',
+      { meanings: '[]' });
+    const period = await create('periodization', series, '同名年代区分');
+    const event = await create('event', period, '同名出来事', label + '-event',
+      { year: '1' });
+    const ids = [series, category, tip, language, word, period, event];
+    for (const id of ids) await publish(id);
+    worlds.push({ series, category, tip, language, word, period, event, ids });
+  }
+  const [a, b] = worlds;
+  const treeA = await json('/api/public/series/' + a.series + '/tree');
+  const treeB = await json('/api/public/series/' + b.series + '/tree');
+  assert.equal(treeA.status, 200);
+  assert.equal(treeB.status, 200);
+  const idsA = new Set(treeA.value.map(node => node.id));
+  const idsB = new Set(treeB.value.map(node => node.id));
+  for (const id of a.ids) assert.ok(idsA.has(id) && !idsB.has(id), 'A identity leaked: ' + id);
+  for (const id of b.ids) assert.ok(idsB.has(id) && !idsA.has(id), 'B identity leaked: ' + id);
+  for (const [item, expected] of [
+    [a.tip, 'A-setting'], [b.tip, 'B-setting'],
+    [a.word, 'A-word'], [b.word, 'B-word'],
+    [a.event, 'A-event'], [b.event, 'B-event'],
+  ]) {
+    const detail = await json('/api/public/items/' + item);
+    assert.equal(detail.status, 200);
+    assert.equal(detail.value.content.body, expected);
+  }
+
+  const hideBCategory = await write('POST', '/api/admin/nodes/' + b.category + '/visibility',
+    { expectedRevision: 1, isPublic: false, publicSince: null });
+  assert.equal(hideBCategory.status, 200, hideBCategory.body);
+  const hiddenB = await json('/api/public/series/' + b.series + '/tree');
+  const stillA = await json('/api/public/series/' + a.series + '/tree');
+  assert.equal(hiddenB.status, 200);
+  assert.equal(stillA.status, 200);
+  const visibleB = new Set(hiddenB.value.map(node => node.id));
+  const visibleA = new Set(stillA.value.map(node => node.id));
+  for (const id of [b.category, b.tip]) assert.ok(!visibleB.has(id));
+  for (const id of [b.language, b.word, b.period, b.event]) assert.ok(visibleB.has(id));
+  for (const id of a.ids) assert.ok(visibleA.has(id), 'B visibility changed A: ' + id);
+  assert.equal((await get('/api/public/items/' + b.tip)).status, 404);
+  assert.equal((await get('/api/public/items/' + a.tip)).status, 200);
+});
+
 /**
  * A synthetic database session exercises the full Nest guard and persistence
  * boundary. This intentionally does NOT test Discord's real OAuth2 exchange.
