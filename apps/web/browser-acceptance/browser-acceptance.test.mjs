@@ -1285,22 +1285,26 @@ test('dictionary browser keeps identical spellings separate by language filter',
     await page.goto(base + '/dictionaries/' + series);
     await page.getByLabel('単語を検索').fill(wordTitle);
     const words = page.getByRole('link', { name: wordTitle, exact: true });
+    await words.nth(1).waitFor();
     assert.equal(await words.count(), 2, 'same spelling must appear under both public languages');
 
     const language = page.getByLabel('言語');
     await language.selectOption(languageA);
+    await words.nth(1).waitFor({ state: 'hidden' });
     assert.equal(await words.count(), 1);
     assert.ok((await page.locator('.dictionary-language').innerText()).includes(prefix + '-meaning-A'));
     assert.ok(!(await page.locator('.dictionary-language').innerText()).includes(prefix + '-meaning-B'));
-    assert.ok((await words.first().getAttribute('href')).endsWith('/items/' + wordA));
+    assert.ok((await words.first().getAttribute('href'))?.endsWith('/items/' + wordA));
 
     await language.selectOption(languageB);
+    await words.nth(1).waitFor({ state: 'hidden' });
     assert.equal(await words.count(), 1);
     assert.ok((await page.locator('.dictionary-language').innerText()).includes(prefix + '-meaning-B'));
     assert.ok(!(await page.locator('.dictionary-language').innerText()).includes(prefix + '-meaning-A'));
-    assert.ok((await words.first().getAttribute('href')).endsWith('/items/' + wordB));
+    assert.ok((await words.first().getAttribute('href'))?.endsWith('/items/' + wordB));
 
     await language.selectOption('');
+    await words.nth(1).waitFor();
     assert.equal(await words.count(), 2, 'removing language filter restores both distinct words');
     await page.close();
     await anonymous.close();
