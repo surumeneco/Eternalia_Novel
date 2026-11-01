@@ -1,6 +1,6 @@
 # α版 AC-01〜AC-78 受入証拠トレーサビリティ（初期台帳）
 
-- 正本: `forGPT/Eternalia_Novel/40_開発・検証/400_受入検証計画.md`（78件のACを欠落なく抽出）。この表は正本を置き換えない。
+- 正本: `forGPT/Creating/Projects/Websites/Eternalia_Novel/40_開発・検証/400_受入検証計画.md`（78件のACを欠落なく抽出）。この表は正本を置き換えない。
 - 対象: `surumeneco/Eternalia_Novel` / `feature/alpha-reimplementation-20261029`。作成時HEAD `a9fe1fd9597689447ee3c0806487c0e084799563`。
 - 環境: GitHub Actions の Node 22 / PostgreSQL 17 / Nuxt+Nest / Chromium (ubuntu-24.04)。本番・実Discord OAuth・実端末の成功を含まない。
 - 検証済み基準: `e6299061f3445207a599d9d1fbde7e1b397f5829` の [CI #41213396614](https://github.com/surumeneco/Eternalia_Novel/actions/runs/41213396614) は4ジョブsuccess、Chromiumブラウザ15件・HTTP/SSR6件が全件成功。後続のスクリーンショット収集/実機確認/CAT Gateは別証拠。
@@ -18,7 +18,7 @@
 | AC-03 | 本文にルビ等の書式を付して保存 | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: semantic ruby/page boundary; IME実機未検証 | not-run |
 | AC-04 | 本文編集中に設定・辞書を検索・参照 | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 同一シリーズの未公開設定・単語を参照中も未保存原稿を保持（CI #41275713765 success） | not-run |
 | AC-05 | カテゴリ・設定・項目・プリセット・タグを作成・編集 | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: category preset editor; タグ・所属変更の全件未検証 | not-run |
-| AC-06 | 設定を相互参照し、改名・削除する | 未特定 | — | not-run |
+| AC-06 | 設定を相互参照し、改名・削除する | packages/contracts/exploratory/related-tip-ancestor-privacy.test.mjs; apps/web/browser-acceptance/browser-acceptance.test.mjs; apps/api/http-acceptance/http-acceptance.test.mjs; docs/cat/ac06-related-ancestor-privacy-draft.md | Domain/B/H: 同一シリーズ・異カテゴリの関連Tip、祖先非公開時の参照秘匿、別シリーズ参照拒否、未公開改名の秘匿を検証するテストを追加（現行HEADのCI結果確認待ち）。削除操作・正式CAT Gate・人間受入は未検証 | not-run |
 | AC-07 | 同じスペルを異なる言語に登録 | apps/web/browser-acceptance/browser-acceptance.test.mjs、apps/api/tests/postgres-alpha.test.mjs | B/DB: 同綴語の言語別選択・固有ID/本文分離（CI #41275393712 success） | not-run |
 | AC-08 | 複数の意味・品詞・語源を登録・辿る | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 同品詞2意味・意味別語源の独立保存と明示公開（CI #41275713765 success） | not-run |
 | AC-09 | 音韻規則・重複規則に違反する単語を入力 | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 同言語重複綴り警告の表示/消去/再表示（CI #41275713765 success） | not-run |
