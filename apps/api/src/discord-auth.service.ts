@@ -147,8 +147,11 @@ export class DiscordAuthService implements OnModuleDestroy {
     return (result.rowCount ?? 0) > 0;
   }
   assertWriteOrigin(headers: RequestHeaders): void {
+    // Media type matching is exact; JSONP/JSON-seq prefix lookalikes are not
+    // acceptable for state-changing author requests. Parameters are allowed.
+    const mediaType = headers['content-type']?.split(';', 1)[0].trim().toLowerCase();
     if (!this.configured || headers.origin !== this.origin ||
-      !headers['content-type']?.toLowerCase().startsWith('application/json')) {
+        mediaType !== 'application/json') {
       throw new ForbiddenException('許可されていない変更要求です。');
     }
   }
