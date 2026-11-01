@@ -1753,7 +1753,7 @@ test('AC-02: author reorders sibling volumes and renames one without changing id
     const page = await author.newPage();
     await page.goto(base + '/studio/order');
     await page.getByRole('combobox', { name: '親となる項目' }).selectOption(series);
-    await page.locator('.order-list li').first().waitFor();
+    await page.getByRole('button', { name: firstTitle + 'を下へ移動' }).waitFor();
     assert.deepEqual(await page.locator('.order-list li > span').allInnerTexts(), [firstTitle, secondTitle]);
     await page.getByRole('button', { name: firstTitle + 'を下へ移動' }).click();
     assert.deepEqual(await page.locator('.order-list li > span').allInnerTexts(), [secondTitle, firstTitle]);
@@ -1770,6 +1770,7 @@ test('AC-02: author reorders sibling volumes and renames one without changing id
     assert.equal(secondNode.parentId, series);
     await page.reload();
     await page.getByRole('combobox', { name: '親となる項目' }).selectOption(series);
+    await page.getByRole('button', { name: secondTitle + 'を下へ移動' }).waitFor();
     assert.deepEqual(await page.locator('.order-list li > span').allInnerTexts(), [secondTitle, firstTitle]);
 
     await page.goto(base + '/studio?item=' + first);
