@@ -20,5 +20,7 @@ Status: **Draft, not Confirmed**. Parent Task: `TASK-20261031-001`. Flow candida
 | V3 | Read author source draft | Original target relation ID still stored |
 | V4 | Re-publish target category | Anonymous target and related link return without changing source draft |
 | V5 | Check unrelated source and target state | Source published body and target's own stored visibility are preserved |
+| V6 | Attempt to add a related Tip from a different series | Domain and HTTP reject the change; source draft and stored revision are unchanged |
+| V7 | Edit a related target's draft title without publishing, then explicitly publish it | Anonymous source link keeps the old title until publication and then uses the new title |
 
 Use the isolated Nuxt/Nest/PostgreSQL Chromium acceptance environment and a synthetic author session. This does not test real Discord OAuth, production deployment, or human visual acceptance. Formal process-closure, TestModel, model-conformance, vectors/Queue, and implementation-conformance are **not-run**. Do not promote this Draft to Confirmed without legitimate authority.
