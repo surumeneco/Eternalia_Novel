@@ -83,7 +83,8 @@ test('AC-06: cross-series Tip relationship is rejected without mutating the sour
   assert.throws(
     () => editNode(db, ids.source, 2,
       contentOf('Source', { relatedTipIds: JSON.stringify([otherTip]) }), 3003),
-    /関連設定は同一シリーズ/,
+    error => error?.code === 'bad-request' &&
+      /関連設定は同一シリーズ/.test(error.message),
   );
   assert.deepEqual(byId(db, ids.source).draft, previousDraft,
     'rejected cross-series relation must not change the author draft');
