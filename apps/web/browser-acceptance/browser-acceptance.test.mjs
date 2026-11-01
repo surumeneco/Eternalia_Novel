@@ -355,7 +355,6 @@ test('author browser drafts, publishes and hides chapter, setting, word, grammar
     const category = await create('category', series, 'category', { presets: '[]' });
     const tip = await create('tip', category, 'tip');
     const section = await create('tipSection', tip, 'section');
-    const sectionSibling = await create('tipSection', tip, 'section-sibling');
     const language = await create('language', series, 'language', { characters: '[]', wordClasses: '[]' });
     const word = await create('word', language, 'word', { meanings: '[]' });
     const authorNodesResponse = await author.request.get(base + '/api/admin/nodes');
@@ -363,7 +362,6 @@ test('author browser drafts, publishes and hides chapter, setting, word, grammar
     const newWord = (await authorNodesResponse.json()).find(node => node.id === word);
     assert.equal(newWord?.isPublic, true, 'new words must default to public visibility');
     const grammar = await create('grammar', language, 'grammar');
-    const grammarSibling = await create('grammar', language, 'grammar-sibling');
     const period = await create('periodization', series, 'period');
     const event = await create('event', period, 'event', { year: '1' });
     for (const id of [series, volume, part, category, tip, language, period]) await publish(id);
@@ -1135,11 +1133,13 @@ test('published descendants are hidden by private ancestors across all four doma
     const category = await create('category', series, 'category', { presets: '[]' });
     const tip = await create('tip', category, 'tip');
     const section = await create('tipSection', tip, 'section');
+    const sectionSibling = await create('tipSection', tip, 'section-sibling');
     const language = await create('language', series, 'language', {
       characters: '[]', wordClasses: '[]',
     });
     const word = await create('word', language, 'word', { meanings: '[]' });
     const grammar = await create('grammar', language, 'grammar');
+    const grammarSibling = await create('grammar', language, 'grammar-sibling');
     const period = await create('periodization', series, 'period');
     const event = await create('event', period, 'event', { year: '1' });
     const eventSibling = await create('event', period, 'event-sibling', { year: '2' });
