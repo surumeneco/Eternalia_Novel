@@ -1,4 +1,38 @@
+---
+cat_version: '0.3'
+kind: domain-spec
+id: eternalia.editor.utf16-markup-boundaries
+status: draft
+process: eternalia.editor
+source_refs:
+  - https://drive.google.com/file/d/1HjDxCgsLOPP0Q4PSqEFxHNYpvABdYyNx/view
+refs:
+  - eternalia.editor.grapheme-fallback
+  - eternalia.editor.halfwidth-kana
+  - eternalia.editor.hangul-jamo
+semantic_contract: markdown-v2
+language: ja
+---
+
 # Alpha editor: UTF-16 surrogate boundary integrity (CAT Draft)
+
+## 対象
+| Ref | Aspect |
+| --- | --- |
+| eternalia.editor | textarea UTF-16選択端点・ruby/page挿入の完全性 |
+| eternalia.reader | public RichContent ruby token文法との一致 |
+
+## 規則
+| ID | 条件 | 要求 | 検証 |
+| --- | --- | --- | --- |
+| editor.utf16.surrogate | 選択端点がUTF-16 high/low surrogateの間にあるとき | ruby/page挿入を拒否し原文を変更しない | apps/web/tests/manuscript-markup.test.mjs |
+| editor.utf16.valid | 補助平面文字の前後または完全な選択のとき | 正当なruby/page挿入を維持する | apps/web/tests/manuscript-markup.test.mjs |
+| editor.newline | ruby選択がCR/LF/CRLF/U+0085/U+2028/U+2029を含むとき | 不正なinline rubyへ変換しない。CRLF内部のcaretも拒否する | apps/web/tests/manuscript-markup.test.mjs |
+| reader.ruby.grammar | readerが改行または予約delimiterを含むruby tokenを読むとき | 不正tokenはliteralとして扱い後続の有効tokenを読み取る | apps/web/tests/rich-content-tokenizer.test.mjs |
+| editor.page.token | 選択端点が既存[[page]]の内部または選択がmarkerを横断するとき | 既存markerを破壊する挿入を拒否し、前後境界は維持する | apps/web/tests/manuscript-markup.test.mjs |
+| editor.ruby.token | 選択端点が有効な既存ruby token内部にあるとき | reader grammarと同じtoken境界で挿入を拒否する | apps/web/tests/manuscript-markup.test.mjs |
+| editor.grapheme | Intl.Segmenter利用時に端点がgrapheme cluster内部にあるとき | 結合仮名・ZWJ emoji・regional indicatorを分断しない。非対応runtimeのfallbackは限定的とする | apps/web/tests/manuscript-grapheme-fallback.test.mjs |
+| editor.kind | JavaScript callerが未対応の挿入kindを渡したとき | nullを返しrubyへ暗黙変換しない | apps/web/tests/manuscript-markup.test.mjs |
 
 Status: **Draft**, not Confirmed. Leaf: TASK-20261101-009.
 
