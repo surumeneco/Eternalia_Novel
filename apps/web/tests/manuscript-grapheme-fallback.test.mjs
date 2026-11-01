@@ -37,3 +37,22 @@ test('fallback allows boundary between two complete flags', () => {
     Intl.Segmenter = original;
   }
 });
+
+test('fallback does not split a subdivision-flag emoji tag sequence', () => {
+  const original = Intl.Segmenter;
+  try {
+    Intl.Segmenter = undefined;
+    const flag = '🏴' + String.fromCodePoint(
+      0xE0067, 0xE0062, 0xE0065, 0xE006E, 0xE0067, 0xE007F,
+    );
+    const source = '前' + flag + '後';
+    for (let offset = 2; offset < 1 + flag.length; offset++) {
+      assert.equal(insert(source, offset, offset, 'page'), null, 'offset ' + offset);
+      assert.equal(insert(source, offset, offset, 'ruby'), null, 'offset ' + offset);
+    }
+    assert.equal(insert(source, 1 + flag.length, 1 + flag.length, 'page')?.value,
+      '前' + flag + '[[page]]後');
+  } finally {
+    Intl.Segmenter = original;
+  }
+});
