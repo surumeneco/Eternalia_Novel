@@ -1987,3 +1987,61 @@ test('AC-24/27: two same-named story hierarchies remain isolated when one series
     await browser.close();
   }
 });
+
+test('AC-47: category editing works but nested categories are blocked in UI and API', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext();
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const prefix = fixture.prefix + '-category-boundary';
+    const createSeries = await author.request.post(base + '/api/admin/nodes', {
+      headers: { Origin: base },
+      data: { kind: 'series', parentId: null,
+        content: { title: prefix + '-series', body: '', details: {} } },
+    });
+    assert.equal(createSeries.status(), 201, await createSeries.text());
+    const series = (await createSeries.json()).id;
+    const page = await author.newPage();
+    await page.goto(base + '/studio?item=' + series);
+    await page.getByRole('button', { name: '子項目を追加' }).click();
+    await page.getByRole('combobox', { name: '種類' }).selectOption('category');
+    const categoryTitle = prefix + '-category';
+    await page.getByRole('textbox', { name: 'タイトル', exact: true }).fill(categoryTitle);
+    await page.getByRole('button', { name: '作成', exact: true }).click();
+    await page.getByRole('heading', { name: 'カテゴリ：' + categoryTitle }).waitFor();
+    const nodes = await (await author.request.get(base + '/api/admin/nodes')).json();
+    const category = nodes.find(node => node.kind === 'category' && node.draft.title === categoryTitle);
+    assert.ok(category?.id);
+    assert.equal(category.parentId, series);
+
+    await page.getByRole('button', { name: '子項目を追加' }).click();
+    const options = await page.getByRole('combobox', { name: '種類' }).locator('option')
+      .evaluateAll(elements => elements.map(element => element.value));
+    assert.deepEqual(options, ['tip'], 'nested categories must not be offered as child kinds');
+    await page.getByRole('button', { name: 'キャンセル' }).click();
+
+    const body = 'カテゴリの説明を更新し、再読込しても保持する。';
+    await page.getByRole('textbox', { name: '本文・説明', exact: true }).fill(body);
+    await page.getByRole('button', { name: '下書きを保存' }).click();
+    await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
+
+    const nested = await author.request.post(base + '/api/admin/nodes', {
+      headers: { Origin: base },
+      data: { kind: 'category', parentId: category.id,
+        content: { title: prefix + '-invalid-nested', body: '', details: {} } },
+    });
+    assert.equal(nested.status(), 400);
+    const after = await (await author.request.get(base + '/api/admin/nodes')).json();
+    assert.ok(!after.some(node => node.draft.title === prefix + '-invalid-nested'));
+    await page.reload();
+    assert.equal(await page.getByRole('textbox', { name: '本文・説明', exact: true }).inputValue(), body);
+    await page.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
