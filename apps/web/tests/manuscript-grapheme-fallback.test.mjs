@@ -109,3 +109,20 @@ test('fallback preserves extended Hangul Jamo L/V/T grapheme boundaries', () => 
     Intl.Segmenter = original;
   }
 });
+
+test('fallback ruby wraps complete grapheme selections with UTF-16 reading offsets', () => {
+  const original = Intl.Segmenter;
+  try {
+    Intl.Segmenter = undefined;
+    for (const cluster of ['ｶﾞ', '👩‍💻', '🇯🇵', '각']) {
+      const source = '前' + cluster + '後';
+      assert.deepEqual(insert(source, 1, 1 + cluster.length, 'ruby'), {
+        value: '前｜' + cluster + '《よみ》後',
+        selectionStart: cluster.length + 3,
+        selectionEnd: cluster.length + 5,
+      }, cluster);
+    }
+  } finally {
+    Intl.Segmenter = original;
+  }
+});
