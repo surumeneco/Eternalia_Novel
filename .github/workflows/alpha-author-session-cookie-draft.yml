@@ -1,0 +1,29 @@
+name: Alpha author-session cookie Draft Red
+
+on:
+  push:
+    branches:
+      - feature/alpha-author-duplicate-session-cookie-red-20261102-queue-b
+    paths:
+      - 'apps/api/tests/discord-author-duplicate-session-cookie.test.mjs'
+      - 'docs/cat/drafts/alpha-author-duplicate-session-cookie.md'
+      - 'package.json'
+      - '.github/workflows/alpha-author-session-cookie-draft.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  draft-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Build exact API source and contracts
+        run: npm run build:contracts && npm run build -w @eternalia/api
+      - name: Run isolated duplicate author-session cookie regression
+        run: node --test apps/api/tests/discord-author-duplicate-session-cookie.test.mjs
