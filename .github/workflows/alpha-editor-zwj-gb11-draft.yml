@@ -1,0 +1,24 @@
+name: Alpha editor GB11 Draft Red
+
+on:
+  push:
+    branches:
+      - feature/alpha-editor-zwj-gb11-nonemoji-red-20261102-queue-b
+    paths:
+      - 'apps/web/tests/manuscript-grapheme-zwj-gb11-fallback.test.mjs'
+      - 'docs/cat/drafts/alpha-editor-zwj-gb11-nonemoji.md'
+      - '.github/workflows/alpha-editor-zwj-gb11-draft.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  draft-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Execute isolated fallback grapheme regression
+        run: node --experimental-strip-types --test apps/web/tests/manuscript-grapheme-zwj-gb11-fallback.test.mjs
