@@ -166,3 +166,57 @@ test('OAuth state is consumed exactly once before an author session is issued', 
     globalThis.fetch = originalFetch;
   }
 });
+
+test('OAuth callback for a non-author never issues a session', async () => {
+  // Synthetic callback boundary: a valid one-time state and Discord token
+  // cannot grant author privileges to a different Discord account.
+  const { DiscordAuthService } = require('../dist/discord-auth.service.js');
+  const originalFetch = globalThis.fetch;
+  const state = 'd'.repeat(64);
+  let deletes = 0;
+  let sessions = 0;
+  let exchanges = 0;
+  let profiles = 0;
+  const auth = Object.create(DiscordAuthService.prototype);
+  Object.assign(auth, {
+    pool: { query: async (sql) => {
+      if (sql.startsWith('DELETE FROM oauth_states')) {
+        deletes++;
+        return { rows: deletes === 1 ? [{ code_verifier: 'test-verifier' }] : [] };
+      }
+      if (sql.startsWith('INSERT INTO author_sessions')) {
+        sessions++;
+        throw new Error('Non-author must not reach session insertion');
+      }
+      throw new Error('Unexpected query: ' + sql);
+    } },
+    clientId: 'test-client', clientSecret: 'test-secret',
+    authorId: '123456789012345678', origin: 'https://example.test',
+  });
+  globalThis.fetch = async (url) => {
+    if (url === 'https://discord.com/api/oauth2/token') {
+      exchanges++;
+      return { ok: true, json: async () => ({ access_token: 'synthetic-token' }) };
+    }
+    if (url === 'https://discord.com/api/users/@me') {
+      profiles++;
+      return { ok: true, json: async () => ({ id: '999999999999999999' }) };
+    }
+    throw new Error('Unexpected OAuth endpoint');
+  };
+  try {
+    const headers = { cookie: 'eternalia_oauth_state=' + state };
+    const query = { state, code: 'one-time-code', iss: 'https://discord.com' };
+    await assert.rejects(auth.complete(headers, query), /作者として許可されていません/);
+    assert.equal(deletes, 1);
+    assert.equal(exchanges, 1);
+    assert.equal(profiles, 1);
+    assert.equal(sessions, 0);
+    await assert.rejects(auth.complete(headers, query), /OAuth認可状態が失効/);
+    assert.equal(deletes, 2);
+    assert.equal(exchanges, 1);
+    assert.equal(sessions, 0);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
