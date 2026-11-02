@@ -15,20 +15,20 @@ test('Intl.Segmenter reference treats Indic virama conjuncts as single graphemes
   }
 });
 
-test('fallback refuses markup inside Indic virama conjuncts', () => {
-  const original = Intl.Segmenter;
-  try {
-    Intl.Segmenter = undefined;
-    for (const cluster of conjuncts) {
+for (const cluster of conjuncts) {
+  test('fallback refuses markup inside Indic conjunct ' + cluster, () => {
+    const original = Intl.Segmenter;
+    try {
+      Intl.Segmenter = undefined;
       const source = '前' + cluster + '後';
       const inside = 1 + cluster.length - 1; // after virama, before final consonant
       assert.equal(insert(source, inside, inside, 'page'), null, cluster);
       assert.equal(insert(source, inside, inside, 'ruby'), null, cluster);
+    } finally {
+      Intl.Segmenter = original;
     }
-  } finally {
-    Intl.Segmenter = original;
-  }
-});
+  });
+}
 
 test('fallback preserves full Indic conjunct ruby and adjacent cluster boundaries', () => {
   const original = Intl.Segmenter;
