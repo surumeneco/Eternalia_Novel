@@ -64,6 +64,14 @@ for (const scenario of [
     profileCalls: 1,
     expected: /Discordユーザー情報を取得できません/,
   },
+  {
+    name: 'Discord profile missing author identity',
+    state: '2'.repeat(64),
+    token: { ok: true, json: async () => ({ access_token: 'synthetic-token' }) },
+    profile: { ok: true, json: async () => ({}) },
+    profileCalls: 1,
+    expected: /作者として許可されていません/,
+  },
 ]) {
   test(scenario.name + ' consumes state without issuing an author session', async () => {
     // Synthetic OAuth/PKCE boundary, not a live Discord browser login.
@@ -95,7 +103,7 @@ for (const scenario of [
       }
       if (url === 'https://discord.com/api/users/@me') {
         profileCalls++;
-        return { ok: false, status: 503 };
+        return scenario.profile ?? { ok: false, status: 503 };
       }
       throw new Error('unexpected OAuth endpoint');
     };
