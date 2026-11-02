@@ -24,3 +24,20 @@ test('fallback treats skin-tone ZWJ sequences as single editable graphemes', () 
     Intl.Segmenter = original;
   }
 });
+
+test('fallback permits boundary between adjacent complete skin-tone ZWJ clusters', () => {
+  const original = Intl.Segmenter;
+  try {
+    Intl.Segmenter = undefined;
+    const first = '👩🏽‍💻';
+    const second = '🧑🏽‍🤝‍🧑🏼';
+    const source = '前' + first + second + '後';
+    const boundary = 1 + first.length;
+    assert.equal(insert(source, boundary - 1, boundary - 1, 'page'), null);
+    assert.equal(insert(source, boundary, boundary, 'page')?.value,
+      '前' + first + '[[page]]' + second + '後');
+    assert.equal(insert(source, boundary + 1, boundary + 1, 'ruby'), null);
+  } finally {
+    Intl.Segmenter = original;
+  }
+});
