@@ -1,0 +1,2550 @@
+/**
+ * Browser acceptance against the real built Nuxt/Nest/PostgreSQL application.
+ * A synthetic author session is seeded only in an empty disposable CI database.
+ * This is not an end-to-end test of Discord's OAuth2 identity provider.
+ */
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFile, mkdir } from 'node:fs/promises';
+import { join } from 'node:path';
+import { chromium } from 'playwright';
+
+const fixture = JSON.parse(await readFile(process.env.HTTP_FIXTURE_FILE, 'utf8'));
+const base = process.env.HTTP_BASE_URL;
+
+test('anonymous mobile reading and browser-based author draft/publish workflow', { timeout: 120_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const reader = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const readerPage = await reader.newPage();
+    const storyResponse = await readerPage.goto(base + '/stories/' + fixture.seriesA);
+    const storyText = await readerPage.locator('body').innerText();
+    assert.equal(storyResponse?.status(), 200, 'story HTTP response: ' + storyText.slice(0, 1500));
+    assert.ok(storyText.includes(fixture.prefix + '-world-A') &&
+      storyText.includes(fixture.prefix + '-chapter-A'),
+      'story DOM should display published series and chapter; got: ' + storyText.slice(0, 2000));
+    for (const selector of ['.site-header', '.site-aside', '.site-main', '.site-footer', '.topic-path']) {
+      assert.equal(await readerPage.locator(selector).count(), 1,
+        'legacy reader shell must preserve ' + selector + ' on the story page');
+    }
+    const overflow = await readerPage.evaluate(() => ({
+      viewport: document.documentElement.clientWidth,
+      content: document.documentElement.scrollWidth,
+    }));
+    assert.ok(overflow.content <= overflow.viewport + 2,
+      'story page must not require horizontal scrolling on mobile: ' + JSON.stringify(overflow));
+
+    await readerPage.goto(base + '/read/' + fixture.chapter);
+    await readerPage.getByRole('button', { name: '次のページ' }).waitFor();
+    assert.ok((await readerPage.locator('.rich-body').innerText())
+      .includes(fixture.prefix + '-published-body'));
+    await readerPage.getByRole('button', { name: '次のページ' }).click();
+    assert.equal((await readerPage.locator('.reading-pages span').innerText()).trim(), '2 / 2');
+    assert.ok(!(await readerPage.locator('body').innerText())
+      .includes(fixture.prefix + '-unpublished-draft-body'));
+
+    // These routes must show their actual per-series views, not collection parents.
+    for (const [path, marker] of [
+      ['/tips/', '設定を検索'],
+      ['/dictionaries/', '単語を検索'],
+      ['/timeline/', '年代区分'],
+    ]) {
+      await readerPage.goto(base + path + fixture.seriesA);
+      const content = await readerPage.locator('body').innerText();
+      assert.ok(content.includes(marker), 'missing nested domain UI at ' + path);
+      assert.ok(content.includes(fixture.prefix + '-world-A'), 'missing series at ' + path);
+    }
+
+    // AC-65: all four public domain pages must remain within the document
+    // viewport on representative phone, tablet and desktop widths.
+    const screenshotDir = process.env.HTTP_SCREENSHOT_DIR;
+    if (screenshotDir) await mkdir(screenshotDir, { recursive: true });
+    for (const width of [320, 390, 768, 1280]) {
+      await readerPage.setViewportSize({ width, height: 844 });
+      for (const domain of ['stories', 'tips', 'dictionaries', 'timeline']) {
+        await readerPage.goto(base + '/' + domain + '/' + fixture.seriesA);
+        const dimensions = await readerPage.evaluate(() => ({
+          viewport: document.documentElement.clientWidth,
+          content: document.documentElement.scrollWidth,
+        }));
+        assert.ok(dimensions.content <= dimensions.viewport + 2,
+          domain + ' horizontal overflow at ' + width + 'px: ' + JSON.stringify(dimensions));
+        if (screenshotDir && (width === 320 || width === 390 || width === 1280)) {
+          await readerPage.screenshot({ path: join(screenshotDir, domain + '-' + width + '.png'), fullPage: true });
+        }
+      }
+    }
+    await readerPage.setViewportSize({ width: 390, height: 844 });
+
+    const author = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const studio = await author.newPage();
+    await studio.goto(base + '/studio');
+    await studio.getByRole('button', { name: '新規シリーズ' }).waitFor();
+    await studio.getByRole('button', { name: '新規シリーズ' }).click();
+    const title = fixture.prefix + '-browser-created';
+    await studio.locator('.create-form input').fill(title);
+    await studio.getByRole('button', { name: '作成', exact: true }).click();
+    await studio.getByRole('heading', { name: 'シリーズ：' + title }).waitFor();
+    if (screenshotDir) await studio.screenshot({ path: join(screenshotDir, 'studio-desktop.png'), fullPage: true });
+
+    const textarea = studio.locator('.studio-editor textarea');
+    await textarea.fill('ブラウザから保存した公開用の説明');
+    await studio.getByRole('button', { name: '下書きを保存' }).click();
+    await studio.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
+
+    const nodesResponse = await author.request.get(base + '/api/admin/nodes');
+    assert.equal(nodesResponse.status(), 200);
+    const nodes = await nodesResponse.json();
+    const created = nodes.find(node => node.kind === 'series' && node.draft.title === title);
+    assert.ok(created?.id, 'browser-created series should persist in PostgreSQL');
+    assert.equal((await reader.request.get(base + '/api/public/items/' + created.id)).status(), 404,
+      'draft must not become public without explicit publication');
+
+    studio.once('dialog', dialog => dialog.accept());
+    await studio.getByRole('button', { name: '保存済み下書きを公開版へ反映' }).click();
+    await studio.getByText('公開スナップショットを更新しました。').waitFor();
+    await readerPage.goto(base + '/series/' + created.id);
+    await readerPage.getByRole('heading', { name: title }).waitFor();
+    assert.ok((await readerPage.locator('body').innerText()).includes('ブラウザから保存した公開用の説明'));
+
+    // Publishing and visibility changes must not overwrite the unsaved editor
+    // buffer or accidentally publish it. Verify the direct anonymous endpoint.
+    const unsavedBeforePublication = '公開操作をしても残す未保存の文章';
+    await textarea.fill(unsavedBeforePublication);
+    studio.once('dialog', dialog => dialog.accept());
+    await studio.getByRole('button', { name: '保存済み下書きを公開版へ反映' }).click();
+    await studio.getByText('公開スナップショットを更新しました。').waitFor();
+    assert.equal(await textarea.inputValue(), unsavedBeforePublication,
+      'publication must preserve the unsaved author buffer');
+    const unchangedPublic = await reader.request.get(base + '/api/public/items/' + created.id);
+    assert.equal(unchangedPublic.status(), 200);
+    assert.equal((await unchangedPublic.json()).content.body, 'ブラウザから保存した公開用の説明',
+      'unsaved author text must not enter the public snapshot');
+
+    await studio.getByRole('button', { name: '非公開にする' }).click();
+    await studio.getByRole('button', { name: '公開に戻す' }).waitFor();
+    assert.equal(await textarea.inputValue(), unsavedBeforePublication,
+      'hiding an item must preserve the unsaved author buffer');
+    assert.equal((await reader.request.get(base + '/api/public/items/' + created.id)).status(), 404,
+      'anonymous direct API access must be blocked after hiding');
+    await readerPage.goto(base + '/series/' + created.id);
+    assert.ok(!(await readerPage.locator('body').innerText()).includes(title),
+      'hidden series title must not appear in anonymous direct browser navigation');
+
+    await studio.getByRole('button', { name: '公開に戻す' }).click();
+    await studio.getByRole('button', { name: '非公開にする' }).waitFor();
+    assert.equal(await textarea.inputValue(), unsavedBeforePublication,
+      'restoring visibility must preserve the unsaved author buffer');
+    const restoredPublic = await reader.request.get(base + '/api/public/items/' + created.id);
+    assert.equal(restoredPublic.status(), 200);
+    assert.equal((await restoredPublic.json()).content.body, 'ブラウザから保存した公開用の説明',
+      'restoring visibility must not publish an unsaved draft');
+
+    // PB-05: a future start time hides the published snapshot even when the
+    // public flag remains enabled; clearing the date restores it unchanged.
+    const publishDate = studio.getByLabel('公開開始日時');
+    await publishDate.fill('2100-01-01T00:00');
+    await studio.getByRole('button', { name: '日時を設定' }).click();
+    await studio.getByText('公開条件を変更しました。').waitFor();
+    assert.equal((await reader.request.get(base + '/api/public/items/' + created.id)).status(), 404,
+      'future publication date must hide the direct anonymous endpoint');
+    // Clear the future schedule through the separate publication management
+    // screen. An empty date must be accepted as immediate publication.
+    const publicationManagement = await author.newPage();
+    await publicationManagement.goto(base + '/studio/publication');
+    const visibilityFilter = publicationManagement.getByLabel('公開状態');
+    await visibilityFilter.selectOption('visible');
+    await publicationManagement.getByRole('heading', { name: fixture.prefix + '-world-A', exact: true }).waitFor();
+    assert.equal(await publicationManagement.getByRole('heading', { name: title, exact: true }).count(), 0,
+      'future-scheduled series must not appear in the visible filter');
+    await visibilityFilter.selectOption('hidden');
+    await publicationManagement.getByRole('heading', { name: title, exact: true }).waitFor();
+    assert.equal(await publicationManagement.getByRole('heading', { name: fixture.prefix + '-world-A', exact: true }).count(), 0,
+      'already public series must not appear in the hidden filter');
+    await visibilityFilter.selectOption('all');
+    const managedRow = publicationManagement.locator('.publication-row').filter({
+      has: publicationManagement.getByRole('heading', { name: title, exact: true }),
+    });
+    await managedRow.locator('input[type="datetime-local"]').fill('');
+    await managedRow.getByRole('button', { name: '日時を保存' }).click();
+    await publicationManagement.getByText('公開開始日時を更新しました。').waitFor();
+
+    // AC-14: a successful mutation followed by a failed readback is not a
+    // verified success. Do not silently acknowledge a stale management view.
+    await managedRow.locator('input[type="datetime-local"]').fill('2100-01-01T00:00');
+    await publicationManagement.route('**/api/admin/nodes', async route => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({ status: 503, contentType: 'application/json', body: '{"message":"test readback failure"}' });
+      } else {
+        await route.continue();
+      }
+    });
+    await managedRow.getByRole('button', { name: '日時を保存' }).click();
+    await publicationManagement.getByText('公開管理データを取得できません。').waitFor();
+    assert.equal(await publicationManagement.getByText('公開開始日時を更新しました。').count(), 0,
+      'a failed post-write readback must not be reported as verified success');
+    await publicationManagement.unroute('**/api/admin/nodes');
+    await publicationManagement.getByRole('button', { name: '再読込' }).click();
+    await managedRow.locator('input[type="datetime-local"]').fill('');
+    await managedRow.getByRole('button', { name: '日時を保存' }).click();
+    await publicationManagement.getByText('公開開始日時を更新しました。').waitFor();
+    await publicationManagement.close();
+    const afterScheduleClear = await reader.request.get(base + '/api/public/items/' + created.id);
+    assert.equal(afterScheduleClear.status(), 200, 'clearing a schedule restores public access');
+    assert.equal((await afterScheduleClear.json()).content.body, 'ブラウザから保存した公開用の説明');
+    assert.equal(await textarea.inputValue(), unsavedBeforePublication,
+      'publication date changes must preserve the unsaved author buffer');
+
+    // Cancelling the native discard warning must preserve unsaved text.
+    await textarea.fill('下書き未保存の編集内容');
+    studio.once('dialog', dialog => dialog.dismiss());
+    await studio.getByRole('button', { name: '新規シリーズ' }).click();
+    assert.equal(await textarea.inputValue(), '下書き未保存の編集内容');
+    studio.once('dialog', dialog => dialog.dismiss());
+    await studio.getByRole('link', { name: 'メモ', exact: true }).click();
+    assert.equal(new URL(studio.url()).pathname, '/studio',
+      'cancelled nested-route navigation must retain the editor');
+    assert.equal(await textarea.inputValue(), '下書き未保存の編集内容');
+
+    studio.once('dialog', dialog => dialog.accept());
+    await studio.getByRole('link', { name: 'メモ', exact: true }).click();
+    await studio.getByRole('heading', { name: 'メモ', exact: true }).waitFor();
+
+    // The chapter editor must preserve the selected text and place the caret
+    // inside the reading field when inserting ruby markup.
+    const manuscript = await author.newPage();
+    await manuscript.goto(base + '/studio?item=' + fixture.chapter);
+    const chapterBody = manuscript.locator('.studio-editor textarea');
+    await chapterBody.waitFor();
+    await chapterBody.fill('漢字');
+    await chapterBody.evaluate(element => {
+      element.focus();
+      element.setSelectionRange(0, 2);
+    });
+    await manuscript.getByRole('button', { name: '選択文字にルビを付ける' }).click();
+    assert.equal(await chapterBody.inputValue(), '｜漢字《よみ》');
+    const readingSelection = await chapterBody.evaluate(element =>
+      element.value.slice(element.selectionStart, element.selectionEnd));
+    assert.equal(readingSelection, 'よみ');
+
+    // AC-65: native keyboard Undo must remove only the toolbar insertion,
+    // not the manuscript typed before it. A direct textarea value assignment
+    // is not part of Chromium's native undo stack.
+    await chapterBody.fill('');
+    await chapterBody.pressSequentially('東京');
+    await chapterBody.evaluate(element => {
+      element.focus();
+      element.setSelectionRange(0, 2);
+    });
+    await manuscript.getByRole('button', { name: '選択文字にルビを付ける' }).click();
+    assert.equal(await chapterBody.inputValue(), '｜東京《よみ》');
+    await chapterBody.press('Control+z');
+    assert.equal(await chapterBody.inputValue(), '東京',
+      'Undo must revert only the ruby toolbar insertion');
+
+    await chapterBody.fill('');
+    await chapterBody.pressSequentially('甲乙');
+    await chapterBody.evaluate(element => {
+      element.focus();
+      element.setSelectionRange(1, 2);
+    });
+    await manuscript.getByRole('button', { name: 'ページ区切りを挿入' }).click();
+    assert.equal(await chapterBody.inputValue(), '甲[[page]]乙',
+      'page marker insertion must preserve the selected manuscript text');
+    await chapterBody.press('Control+z');
+    assert.equal(await chapterBody.inputValue(), '甲乙',
+      'Undo must revert only the page marker insertion');
+
+    await chapterBody.dispatchEvent('compositionstart');
+    assert.equal(await manuscript.getByRole('button', { name: '選択文字にルビを付ける' }).isDisabled(), true,
+      'toolbar must not modify a composing IME buffer');
+    await chapterBody.dispatchEvent('compositionend');
+    assert.equal(await manuscript.getByRole('button', { name: '選択文字にルビを付ける' }).isEnabled(), true);
+
+    // Direct child routes of the author workspace must render their own pages.
+    const adminViews = await author.newPage();
+    for (const [path, heading] of [
+      ['/studio/memos', 'メモ'],
+      ['/studio/order', '並べ替え'],
+      ['/studio/publication', '公開管理'],
+    ]) {
+      await adminViews.goto(base + path);
+      await adminViews.getByRole('heading', { name: heading, exact: true }).waitFor();
+    }
+    // A6/W6.1: exercise the actual studio visibility controls for one
+    // published item from each domain, then restore the original state.
+    // The later HTTP acceptance tests share these disposable fixtures.
+    const visibilityPage = await author.newPage();
+    for (const [kind, id, directPath] of [
+      ['chapter', fixture.chapter, '/read/'],
+      ['tipSection', fixture.section, '/items/'],
+      ['word', fixture.word, '/items/'],
+      ['event', fixture.event, '/items/'],
+    ]) {
+      const beforeResponse = await reader.request.get(base + '/api/public/items/' + id);
+      assert.equal(beforeResponse.status(), 200, kind + ' initially public');
+      const before = await beforeResponse.json();
+      await visibilityPage.goto(base + '/studio?item=' + id);
+      const hide = visibilityPage.getByRole('button', { name: '非公開にする' });
+      const restore = visibilityPage.getByRole('button', { name: '公開に戻す' });
+      await hide.waitFor();
+      await hide.click();
+      await restore.waitFor();
+      assert.equal((await reader.request.get(base + '/api/public/items/' + id)).status(), 404,
+        kind + ' must be inaccessible to anonymous readers while private');
+      await readerPage.goto(base + directPath + id);
+      assert.ok(!(await readerPage.locator('body').innerText()).includes(before.content.title),
+        kind + ' private title must not leak in the direct reader view');
+      await restore.click();
+      await hide.waitFor();
+      const reopenedResponse = await reader.request.get(base + '/api/public/items/' + id);
+      assert.equal(reopenedResponse.status(), 200, kind + ' should reopen');
+      const reopened = await reopenedResponse.json();
+      assert.deepEqual(reopened.content, before.content,
+        kind + ' visibility changes must preserve the published snapshot');
+    }
+    await visibilityPage.close();
+    await author.close();
+    await reader.close();
+  } finally {
+    await browser.close();
+  }
+});
+
+test('author browser drafts, publishes and hides chapter, setting, word, grammar and event', { timeout: 240_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const anonymous = await browser.newContext();
+    const page = await author.newPage();
+    const prefix = fixture.prefix + '-four-domain-browser';
+
+    async function create(kind, parentId, suffix, details = {}) {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base },
+        data: { kind, parentId, content: { title: prefix + '-' + suffix, body: '', details } },
+      });
+      assert.equal(response.status(), 201, 'create ' + kind + ': ' + await response.text());
+      return (await response.json()).id;
+    }
+    async function publish(id, revision = 1) {
+      const response = await author.request.post(base + '/api/admin/nodes/' + id + '/publish', {
+        headers: { Origin: base }, data: { expectedRevision: revision },
+      });
+      assert.equal(response.status(), 200, 'publish ancestor: ' + await response.text());
+    }
+    async function publicItem(id) {
+      const response = await anonymous.request.get(base + '/api/public/items/' + id);
+      return { status: response.status(), value: response.status() === 200 ? await response.json() : null };
+    }
+
+    const series = await create('series', null, 'series');
+    const volume = await create('volume', series, 'volume');
+    const part = await create('part', volume, 'part');
+    const chapter = await create('chapter', part, 'chapter');
+    const category = await create('category', series, 'category', { presets: '[]' });
+    const tip = await create('tip', category, 'tip');
+    const section = await create('tipSection', tip, 'section');
+    const language = await create('language', series, 'language', { characters: '[]', wordClasses: '[]' });
+    const word = await create('word', language, 'word', { meanings: '[]' });
+    const authorNodesResponse = await author.request.get(base + '/api/admin/nodes');
+    assert.equal(authorNodesResponse.status(), 200);
+    const newWord = (await authorNodesResponse.json()).find(node => node.id === word);
+    assert.equal(newWord?.isPublic, true, 'new words must default to public visibility');
+    const grammar = await create('grammar', language, 'grammar');
+    const period = await create('periodization', series, 'period');
+    const event = await create('event', period, 'event', { year: '1' });
+    for (const id of [series, volume, part, category, tip, language, period]) await publish(id);
+
+    for (const [kind, id] of [
+      ['chapter', chapter], ['tipSection', section], ['word', word], ['grammar', grammar], ['event', event],
+    ]) {
+      await page.goto(base + '/studio?item=' + id);
+      const editor = page.getByRole('textbox', { name: '本文・説明', exact: true });
+      await editor.waitFor();
+      assert.equal(await editor.count(), 1, kind + ' must expose exactly one labeled body editor');
+      const first = prefix + '-' + kind + '-first-publication';
+      const second = prefix + '-' + kind + '-second-publication';
+      await editor.fill(first);
+      if (kind === 'word') {
+        await page.getByRole('button', { name: '意味を追加' }).click();
+        await page.locator('.word-meaning textarea').first().fill('第一の意味');
+        await page.getByRole('button', { name: '語源を追加' }).click();
+        await page.locator('.word-origin textarea').first().fill('語源は意味単位で保存');
+      }
+      await page.getByRole('button', { name: '下書きを保存' }).click();
+      await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
+      assert.equal((await publicItem(id)).status, 404, kind + ' saved draft must remain private');
+      await page.reload();
+      await editor.waitFor();
+      assert.equal(await editor.inputValue(), first, kind + ' saved draft must survive editor reload');
+      if (kind === 'word') {
+        assert.equal(await page.locator('.word-meaning textarea').first().inputValue(), '第一の意味',
+          'word meaning must survive editor reload');
+        assert.equal(await page.locator('.word-origin textarea').first().inputValue(), '語源は意味単位で保存',
+          'meaning-scoped etymology must survive editor reload');
+      }
+      assert.equal((await publicItem(id)).status, 404, kind + ' reload must not publish the draft');
+
+      page.once('dialog', dialog => dialog.accept());
+      await page.getByRole('button', { name: '保存済み下書きを公開版へ反映' }).click();
+      await page.getByText('公開スナップショットを更新しました。').waitFor();
+      const firstPublic = await publicItem(id);
+      assert.equal(firstPublic.value?.content.body, first, kind + ' first publication');
+      if (kind === 'word') {
+        const meanings = JSON.parse(firstPublic.value.content.details.meanings);
+        assert.equal(meanings.length, 1);
+        assert.equal(meanings[0].definition, '第一の意味');
+        assert.equal(meanings[0].etymologies.length, 1);
+        assert.equal(meanings[0].etymologies[0].note, '語源は意味単位で保存');
+        assert.match(meanings[0].id, /^[0-9a-f-]{36}$/i);
+        assert.match(meanings[0].etymologies[0].id, /^[0-9a-f-]{36}$/i);
+      }
+
+      await editor.fill(second);
+      await page.getByRole('button', { name: '下書きを保存' }).click();
+      await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
+      assert.equal((await publicItem(id)).value?.content.body, first,
+        kind + ' second draft must not change public snapshot');
+      await page.reload();
+      await editor.waitFor();
+      assert.equal(await editor.inputValue(), second, kind + ' second draft must survive editor reload');
+      assert.equal((await publicItem(id)).value?.content.body, first,
+        kind + ' reloading an unpublished revision must preserve the public snapshot');
+
+      page.once('dialog', dialog => dialog.accept());
+      await page.getByRole('button', { name: '保存済み下書きを公開版へ反映' }).click();
+      await page.getByText('公開スナップショットを更新しました。').waitFor();
+      assert.equal((await publicItem(id)).value?.content.body, second, kind + ' explicit republish');
+
+      await page.getByRole('button', { name: '非公開にする' }).click();
+      await page.getByText('公開条件を変更しました。').waitFor();
+      assert.equal((await publicItem(id)).status, 404, kind + ' hidden item must not be anonymously accessible');
+      await page.reload();
+      await editor.waitFor();
+      assert.equal((await publicItem(id)).status, 404, kind + ' hidden state must survive reload');
+      await page.getByRole('button', { name: '公開に戻す' }).click();
+      await page.getByText('公開条件を変更しました。').waitFor();
+      assert.equal((await publicItem(id)).value?.content.body, second,
+        kind + ' restoring visibility must retain the last published snapshot');
+    }
+    await anonymous.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
+
+test('long multilingual manuscript survives browser reload and explicit publication without text loss', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const response = await author.request.post(base + '/api/admin/nodes', {
+      headers: { Origin: base },
+      data: {
+        kind: 'chapter', parentId: fixture.part,
+        content: { title: fixture.prefix + '-unicode-chapter', body: '', details: {} },
+      },
+    });
+    assert.equal(response.status(), 201, await response.text());
+    const chapter = (await response.json()).id;
+    const manuscript = ('日本語と漢字・ひらがな・カタカナ。Élève、Straße、𠮷、📚。\n' +
+      'ルビ｜言葉《ことば》とページ区切り。\n').repeat(250);
+    const page = await author.newPage();
+    await page.goto(base + '/studio?item=' + chapter);
+    const editor = page.getByRole('textbox', { name: '本文・説明', exact: true });
+    await editor.waitFor();
+    await editor.fill(manuscript);
+    await page.getByRole('button', { name: '下書きを保存' }).click();
+    await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
+    await page.reload();
+    await editor.waitFor();
+    assert.equal(await editor.inputValue(), manuscript, 'long multilingual draft must round-trip exactly');
+    page.once('dialog', dialog => dialog.accept());
+    await page.getByRole('button', { name: '保存済み下書きを公開版へ反映' }).click();
+    await page.getByText('公開スナップショットを更新しました。').waitFor();
+    const published = await author.request.get(base + '/api/public/items/' + chapter);
+    assert.equal(published.status(), 200);
+    assert.equal((await published.json()).content.body, manuscript,
+      'public snapshot must preserve Unicode, newlines and long manuscript content');
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
+
+test('author memo browser persists tags and handles failed post-write readback', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const page = await author.newPage();
+    await page.goto(base + '/studio/memos');
+    await page.getByRole('button', { name: '新規メモ' }).click();
+    const title = fixture.prefix + '-browser-memo';
+    await page.locator('.memo-editor input').first().fill(title);
+    const editor = page.locator('.memo-editor textarea');
+    await editor.fill('メモ本文の初稿');
+    await page.locator('.memo-editor input').nth(1).fill('人物, 調査');
+    await page.getByRole('button', { name: '保存', exact: true }).click();
+    await page.getByText('メモを保存しました。').waitFor();
+
+    const listResponse = await author.request.get(base + '/api/admin/memos');
+    assert.equal(listResponse.status(), 200);
+    const created = (await listResponse.json()).find(memo => memo.title === title);
+    assert.ok(created?.id, 'memo must persist to PostgreSQL');
+    assert.deepEqual(created.tags, ['人物', '調査']);
+    await page.locator('.memo-sidebar input[type="search"]').fill('調査');
+    await page.getByRole('button', { name: new RegExp(title) }).waitFor();
+
+    await editor.fill('未保存のメモ変更');
+    page.once('dialog', dialog => dialog.dismiss());
+    await page.getByLabel('パンくずリスト').getByRole('link', { name: '作者の書斎' }).click();
+    assert.equal(new URL(page.url()).pathname, '/studio/memos');
+    assert.equal(await editor.inputValue(), '未保存のメモ変更');
+
+    await page.route('**/api/admin/memos', async route => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({ status: 503, contentType: 'application/json', body: '{"message":"test readback failure"}' });
+      } else {
+        await route.continue();
+      }
+    });
+    await page.getByRole('button', { name: '保存', exact: true }).click();
+    await page.getByText('メモを取得できませんでした。').waitFor();
+    assert.equal(await page.getByText('メモを保存しました。').count(), 0,
+      'memo save must not claim verified success after failed readback');
+
+    await page.unroute('**/api/admin/memos');
+    page.once('dialog', dialog => dialog.accept());
+    await page.getByRole('button', { name: '再読込' }).click();
+    assert.equal(await editor.inputValue(), '未保存のメモ変更',
+      'reloading after a successful write must recover the persisted edit');
+    const finalResponse = await author.request.get(base + '/api/admin/memos');
+    assert.equal(finalResponse.status(), 200);
+    const finalMemo = (await finalResponse.json()).find(memo => memo.id === created.id);
+    assert.equal(finalMemo.body, '未保存のメモ変更');
+    assert.ok(finalMemo.revision > created.revision);
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
+
+test('author browser reorders only sibling chapters and protects unapplied changes', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const prefix = fixture.prefix + '-browser-order';
+    async function create(kind, parentId, suffix) {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base },
+        data: { kind, parentId, content: { title: prefix + '-' + suffix, body: '', details: {} } },
+      });
+      assert.equal(response.status(), 201, 'create ' + kind + ': ' + await response.text());
+      return (await response.json()).id;
+    }
+    const series = await create('series', null, 'series');
+    const volume = await create('volume', series, 'volume');
+    const part = await create('part', volume, 'part');
+    const first = await create('chapter', part, 'first');
+    const second = await create('chapter', part, 'second');
+    const page = await author.newPage();
+    await page.goto(base + '/studio/order');
+    await page.getByLabel('親となる項目').selectOption(part);
+    await page.getByLabel('項目の種類').selectOption('chapter');
+    const list = page.locator('.order-list li');
+    await list.first().waitFor();
+    assert.ok((await list.nth(0).innerText()).includes(prefix + '-first'));
+    assert.ok((await list.nth(1).innerText()).includes(prefix + '-second'));
+    await list.nth(0).getByRole('button', { name: '下へ' }).click();
+    assert.ok((await list.nth(0).innerText()).includes(prefix + '-second'));
+
+    page.once('dialog', dialog => dialog.dismiss());
+    await page.getByRole('link', { name: '執筆・編集に戻る' }).click();
+    assert.equal(new URL(page.url()).pathname, '/studio/order',
+      'cancelling the discard dialog must retain unapplied ordering');
+    assert.ok((await list.nth(0).innerText()).includes(prefix + '-second'));
+
+    page.once('dialog', dialog => dialog.accept());
+    await page.getByRole('button', { name: '表示順を反映' }).click();
+    await page.getByText('順序を反映しました。').waitFor();
+    const response = await author.request.get(base + '/api/admin/nodes');
+    assert.equal(response.status(), 200);
+    const nodes = await response.json();
+    const firstNode = nodes.find(node => node.id === first);
+    const secondNode = nodes.find(node => node.id === second);
+    assert.equal(firstNode?.order, 1);
+    assert.equal(secondNode?.order, 0);
+    assert.equal(firstNode?.draft.body, '');
+    assert.equal(secondNode?.draft.body, '');
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
+
+test('unsaved manuscript survives cancelled navigation and is discarded only after confirmation', { timeout: 60_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const page = await author.newPage();
+    await page.goto(base + '/studio?item=' + fixture.chapter);
+    const editor = page.getByRole('textbox', { name: '本文・説明', exact: true });
+    await editor.waitFor();
+    const persisted = await editor.inputValue();
+    const unsaved = persisted + '\n未保存の移動保護確認';
+    await editor.fill(unsaved);
+    page.once('dialog', dialog => dialog.dismiss());
+    await page.getByRole('link', { name: 'メモ', exact: true }).click();
+    assert.equal(new URL(page.url()).pathname, '/studio',
+      'cancelled navigation must stay in the manuscript editor');
+    assert.equal(await editor.inputValue(), unsaved,
+      'cancelled navigation must preserve unsaved manuscript input');
+    page.once('dialog', dialog => dialog.accept());
+    await page.getByRole('link', { name: 'メモ', exact: true }).click();
+    await page.getByRole('heading', { name: 'メモ', exact: true }).waitFor();
+    await page.goto(base + '/studio?item=' + fixture.chapter);
+    await editor.waitFor();
+    assert.equal(await editor.inputValue(), persisted,
+      'confirmed discard must not persist unsaved manuscript input');
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
+
+test('author manuscript editor fits narrow mobile viewports without horizontal overflow', { timeout: 60_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const page = await author.newPage();
+    await page.goto(base + '/studio?item=' + fixture.chapter);
+    const editor = page.getByRole('textbox', { name: '本文・説明', exact: true });
+    await editor.waitFor();
+    for (const width of [390, 320]) {
+      await page.setViewportSize({ width, height: 720 });
+      const dimensions = await page.evaluate(() => ({
+        viewport: document.documentElement.clientWidth,
+        content: document.documentElement.scrollWidth,
+      }));
+      assert.ok(dimensions.content <= dimensions.viewport,
+        'author editor must not overflow at ' + width + 'px: ' + JSON.stringify(dimensions));
+      assert.ok(await editor.isVisible(), 'body editor must remain visible at ' + width + 'px');
+      assert.ok(await page.getByRole('button', { name: '下書きを保存' }).isVisible(),
+        'save action must remain visible at ' + width + 'px');
+      if (process.env.HTTP_SCREENSHOT_DIR) {
+        await mkdir(process.env.HTTP_SCREENSHOT_DIR, { recursive: true });
+        await page.screenshot({
+          path: join(process.env.HTTP_SCREENSHOT_DIR, 'studio-' + width + '.png'), fullPage: true,
+        });
+      }
+    }
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
+
+test('stale author editor reports revision conflict without overwriting the saved draft', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    async function create(kind, parentId, suffix) {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base },
+        data: {
+          kind, parentId,
+          content: { title: fixture.prefix + '-conflict-' + suffix, body: '', details: {} },
+        },
+      });
+      assert.equal(response.status(), 201, 'create ' + kind + ': ' + await response.text());
+      return (await response.json()).id;
+    }
+    const series = await create('series', null, 'series');
+    const volume = await create('volume', series, 'volume');
+    const part = await create('part', volume, 'part');
+    const chapter = await create('chapter', part, 'chapter');
+    const firstPage = await author.newPage();
+    const stalePage = await author.newPage();
+    await firstPage.goto(base + '/studio?item=' + chapter);
+    await stalePage.goto(base + '/studio?item=' + chapter);
+    const firstEditor = firstPage.getByRole('textbox', { name: '本文・説明', exact: true });
+    const staleEditor = stalePage.getByRole('textbox', { name: '本文・説明', exact: true });
+    await firstEditor.waitFor();
+    await staleEditor.waitFor();
+    await firstEditor.fill('先に保存された本文');
+    await firstPage.getByRole('button', { name: '下書きを保存' }).click();
+    await firstPage.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
+    await staleEditor.fill('競合して保存できない本文');
+    await stalePage.getByRole('button', { name: '下書きを保存' }).click();
+    await stalePage.getByRole('alert').waitFor();
+    assert.equal(await stalePage.getByText('下書きを保存しました。公開版は変更されていません。').count(), 0,
+      'stale editor must not claim a successful save');
+    assert.equal(await staleEditor.inputValue(), '競合して保存できない本文',
+      'failed save must retain the local text for conflict resolution');
+    const response = await author.request.get(base + '/api/admin/nodes');
+    assert.equal(response.status(), 200);
+    const saved = (await response.json()).find(node => node.id === chapter);
+    assert.equal(saved?.draft.body, '先に保存された本文',
+      'revision conflict must not silently overwrite the first author save');
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
+
+test('browser logout revokes synthetic author session and protected API access', { timeout: 60_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.logoutAuthorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const page = await author.newPage();
+    page.on('dialog', dialog => dialog.accept());
+    await page.goto(base + '/studio');
+    await page.getByRole('button', { name: 'ログアウト', exact: true }).click();
+    await page.getByRole('link', { name: 'Discordでログイン' }).waitFor();
+    assert.equal((await author.request.get(base + '/api/admin/nodes')).status(), 401,
+      'logout must revoke access to the author collection');
+    const denied = await author.request.post(base + '/api/admin/nodes', {
+      headers: { Origin: base },
+      data: {
+        kind: 'series', parentId: null,
+        content: { title: fixture.prefix + '-logout-denied', body: '', details: {} },
+      },
+    });
+    assert.equal(denied.status(), 401, 'logout must reject protected writes');
+    assert.equal((await author.cookies(base)).filter(cookie => cookie.name === 'eternalia_author').length, 0,
+      'logout must remove the author cookie');
+    const otherSession = await browser.newContext();
+    await otherSession.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    assert.equal((await otherSession.request.get(base + '/api/admin/nodes')).status(), 200,
+      'logging out one device must not revoke an independent author session');
+    await otherSession.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
+
+test('anonymous browser cannot access author workspace data or editing controls', { timeout: 60_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const anonymous = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const page = await anonymous.newPage();
+    for (const [path, privateSelector] of [
+      ['/studio', '.studio-editor textarea'],
+      ['/studio/memos', '.memo-editor'],
+      ['/studio/order', '.order-list'],
+      ['/studio/publication', '.publication-list'],
+    ]) {
+      await page.goto(base + path);
+      await page.getByRole('link', { name: 'Discordでログイン' }).waitFor();
+      assert.equal(await page.locator(privateSelector).count(), 0,
+        path + ' must not render private author controls without a session');
+    }
+    for (const path of ['/api/admin/nodes', '/api/admin/memos']) {
+      assert.equal((await anonymous.request.get(base + path)).status(), 401,
+        path + ' must not expose private data');
+    }
+    await anonymous.close();
+  } finally {
+    await browser.close();
+  }
+});
+
+test('authenticated non-author reader cannot enter the author workspace', { timeout: 90_000 }, async () => {
+  // AC-19/22: valid synthetic session belongs to a different Discord identity.
+  // This is not a real Discord OAuth2 login test.
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const reader = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    await reader.addCookies([{
+      name: 'eternalia_author', value: fixture.outsiderToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const page = await reader.newPage();
+    await page.goto(base + '/studio');
+    await page.getByRole('link', { name: 'Discordでログイン' }).waitFor();
+    assert.equal(await page.locator('.studio-editor').count(), 0,
+      'a signed-in reader must not receive author editing controls');
+    assert.equal((await reader.request.get(base + '/api/admin/nodes')).status(), 401,
+      'a signed-in reader must not read private author data');
+    const publicPage = await page.goto(base + '/stories/' + fixture.seriesA);
+    assert.equal(publicPage?.status(), 200,
+      'non-author login must not prevent reading public content');
+    assert.ok((await page.locator('body').innerText()).includes(fixture.prefix + '-world-A'));
+    await reader.close();
+  } finally {
+    await browser.close();
+  }
+});
+
+test('category preset editor copies only into newly created setting children', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const prefix = fixture.prefix + '-preset-browser';
+    async function create(kind, parentId, suffix, details = {}) {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base },
+        data: { kind, parentId, content: { title: prefix + '-' + suffix, body: '', details } },
+      });
+      assert.equal(response.status(), 201, 'create ' + kind + ': ' + await response.text());
+      return (await response.json()).id;
+    }
+    async function nodes() {
+      const response = await author.request.get(base + '/api/admin/nodes');
+      assert.equal(response.status(), 200);
+      return response.json();
+    }
+    const series = await create('series', null, 'series');
+    const category = await create('category', series, 'category', { presets: '[]' });
+    const page = await author.newPage();
+    await page.goto(base + '/studio?item=' + category);
+    // AC-47: category nesting is disallowed in the author UI as well as the API.
+    await page.getByRole('button', { name: '子項目を追加' }).click();
+    assert.deepEqual(
+      await page.locator('.create-form select option').evaluateAll(options =>
+        options.map(option => option.value)),
+      ['tip'], 'a category must only offer tip children, never nested categories');
+    await page.getByRole('button', { name: 'キャンセル', exact: true }).click();
+    const presets = page.locator('.presets-editor');
+    await presets.getByRole('button', { name: '項目を追加' }).click();
+    await presets.locator('input').first().fill('最初の項目');
+    await presets.locator('textarea').first().fill('最初の本文');
+    await page.getByRole('button', { name: '下書きを保存' }).click();
+    await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
+
+    const firstTip = await create('tip', category, 'first-tip');
+    const firstSection = (await nodes()).find(node => node.kind === 'tipSection' && node.parentId === firstTip);
+    assert.equal(firstSection?.draft.title, '最初の項目');
+    assert.equal(firstSection?.draft.body, '最初の本文');
+
+    await presets.locator('input').first().fill('更新後の項目');
+    await page.getByRole('button', { name: '下書きを保存' }).click();
+    await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
+    const oldSection = (await nodes()).find(node => node.id === firstSection.id);
+    assert.equal(oldSection.draft.title, '最初の項目',
+      'existing setting sections must not inherit later preset changes');
+
+    const secondTip = await create('tip', category, 'second-tip');
+    const secondSection = (await nodes()).find(node => node.kind === 'tipSection' && node.parentId === secondTip);
+    assert.equal(secondSection?.draft.title, '更新後の項目');
+    assert.equal(secondSection?.draft.body, '最初の本文');
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
+
+test('related setting links exclude hidden targets from public projection', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const anonymous = await browser.newContext();
+    const prefix = fixture.prefix + '-tip-links-browser';
+    async function create(kind, parentId, suffix, details = {}) {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base },
+        data: { kind, parentId, content: { title: prefix + '-' + suffix, body: '', details } },
+      });
+      assert.equal(response.status(), 201, 'create ' + kind + ': ' + await response.text());
+      return (await response.json()).id;
+    }
+    async function publish(id, revision = 1) {
+      const response = await author.request.post(base + '/api/admin/nodes/' + id + '/publish', {
+        headers: { Origin: base }, data: { expectedRevision: revision },
+      });
+      assert.equal(response.status(), 200);
+    }
+    const series = await create('series', null, 'series');
+    const category = await create('category', series, 'category', { presets: '[]' });
+    const source = await create('tip', category, 'source');
+    const target = await create('tip', category, 'target');
+    for (const id of [series, category, target]) await publish(id);
+    const page = await author.newPage();
+    await page.goto(base + '/studio?item=' + source);
+    const links = page.locator('.tip-links-editor');
+    await links.locator('input').fill('人物, 地名');
+    await links.locator('select').selectOption(target);
+    await links.getByRole('button', { name: '関連に追加' }).click();
+    await page.getByRole('button', { name: '下書きを保存' }).click();
+    await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
+    assert.equal((await anonymous.request.get(base + '/api/public/items/' + source)).status(), 404);
+    page.once('dialog', dialog => dialog.accept());
+    await page.getByRole('button', { name: '保存済み下書きを公開版へ反映' }).click();
+    await page.getByText('公開スナップショットを更新しました。').waitFor();
+
+    const visibleResponse = await anonymous.request.get(base + '/api/public/items/' + source);
+    assert.equal(visibleResponse.status(), 200);
+    const visible = (await visibleResponse.json()).content.details;
+    assert.deepEqual(JSON.parse(visible.tags), ['人物', '地名']);
+    assert.deepEqual(JSON.parse(visible.relatedTips).map(item => item.id), [target]);
+
+    const hideResponse = await author.request.post(base + '/api/admin/nodes/' + target + '/visibility', {
+      headers: { Origin: base },
+      data: { expectedRevision: 1, isPublic: false, publicSince: null },
+    });
+    assert.equal(hideResponse.status(), 200);
+    const hiddenResponse = await anonymous.request.get(base + '/api/public/items/' + source);
+    assert.equal(hiddenResponse.status(), 200);
+    assert.deepEqual(JSON.parse((await hiddenResponse.json()).content.details.relatedTips), [],
+      'private target must not leak through public related settings');
+    const adminResponse = await author.request.get(base + '/api/admin/nodes');
+    assert.equal(adminResponse.status(), 200);
+    const authorSource = (await adminResponse.json()).find(node => node.id === source);
+    assert.deepEqual(JSON.parse(authorSource.draft.details.relatedTipIds), [target],
+      'hiding the target must not delete the author relationship');
+    await anonymous.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
+
+test('language editor persists character adjacency and word classes before publication', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const anonymous = await browser.newContext();
+    const prefix = fixture.prefix + '-language-browser';
+    async function create(kind, parentId, suffix, details = {}) {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base },
+        data: { kind, parentId, content: { title: prefix + '-' + suffix, body: '', details } },
+      });
+      assert.equal(response.status(), 201, 'create ' + kind + ': ' + await response.text());
+      return (await response.json()).id;
+    }
+    const series = await create('series', null, 'series');
+    const language = await create('language', series, 'language', { characters: '[]', wordClasses: '[]' });
+    const page = await author.newPage();
+    await page.goto(base + '/studio?item=' + language);
+    const structure = page.locator('.language-structure');
+    await structure.getByRole('button', { name: '文字を追加' }).click();
+    await structure.getByRole('button', { name: '文字を追加' }).click();
+    const entries = structure.locator(':scope > fieldset').first().locator('.symbol-entry');
+    await entries.nth(0).locator('input').nth(0).fill('a');
+    await entries.nth(0).locator('input').nth(1).fill('a');
+    await entries.nth(1).locator('input').nth(0).fill('b');
+    await entries.nth(1).locator('input').nth(1).fill('b');
+    await entries.nth(0).locator('.following-grid input').nth(1).check();
+    await structure.getByRole('button', { name: '品詞を追加' }).click();
+    const wordClass = structure.locator(':scope > fieldset').nth(1).locator('.symbol-entry');
+    await wordClass.locator('input').fill('名詞');
+    await wordClass.locator('textarea').fill('物事の名称');
+    await page.getByRole('button', { name: '下書きを保存' }).click();
+    await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
+
+    const adminResponse = await author.request.get(base + '/api/admin/nodes');
+    assert.equal(adminResponse.status(), 200);
+    const draft = (await adminResponse.json()).find(node => node.id === language).draft.details;
+    const chars = JSON.parse(draft.characters);
+    const classes = JSON.parse(draft.wordClasses);
+    assert.deepEqual(chars.map(entry => entry.glyph), ['a', 'b']);
+    assert.deepEqual(chars[0].nextIds, [chars[1].id]);
+    assert.deepEqual(classes.map(entry => entry.name), ['名詞']);
+    assert.equal(classes[0].description, '物事の名称');
+
+    for (const [id, revision] of [[series, 1], [language, 2]]) {
+      const response = await author.request.post(base + '/api/admin/nodes/' + id + '/publish', {
+        headers: { Origin: base }, data: { expectedRevision: revision },
+      });
+      assert.equal(response.status(), 200);
+    }
+    const publicResponse = await anonymous.request.get(base + '/api/public/items/' + language);
+    assert.equal(publicResponse.status(), 200);
+    const published = (await publicResponse.json()).content.details;
+    assert.deepEqual(JSON.parse(published.characters), chars);
+    assert.deepEqual(JSON.parse(published.wordClasses), classes);
+    await anonymous.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
+
+test('anonymous search finds published words but never private or unpublished text', { timeout: 60_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const anonymous = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const page = await anonymous.newPage();
+    await page.goto(base + '/search?series=' + fixture.seriesA);
+    const query = page.getByLabel('検索語');
+    const domain = page.locator('.search-filters select').nth(1);
+    await query.fill(fixture.prefix + '-visible-word-body');
+    const wordLink = page.getByRole('link', { name: fixture.prefix + '-visible-word', exact: true });
+    await wordLink.waitFor();
+    await domain.selectOption('tips');
+    assert.equal(await wordLink.count(), 0, 'dictionary word must be excluded from settings filter');
+    await domain.selectOption('dictionaries');
+    await wordLink.waitFor();
+    await domain.selectOption('all');
+
+    await query.fill(fixture.prefix + '-private-content');
+    await page.getByText('条件に一致する公開資料はありません。').waitFor();
+    assert.ok(!(await page.locator('body').innerText()).includes(fixture.prefix + '-private-tip'));
+    await query.fill(fixture.prefix + '-unpublished');
+    await page.getByText('条件に一致する公開資料はありません。').waitFor();
+    assert.ok(!(await page.locator('body').innerText()).includes(fixture.prefix + '-unpublished-tip'));
+    await anonymous.close();
+  } finally {
+    await browser.close();
+  }
+});
+
+test('reader renders semantic ruby and keyboard-operable page boundaries', { timeout: 60_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext();
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const anonymous = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const prefix = fixture.prefix + '-reader-ruby';
+    async function create(kind, parentId, suffix, body = '') {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base },
+        data: { kind, parentId, content: { title: prefix + '-' + suffix, body, details: {} } },
+      });
+      assert.equal(response.status(), 201);
+      return (await response.json()).id;
+    }
+    const series = await create('series', null, 'series');
+    const volume = await create('volume', series, 'volume');
+    const part = await create('part', volume, 'part');
+    const chapter = await create('chapter', part, 'chapter', '一頁｜漢字《かんじ》[[page]]二頁');
+    for (const id of [series, volume, part, chapter]) {
+      const response = await author.request.post(base + '/api/admin/nodes/' + id + '/publish', {
+        headers: { Origin: base }, data: { expectedRevision: 1 },
+      });
+      assert.equal(response.status(), 200);
+    }
+    const page = await anonymous.newPage();
+    await page.goto(base + '/read/' + chapter);
+    const body = page.locator('.rich-content .rich-body');
+    await page.locator('ruby rt', { hasText: 'かんじ' }).waitFor();
+    assert.ok((await body.innerText()).includes('一頁'));
+    assert.ok(!(await body.innerText()).includes('二頁'));
+    const previous = page.getByRole('button', { name: '前のページ' });
+    const next = page.getByRole('button', { name: '次のページ' });
+    assert.equal(await previous.isDisabled(), true);
+    await next.focus();
+    await next.press('Enter');
+    assert.ok((await body.innerText()).includes('二頁'));
+    assert.ok(!(await body.innerText()).includes('一頁'));
+    assert.equal(await next.isDisabled(), true);
+    await previous.click();
+    assert.ok((await body.innerText()).includes('一頁'));
+    await anonymous.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
+
+
+test('published descendants are hidden by private ancestors across all four domains', { timeout: 120_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext();
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const anonymous = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const prefix = fixture.prefix + '-ancestor-visibility';
+
+    async function create(kind, parentId, suffix, details = {}) {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base },
+        data: {
+          kind, parentId,
+          content: { title: prefix + '-' + suffix, body: prefix + '-body-' + suffix, details },
+        },
+      });
+      assert.equal(response.status(), 201, 'create ' + kind + ': ' + await response.text());
+      return (await response.json()).id;
+    }
+    async function publish(id) {
+      const response = await author.request.post(base + '/api/admin/nodes/' + id + '/publish', {
+        headers: { Origin: base }, data: { expectedRevision: 1 },
+      });
+      assert.equal(response.status(), 200, 'publish ' + id + ': ' + await response.text());
+    }
+    async function visibility(id, isPublic, publicSince = null) {
+      const list = await author.request.get(base + '/api/admin/nodes');
+      assert.equal(list.status(), 200);
+      const node = (await list.json()).find(item => item.id === id);
+      assert.ok(node, 'author must retain access to hidden node ' + id);
+      const response = await author.request.post(base + '/api/admin/nodes/' + id + '/visibility', {
+        headers: { Origin: base },
+        data: { expectedRevision: node.revision, isPublic, publicSince },
+      });
+      assert.equal(response.status(), 200, 'set visibility ' + id + ': ' + await response.text());
+    }
+    async function expectPublic(id, expected, context) {
+      const response = await anonymous.request.get(base + '/api/public/items/' + id);
+      assert.equal(response.status(), expected ? 200 : 404, context);
+      if (expected) {
+        const item = await response.json();
+        assert.ok(item.content.body.startsWith(prefix + '-body-'),
+          context + ': published snapshot must remain intact');
+      }
+    }
+
+    const series = await create('series', null, 'series');
+    const volume = await create('volume', series, 'volume');
+    const part = await create('part', volume, 'part');
+    const chapter = await create('chapter', part, 'chapter');
+    const category = await create('category', series, 'category', { presets: '[]' });
+    const tip = await create('tip', category, 'tip');
+    const section = await create('tipSection', tip, 'section');
+    const sectionSibling = await create('tipSection', tip, 'section-sibling');
+    const language = await create('language', series, 'language', {
+      characters: '[]', wordClasses: '[]',
+    });
+    const word = await create('word', language, 'word', { meanings: '[]' });
+    const grammar = await create('grammar', language, 'grammar');
+    const grammarSibling = await create('grammar', language, 'grammar-sibling');
+    const period = await create('periodization', series, 'period');
+    const event = await create('event', period, 'event', { year: '1' });
+    const eventSibling = await create('event', period, 'event-sibling', { year: '2' });
+    const nodes = [series, volume, part, chapter, category, tip, section, sectionSibling,
+      language, word, grammar, grammarSibling, period, event, eventSibling];
+    for (const id of nodes) await publish(id);
+    const leaves = [chapter, section, sectionSibling, word, grammar, grammarSibling, event, eventSibling];
+    for (const id of leaves) await expectPublic(id, true, 'all ancestors initially published');
+
+    // PB-10/11: one private series must hide every descendant, regardless of
+    // its own public flag and previously published snapshot.
+    await visibility(series, false);
+    for (const id of leaves) await expectPublic(id, false, 'private series blocks descendant ' + id);
+    const page = await anonymous.newPage();
+    for (const [id, route, suffix] of [
+      [chapter, '/read/', 'chapter'],
+      [section, '/items/', 'section'],
+      [word, '/items/', 'word'],
+      [event, '/items/', 'event'],
+    ]) {
+      await page.goto(base + route + id);
+      assert.ok(!(await page.locator('body').innerText()).includes(prefix + '-' + suffix),
+        'private ancestor must not leak ' + suffix + ' in direct reader page');
+    }
+    await page.goto(base + '/search?series=' + series);
+    await page.getByLabel('検索語').fill(prefix + '-word');
+    // A private series is absent from the public series selector; the search
+    // page may show a generic unavailable-series alert rather than an empty
+    // results message. Both are safe provided the private title never leaks.
+    await page.getByRole('alert').waitFor();
+    assert.equal(await page.getByRole('link', { name: prefix + '-word', exact: true }).count(), 0,
+      'private ancestor must hide word from anonymous search');
+    assert.ok(!(await page.locator('body').innerText()).includes(prefix + '-word'),
+      'private ancestor must not leak word title in anonymous search');
+
+    await visibility(series, true);
+    for (const id of leaves) await expectPublic(id, true, 'series restoration must preserve snapshots');
+
+    // Intermediate ancestors must hide only their own subtree.
+    await visibility(language, false);
+    await expectPublic(word, false, 'private language blocks word');
+    await expectPublic(grammar, false, 'private language blocks grammar');
+    await expectPublic(grammarSibling, false, 'private language blocks sibling grammar');
+    await expectPublic(chapter, true, 'private language must not affect story');
+    await visibility(language, true);
+    await expectPublic(word, true, 'word reappears when language is restored');
+
+    await visibility(tip, false);
+    await expectPublic(section, false, 'private setting blocks its section');
+    await expectPublic(sectionSibling, false, 'private setting blocks sibling section');
+    await expectPublic(event, true, 'private setting must not affect timeline');
+    await visibility(tip, true);
+    await expectPublic(section, true, 'setting section reappears');
+
+    await visibility(period, false);
+    await expectPublic(event, false, 'private period blocks event');
+    await expectPublic(eventSibling, false, 'private period blocks sibling event');
+    await expectPublic(chapter, true, 'private period must not affect story');
+    await visibility(period, true);
+    await expectPublic(event, true, 'event reappears when period is restored');
+
+    // PB-12: restoring a parent must never override a child's own private flag.
+    await visibility(word, false);
+    await visibility(language, false);
+    await visibility(language, true);
+    await expectPublic(word, false, 'private child remains hidden after parent restoration');
+    await expectPublic(grammar, true, 'public sibling remains visible after parent restoration');
+    await visibility(word, true);
+    await expectPublic(word, true, 'explicitly restored child retains published content');
+
+    // AC-35/51, AC-52, AC-44: individual privacy must not hide public siblings.
+    await visibility(section, false);
+    await expectPublic(section, false, 'private setting section stays hidden');
+    await expectPublic(sectionSibling, true, 'public setting section sibling remains readable');
+    await visibility(section, true);
+    await expectPublic(section, true, 'setting section can be restored independently');
+
+    await visibility(grammar, false);
+    await expectPublic(grammar, false, 'private grammar stays hidden');
+    await expectPublic(grammarSibling, true, 'public grammar sibling remains readable');
+    await visibility(grammar, true);
+    await expectPublic(grammar, true, 'grammar can be restored independently');
+
+    await visibility(event, false);
+    await expectPublic(event, false, 'private event stays hidden');
+    await expectPublic(eventSibling, true, 'public event sibling remains readable');
+    await visibility(event, true);
+    await expectPublic(event, true, 'event can be restored independently');
+
+    // PB-05: a future publication date on a published ancestor must hide
+    // all descendants until the ancestor becomes effective again.
+    await visibility(series, true, Date.UTC(2100, 0, 1));
+    for (const id of leaves) {
+      await expectPublic(id, false, 'future-scheduled ancestor blocks descendant ' + id);
+    }
+    await visibility(series, true);
+    for (const id of leaves) {
+      await expectPublic(id, true, 'clearing ancestor schedule restores published descendant ' + id);
+    }
+
+    // AC-45: a future-scheduled period must block its events but not the story.
+    await visibility(period, true, Date.UTC(2100, 0, 1));
+    await expectPublic(event, false, 'scheduled period blocks its first event');
+    await expectPublic(eventSibling, false, 'scheduled period blocks its second event');
+    await expectPublic(chapter, true, 'scheduled period must not hide unrelated story');
+    await visibility(period, true);
+    await expectPublic(event, true, 'clearing period schedule restores first event');
+    await expectPublic(eventSibling, true, 'clearing period schedule restores second event');
+    await page.close();
+    await anonymous.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
+
+
+test('dictionary browser keeps identical spellings separate by language filter', { timeout: 60_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext();
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const anonymous = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const prefix = fixture.prefix + '-homographs';
+    const wordTitle = prefix + '-同綴語';
+    async function create(kind, parentId, title, body = '') {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base },
+        data: { kind, parentId, content: { title, body, details: {} } },
+      });
+      assert.equal(response.status(), 201, await response.text());
+      return (await response.json()).id;
+    }
+    async function publish(id) {
+      const response = await author.request.post(base + '/api/admin/nodes/' + id + '/publish', {
+        headers: { Origin: base }, data: { expectedRevision: 1 },
+      });
+      assert.equal(response.status(), 200, await response.text());
+    }
+    const series = await create('series', null, prefix + '-series');
+    const languageA = await create('language', series, prefix + '-language-A');
+    const languageB = await create('language', series, prefix + '-language-B');
+    const wordA = await create('word', languageA, wordTitle, prefix + '-meaning-A');
+    const wordB = await create('word', languageB, wordTitle, prefix + '-meaning-B');
+    for (const id of [series, languageA, languageB, wordA, wordB]) await publish(id);
+
+    const page = await anonymous.newPage();
+    await page.goto(base + '/dictionaries/' + series);
+    await page.getByLabel('単語を検索').fill(wordTitle);
+    const words = page.getByRole('link', { name: wordTitle, exact: true });
+    await words.nth(1).waitFor();
+    assert.equal(await words.count(), 2, 'same spelling must appear under both public languages');
+
+    const language = page.getByLabel('言語');
+    await language.selectOption(languageA);
+    await words.nth(1).waitFor({ state: 'hidden' });
+    assert.equal(await words.count(), 1);
+    assert.ok((await page.locator('.dictionary-language').innerText()).includes(prefix + '-meaning-A'));
+    assert.ok(!(await page.locator('.dictionary-language').innerText()).includes(prefix + '-meaning-B'));
+    assert.ok((await words.first().getAttribute('href'))?.endsWith('/items/' + wordA));
+
+    await language.selectOption(languageB);
+    await words.nth(1).waitFor({ state: 'hidden' });
+    assert.equal(await words.count(), 1);
+    assert.ok((await page.locator('.dictionary-language').innerText()).includes(prefix + '-meaning-B'));
+    assert.ok(!(await page.locator('.dictionary-language').innerText()).includes(prefix + '-meaning-A'));
+    assert.ok((await words.first().getAttribute('href'))?.endsWith('/items/' + wordB));
+
+    await language.selectOption('');
+    await words.nth(1).waitFor();
+    assert.equal(await words.count(), 2, 'removing language filter restores both distinct words');
+    await page.close();
+    await anonymous.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
+
+
+test('word editor shows and clears same-language duplicate spelling warnings', { timeout: 60_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext();
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const prefix = fixture.prefix + '-duplicate-spelling';
+    async function create(kind, parentId, title) {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base },
+        data: { kind, parentId, content: { title, body: '', details: {} } },
+      });
+      assert.equal(response.status(), 201, await response.text());
+      return (await response.json()).id;
+    }
+    const series = await create('series', null, prefix + '-series');
+    const language = await create('language', series, prefix + '-language');
+    await create('word', language, prefix + '-same');
+    const second = await create('word', language, prefix + '-same');
+    const page = await author.newPage();
+    await page.goto(base + '/studio?item=' + second);
+    const warnings = page.locator('.spelling-warnings');
+    await warnings.getByText('同じ言語内に同じ綴りの単語があります。意味と登録対象を確認してください。').waitFor();
+    assert.equal(await warnings.locator('li').count(), 1, 'one duplicate warning should be displayed');
+
+    const title = page.getByRole('textbox', { name: '名称・見出し', exact: true });
+    await title.fill(prefix + '-unique');
+    await warnings.waitFor({ state: 'hidden' });
+    await title.fill(prefix + '-same');
+    await warnings.waitFor({ state: 'visible' });
+    assert.equal(await warnings.locator('li').count(), 1, 'warning should return for duplicate spelling');
+    await page.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
+
+
+test('two same-class word meanings retain independent etymologies through draft and publication', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext();
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const anonymous = await browser.newContext();
+    const prefix = fixture.prefix + '-two-meanings';
+    async function create(kind, parentId, title, details = {}) {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base },
+        data: { kind, parentId, content: { title, body: '', details } },
+      });
+      assert.equal(response.status(), 201, await response.text());
+      return (await response.json()).id;
+    }
+    async function publish(id) {
+      const response = await author.request.post(base + '/api/admin/nodes/' + id + '/publish', {
+        headers: { Origin: base }, data: { expectedRevision: 1 },
+      });
+      assert.equal(response.status(), 200, await response.text());
+    }
+    async function publicMeanings(word) {
+      const response = await anonymous.request.get(base + '/api/public/items/' + word);
+      assert.equal(response.status(), 200);
+      return JSON.parse((await response.json()).content.details.meanings);
+    }
+    const series = await create('series', null, prefix + '-series');
+    const language = await create('language', series, prefix + '-language');
+    const word = await create('word', language, prefix + '-word', { meanings: '[]' });
+    for (const id of [series, language]) await publish(id);
+    const page = await author.newPage();
+    await page.goto(base + '/studio?item=' + word);
+    await page.getByRole('button', { name: '意味を追加' }).click();
+    await page.getByRole('button', { name: '意味を追加' }).click();
+    const meanings = page.locator('.word-meaning');
+    assert.equal(await meanings.count(), 2);
+    for (const [index, definition, origin] of [
+      [0, '第一の意味', '第一の語源'],
+      [1, '第二の意味', '第二の語源'],
+    ]) {
+      const meaning = meanings.nth(index);
+      await meaning.getByRole('textbox', { name: '品詞' }).fill('名詞');
+      await meaning.getByRole('textbox', { name: '意味・説明' }).fill(definition);
+      await meaning.getByRole('button', { name: '語源を追加' }).click();
+      await meaning.getByRole('textbox', { name: '語源の説明' }).fill(origin);
+    }
+    await page.getByRole('button', { name: '下書きを保存' }).click();
+    await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
+    assert.equal((await anonymous.request.get(base + '/api/public/items/' + word)).status(), 404);
+    await page.reload();
+    await meanings.nth(1).waitFor();
+    assert.equal(await meanings.nth(0).getByRole('textbox', { name: '意味・説明' }).inputValue(), '第一の意味');
+    assert.equal(await meanings.nth(1).getByRole('textbox', { name: '語源の説明' }).inputValue(), '第二の語源');
+    page.once('dialog', dialog => dialog.accept());
+    await page.getByRole('button', { name: '保存済み下書きを公開版へ反映' }).click();
+    await page.getByText('公開スナップショットを更新しました。').waitFor();
+    const first = await publicMeanings(word);
+    assert.equal(first.length, 2);
+    assert.deepEqual(first.map(item => item.partOfSpeech), ['名詞', '名詞']);
+    assert.deepEqual(first.map(item => item.definition), ['第一の意味', '第二の意味']);
+    assert.deepEqual(first.map(item => item.etymologies[0].note), ['第一の語源', '第二の語源']);
+    assert.notEqual(first[0].id, first[1].id);
+    assert.notEqual(first[0].etymologies[0].id, first[1].etymologies[0].id);
+
+    await meanings.nth(0).getByRole('textbox', { name: '意味・説明' }).fill('更新後の第一義');
+    await page.getByRole('button', { name: '下書きを保存' }).click();
+    await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
+    assert.deepEqual(await publicMeanings(word), first, 'unpublished edit must not affect public meanings');
+    page.once('dialog', dialog => dialog.accept());
+    await page.getByRole('button', { name: '保存済み下書きを公開版へ反映' }).click();
+    await page.getByText('公開スナップショットを更新しました。').waitFor();
+    const second = await publicMeanings(word);
+    assert.equal(second[0].definition, '更新後の第一義');
+    assert.deepEqual(second[1], first[1], 'second sense and its etymology must remain unchanged');
+    assert.equal(second[0].id, first[0].id);
+    assert.deepEqual(second[0].etymologies, first[0].etymologies);
+    await page.close();
+    await anonymous.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
+
+
+test('author references unpublished settings and words without losing unsaved manuscript', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext();
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const anonymous = await browser.newContext();
+    const prefix = fixture.prefix + '-reference-during-writing';
+    async function create(kind, parentId, suffix, body = '') {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base },
+        data: { kind, parentId, content: { title: prefix + '-' + suffix, body, details: {} } },
+      });
+      assert.equal(response.status(), 201, await response.text());
+      return (await response.json()).id;
+    }
+    const series = await create('series', null, 'series');
+    const volume = await create('volume', series, 'volume');
+    const part = await create('part', volume, 'part');
+    const chapter = await create('chapter', part, 'chapter');
+    const category = await create('category', series, 'category');
+    const tip = await create('tip', category, 'tip', '作者限定の設定本文');
+    const language = await create('language', series, 'language');
+    const word = await create('word', language, 'word', '作者限定の単語本文');
+
+    const page = await author.newPage();
+    await page.goto(base + '/studio?item=' + chapter);
+    const manuscript = page.getByRole('textbox', { name: '本文・説明', exact: true });
+    const unsaved = prefix + '-まだ保存していない原稿';
+    await manuscript.fill(unsaved);
+    const reference = page.locator('.author-reference');
+    await reference.getByLabel('検索').fill(prefix + '-tip');
+    await reference.getByRole('button', { name: '設定：' + prefix + '-tip', exact: true }).click();
+    assert.ok((await reference.locator('.reference-detail').innerText()).includes('作者限定の設定本文'));
+    assert.equal(await manuscript.inputValue(), unsaved, 'setting lookup must not replace manuscript buffer');
+
+    await reference.getByLabel('種類').selectOption('word');
+    await reference.getByLabel('検索').fill(prefix + '-word');
+    await reference.getByRole('button', { name: '単語：' + prefix + '-word', exact: true }).click();
+    assert.ok((await reference.locator('.reference-detail').innerText()).includes('作者限定の単語本文'));
+    assert.equal(await manuscript.inputValue(), unsaved, 'dictionary lookup must not replace manuscript buffer');
+    for (const id of [tip, word]) {
+      assert.equal((await anonymous.request.get(base + '/api/public/items/' + id)).status(), 404,
+        'author reference must not expose unpublished data to anonymous readers');
+    }
+    await page.getByRole('button', { name: '下書きを保存' }).click();
+    await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
+    await page.reload();
+    await manuscript.waitFor();
+    assert.equal(await manuscript.inputValue(), unsaved, 'saved manuscript must survive reload after reference lookup');
+    await page.close();
+    await anonymous.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
+
+
+test('published tags search across categories without changing ownership or privacy', { timeout: 60_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext();
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const anonymous = await browser.newContext();
+    const prefix = fixture.prefix + '-cross-category-tags';
+    const tag = '共有-' + fixture.prefix.slice(-18); // domain tags are limited to 50 characters
+    async function create(kind, parentId, suffix, details = {}) {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base },
+        data: { kind, parentId, content: { title: prefix + '-' + suffix, body: '', details } },
+      });
+      assert.equal(response.status(), 201, await response.text());
+      return (await response.json()).id;
+    }
+    async function publish(id) {
+      const response = await author.request.post(base + '/api/admin/nodes/' + id + '/publish', {
+        headers: { Origin: base }, data: { expectedRevision: 1 },
+      });
+      assert.equal(response.status(), 200, await response.text());
+    }
+    const series = await create('series', null, 'series');
+    const categoryA = await create('category', series, 'category-A');
+    const categoryB = await create('category', series, 'category-B');
+    const tipA = await create('tip', categoryA, 'tip-A', { tags: JSON.stringify([tag]) });
+    const tipB = await create('tip', categoryB, 'tip-B', { tags: JSON.stringify([tag]) });
+    for (const id of [series, categoryA, categoryB, tipA, tipB]) await publish(id);
+
+    const page = await anonymous.newPage();
+    await page.goto(base + '/tips/' + series);
+    await page.getByRole('combobox', { name: 'タグ', exact: true }).selectOption(tag);
+    await page.getByRole('link', { name: prefix + '-tip-B', exact: true }).waitFor();
+    const groups = page.locator('.tip-category');
+    assert.equal(await groups.count(), 2, 'tag filter should span both categories');
+    assert.equal(await page.getByRole('link', { name: prefix + '-tip-A', exact: true }).count(), 1);
+    assert.equal(await page.getByRole('link', { name: prefix + '-tip-B', exact: true }).count(), 1);
+
+    await page.getByRole('combobox', { name: 'カテゴリ', exact: true }).selectOption(categoryA);
+    await page.getByRole('link', { name: prefix + '-tip-B', exact: true }).waitFor({ state: 'hidden' });
+    assert.equal(await groups.count(), 1);
+    assert.ok((await groups.innerText()).includes(prefix + '-tip-A'));
+    assert.ok(!(await groups.innerText()).includes(prefix + '-tip-B'));
+    await page.getByRole('combobox', { name: 'カテゴリ', exact: true }).selectOption(categoryB);
+    await page.getByRole('link', { name: prefix + '-tip-A', exact: true }).waitFor({ state: 'hidden' });
+    assert.equal(await groups.count(), 1);
+    assert.ok((await groups.innerText()).includes(prefix + '-tip-B'));
+
+    const hidden = await author.request.post(base + '/api/admin/nodes/' + tipA + '/visibility', {
+      headers: { Origin: base },
+      data: { expectedRevision: 1, isPublic: false, publicSince: null },
+    });
+    assert.equal(hidden.status(), 200);
+    await page.reload();
+    await page.getByRole('combobox', { name: 'タグ', exact: true }).selectOption(tag);
+    await page.getByRole('link', { name: prefix + '-tip-B', exact: true }).waitFor();
+    assert.equal(await page.getByRole('link', { name: prefix + '-tip-A', exact: true }).count(), 0);
+    assert.equal(await page.getByRole('link', { name: prefix + '-tip-B', exact: true }).count(), 1);
+    assert.equal((await anonymous.request.get(base + '/api/public/items/' + tipA)).status(), 404);
+    assert.equal((await anonymous.request.get(base + '/api/public/items/' + tipB)).status(), 200);
+    await page.close();
+    await anonymous.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
+
+test('AC-37/38: new word defaults public but supports private creation without reader exposure', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext();
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const reader = await browser.newContext();
+    const prefix = fixture.prefix + '-word-initial-visibility';
+    async function create(kind, parentId, title) {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base },
+        data: { kind, parentId, content: { title, body: '', details: {} } },
+      });
+      assert.equal(response.status(), 201, await response.text());
+      return (await response.json()).id;
+    }
+    async function publish(id) {
+      const response = await author.request.post(base + '/api/admin/nodes/' + id + '/publish', {
+        headers: { Origin: base }, data: { expectedRevision: 1 },
+      });
+      assert.equal(response.status(), 200, await response.text());
+    }
+    const series = await create('series', null, prefix + '-series');
+    const language = await create('language', series, prefix + '-language');
+    await publish(series);
+    await publish(language);
+
+    const page = await author.newPage();
+    await page.goto(base + '/studio?item=' + language);
+    await page.getByRole('button', { name: '子項目を追加' }).click();
+    const initialVisibility = page.getByRole('checkbox', { name: '新規単語を公開設定で作成' });
+    assert.equal(await initialVisibility.isChecked(), true, 'new word should default to public');
+    await page.getByText('公開設定でも、公開版を反映するまでは読者に表示されません。').waitFor();
+    await initialVisibility.uncheck();
+    await page.getByRole('textbox', { name: 'タイトル', exact: true }).fill(prefix + '-private');
+    await page.getByRole('button', { name: '作成', exact: true }).click();
+    await page.getByRole('heading', { name: '単語：' + prefix + '-private' }).waitFor();
+
+    let nodes = await (await author.request.get(base + '/api/admin/nodes')).json();
+    const privateWord = nodes.find(node => node.kind === 'word' && node.draft.title === prefix + '-private');
+    assert.ok(privateWord?.id);
+    assert.equal(privateWord.isPublic, false);
+    assert.equal(privateWord.published, null);
+    assert.equal((await reader.request.get(base + '/api/public/items/' + privateWord.id)).status(), 404);
+
+    page.once('dialog', dialog => dialog.accept());
+    await page.getByRole('button', { name: '保存済み下書きを公開版へ反映' }).click();
+    await page.getByText('公開スナップショットを更新しました。').waitFor();
+    nodes = await (await author.request.get(base + '/api/admin/nodes')).json();
+    assert.equal(nodes.find(node => node.id === privateWord.id).isPublic, false,
+      'publishing the snapshot must not override an explicitly private word');
+    assert.equal((await reader.request.get(base + '/api/public/items/' + privateWord.id)).status(), 404);
+    await page.getByRole('button', { name: '公開に戻す' }).click();
+    await page.getByText('公開条件を変更しました。').waitFor();
+    assert.equal((await reader.request.get(base + '/api/public/items/' + privateWord.id)).status(), 200);
+
+    await page.goto(base + '/studio?item=' + language);
+    await page.getByRole('button', { name: '子項目を追加' }).click();
+    assert.equal(await page.getByRole('checkbox', { name: '新規単語を公開設定で作成' }).isChecked(), true,
+      'new creation form must reset to the public default');
+    await page.getByRole('textbox', { name: 'タイトル', exact: true }).fill(prefix + '-default');
+    await page.getByRole('button', { name: '作成', exact: true }).click();
+    await page.getByRole('heading', { name: '単語：' + prefix + '-default' }).waitFor();
+    nodes = await (await author.request.get(base + '/api/admin/nodes')).json();
+    const defaultWord = nodes.find(node => node.kind === 'word' && node.draft.title === prefix + '-default');
+    assert.equal(defaultWord?.isPublic, true);
+    assert.equal(defaultWord.published, null);
+    assert.equal((await reader.request.get(base + '/api/public/items/' + defaultWord.id)).status(), 404);
+    await page.close();
+    await reader.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
+
+test('AC-01: author creates series, volume, part and chapter through studio and reloads draft', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const page = await author.newPage();
+    await page.goto(base + '/studio');
+    const prefix = fixture.prefix + '-ui-hierarchy';
+    const seriesTitle = prefix + '-series';
+    await page.getByRole('button', { name: '新規シリーズ' }).click();
+    await page.getByRole('textbox', { name: 'タイトル', exact: true }).fill(seriesTitle);
+    await page.getByRole('button', { name: '作成', exact: true }).click();
+    await page.getByRole('heading', { name: 'シリーズ：' + seriesTitle }).waitFor();
+
+    const children = [
+      { kind: 'volume', label: '編', title: prefix + '-volume' },
+      { kind: 'part', label: '部', title: prefix + '-part' },
+      { kind: 'chapter', label: '章', title: prefix + '-chapter' },
+    ];
+    for (const child of children) {
+      await page.getByRole('button', { name: '子項目を追加' }).click();
+      assert.equal(await page.getByRole('combobox', { name: '種類' }).inputValue(), child.kind);
+      await page.getByRole('textbox', { name: 'タイトル', exact: true }).fill(child.title);
+      await page.getByRole('button', { name: '作成', exact: true }).click();
+      await page.getByRole('heading', { name: child.label + '：' + child.title }).waitFor();
+    }
+
+    const chapterBody = '階層UIから保存した章本文。\n改行を含む日本語の原稿。';
+    await page.getByRole('textbox', { name: '本文・説明', exact: true }).fill(chapterBody);
+    await page.getByRole('button', { name: '下書きを保存' }).click();
+    await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
+
+    const response = await author.request.get(base + '/api/admin/nodes');
+    assert.equal(response.status(), 200);
+    const nodes = await response.json();
+    const series = nodes.find(node => node.kind === 'series' && node.draft.title === seriesTitle);
+    assert.ok(series?.id);
+    let parentId = series.id;
+    for (const child of children) {
+      const node = nodes.find(item => item.kind === child.kind && item.draft.title === child.title);
+      assert.ok(node?.id, 'missing UI-created ' + child.kind);
+      assert.equal(node.parentId, parentId, 'incorrect parent for ' + child.kind);
+      assert.equal(node.published, null, 'draft creation must not publish ' + child.kind);
+      parentId = node.id;
+    }
+    const chapter = nodes.find(node => node.id === parentId);
+    assert.equal(chapter.draft.body, chapterBody);
+    await page.goto(base + '/studio?item=' + chapter.id);
+    await page.getByRole('heading', { name: '章：' + children[2].title }).waitFor();
+    assert.equal(await page.getByRole('textbox', { name: '本文・説明', exact: true }).inputValue(), chapterBody);
+    await page.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
+
+test('AC-02: author reorders sibling volumes and renames one without changing identity', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const prefix = fixture.prefix + '-ui-order';
+    async function create(kind, parentId, title) {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base },
+        data: { kind, parentId, content: { title, body: '', details: {} } },
+      });
+      assert.equal(response.status(), 201, await response.text());
+      return (await response.json()).id;
+    }
+    const series = await create('series', null, prefix + '-series');
+    const firstTitle = prefix + '-volume-A';
+    const secondTitle = prefix + '-volume-B';
+    const first = await create('volume', series, firstTitle);
+    const second = await create('volume', series, secondTitle);
+    const page = await author.newPage();
+    await page.goto(base + '/studio/order');
+    await page.getByRole('combobox', { name: '親となる項目' }).selectOption(series);
+    await page.getByRole('button', { name: firstTitle + 'を下へ移動' }).waitFor();
+    assert.deepEqual(await page.locator('.order-list li > span').allInnerTexts(), [firstTitle, secondTitle]);
+    await page.getByRole('button', { name: firstTitle + 'を下へ移動' }).click();
+    assert.deepEqual(await page.locator('.order-list li > span').allInnerTexts(), [secondTitle, firstTitle]);
+    page.once('dialog', dialog => dialog.accept());
+    await page.getByRole('button', { name: '表示順を反映' }).click();
+    await page.getByRole('status').getByText('順序を反映しました。').waitFor();
+
+    let nodes = await (await author.request.get(base + '/api/admin/nodes')).json();
+    let firstNode = nodes.find(node => node.id === first);
+    let secondNode = nodes.find(node => node.id === second);
+    assert.equal(firstNode.order, 1);
+    assert.equal(secondNode.order, 0);
+    assert.equal(firstNode.parentId, series);
+    assert.equal(secondNode.parentId, series);
+    await page.reload();
+    await page.getByRole('combobox', { name: '親となる項目' }).selectOption(series);
+    await page.getByRole('button', { name: secondTitle + 'を下へ移動' }).waitFor();
+    assert.deepEqual(await page.locator('.order-list li > span').allInnerTexts(), [secondTitle, firstTitle]);
+
+    await page.goto(base + '/studio?item=' + first);
+    await page.getByRole('textbox', { name: '名称・見出し', exact: true }).fill(prefix + '-volume-A-renamed');
+    await page.getByRole('button', { name: '下書きを保存' }).click();
+    await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
+    await page.reload();
+    assert.equal(await page.getByRole('textbox', { name: '名称・見出し', exact: true }).inputValue(),
+      prefix + '-volume-A-renamed');
+    nodes = await (await author.request.get(base + '/api/admin/nodes')).json();
+    firstNode = nodes.find(node => node.id === first);
+    secondNode = nodes.find(node => node.id === second);
+    assert.equal(firstNode.draft.title, prefix + '-volume-A-renamed');
+    assert.equal(secondNode.draft.title, secondTitle);
+    assert.equal(firstNode.order, 1);
+    assert.equal(secondNode.order, 0);
+    assert.equal(firstNode.parentId, series);
+    assert.equal(secondNode.parentId, series);
+    await page.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
+
+test('AC-11: interrupted draft save retains unsaved input and succeeds after retry', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext();
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const title = fixture.prefix + '-network-retry';
+    const createResponse = await author.request.post(base + '/api/admin/nodes', {
+      headers: { Origin: base },
+      data: { kind: 'series', parentId: null,
+        content: { title, body: 'original saved draft', details: {} } },
+    });
+    assert.equal(createResponse.status(), 201, await createResponse.text());
+    const id = (await createResponse.json()).id;
+    const page = await author.newPage();
+    await page.goto(base + '/studio?item=' + id);
+    const editor = page.getByRole('textbox', { name: '本文・説明', exact: true });
+    const unsaved = '通信断の間も保持すべき原稿。\n再試行後に永続化する。';
+    await editor.fill(unsaved);
+    const path = '**/api/admin/nodes/' + id;
+    let interrupted = false;
+    await page.route(path, async route => {
+      if (!interrupted && route.request().method() === 'PATCH') {
+        interrupted = true;
+        await route.abort('failed');
+      } else {
+        await route.continue();
+      }
+    });
+    await page.getByRole('button', { name: '下書きを保存' }).click();
+    await page.getByRole('alert').getByText('保存に失敗しました。再読込して競合状態を確認してください。').waitFor();
+    assert.equal(interrupted, true);
+    assert.equal(await editor.inputValue(), unsaved, 'network failure must retain the unsaved buffer');
+    let nodes = await (await author.request.get(base + '/api/admin/nodes')).json();
+    assert.equal(nodes.find(node => node.id === id).draft.body, 'original saved draft');
+
+    await page.unroute(path);
+    await page.getByRole('button', { name: '下書きを保存' }).click();
+    await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
+    nodes = await (await author.request.get(base + '/api/admin/nodes')).json();
+    assert.equal(nodes.find(node => node.id === id).draft.body, unsaved);
+    assert.equal(nodes.find(node => node.id === id).published, null);
+    await page.reload();
+    assert.equal(await page.getByRole('textbox', { name: '本文・説明', exact: true }).inputValue(), unsaved);
+    await page.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
+
+test('AC-55: anonymous recent listing links published chapter and removes it after hiding', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext();
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const reader = await browser.newContext();
+    const prefix = fixture.prefix + '-recent-privacy';
+    async function create(kind, parentId, title, body = '') {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base },
+        data: { kind, parentId, content: { title, body, details: {} } },
+      });
+      assert.equal(response.status(), 201, await response.text());
+      return (await response.json()).id;
+    }
+    async function publish(id) {
+      const response = await author.request.post(base + '/api/admin/nodes/' + id + '/publish', {
+        headers: { Origin: base }, data: { expectedRevision: 1 },
+      });
+      assert.equal(response.status(), 200, await response.text());
+    }
+    async function recent() {
+      const response = await reader.request.get(base + '/api/public/recent');
+      assert.equal(response.status(), 200);
+      return response.json();
+    }
+    const series = await create('series', null, prefix + '-series');
+    const volume = await create('volume', series, prefix + '-volume');
+    const part = await create('part', volume, prefix + '-part');
+    const chapterTitle = prefix + '-chapter';
+    const chapter = await create('chapter', part, chapterTitle, '新着から開ける公開章本文');
+    assert.ok(!(await recent()).some(item => item.id === chapter),
+      'unpublished draft must not appear in recent list');
+    for (const id of [series, volume, part, chapter]) await publish(id);
+
+    const items = await recent();
+    assert.ok(items.some(item => item.id === chapter && item.content.title === chapterTitle));
+    const page = await reader.newPage();
+    await page.goto(base + '/');
+    const link = page.getByRole('link', { name: chapterTitle, exact: true });
+    await link.waitFor();
+    assert.equal(await link.getAttribute('href'), '/read/' + chapter);
+    await link.click();
+    await page.locator('.rich-body').getByText('新着から開ける公開章本文').waitFor();
+
+    const hide = await author.request.post(base + '/api/admin/nodes/' + chapter + '/visibility', {
+      headers: { Origin: base },
+      data: { expectedRevision: 1, isPublic: false, publicSince: null },
+    });
+    assert.equal(hide.status(), 200, await hide.text());
+    assert.ok(!(await recent()).some(item => item.id === chapter),
+      'hidden chapter must not appear in anonymous recent API');
+    assert.equal((await reader.request.get(base + '/api/public/items/' + chapter)).status(), 404);
+    await page.goto(base + '/');
+    assert.equal(await page.getByRole('link', { name: chapterTitle, exact: true }).count(), 0,
+      'hidden chapter must not appear in recent home links');
+    await page.close();
+    await reader.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
+
+test('AC-24/27: two same-named story hierarchies remain isolated when one series is hidden', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext();
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const reader = await browser.newContext();
+    const prefix = fixture.prefix + '-cross-series-story';
+    async function create(kind, parentId, title, body = '') {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base },
+        data: { kind, parentId, content: { title, body, details: {} } },
+      });
+      assert.equal(response.status(), 201, await response.text());
+      return (await response.json()).id;
+    }
+    async function publish(id) {
+      const response = await author.request.post(base + '/api/admin/nodes/' + id + '/publish', {
+        headers: { Origin: base }, data: { expectedRevision: 1 },
+      });
+      assert.equal(response.status(), 200, await response.text());
+    }
+    async function createStory(suffix) {
+      const series = await create('series', null, prefix + '-series-' + suffix);
+      const volume = await create('volume', series, prefix + '-same-volume');
+      const part = await create('part', volume, prefix + '-same-part');
+      const chapter = await create('chapter', part, prefix + '-same-chapter', prefix + '-body-' + suffix);
+      for (const id of [series, volume, part, chapter]) await publish(id);
+      return { series, volume, part, chapter };
+    }
+    const a = await createStory('A');
+    const b = await createStory('B');
+    assert.notEqual(a.chapter, b.chapter);
+    const treeAResponse = await reader.request.get(base + '/api/public/series/' + a.series + '/tree');
+    const treeBResponse = await reader.request.get(base + '/api/public/series/' + b.series + '/tree');
+    assert.equal(treeAResponse.status(), 200);
+    assert.equal(treeBResponse.status(), 200);
+    const treeA = await treeAResponse.json();
+    const treeB = await treeBResponse.json();
+    assert.ok(treeA.some(node => node.id === a.chapter && node.content.body === prefix + '-body-A'));
+    assert.ok(treeB.some(node => node.id === b.chapter && node.content.body === prefix + '-body-B'));
+    assert.ok(!treeA.some(node => node.id === b.chapter));
+    assert.ok(!treeB.some(node => node.id === a.chapter));
+
+    const page = await reader.newPage();
+    await page.goto(base + '/read/' + a.chapter);
+    const body = await page.locator('.rich-body').innerText();
+    assert.ok(body.includes(prefix + '-body-A'));
+    assert.ok(!body.includes(prefix + '-body-B'));
+
+    const hide = await author.request.post(base + '/api/admin/nodes/' + b.series + '/visibility', {
+      headers: { Origin: base },
+      data: { expectedRevision: 1, isPublic: false, publicSince: null },
+    });
+    assert.equal(hide.status(), 200, await hide.text());
+    assert.equal((await reader.request.get(base + '/api/public/series/' + b.series + '/tree')).status(), 404);
+    assert.equal((await reader.request.get(base + '/api/public/items/' + b.chapter)).status(), 404);
+    assert.equal((await reader.request.get(base + '/api/public/items/' + a.chapter)).status(), 200);
+    await page.close();
+    await reader.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
+
+test('AC-47: category editing works but nested categories are blocked in UI and API', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext();
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const prefix = fixture.prefix + '-category-boundary';
+    const createSeries = await author.request.post(base + '/api/admin/nodes', {
+      headers: { Origin: base },
+      data: { kind: 'series', parentId: null,
+        content: { title: prefix + '-series', body: '', details: {} } },
+    });
+    assert.equal(createSeries.status(), 201, await createSeries.text());
+    const series = (await createSeries.json()).id;
+    const page = await author.newPage();
+    await page.goto(base + '/studio?item=' + series);
+    await page.getByRole('button', { name: '子項目を追加' }).click();
+    await page.getByRole('combobox', { name: '種類' }).selectOption('category');
+    const categoryTitle = prefix + '-category';
+    await page.getByRole('textbox', { name: 'タイトル', exact: true }).fill(categoryTitle);
+    await page.getByRole('button', { name: '作成', exact: true }).click();
+    await page.getByRole('heading', { name: 'カテゴリ：' + categoryTitle }).waitFor();
+    const nodes = await (await author.request.get(base + '/api/admin/nodes')).json();
+    const category = nodes.find(node => node.kind === 'category' && node.draft.title === categoryTitle);
+    assert.ok(category?.id);
+    assert.equal(category.parentId, series);
+
+    await page.getByRole('button', { name: '子項目を追加' }).click();
+    const options = await page.getByRole('combobox', { name: '種類' }).locator('option')
+      .evaluateAll(elements => elements.map(element => element.value));
+    assert.deepEqual(options, ['tip'], 'nested categories must not be offered as child kinds');
+    await page.getByRole('button', { name: 'キャンセル' }).click();
+
+    const body = 'カテゴリの説明を更新し、再読込しても保持する。';
+    await page.getByRole('textbox', { name: '本文・説明', exact: true }).fill(body);
+    await page.getByRole('button', { name: '下書きを保存' }).click();
+    await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
+
+    const nested = await author.request.post(base + '/api/admin/nodes', {
+      headers: { Origin: base },
+      data: { kind: 'category', parentId: category.id,
+        content: { title: prefix + '-invalid-nested', body: '', details: {} } },
+    });
+    assert.equal(nested.status(), 400);
+    const after = await (await author.request.get(base + '/api/admin/nodes')).json();
+    assert.ok(!after.some(node => node.draft.title === prefix + '-invalid-nested'));
+    await page.goto(base + '/studio?item=' + category.id);
+    await page.getByRole('heading', { name: 'カテゴリ：' + categoryTitle }).waitFor();
+    assert.equal(await page.getByRole('textbox', { name: '本文・説明', exact: true }).inputValue(), body);
+    await page.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
+
+test('AC-25: settings, dictionary and timeline remain isolated across two published series', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext();
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const reader = await browser.newContext();
+    const prefix = fixture.prefix + '-multi-domain';
+    async function create(kind, parentId, title, details = {}) {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base },
+        data: { kind, parentId, content: { title, body: '', details } },
+      });
+      assert.equal(response.status(), 201, await response.text());
+      return (await response.json()).id;
+    }
+    async function publish(id) {
+      const response = await author.request.post(base + '/api/admin/nodes/' + id + '/publish', {
+        headers: { Origin: base }, data: { expectedRevision: 1 },
+      });
+      assert.equal(response.status(), 200, await response.text());
+    }
+    async function createDomainSeries(suffix) {
+      const series = await create('series', null, prefix + '-series-' + suffix);
+      const category = await create('category', series, prefix + '-same-category', { presets: '[]' });
+      const tip = await create('tip', category, prefix + '-same-tip');
+      const language = await create('language', series, prefix + '-same-language');
+      const word = await create('word', language, prefix + '-same-word', { meanings: '[]' });
+      const periodization = await create('periodization', series, prefix + '-same-period');
+      const event = await create('event', periodization, prefix + '-same-event');
+      for (const id of [series, category, tip, language, word, periodization, event]) await publish(id);
+      return { series, category, tip, language, word, periodization, event };
+    }
+    async function tree(id) {
+      const response = await reader.request.get(base + '/api/public/series/' + id + '/tree');
+      assert.equal(response.status(), 200, await response.text());
+      return response.json();
+    }
+    const a = await createDomainSeries('A');
+    const b = await createDomainSeries('B');
+    const aIds = new Set(Object.values(a));
+    const bIds = new Set(Object.values(b));
+    const treeA = await tree(a.series);
+    const treeB = await tree(b.series);
+    for (const id of aIds) assert.ok(treeA.some(node => node.id === id), 'A missing ' + id);
+    for (const id of bIds) assert.ok(treeB.some(node => node.id === id), 'B missing ' + id);
+    assert.ok(!treeA.some(node => bIds.has(node.id)), 'series A must not contain B');
+    assert.ok(!treeB.some(node => aIds.has(node.id)), 'series B must not contain A');
+
+    const hide = await author.request.post(base + '/api/admin/nodes/' + b.category + '/visibility', {
+      headers: { Origin: base },
+      data: { expectedRevision: 1, isPublic: false, publicSince: null },
+    });
+    assert.equal(hide.status(), 200, await hide.text());
+    const afterB = await tree(b.series);
+    assert.ok(!afterB.some(node => node.id === b.category || node.id === b.tip),
+      'hidden B category must hide its Tip');
+    for (const id of [b.language, b.word, b.periodization, b.event]) {
+      assert.ok(afterB.some(node => node.id === id), 'unrelated B domain must remain visible: ' + id);
+    }
+    const afterA = await tree(a.series);
+    for (const id of aIds) assert.ok(afterA.some(node => node.id === id), 'A changed when B was hidden');
+    await reader.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
+
+test('AC-56: shared author navigation works while anonymous editor and API writes stay guarded', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext();
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const anonymous = await browser.newContext();
+    const title = fixture.prefix + '-author-nav-series';
+    const create = await author.request.post(base + '/api/admin/nodes', {
+      headers: { Origin: base },
+      data: { kind: 'series', parentId: null, content: { title, body: '', details: {} } },
+    });
+    assert.equal(create.status(), 201, await create.text());
+    const series = (await create.json()).id;
+    const publish = await author.request.post(base + '/api/admin/nodes/' + series + '/publish', {
+      headers: { Origin: base }, data: { expectedRevision: 1 },
+    });
+    assert.equal(publish.status(), 200, await publish.text());
+
+    const page = await author.newPage();
+    for (const route of [
+      '/', '/stories', '/series/' + series,
+      '/read/' + fixture.chapter + '?series=' + fixture.seriesA,
+      '/tips/' + fixture.seriesA,
+      '/dictionaries/' + fixture.seriesA,
+      '/timeline/' + fixture.seriesA,
+    ]) {
+      await page.goto(base + route);
+      await page.getByRole('contentinfo').getByRole('link', { name: '作者の書斎' }).click();
+      await page.getByRole('heading', { name: '作者の書斎' }).waitFor();
+      await page.getByRole('button', { name: '新規シリーズ' }).waitFor();
+    }
+
+    // Item-specific author navigation must select the exact published chapter.
+    await page.goto(base + '/read/' + fixture.chapter);
+    const editLink = page.getByRole('link', { name: 'この項目を編集' });
+    await editLink.waitFor();
+    await editLink.click();
+    await page.waitForURL(url => url.pathname === '/studio'
+      && url.searchParams.get('item') === fixture.chapter);
+    await page.getByRole('textbox', { name: '本文・説明', exact: true }).waitFor();
+
+    // The series detail page must also link directly to the exact series editor.
+    await page.goto(base + '/stories/' + series);
+    await page.getByRole('link', { name: 'この項目を編集' }).click();
+    await page.waitForURL(url => url.pathname === '/studio'
+      && url.searchParams.get('item') === series);
+    await page.getByRole('heading', { name: 'シリーズ：' + title }).waitFor();
+
+    const readerPage = await anonymous.newPage();
+    await readerPage.goto(base + '/read/' + fixture.chapter);
+    await readerPage.locator('.author-edit-link').waitFor({ state: 'hidden' });
+    assert.equal(await readerPage.getByRole('link', { name: 'この項目を編集' }).count(), 0);
+    await readerPage.goto(base + '/stories/' + series);
+    assert.equal(await readerPage.getByRole('link', { name: 'この項目を編集' }).count(), 0,
+      'anonymous series reader must not see an author edit control');
+    await readerPage.goto(base + '/studio');
+    await readerPage.getByText('編集するには、許可された作者のDiscordアカウントで認証してください。').waitFor();
+    assert.equal(await readerPage.getByRole('button', { name: '新規シリーズ' }).count(), 0);
+    const unauthorized = await anonymous.request.post(base + '/api/admin/nodes', {
+      headers: { Origin: base },
+      data: { kind: 'series', parentId: null,
+        content: { title: title + '-unauthorized', body: '', details: {} } },
+    });
+    assert.equal(unauthorized.status(), 401);
+    const nodes = await (await author.request.get(base + '/api/admin/nodes')).json();
+    assert.ok(!nodes.some(node => node.draft.title === title + '-unauthorized'));
+    await readerPage.close();
+    await page.close();
+    await anonymous.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
+
+test('AC-34: hiding and reshowing a published chapter preserves its public snapshot', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext();
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const reader = await browser.newContext();
+    const prefix = fixture.prefix + '-chapter-hide-reshow';
+    async function create(kind, parentId, title, body = '') {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base },
+        data: { kind, parentId, content: { title, body, details: {} } },
+      });
+      assert.equal(response.status(), 201, await response.text());
+      return (await response.json()).id;
+    }
+    async function publish(id) {
+      const response = await author.request.post(base + '/api/admin/nodes/' + id + '/publish', {
+        headers: { Origin: base }, data: { expectedRevision: 1 },
+      });
+      assert.equal(response.status(), 200, await response.text());
+    }
+    const series = await create('series', null, prefix + '-series');
+    const volume = await create('volume', series, prefix + '-volume');
+    const part = await create('part', volume, prefix + '-part');
+    const chapter = await create('chapter', part, prefix + '-chapter', '公開版として保持する章本文');
+    for (const id of [series, volume, part, chapter]) await publish(id);
+    let publicResponse = await reader.request.get(base + '/api/public/items/' + chapter);
+    assert.equal(publicResponse.status(), 200);
+    assert.equal((await publicResponse.json()).content.body, '公開版として保持する章本文');
+
+    const hide = await author.request.post(base + '/api/admin/nodes/' + chapter + '/visibility', {
+      headers: { Origin: base },
+      data: { expectedRevision: 1, isPublic: false, publicSince: null },
+    });
+    assert.equal(hide.status(), 200, await hide.text());
+    assert.equal((await reader.request.get(base + '/api/public/items/' + chapter)).status(), 404);
+    const tree = await (await reader.request.get(base + '/api/public/series/' + series + '/tree')).json();
+    assert.ok(!tree.some(node => node.id === chapter));
+    const hiddenNode = (await (await author.request.get(base + '/api/admin/nodes')).json())
+      .find(node => node.id === chapter);
+    assert.equal(hiddenNode.isPublic, false);
+    assert.equal(hiddenNode.published.value.body, '公開版として保持する章本文');
+
+    const show = await author.request.post(base + '/api/admin/nodes/' + chapter + '/visibility', {
+      headers: { Origin: base },
+      data: { expectedRevision: 2, isPublic: true, publicSince: null },
+    });
+    assert.equal(show.status(), 200, await show.text());
+    publicResponse = await reader.request.get(base + '/api/public/items/' + chapter);
+    assert.equal(publicResponse.status(), 200);
+    assert.equal((await publicResponse.json()).content.body, '公開版として保持する章本文');
+    await reader.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
+
+
+test('related Tip projection respects a hidden category ancestor and restores on republish', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const anonymous = await browser.newContext();
+    const prefix = fixture.prefix + '-related-ancestor';
+    async function create(kind, parentId, suffix) {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base },
+        data: { kind, parentId, content: { title: prefix + '-' + suffix, body: suffix, details: {} } },
+      });
+      assert.equal(response.status(), 201, 'create ' + kind + ': ' + await response.text());
+      return (await response.json()).id;
+    }
+    async function publish(id, revision = 1) {
+      const response = await author.request.post(base + '/api/admin/nodes/' + id + '/publish', {
+        headers: { Origin: base }, data: { expectedRevision: revision },
+      });
+      assert.equal(response.status(), 200, 'publish ' + id + ': ' + await response.text());
+    }
+    const series = await create('series', null, 'series');
+    const sourceCategory = await create('category', series, 'source-category');
+    const targetCategory = await create('category', series, 'target-category');
+    const source = await create('tip', sourceCategory, 'source-tip');
+    const target = await create('tip', targetCategory, 'target-tip');
+    for (const id of [series, sourceCategory, targetCategory, target]) await publish(id);
+
+    const page = await author.newPage();
+    await page.goto(base + '/studio?item=' + source);
+    const links = page.locator('.tip-links-editor');
+    await links.locator('select').selectOption(target);
+    await links.getByRole('button', { name: '関連に追加' }).click();
+    await page.getByRole('button', { name: '下書きを保存' }).click();
+    await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
+    page.once('dialog', dialog => dialog.accept());
+    await page.getByRole('button', { name: '保存済み下書きを公開版へ反映' }).click();
+    await page.getByText('公開スナップショットを更新しました。').waitFor();
+
+    async function relatedIds() {
+      const response = await anonymous.request.get(base + '/api/public/items/' + source);
+      assert.equal(response.status(), 200, 'source Tip must remain public');
+      const content = (await response.json()).content;
+      assert.equal(content.body, 'source-tip', 'source published body must remain unchanged');
+      return JSON.parse(content.details.relatedTips).map(item => item.id);
+    }
+    assert.deepEqual(await relatedIds(), [target], 'public cross-category related Tip must be visible');
+
+    const hide = await author.request.post(base + '/api/admin/nodes/' + targetCategory + '/visibility', {
+      headers: { Origin: base },
+      data: { expectedRevision: 1, isPublic: false, publicSince: null },
+    });
+    assert.equal(hide.status(), 200, 'hide target category: ' + await hide.text());
+    assert.equal((await anonymous.request.get(base + '/api/public/items/' + target)).status(), 404,
+      'target Tip must be hidden by its category ancestor');
+    assert.deepEqual(await relatedIds(), [],
+      'source must not leak a related Tip whose category ancestor is hidden');
+
+    const nodesResponse = await author.request.get(base + '/api/admin/nodes');
+    assert.equal(nodesResponse.status(), 200);
+    const nodes = await nodesResponse.json();
+    const authorSource = nodes.find(node => node.id === source);
+    const authorTarget = nodes.find(node => node.id === target);
+    assert.deepEqual(JSON.parse(authorSource.draft.details.relatedTipIds), [target],
+      'author relationship must survive an ancestor visibility change');
+    assert.equal(authorTarget.isPublic, true, 'target stored visibility must not be overwritten');
+
+    const show = await author.request.post(base + '/api/admin/nodes/' + targetCategory + '/visibility', {
+      headers: { Origin: base },
+      data: { expectedRevision: 2, isPublic: true, publicSince: null },
+    });
+    assert.equal(show.status(), 200, 'republish target category: ' + await show.text());
+    assert.equal((await anonymous.request.get(base + '/api/public/items/' + target)).status(), 200);
+    assert.deepEqual(await relatedIds(), [target],
+      'republishing an ancestor should restore the related link without rewriting the source');
+    await page.close();
+    await anonymous.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
+
+
+test('AC-02: part ordering and part/chapter renames preserve identity and ancestry', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const prefix = fixture.prefix + '-part-order';
+    async function create(kind, parentId, suffix) {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base },
+        data: { kind, parentId, content: { title: prefix + '-' + suffix, body: suffix, details: {} } },
+      });
+      assert.equal(response.status(), 201, 'create ' + kind + ': ' + await response.text());
+      return (await response.json()).id;
+    }
+    const series = await create('series', null, 'series');
+    const volume = await create('volume', series, 'volume');
+    const first = await create('part', volume, 'part-A');
+    const second = await create('part', volume, 'part-B');
+    const chapter = await create('chapter', first, 'chapter');
+    const page = await author.newPage();
+    await page.goto(base + '/studio/order');
+    await page.getByRole('combobox', { name: '親となる項目' }).selectOption(volume);
+    await page.getByRole('combobox', { name: '項目の種類' }).selectOption('part');
+    const list = page.locator('.order-list li > span');
+    await page.getByRole('button', { name: prefix + '-part-Aを下へ移動' }).waitFor();
+    assert.deepEqual(await list.allInnerTexts(), [prefix + '-part-A', prefix + '-part-B']);
+    await page.getByRole('button', { name: prefix + '-part-Aを下へ移動' }).click();
+    page.once('dialog', dialog => dialog.accept());
+    await page.getByRole('button', { name: '表示順を反映' }).click();
+    await page.getByRole('status').getByText('順序を反映しました。').waitFor();
+    await page.reload();
+    await page.getByRole('combobox', { name: '親となる項目' }).selectOption(volume);
+    await page.getByRole('combobox', { name: '項目の種類' }).selectOption('part');
+    await page.getByRole('button', { name: prefix + '-part-Bを下へ移動' }).waitFor();
+    assert.deepEqual(await list.allInnerTexts(), [prefix + '-part-B', prefix + '-part-A']);
+
+    await page.goto(base + '/studio?item=' + first);
+    await page.getByRole('textbox', { name: '名称・見出し', exact: true }).fill(prefix + '-part-A-renamed');
+    await page.getByRole('button', { name: '下書きを保存' }).click();
+    await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
+    await page.reload();
+    assert.equal(await page.getByRole('textbox', { name: '名称・見出し', exact: true }).inputValue(),
+      prefix + '-part-A-renamed');
+
+    await page.goto(base + '/studio?item=' + chapter);
+    await page.getByRole('textbox', { name: '名称・見出し', exact: true }).fill(prefix + '-chapter-renamed');
+    await page.getByRole('button', { name: '下書きを保存' }).click();
+    await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
+    await page.reload();
+    assert.equal(await page.getByRole('textbox', { name: '名称・見出し', exact: true }).inputValue(),
+      prefix + '-chapter-renamed');
+
+    const response = await author.request.get(base + '/api/admin/nodes');
+    assert.equal(response.status(), 200);
+    const nodes = await response.json();
+    const a = nodes.find(node => node.id === first);
+    const b = nodes.find(node => node.id === second);
+    const c = nodes.find(node => node.id === chapter);
+    assert.equal(a?.order, 1);
+    assert.equal(b?.order, 0);
+    assert.equal(a?.parentId, volume);
+    assert.equal(b?.parentId, volume);
+    assert.equal(a?.draft.title, prefix + '-part-A-renamed');
+    assert.equal(b?.draft.title, prefix + '-part-B');
+    assert.equal(c?.parentId, first);
+    assert.equal(c?.draft.title, prefix + '-chapter-renamed');
+    assert.equal(c?.draft.body, 'chapter');
+    await page.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
+
+
+test('AC-06: related Tip reorder and removal affect readers only after explicit publication', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const anonymous = await browser.newContext();
+    const prefix = fixture.prefix + '-related-order';
+    async function create(kind, parentId, suffix) {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base },
+        data: { kind, parentId, content: { title: prefix + '-' + suffix, body: suffix, details: {} } },
+      });
+      assert.equal(response.status(), 201, 'create ' + kind + ': ' + await response.text());
+      return (await response.json()).id;
+    }
+    async function publish(id) {
+      const response = await author.request.post(base + '/api/admin/nodes/' + id + '/publish', {
+        headers: { Origin: base }, data: { expectedRevision: 1 },
+      });
+      assert.equal(response.status(), 200, 'publish ' + id + ': ' + await response.text());
+    }
+    const series = await create('series', null, 'series');
+    const category = await create('category', series, 'category');
+    const source = await create('tip', category, 'source');
+    const targetA = await create('tip', category, 'target-A');
+    const targetB = await create('tip', category, 'target-B');
+    for (const id of [series, category, targetA, targetB]) await publish(id);
+
+    const page = await author.newPage();
+    await page.goto(base + '/studio?item=' + source);
+    const links = page.locator('.tip-links-editor');
+    for (const target of [targetA, targetB]) {
+      await links.locator('select').selectOption(target);
+      await links.getByRole('button', { name: '関連に追加' }).click();
+    }
+    const titles = links.locator('.related-list li > span');
+    assert.deepEqual(await titles.allInnerTexts(), [prefix + '-target-A', prefix + '-target-B']);
+    await links.getByRole('button', { name: prefix + '-target-Bを上へ' }).click();
+    assert.deepEqual(await titles.allInnerTexts(), [prefix + '-target-B', prefix + '-target-A']);
+
+    async function saveDraft() {
+      const saved = page.waitForResponse(response =>
+        response.url().includes('/api/admin/nodes/' + source) &&
+        response.request().method() === 'PATCH');
+      await page.getByRole('button', { name: '下書きを保存' }).click();
+      assert.equal((await saved).status(), 200);
+    }
+    async function publishDraft() {
+      page.once('dialog', dialog => dialog.accept());
+      await page.getByRole('button', { name: '保存済み下書きを公開版へ反映' }).click();
+      await page.getByText('公開スナップショットを更新しました。').waitFor();
+    }
+    async function publicRelated() {
+      const response = await anonymous.request.get(base + '/api/public/items/' + source);
+      assert.equal(response.status(), 200);
+      return JSON.parse((await response.json()).content.details.relatedTips).map(item => item.id);
+    }
+    await saveDraft();
+    assert.equal((await anonymous.request.get(base + '/api/public/items/' + source)).status(), 404,
+      'saving the first draft must not publish the source');
+    await publishDraft();
+    assert.deepEqual(await publicRelated(), [targetB, targetA]);
+
+    await links.getByRole('button', { name: prefix + '-target-Aを削除' }).click();
+    assert.deepEqual(await titles.allInnerTexts(), [prefix + '-target-B']);
+    await saveDraft();
+    assert.deepEqual(await publicRelated(), [targetB, targetA],
+      'saving a changed relation list must not alter the old public snapshot');
+    await publishDraft();
+    assert.deepEqual(await publicRelated(), [targetB],
+      'explicit publication must update the related-link projection');
+    const nodes = await (await author.request.get(base + '/api/admin/nodes')).json();
+    assert.deepEqual(JSON.parse(nodes.find(node => node.id === source).draft.details.relatedTipIds), [targetB]);
+    await page.close();
+    await anonymous.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
