@@ -44,3 +44,24 @@ test('noncolliding preset copies remain independently identifiable and editable'
   assert.deepEqual(sections.map(node => node.parentId), [firstTipId, uniqueTipId]);
   assert.deepEqual(sections.map(node => node.draft.title), ['概要', '概要']);
 });
+
+
+test('generated section ID cannot shadow a manually assigned section of another Tip', () => {
+  let db = libraryWithPreset();
+  db = add(db, uniqueTipId, 'tip', categoryId);
+  const reservedId = `${collidingTipId.slice(0, 30)}000000`;
+  db = add(db, reservedId, 'tipSection', uniqueTipId);
+  assert.throws(() => add(db, collidingTipId, 'tip', categoryId),
+    error => error?.code === 'bad-request');
+  assert.equal(db.nodes.filter(node => node.id === reservedId).length, 1);
+  assert.equal(db.nodes.find(node => node.id === reservedId)?.parentId, uniqueTipId);
+});
+
+test('similar Tip IDs remain valid when the category has no presets to duplicate', () => {
+  let db = add(newLibrary(), seriesId, 'series', null);
+  db = add(db, categoryId, 'category', seriesId);
+  db = add(db, firstTipId, 'tip', categoryId);
+  db = add(db, collidingTipId, 'tip', categoryId);
+  assert.equal(db.nodes.filter(node => node.kind === 'tip').length, 2);
+  assert.equal(db.nodes.filter(node => node.kind === 'tipSection').length, 0);
+});
