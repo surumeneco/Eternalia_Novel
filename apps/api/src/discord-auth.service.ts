@@ -30,6 +30,16 @@ function matchSecret(left: string, right: string): boolean {
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
+function canonicalHttpOrigin(raw: string): boolean {
+  try {
+    const parsed = new URL(raw);
+    return (parsed.protocol === 'https:' || parsed.protocol === 'http:') &&
+      !parsed.username && !parsed.password && parsed.origin === raw;
+  } catch {
+    return false;
+  }
+}
+
 @Injectable()
 export class DiscordAuthService implements OnModuleDestroy {
   private readonly pool = process.env.DATABASE_URL ? new Pool({
@@ -42,7 +52,7 @@ export class DiscordAuthService implements OnModuleDestroy {
 
   get configured(): boolean {
     return !!(this.pool && this.clientId && this.clientSecret &&
-      /^\d{15,25}$/.test(this.authorId) && /^https?:\/\/[^/]+$/.test(this.origin));
+      /^\d{15,25}$/.test(this.authorId) && canonicalHttpOrigin(this.origin));
   }
   private requirePool(): Pool {
     if (!this.configured || !this.pool) throw new ServiceUnavailableException('Discord認証が設定されていません。');
@@ -147,8 +157,15 @@ export class DiscordAuthService implements OnModuleDestroy {
     return (result.rowCount ?? 0) > 0;
   }
   assertWriteOrigin(headers: RequestHeaders): void {
+    // Media type matching is exact; JSONP/JSON-seq prefix lookalikes are not
+    // acceptable for state-changing author requests. Parameters are allowed.
+    const rawMediaType = headers['content-type'];
+    const mediaType = rawMediaType?.split(';', 1)[0].trim().toLowerCase();
+    // Content-Type is not a list header. Reject combined/ambiguous values
+    // instead of accepting a JSON prefix with a second media type appended.
     if (!this.configured || headers.origin !== this.origin ||
-      !headers['content-type']?.toLowerCase().startsWith('application/json')) {
+        !rawMediaType || rawMediaType.includes(',') ||
+        mediaType !== 'application/json') {
       throw new ForbiddenException('許可されていない変更要求です。');
     }
   }
