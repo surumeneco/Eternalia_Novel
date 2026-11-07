@@ -32,7 +32,10 @@ language: ja
 | AC-META-02 | 各ACに判定欄がある | `pass`、`fail`、`not-run`、`pending-decision`、`scope-excluded` の列挙を検査 | 不明な状態・空欄は拒否 |
 | AC-META-03 | AC全体をpassに変更する | 試験コードパス、40桁の正確なHEAD SHA、GitHub Actions実行URLの記載を確認 | 根拠を持たないpassを拒否 |
 | AC-META-04 | 断片的なCIまたは探索的テストが成功する | 台帳が`not-run`を維持できる | 部分証拠を自動的にpassへ昇格させない |
+| AC-META-05 | Node22でPostgreSQL、Chromium、HTTPのテストを一度実行する | 同じテストプロセスからTAPとJUnit XMLを生成し、JUnitに少なくとも1件のtestcaseがあることを検証 | 退出コードとJUnitの失敗数を分離して検査、実行HEADとRun IDをmanifestとして記録 |
 
 ## 非権限・非保証
+
+台帳構造の検査とJUnit Test Report収集は互いに独立した証拠。JUnitのtestcase名と数は実行ログの補助資料であり、どのACを満たしたかの意味判定は行わない。
 
 この静的検査は実際にCIが成功したか、コミットSHAとテストが一致するか、証拠リンクが有効か、ユーザーの実機確認が終わったかを**検証できない**。正規CAT Process Closure / Model Conformance / Implementation Conformance / Confirmed昇格にも該当しない。証拠の真正性は別工程で照合し、誤った合格認定を避ける。
