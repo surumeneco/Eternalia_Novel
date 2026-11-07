@@ -32,6 +32,7 @@ language: ja
 | AUTH-BROWSER-02 | 同じ攻撃ページからログアウト用form POSTをNest/Nuxtへ送信 | HTTP 403、正規作者セッションは失効しない | 実Chromium、HTTP、PostgreSQL |
 | AUTH-OAUTH-01 | GET /api/auth/discord でOAuth開始 | 302/303でDiscord認可へ、state/PKCE S256/redirect先とHttpOnly/SameSite cookieを確認 | 実HTTP+PostgreSQL |
 | AUTH-OAUTH-02 | callbackへの不一致state、Cookie不足、issuer不一致等の入力 | 401、作者セッションが新規発行されず、Discordトークン交換に到達しない | 実HTTP+PostgreSQL |
+| AUTH-OAUTH-03 | Discord APIを局所的に模擬し、返却Discord IDを作者ID／非作者IDに切り替える | PKCE verifier照合、state一回限り使用、本人だけにランダムなアプリ側セッションを発行し、logout後に失効すること。非作者は拒否 | 模擬Discordフェッチ + 実PostgreSQL |
 
 規範上、具体的なCookie仕様・HTTPパス・コードやエラー契約は詳細未決である。これらのassertは現行α実装の観測用Oracleであり、新規の確定仕様・正式TestModel・正規Gateではない。
 
