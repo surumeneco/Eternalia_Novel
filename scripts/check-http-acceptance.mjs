@@ -85,6 +85,7 @@ try {
   // Keep independent synthetic session checks ahead of the main suite, which
   // may invalidate the test author session during logout coverage.
   await command(['--test', 'apps/api/http-acceptance/author-write-boundary.test.mjs']);
+  await command(['--test', 'apps/api/http-acceptance/author-revision-conflict.test.mjs']);
   await command(['--test', 'apps/api/http-acceptance/http-acceptance.test.mjs']);
 } finally {
   for (const child of processes) child.kill();
