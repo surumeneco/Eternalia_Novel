@@ -123,3 +123,58 @@ test('story, setting, dictionary and timeline author editors fit 320px and 390px
       } finally { await author.close(); }
     } finally { await browser.close(); }
   });
+
+test('reader shell preserves runtime colors and mobile navigation for keyboard and touch',
+  { timeout: 60_000 }, async () => {
+    const browser = await chromium.launch({ headless: true });
+    try {
+      const reader = await browser.newContext({
+        viewport: { width: 320, height: 780 }, isMobile: true, hasTouch: true,
+      });
+      try {
+        const page = await reader.newPage();
+        const response = await page.goto(base + '/stories/' + fixture.seriesA);
+        assert.equal(response?.status(), 200);
+        const styles = await page.evaluate(() => {
+          const header = document.querySelector('.site-header');
+          const panel = document.querySelector('.stone-panel');
+          if (!header || !panel) throw new Error('reader shell is incomplete');
+          return {
+            header: getComputedStyle(header).backgroundColor,
+            panel: getComputedStyle(panel).backgroundColor,
+            background: getComputedStyle(document.body).backgroundImage,
+            width: document.documentElement.scrollWidth,
+            viewport: document.documentElement.clientWidth,
+          };
+        });
+        assert.equal(styles.header, 'rgb(0, 191, 255)', 'retained sky-blue header role');
+        assert.equal(styles.panel, 'rgb(38, 38, 38)', 'retained dark stone-panel role');
+        assert.match(styles.background, /linear-gradient/i, 'sky-to-grass background required');
+        assert.ok(styles.background.includes('rgb(63, 111, 127)') &&
+          styles.background.includes('rgb(0, 63, 21)'),
+          'retain the approved gradient endpoints');
+        assert.ok(styles.width <= styles.viewport + 2, 'reader shell must fit the phone viewport');
+
+        const menu = page.locator('.nav-toggle');
+        const nav = page.locator('#global-navigation');
+        assert.equal(await menu.isVisible(), true);
+        assert.equal(await menu.getAttribute('aria-expanded'), 'false');
+        assert.equal(await nav.isVisible(), false);
+        await menu.focus();
+        await menu.press('Enter');
+        assert.equal(await menu.getAttribute('aria-expanded'), 'true',
+          'keyboard activation should expand the mobile nav');
+        assert.equal(await nav.isVisible(), true);
+        await menu.press('Enter');
+        assert.equal(await menu.getAttribute('aria-expanded'), 'false',
+          'keyboard activation should collapse the mobile nav');
+
+        await menu.tap();
+        assert.equal(await menu.getAttribute('aria-expanded'), 'true');
+        await nav.locator('a[href="/dictionaries"]').tap();
+        await page.waitForURL(base + '/dictionaries');
+        assert.equal(await menu.getAttribute('aria-expanded'), 'false',
+          'touch navigation should close after a route transition');
+      } finally { await reader.close(); }
+    } finally { await browser.close(); }
+  });
