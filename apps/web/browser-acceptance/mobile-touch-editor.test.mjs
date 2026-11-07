@@ -84,7 +84,7 @@ test('touch toolbar preserves selected Japanese text and separates draft from pu
         await page.getByRole('button', { name: '保存済み下書きを公開版へ反映' }).tap();
         await page.getByText('公開スナップショットを更新しました。').waitFor();
         publicResponse = await author.request.get(base + '/api/public/items/' + chapter);
-        assert.equal(publicResponse.status(), 200, await publicResponse.text());
+        assert.equal(publicResponse.status(), 200, 'published chapter must be visible to readers');
         assert.equal((await publicResponse.json()).content.body, body);
         await page.reload();
         assert.equal(await editor.inputValue(), body, 'mobile touch edit must persist after reload');
