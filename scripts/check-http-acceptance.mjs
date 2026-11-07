@@ -81,6 +81,7 @@ try {
   // revoke that fixture during their logout assertion.
   if (process.env.HTTP_BROWSER_ACCEPTANCE === '1') {
     await command(['--test', 'apps/web/browser-acceptance/browser-acceptance.test.mjs']);
+    await command(['--test', 'apps/web/browser-acceptance/mobile-touch-editor.test.mjs']);
   }
   await command(['--test', 'apps/api/http-acceptance/http-acceptance.test.mjs']);
 } finally {
