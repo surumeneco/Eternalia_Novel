@@ -80,6 +80,7 @@ try {
   // Browser interactions use the synthetic author session before HTTP tests
   // revoke that fixture during their logout assertion.
   if (process.env.HTTP_BROWSER_ACCEPTANCE === '1') {
+    await command(['--test', 'apps/web/browser-acceptance/author-csrf-oauth.test.mjs']);
     await command(['--test', 'apps/web/browser-acceptance/browser-acceptance.test.mjs']);
   }
   // Keep independent synthetic session checks ahead of the main suite, which
