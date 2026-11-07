@@ -34,6 +34,7 @@ language: ja
 | MOB-03 | compositionstart中にツールバーを参照 | ルビ・区切り挿入は無効化され、compositionend後は再び使用可能 | 実Chromiumの合成イベント（実IMEではない） |
 | MOB-04 | スマートフォン幅320/390pxの4領域編集 | 水平はみ出しなし、本文・保存アクションが表示・操作可能 | 実Chromium viewport |
 | MOB-05 | タッチ操作後に下書き保存・明示公開 | 保存だけでは非公開、明示公開後にのみ新本文を匿名読者が取得可能 | 実HTTP + PostgreSQL |
+| MOB-06 | 320pxの匿名読者画面で共通Shellを開く | 旧ブランド青/石板面/空→草原背景の実計算CSSが維持され、モバイルナビがキーボード/タッチで開閉・移動できる | 実Chromium CSS・DOM |
 
 ## 制限
 
