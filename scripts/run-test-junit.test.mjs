@@ -52,9 +52,9 @@ test('skipped or todo acceptance tests cannot produce a passed JUnit receipt', a
   const dir = await mkdtemp(join(tmpdir(), 'eternalia-junit-skips-'));
   try {
     for (const [suite, source] of [
-      ['only-skip', "import {test} from 'node:test';test('not executed', {skip: 'incomplete'}, () => { throw new Error('should not run'); });\\n"],
-      ['mixed-skip', "import {test} from 'node:test';test('executed', () => {});test('not executed', {skip: true}, () => {});\\n"],
-      ['todo-only', "import {test} from 'node:test';test.todo('not implemented');\\n"],
+      ['only-skip', "import {test} from 'node:test';test('not executed', {skip: 'incomplete'}, () => { throw new Error('should not run'); });\n"],
+      ['mixed-skip', "import {test} from 'node:test';test('executed', () => {});test('not executed', {skip: true}, () => {});\n"],
+      ['todo-only', "import {test} from 'node:test';test.todo('not implemented');\n"],
     ]) {
       const file = join(dir, suite + '.test.mjs');
       await writeFile(file, source);
