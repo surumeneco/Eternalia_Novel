@@ -29,10 +29,12 @@ let xml = '';
 try { xml = await readFile(output, 'utf8'); } catch { /* explicitly reported as missing below */ }
 const testCases = (xml.match(/<testcase\b/g) ?? []).length;
 const failures = (xml.match(/<(?:failure|error)\b/g) ?? []).length;
+// Skipped and TODO tests are not executed acceptance evidence, even if Node exits 0.
+const skipped = (xml.match(/<skipped\b/g) ?? []).length;
 const valid = xml.includes('<testsuites>') && xml.includes('</testsuites>') && testCases > 0;
 const manifest = {
-  suite, status: exitCode === 0 && valid && failures === 0 ? 'passed' : 'failed',
-  node: process.version, testcaseCount: testCases, failureCount: failures,
+  suite, status: exitCode === 0 && valid && failures === 0 && skipped === 0 ? 'passed' : 'failed',
+  node: process.version, testcaseCount: testCases, failureCount: failures, skippedCount: skipped,
   sha256: xml ? createHash('sha256').update(xml).digest('hex') : null,
   githubSha: process.env.GITHUB_SHA || null,
   githubRunId: process.env.GITHUB_RUN_ID || null,
