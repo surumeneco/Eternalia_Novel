@@ -80,8 +80,12 @@ try {
   // Browser interactions use the synthetic author session before HTTP tests
   // revoke that fixture during their logout assertion.
   if (process.env.HTTP_BROWSER_ACCEPTANCE === '1') {
+    await command(['scripts/run-test-junit.mjs', 'browser-auth-boundary', 'apps/web/browser-acceptance/author-csrf-oauth.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser', 'apps/web/browser-acceptance/browser-acceptance.test.mjs']);
   }
+  // Run separate boundary tests before the main suite revokes the synthetic author session.
+  await command(['scripts/run-test-junit.mjs', 'http-write-boundary', 'apps/api/http-acceptance/author-write-boundary.test.mjs']);
+  await command(['scripts/run-test-junit.mjs', 'http-revision-conflict', 'apps/api/http-acceptance/author-revision-conflict.test.mjs']);
   await command(['scripts/run-test-junit.mjs', 'http', 'apps/api/http-acceptance/http-acceptance.test.mjs']);
 } finally {
   for (const child of processes) child.kill();
