@@ -86,14 +86,19 @@ export function insertManuscriptMarkup(
     const at = source.lastIndexOf(marker, index);
     return at >= 0 && index > at && index < at + marker.length;
   };
-  if (splitsPair(start) || splitsPair(end) || splitsGrapheme(start) || splitsGrapheme(end) ||
-      splitsCrlf(start) || splitsCrlf(end) ||
-      splitsMarker(start) || splitsMarker(end)) return null;
+  // Ruby replaces the selected range; page inserts only at selectionStart.
+  // Rejecting an unused page selectionEnd would break touch insertion when
+  // selection extends into an existing ruby token without modifying it.
+  const invalidMutationBoundary = (index: number) =>
+    splitsPair(index) || splitsGrapheme(index) ||
+    splitsCrlf(index) || splitsMarker(index);
+  if (invalidMutationBoundary(start) ||
+      (kind === 'ruby' && invalidMutationBoundary(end))) return null;
   // Match the reader's inline ruby grammar before editing an existing token.
   const rubyTokens = /｜([^｜《》\r\n\u0085\u2028\u2029]+)《([^｜《》\r\n\u0085\u2028\u2029]+)》/g;
   for (const match of source.matchAll(rubyTokens)) {
     const inside = (index: number) => index > match.index && index < match.index + match[0].length;
-    if (inside(start) || inside(end)) return null;
+    if (inside(start) || (kind === 'ruby' && inside(end))) return null;
   }
   const selected = source.slice(start, end);
   if (kind === 'page') {
