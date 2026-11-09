@@ -38,6 +38,6 @@ language: ja
 
 ## Scope and status
 
-**Draft only.** U+200C is a Grapheme_Cluster_Break Extend character under UAX #29. The current fallback handles combining marks, U+200D ZWJ, emoji modifiers, Hangul and regional indicators, but not this non-mark extender. This Draft is distinct from PR #12's U+200D GB11 cases. It does not prove actual Android/IME/Chromium behavior or authorize a production fallback change.
+**Draft only.** U+200C is a Grapheme_Cluster_Break Extend character under UAX #29. The original fallback handled combining marks, U+200D ZWJ, emoji modifiers, Hangul and regional indicators, but not this non-mark extender. In this unconfirmed feature-branch candidate, the guard for `next === 0x200C` is added, retaining the legal boundary after ZWNJ. This Draft is distinct from PR #12's U+200D GB11 cases. It does not prove actual Android/IME/Chromium behavior or provide Confirmed normative authorization.
 
-CAT Process/PI/TCE confirmation and normative machine Gates, production Green and device acceptance: **not-run**.
+**Exploratory evidence:** Current-alpha integration HEAD `52fd99ecc1c7cae55b89e9b5f19fa6e3e3cc5af8` yielded the expected Node Red at [Actions #42638215331](https://github.com/surumeneco/Eternalia_Novel/actions/runs/42638215331), specifically `fallback rejects insertion immediately before ZWNJ inside a grapheme`. Candidate implementation commit `3215a62cfccaa70ddfb1d0e0e7e86414b3c2ea84` adds the targeted check; full Green verification must be checked on the latest HEAD separately. CAT Process/PI/TCE confirmation, normative machine Gates, physical Android/IME and device acceptance: **not-run**.
