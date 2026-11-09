@@ -82,6 +82,38 @@ test('published chapter body survives an unpublished draft edit across direct re
   assert.ok(!reader.body.includes(fixture.prefix + '-unpublished-draft'));
 });
 
+// Exploratory HTTP/privacy evidence only; not a confirmed CAT-generated test.
+test('anonymous breadcrumb paths exclude hidden ancestors, drafts and scheduled items', async () => {
+  const pathOf = id => '/api/public/items/' + id + '/path';
+  const expected = [fixture.seriesA, fixture.volume, fixture.part, fixture.chapter];
+  const secretMarkers = [
+    fixture.prefix + '-private-content',
+    fixture.prefix + '-private-tip',
+    fixture.prefix + '-unpublished-tip',
+    fixture.prefix + '-scheduled-secret',
+    fixture.prefix + '-unpublished-draft-body',
+  ];
+  // Check both real Nest API and its Nuxt proxy, not merely a unit contract.
+  for (const root of [base, api]) {
+    const published = await json(pathOf(fixture.chapter), root);
+    assert.equal(published.status, 200, 'published chapter path ' + root);
+    assert.deepEqual(published.value.map(node => node.id), expected,
+      'published breadcrumbs must contain only the exact ancestor chain');
+    for (const marker of secretMarkers) {
+      assert.ok(!published.body.includes(marker), 'private draft leaked into public path: ' + marker);
+    }
+    for (const id of [fixture.hiddenCategory, fixture.hiddenTip,
+                      fixture.unpublishedTip, fixture.scheduled]) {
+      const blocked = await get(pathOf(id), root);
+      assert.equal(blocked.status, 404,
+        'blocked breadcrumb unexpectedly accessible for ' + id + ' via ' + root);
+      for (const marker of secretMarkers) {
+        assert.ok(!blocked.body.includes(marker), 'blocked response disclosed ' + marker);
+      }
+    }
+  }
+});
+
 test('anonymous requests cannot read or mutate author library or memos', async () => {
   // AC-23: exercise both Nuxt proxy and direct Nest HTTP boundaries.
   const before = await get('/api/public/items/' + fixture.chapter);
