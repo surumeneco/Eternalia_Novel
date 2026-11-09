@@ -46,6 +46,32 @@ export function insertManuscriptMarkup(
   const isHangulLVT = (cp: number) =>
     cp >= 0xAC00 && cp <= 0xD7A3 && (cp - 0xAC00) % 28 !== 0;
 
+  // Restricted GB9c fallback for Devanagari/Bengali consonant + virama +
+  // consonant. Require a preceding base consonant, not an isolated virama;
+  // complete Unicode Indic_Conjunct_Break data requires normative review.
+  const indicScript = (cp: number): 0 | 1 | 2 =>
+    cp >= 0x0915 && cp <= 0x0939 ? 1 :
+    cp >= 0x0995 && cp <= 0x09B9 ? 2 : 0;
+  const splitsIndicConjunct = (index: number): boolean => {
+    const script = indicScript(source.codePointAt(index)!);
+    if (!script) return false;
+    let cursor = index;
+    let hasVirama = false;
+    while (cursor > 0) {
+      const cp = codePointBefore(cursor);
+      if ((script === 1 && cp === 0x094D) ||
+          (script === 2 && cp === 0x09CD)) {
+        hasVirama = true;
+      } else if (/[\p{M}]/u.test(String.fromCodePoint(cp)) || cp === 0x200D) {
+        // Extenders between consonants do not end the candidate chain.
+      } else {
+        return hasVirama && indicScript(cp) === script;
+      }
+      cursor -= cp > 0xFFFF ? 2 : 1;
+    }
+    return false;
+  };
+
   const fallbackSplitsGrapheme = (index: number): boolean => {
     if (index <= 0 || index >= source.length) return false;
     const previous = codePointBefore(index);
@@ -59,6 +85,7 @@ export function insertManuscriptMarkup(
         // Emoji subdivision flags use supplementary tag code points that
         // are neither combining marks nor ZWJ. Keep the tag run attached.
         (next >= 0xE0020 && next <= 0xE007F)) return true;
+    if (splitsIndicConjunct(index)) return true;
     if ((isHangulL(previous) &&
           (isHangulL(next) || isHangulV(next) || isHangulLV(next) || isHangulLVT(next))) ||
         ((isHangulLV(previous) || isHangulV(previous)) &&
@@ -86,14 +113,19 @@ export function insertManuscriptMarkup(
     const at = source.lastIndexOf(marker, index);
     return at >= 0 && index > at && index < at + marker.length;
   };
-  if (splitsPair(start) || splitsPair(end) || splitsGrapheme(start) || splitsGrapheme(end) ||
-      splitsCrlf(start) || splitsCrlf(end) ||
-      splitsMarker(start) || splitsMarker(end)) return null;
+  // Ruby replaces the selected range; page inserts only at selectionStart.
+  // Rejecting an unused page selectionEnd would break touch insertion when
+  // selection extends into an existing ruby token without modifying it.
+  const invalidMutationBoundary = (index: number) =>
+    splitsPair(index) || splitsGrapheme(index) ||
+    splitsCrlf(index) || splitsMarker(index);
+  if (invalidMutationBoundary(start) ||
+      (kind === 'ruby' && invalidMutationBoundary(end))) return null;
   // Match the reader's inline ruby grammar before editing an existing token.
   const rubyTokens = /｜([^｜《》\r\n\u0085\u2028\u2029]+)《([^｜《》\r\n\u0085\u2028\u2029]+)》/g;
   for (const match of source.matchAll(rubyTokens)) {
     const inside = (index: number) => index > match.index && index < match.index + match[0].length;
-    if (inside(start) || inside(end)) return null;
+    if (inside(start) || (kind === 'ruby' && inside(end))) return null;
   }
   const selected = source.slice(start, end);
   if (kind === 'page') {
