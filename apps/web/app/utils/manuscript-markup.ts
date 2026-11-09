@@ -72,11 +72,31 @@ export function insertManuscriptMarkup(
     return false;
   };
 
+  // GB11 only joins Extended_Pictographic Extend* ZWJ ×
+  // Extended_Pictographic; ordinary text after ZWJ has a legal boundary.
+  const isExtendedPictographic = (cp: number) =>
+    /\p{Extended_Pictographic}/u.test(String.fromCodePoint(cp));
+  const followsEmojiZwj = (index: number): boolean => {
+    if (!isExtendedPictographic(source.codePointAt(index)!)) return false;
+    let cursor = index - 1; // skip the ZWJ immediately before insertion
+    while (cursor > 0) {
+      const cp = codePointBefore(cursor);
+      if (/\p{M}/u.test(String.fromCodePoint(cp)) ||
+          (cp >= 0x1F3FB && cp <= 0x1F3FF)) {
+        cursor -= cp > 0xFFFF ? 2 : 1;
+        continue;
+      }
+      return isExtendedPictographic(cp);
+    }
+    return false;
+  };
+
   const fallbackSplitsGrapheme = (index: number): boolean => {
     if (index <= 0 || index >= source.length) return false;
     const previous = codePointBefore(index);
     const next = source.codePointAt(index)!;
-    if (previous === 0x200D || next === 0x200D ||
+    if (next === 0x200D ||
+        (previous === 0x200D && followsEmojiZwj(index)) ||
         /\p{M}/u.test(String.fromCodePoint(next)) ||
         // Halfwidth kana voicing marks are modifier letters, not \p{M},
         // but Unicode grapheme segmentation joins them to the base kana.
