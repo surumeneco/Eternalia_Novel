@@ -21,13 +21,28 @@ function digest(value: string): string {
   return createHash('sha256').update(value).digest('hex');
 }
 function cookieValue(raw: string | undefined, name: string): string | null {
-  const part = (raw || '').split(';').map(v => v.trim()).find(v => v.startsWith(name + '='));
-  const value = part?.slice(name.length + 1) ?? null;
-  return value && /^[0-9a-f]{48,128}$/.test(value) ? value : null;
+  // A request may carry same-name cookies from different Path scopes.
+  // Choosing the first depends on header order and can trust an ambiguous
+  // OAuth state or author-session credential. Fail closed before any DB lookup.
+  const matches = (raw || '').split(';').map(v => v.trim())
+    .filter(v => v.startsWith(name + '='));
+  if (matches.length !== 1) return null;
+  const value = matches[0]!.slice(name.length + 1);
+  return /^[0-9a-f]{48,128}$/.test(value) ? value : null;
 }
 function matchSecret(left: string, right: string): boolean {
   const a = Buffer.from(left), b = Buffer.from(right);
   return a.length === b.length && timingSafeEqual(a, b);
+}
+
+function canonicalHttpOrigin(raw: string): boolean {
+  try {
+    const parsed = new URL(raw);
+    return (parsed.protocol === 'https:' || parsed.protocol === 'http:') &&
+      !parsed.username && !parsed.password && parsed.origin === raw;
+  } catch {
+    return false;
+  }
 }
 
 @Injectable()
@@ -42,7 +57,7 @@ export class DiscordAuthService implements OnModuleDestroy {
 
   get configured(): boolean {
     return !!(this.pool && this.clientId && this.clientSecret &&
-      /^\d{15,25}$/.test(this.authorId) && /^https?:\/\/[^/]+$/.test(this.origin));
+      /^\d{15,25}$/.test(this.authorId) && canonicalHttpOrigin(this.origin));
   }
   private requirePool(): Pool {
     if (!this.configured || !this.pool) throw new ServiceUnavailableException('Discord認証が設定されていません。');
@@ -147,15 +162,31 @@ export class DiscordAuthService implements OnModuleDestroy {
     return (result.rowCount ?? 0) > 0;
   }
   assertWriteOrigin(headers: RequestHeaders): void {
+    // Media type matching is exact; JSONP/JSON-seq prefix lookalikes are not
+    // acceptable for state-changing author requests. Parameters are allowed.
+    const rawMediaType = headers['content-type'];
+    const mediaType = rawMediaType?.split(';', 1)[0].trim().toLowerCase();
+    // Content-Type is not a list header. Reject combined/ambiguous values
+    // instead of accepting a JSON prefix with a second media type appended.
     if (!this.configured || headers.origin !== this.origin ||
-      !headers['content-type']?.toLowerCase().startsWith('application/json')) {
+        !rawMediaType || rawMediaType.includes(',') ||
+        mediaType !== 'application/json') {
       throw new ForbiddenException('許可されていない変更要求です。');
     }
   }
   async logout(headers: RequestHeaders): Promise<void> {
-    const raw = cookieValue(headers.cookie,sessionCookie);
-    if (raw && this.pool) {
-      await this.pool.query('DELETE FROM author_sessions WHERE session_digest=$1', [digest(raw)]);
+    if (!this.pool) return;
+    // A browser can send several same-name cookies from different Path scopes.
+    // Authorization must reject that ambiguity, but logout should revoke every
+    // valid presented session instead of leaving additional sessions active.
+    const tokens = new Set(
+      (headers.cookie || '').split(';').map(part => part.trim())
+        .filter(part => part.startsWith(sessionCookie + '='))
+        .map(part => part.slice(sessionCookie.length + 1))
+        .filter(token => /^[0-9a-f]{64}$/.test(token)),
+    );
+    for (const token of tokens) {
+      await this.pool.query('DELETE FROM author_sessions WHERE session_digest=$1', [digest(token)]);
     }
   }
   async onModuleDestroy(): Promise<void> { await this.pool?.end(); }

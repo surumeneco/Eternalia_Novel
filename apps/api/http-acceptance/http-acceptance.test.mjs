@@ -82,6 +82,38 @@ test('published chapter body survives an unpublished draft edit across direct re
   assert.ok(!reader.body.includes(fixture.prefix + '-unpublished-draft'));
 });
 
+// Exploratory HTTP/privacy evidence only; not a confirmed CAT-generated test.
+test('anonymous breadcrumb paths exclude hidden ancestors, drafts and scheduled items', async () => {
+  const pathOf = id => '/api/public/items/' + id + '/path';
+  const expected = [fixture.seriesA, fixture.volume, fixture.part, fixture.chapter];
+  const secretMarkers = [
+    fixture.prefix + '-private-content',
+    fixture.prefix + '-private-tip',
+    fixture.prefix + '-unpublished-tip',
+    fixture.prefix + '-scheduled-secret',
+    fixture.prefix + '-unpublished-draft-body',
+  ];
+  // Check both real Nest API and its Nuxt proxy, not merely a unit contract.
+  for (const root of [base, api]) {
+    const published = await json(pathOf(fixture.chapter), root);
+    assert.equal(published.status, 200, 'published chapter path ' + root);
+    assert.deepEqual(published.value.map(node => node.id), expected,
+      'published breadcrumbs must contain only the exact ancestor chain');
+    for (const marker of secretMarkers) {
+      assert.ok(!published.body.includes(marker), 'private draft leaked into public path: ' + marker);
+    }
+    for (const id of [fixture.hiddenCategory, fixture.hiddenTip,
+                      fixture.unpublishedTip, fixture.scheduled]) {
+      const blocked = await get(pathOf(id), root);
+      assert.equal(blocked.status, 404,
+        'blocked breadcrumb unexpectedly accessible for ' + id + ' via ' + root);
+      for (const marker of secretMarkers) {
+        assert.ok(!blocked.body.includes(marker), 'blocked response disclosed ' + marker);
+      }
+    }
+  }
+});
+
 test('anonymous requests cannot read or mutate author library or memos', async () => {
   // AC-23: exercise both Nuxt proxy and direct Nest HTTP boundaries.
   const before = await get('/api/public/items/' + fixture.chapter);
@@ -648,6 +680,63 @@ test('AC-06: cross-series related Tip PATCH is rejected atomically at the HTTP b
   assert.equal(after.status, 200);
   assert.deepEqual(JSON.parse(after.body), beforeNodes,
     'rejected cross-series relation must not mutate any author node or revision');
+});
+
+test('stale publish and visibility writes return 409 without changing public content', async () => {
+  // Synthetic author session; real Discord OAuth2 remains a separate gate.
+  const cookie = 'eternalia_author=' + fixture.authorToken;
+  async function write(method, path, body) {
+    const response = await fetch(base + path, {
+      method,
+      headers: { Cookie: cookie, Origin: base, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    return { status: response.status, body: await response.text() };
+  }
+  async function create(kind, parentId, title, body = '') {
+    const response = await write('POST', '/api/admin/nodes', {
+      kind, parentId, content: { title, body, details: {} },
+    });
+    assert.equal(response.status, 201, response.body);
+    return JSON.parse(response.body).id;
+  }
+
+  const series = await create('series', null, fixture.prefix + '-revision-series');
+  const volume = await create('volume', series, '改訂巻');
+  const part = await create('part', volume, '改訂部');
+  const chapter = await create('chapter', part, '改訂章', '公開済み本文');
+  for (const id of [series, volume, part, chapter]) {
+    const published = await write('POST', '/api/admin/nodes/' + id + '/publish',
+      { expectedRevision: 1 });
+    assert.equal(published.status, 200, published.body);
+  }
+  assert.equal((await json('/api/public/items/' + chapter)).value.content.body, '公開済み本文');
+
+  const saved = await write('PATCH', '/api/admin/nodes/' + chapter, {
+    expectedRevision: 1,
+    content: { title: '改訂章', body: '改訂後本文', details: {} },
+  });
+  assert.equal(saved.status, 200, saved.body);
+  const stalePublish = await write('POST', '/api/admin/nodes/' + chapter + '/publish',
+    { expectedRevision: 1 });
+  assert.equal(stalePublish.status, 409);
+  assert.equal((await json('/api/public/items/' + chapter)).value.content.body, '公開済み本文');
+
+  const currentPublish = await write('POST', '/api/admin/nodes/' + chapter + '/publish',
+    { expectedRevision: 2 });
+  assert.equal(currentPublish.status, 200, currentPublish.body);
+  const staleVisibility = await write('POST', '/api/admin/nodes/' + chapter + '/visibility',
+    { expectedRevision: 1, isPublic: false, publicSince: null });
+  assert.equal(staleVisibility.status, 409);
+  assert.equal((await json('/api/public/items/' + chapter)).value.content.body, '改訂後本文');
+
+  const futurePublish = await write('POST', '/api/admin/nodes/' + chapter + '/publish',
+    { expectedRevision: 999999 });
+  assert.equal(futurePublish.status, 409, 'future revision cannot publish');
+  const futureVisibility = await write('POST', '/api/admin/nodes/' + chapter + '/visibility',
+    { expectedRevision: 999999, isPublic: false, publicSince: null });
+  assert.equal(futureVisibility.status, 409, 'future revision cannot hide public content');
+  assert.equal((await json('/api/public/items/' + chapter)).value.content.body, '改訂後本文');
 });
 
 test('synthetic author completes four-domain HTTP publication and privacy cycle', async () => {
