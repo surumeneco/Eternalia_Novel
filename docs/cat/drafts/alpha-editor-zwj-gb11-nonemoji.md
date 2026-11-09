@@ -20,7 +20,7 @@ language: ja
 | eternalia.editor | `insertManuscriptMarkup` の `Intl.Segmenter` 非対応WebView用fallback |
 | eternalia.reader | Unicode grapheme境界を保ったページ/ルビ編集とUTF-16 selection offsets |
 
-現行fallbackは `previous === U+200D` を無条件に分割禁止とする。一方、Unicode GB11のZWJ後方接続は、ZWJの前にExtended_Pictographicがあり、次がExtended_Pictographicである等の文脈に依存する。通常の文字 `a‍b` や `a‍💻` ではZWJ直後が正当なgrapheme境界となり得る。`Intl.Segmenter('ja', {granularity:'grapheme'})` の観測を独立参照とし、emoji ZWJ `👩‍💻` の非分割を維持する。PR #9のIndic conjunct、PR #10のPrependとは異なる境界。
+修正前のfallbackは `previous === U+200D` を無条件に分割禁止としていた。一方、Unicode GB11のZWJ後方接続は、ZWJの前にExtended_Pictographicがあり、次がExtended_Pictographicである等の文脈に依存する。通常の文字 `a‍b` や `a‍💻` ではZWJ直後が正当なgrapheme境界となり得る。`Intl.Segmenter('ja', {granularity:'grapheme'})` の観測を独立参照とし、emoji ZWJ `👩‍💻` の非分割を維持する。PR #9のIndic conjunct、PR #10のPrependとは異なる境界。
 
 ## 規則
 
@@ -33,13 +33,13 @@ language: ja
 
 ## Test model / TCE
 
-- EDITOR-GB11-01 (Red): `前a‍b後` のUTF-16 offset 3でpageを挿入できる。
-- EDITOR-GB11-02 (Red): `前a‍💻後` のoffset 3でpageを挿入できる。
+- EDITOR-GB11-01 (旧Red→候補Green): `前a‍b後` のUTF-16 offset 3でpageを挿入できる。
+- EDITOR-GB11-02 (旧Red→候補Green): `前a‍💻後` のoffset 3でpageを挿入できる。
 - EDITOR-GB11-03 (Green): `前👩‍💻後` のZWJ後、emoji内部でpage/rubyを拒否する。
-- EDITOR-GB11-04 (Red): `前a‍b後` の範囲[1,3]をruby化できる。
+- EDITOR-GB11-04 (旧Red→候補Green): `前a‍b後` の範囲[1,3]をruby化できる。
 
 ## 検証・Gate
 
-Node 22 `Intl.Segmenter` の境界を参照し、fallbackのみを強制した合成テストを準備する。実Android WebView・日本語IME・Playwright/Chromium手動受入は別途必要。
+Node 22 `Intl.Segmenter` の境界を参照した合成テストで、現αと結合したHEAD `3b5717600bd56a581000d4483267c9031c1d3f81` の [Actions #42642136977](https://github.com/surumeneco/Eternalia_Novel/actions/runs/42642136977) は期待した3件のRedを記録。候補修正HEAD `ea3fccd501197218eaae124d6fe65cd9e919961a` の [Actions #42642522936](https://github.com/surumeneco/Eternalia_Novel/actions/runs/42642522936) は4/4 CI成功、同4ケースGreen。Unicode UAX #29 GB11の完全準拠や実Android WebView・日本語IME・Chromiumでの当該Unicode入力操作は別途確認が必要。
 
-**Draft / not Confirmed.** 規範CAT Process/PI/TCEの確認、process-closure、TestModel、model-conformance、vectors、Queue、current-item、implementation-conformanceおよび実機受入は not-run。productionの変更やPRマージはこのDraftのみで行わない。
+**Draft / not Confirmed.** 規範CAT Process/PI/TCEの確認、process-closure、TestModel、model-conformance、vectors、Queue、current-item、implementation-conformanceおよび実機受入は not-run。候補コードはfeature branchにのみ反映。Confirmedへの昇格、`develop`/`main`へのマージ承認、実機の受入完了を意味しない。
