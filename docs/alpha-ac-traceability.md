@@ -29,17 +29,17 @@
 | AC-09 | 音韻規則・重複規則に違反する単語を入力 | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 同言語重複綴り警告の表示/消去/再表示（CI #41275713765 success） | not-run |
 | AC-10 | 異なる年代区分で同じ出来事を表示 | 未特定 | — | pending-decision |
 | AC-11 | 編集失敗・通信切断・再接続を発生させる | apps/web/browser-acceptance/browser-acceptance.test.mjs; docs/cat/ac11-save-network-retry-draft.md | B: 作者下書きPATCHの合成通信断→入力保持・DB未変更→再送・再読込成功（CI #41286691284 success、実回線・全条件は未検証） | not-run |
-| AC-12 | 同一レコードを複数編集元から更新 | apps/web/browser-acceptance/browser-acceptance.test.mjs、apps/api/tests/postgres-alpha.test.mjs | B/DB: 2タブ競合、保存済み本文維持、未保存入力保持（実端末は未検証） | not-run |
+| AC-12 | 同一レコードを複数編集元から更新 | apps/web/browser-acceptance/browser-acceptance.test.mjs、apps/api/tests/postgres-alpha.test.mjs; apps/api/http-acceptance/author-revision-conflict.test.mjs | B/DB: 2タブ競合、保存済み本文維持、未保存入力保持（実端末は未検証）。H+PG: Nest/Nuxt同時PATCHの200/409、rev+1のみ永続化、旧版公開/可視性変更409（CI #42346968728 success、実2ブラウザタブは未実施） | not-run |
 | AC-13 | 保留：ゴミ箱・ゴミ箱からの復元（当面実装・受入試験の対象外） | 未特定 | — | scope-excluded |
 | AC-14 | 検証エラー・API失敗・権限不足を発生させる | apps/api/http-acceptance/http-acceptance.test.mjs | H: 不正意味JSONの400拒否・下書き/公開稿非破壊（CI #41275713765 success） | not-run |
 | AC-15 | 非ASCII文字、長文、特殊文字、改行、多言語テキストを編集 | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 長文・日本語・アクセント・異体字・絵文字・改行を保存/再読込/公開（正規化全件未検証） | not-run |
 | AC-16 | 作者が本文・設定・辞書・年表の公開対象を指定して公開する | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 5種の明示公開（最新CI待ち、全画面表示未検証） | not-run |
 | AC-17 | 各領域の公開対象を非公開へ戻し、匿名読者が再取得する | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 章/TipSection/単語/文法/出来事の非公開→再公開を検証（検索/直URL全経路は未網羅） | not-run |
-| AC-18 | Discord連携でログイン・ログアウトを行う | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 合成作者セッションのログアウトと独立セッション維持（実Discord OAuthは未検証） | not-run |
-| AC-19 | Discord認証済みだが権限のない利用者が編集・公開操作を行う | apps/api/http-acceptance/http-acceptance.test.mjs; apps/web/browser-acceptance/browser-acceptance.test.mjs; docs/cat/ac19-22-non-author-guard-draft.md | B+H: 別Discord主体の有効な合成セッションで作者画面を開いても編集UIは表示されず公開閲覧は可能（CI #41294000373 success）。管理GET/POST/PATCH・公開・可視性・並べ替えはNuxt/Nest両経路から401拒否し、DB/公開稿不変（CI #41293650480 success）。実Discord OAuthは未実施 | not-run |
+| AC-18 | Discord連携でログイン・ログアウトを行う | apps/web/browser-acceptance/browser-acceptance.test.mjs; apps/web/browser-acceptance/author-csrf-oauth.test.mjs; apps/api/tests/discord-oauth-lifecycle.test.mjs | B: 合成作者セッションのログアウトと独立セッション維持（実Discord OAuthは未検証）。B+H+PG: OAuth開始PKCE/state S256、callback不正拒否、模擬Discord応答による本人発行/非本人拒否/state再利用・期限切れ/ログアウト失効（CI #42346968728 success、実Discord連携は未実施） | not-run |
+| AC-19 | Discord認証済みだが権限のない利用者が編集・公開操作を行う | apps/api/http-acceptance/http-acceptance.test.mjs; apps/web/browser-acceptance/browser-acceptance.test.mjs; docs/cat/ac19-22-non-author-guard-draft.md; apps/api/tests/discord-oauth-lifecycle.test.mjs | B+H: 別Discord主体の有効な合成セッションで作者画面を開いても編集UIは表示されず公開閲覧は可能（CI #41294000373 success）。管理GET/POST/PATCH・公開・可視性・並べ替えはNuxt/Nest両経路から401拒否し、DB/公開稿不変（CI #41293650480 success）。実Discord OAuthは未実施。PG: 模擬Discord APIが非作者IDを返した時は403、作者セッションを発行しない（CI #42346968728 success、実Discord非本人ログインは未実施） | not-run |
 | AC-20 | 未ログイン読者が本文・設定集・辞書・年表の公開・未公開データを取得する | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 匿名公開API・非公開拒否（全経路未網羅） | not-run |
 | AC-21 | Discordログインしていない状態で公開データを閲覧する | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: anonymous mobile reading | not-run |
-| AC-22 | 読者がDiscordログイン後に編集・公開APIを呼び出す | apps/api/http-acceptance/http-acceptance.test.mjs; docs/cat/ac19-22-non-author-guard-draft.md | H: 合成された非作者セッションで8種類の管理要求をNuxt proxy・Nest直接APIの両方から401拒否（CI #41293650480 success）。実Discord OAuthでの受入は未実施 | not-run |
+| AC-22 | 読者がDiscordログイン後に編集・公開APIを呼び出す | apps/api/http-acceptance/http-acceptance.test.mjs; docs/cat/ac19-22-non-author-guard-draft.md; apps/api/tests/discord-oauth-lifecycle.test.mjs | H: 合成された非作者セッションで8種類の管理要求をNuxt proxy・Nest直接APIの両方から401拒否（CI #41293650480 success）。実Discord OAuthでの受入は未実施。PG: OAuth模擬トークン交換を経ても非作者IDなら403で拒否（CI #42346968728 success、実Discord非本人ログインは未実施） | not-run |
 | AC-23 | 未ログイン状態で編集・公開APIを呼び出す | apps/api/http-acceptance/http-acceptance.test.mjs; apps/web/browser-acceptance/browser-acceptance.test.mjs | H+B: 匿名で管理GET/POST/PATCH・公開・可視性・並べ替えを両HTTP経路から401拒否し、匿名ブラウザに作者編集UIを表示しない（CI #41293879283 push success、実OAuth不要な匿名境界の部分証拠） | not-run |
 | AC-24 | 異なるシリーズA・Bを作成して編・部・章・本文をそれぞれ登録 | apps/web/browser-acceptance/browser-acceptance.test.mjs; docs/cat/ac24-27-cross-series-story-isolation-draft.md | B: A/Bに同名の編・部・章と異なる本文を登録し匿名公開ツリー・直URLの独立性を検証（CI #41286928693 success） | not-run |
 | AC-25 | 両シリーズに設定・言語・出来事を登録し切り替える | apps/web/browser-acceptance/browser-acceptance.test.mjs; apps/api/http-acceptance/http-acceptance.test.mjs; docs/cat/ac25-cross-series-multidomain-isolation-draft.md | B+H: A/B同名のカテゴリ/Tip・言語/Word・年代/Eventを別IDで公開し、両公開ツリーの非混入とBカテゴリ非公開後のA・B他領域の維持を検証（CI #41293612935 success）。作者UIの全切替導線は別途精査 | not-run |
@@ -86,10 +86,10 @@
 | AC-66 | v0.3共通、PB-06、CM-09 | 未特定 | — | not-run |
 | AC-67 | v0.3設定・辞書、ST-03/05/06/09、LG-05〜08 | 未特定 | — | not-run |
 | AC-68 | v0.3 Timeline、TL-01〜06 | 未特定 | — | not-run |
-| AC-69 | PB-18、215承認済み公開更新方式 | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 章/TipSection/単語/文法/出来事の下書き・再読込・明示公開・非公開/復帰（実UI全経路未網羅） | not-run |
+| AC-69 | PB-18、215承認済み公開更新方式 | apps/web/browser-acceptance/browser-acceptance.test.mjs; apps/api/http-acceptance/author-revision-conflict.test.mjs | B: 章/TipSection/単語/文法/出来事の下書き・再読込・明示公開・非公開/復帰（実UI全経路未網羅）。H+PG: 明示公開前の下書きは404、公開後にrev3下書きを保存しても公開稿不変、旧revで再公開/非公開を拒否（CI #42346968728 success、利用者実機は未実施） | not-run |
 | AC-70 | PB-10〜17、PB-18 | apps/web/browser-acceptance/browser-acceptance.test.mjs、apps/api/http-acceptance/http-acceptance.test.mjs | B/H: 全4領域の祖先/子非公開、未来予定、直URL/検索（CI #41275269669 success、全経路未網羅） | not-run |
 | AC-71 | 旧Backend develop/920 | 未特定 | — | not-run |
-| AC-72 | 215・210 | .github/workflows/alpha-checks.yml | CI: Node22/Nuxt/Nest/PG17/Chromium 4ジョブ成功、実Discord OAuth未検証 | not-run |
+| AC-72 | 215・210 | .github/workflows/alpha-checks.yml; apps/web/browser-acceptance/author-csrf-oauth.test.mjs; apps/api/tests/discord-oauth-lifecycle.test.mjs | CI: Node22/Nuxt/Nest/PG17/Chromium 4ジョブ成功、実Discord OAuth未検証。CI #42346968728: Node22/Nuxt4/Nest/PG/Chromiumの4ジョブsuccess、PG 11/11、Chromium 35/35と追加ブラウザOrigin/OAuth 2/2成功。実Discord認証は未実施 | not-run |
 | AC-73 | 010 UI構造試験導入 | 未特定 | — | not-run |
 | AC-74 | 910/920継承監査 | 未特定 | — | not-run |
 | AC-75 | CM-02/03/08/09 | 未特定 | — | pending-decision |
