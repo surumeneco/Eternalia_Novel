@@ -93,3 +93,19 @@ test('unknown runtime insertion kind does not silently create ruby', () => {
   assert.equal(insert('本文', 1, 1, 'page')?.value, '本[[page]]文');
   assert.equal(insert('本文', 1, 1, 'ruby')?.value, '本｜文字《よみ》文');
 });
+
+test('page marker preserves selection that extends into an existing ruby token', () => {
+  const source = '前｜漢字《かんじ》後';
+  assert.deepEqual(insert(source, 1, 4, 'page'), {
+    value: '前[[page]]｜漢字《かんじ》後',
+    selectionStart: 9, selectionEnd: 9,
+  });
+  assert.equal(insert(source, 1, 4, 'ruby'), null,
+    'ruby replacement must still reject an endpoint inside a token');
+});
+
+test('page marker checks its insertion point, not the unused selection end', () => {
+  assert.equal(insert('前𠮷後', 1, 2, 'page')?.value, '前[[page]]𠮷後');
+  assert.equal(insert('前𠮷後', 2, 3, 'page'), null,
+    'insertion itself must not split a supplementary character');
+});
