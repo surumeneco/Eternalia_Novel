@@ -81,6 +81,7 @@ try {
   // revoke that fixture during their logout assertion.
   if (process.env.HTTP_BROWSER_ACCEPTANCE === '1') {
     await command(['scripts/run-test-junit.mjs', 'browser-auth-boundary', 'apps/web/browser-acceptance/author-csrf-oauth.test.mjs']);
+    await command(['scripts/run-test-junit.mjs', 'browser-mobile-touch', 'apps/web/browser-acceptance/mobile-touch-editor.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser', 'apps/web/browser-acceptance/browser-acceptance.test.mjs']);
   }
   // Run separate boundary tests before the main suite revokes the synthetic author session.
