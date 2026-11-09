@@ -80,9 +80,9 @@ try {
   // Browser interactions use the synthetic author session before HTTP tests
   // revoke that fixture during their logout assertion.
   if (process.env.HTTP_BROWSER_ACCEPTANCE === '1') {
-    await command(['--test', 'apps/web/browser-acceptance/browser-acceptance.test.mjs']);
+    await command(['scripts/run-test-junit.mjs', 'browser', 'apps/web/browser-acceptance/browser-acceptance.test.mjs']);
   }
-  await command(['--test', 'apps/api/http-acceptance/http-acceptance.test.mjs']);
+  await command(['scripts/run-test-junit.mjs', 'http', 'apps/api/http-acceptance/http-acceptance.test.mjs']);
 } finally {
   for (const child of processes) child.kill();
   await rm(tmp, { recursive: true, force: true });
