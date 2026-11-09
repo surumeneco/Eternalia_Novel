@@ -1,6 +1,6 @@
 # α版 実機受入チェックリスト（未実施）
 
-対象: `surumeneco/Eternalia_Novel` / PR #3 / `feature/alpha-reimplementation-20261029`。正本は `forGPT/Creating/Projects/Websites/Eternalia_Novel/40_開発・検証/400_受入検証計画.md`。本書は実機検証の手順と記録欄であり、実施済み証拠ではない。
+対象: `surumeneco/Eternalia_Novel` のα版 / PR #3（`feature/alpha-reimplementation-20261029`）。作者認証・公開境界（旧検証PR #7）、Unicode/IME編集（旧検証PR #6）およびモバイルタッチ操作を、統合した**実際の配備HEAD**で確認する。別ブランチの過去のCIを同一環境での統合試験とみなさない。正本は `forGPT/Creating/Projects/Websites/Eternalia_Novel/40_開発・検証/400_受入検証計画.md`。本書は手順と記録欄であり、実機受入の完了証拠ではない。
 
 **現在の判定: 全件 not-run（人間による実機検証）。** GitHub Actionsの合成セッション/一時PostgreSQL/Chromium成功はDiscord本人認証、実IME、端末、旧v0.3デザイン承認を代替しない。
 
