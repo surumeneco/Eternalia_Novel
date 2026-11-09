@@ -1,19 +1,7 @@
 <script setup lang="ts">
+import { tokenizeRichContent } from '~/utils/rich-content-tokenizer';
 const props = withDefaults(defineProps<{ source: string; paged?: boolean }>(), { paged: false });
-interface Token { base: string; reading?: string }
-function tokenize(source: string): Token[] {
-  const result: Token[] = [];
-  const pattern = /｜([^《\n]+)《([^》\n]+)》/g;
-  let offset = 0, match: RegExpExecArray | null;
-  while ((match = pattern.exec(source))) {
-    if (match.index > offset) result.push({ base: source.slice(offset, match.index) });
-    result.push({ base: match[1] ?? '', reading: match[2] ?? undefined });
-    offset = pattern.lastIndex;
-  }
-  if (offset < source.length) result.push({ base: source.slice(offset) });
-  return result;
-}
-const pages = computed(() => props.source.split('[[page]]').map(tokenize));
+const pages = computed(() => props.source.split('[[page]]').map(tokenizeRichContent));
 const currentPage = ref(0);
 watch(() => props.source, () => { currentPage.value = 0; });
 const displayed = computed(() => props.paged
