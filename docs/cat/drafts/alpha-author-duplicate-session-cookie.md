@@ -20,7 +20,7 @@ language: ja
 | eternalia.auth | `DiscordAuthService.isAuthor` が読む作者セッションcookieの一意性 |
 | eternalia.author | 重複したcookie headerから編集権限を推定しない認可境界 |
 
-OAuth state-cookieの重複拒否（PR #8）とは別に、ログイン後の `eternalia_author` session-cookieの重複を検証する。現行 `cookieValue` は最初の一致を採用するため、同名cookieが二つある場合はheader順序に依存して認可が成立し得る。異なるPathを持つcookieがブラウザから送られる場合もあるため、重複拒否はcookie移行/cleanupを含む規範判断が必要。これは認証設計のDraftであり、現行実装の正当な変更許可ではない。
+OAuth state-cookieの重複拒否（PR #8）とは別に、ログイン後の `eternalia_author` session-cookieの重複を検証する。修正前の `cookieValue` は最初の一致を採用しており、同名cookieが二つある場合はheader順序に依存して認可が成立し得た。現行feature上の暫定修正候補は一致が複数のとき `null` を返すため、`isAuthor` はDB照会前に拒否する。異なるPathを持つcookieがブラウザから送られる場合もあるため、重複拒否はcookie移行/cleanupを含む規範判断が必要。これは認証設計のDraftであり、現行実装の正当な変更許可ではない。
 
 ## 規則
 
@@ -41,3 +41,5 @@ OAuth state-cookieの重複拒否（PR #8）とは別に、ログイン後の `e
 PR #8の重複OAuth state-cookie testとは独立の、session authorization boundaryに対する合成Nodeテスト。実Discord OAuth2/PKCE、cookie path collision、HTTPブラウザ、PostgreSQL実データは検証対象外。
 
 **Draft / not Confirmed.** 規範Process/PI/TCEの確認、process-closure、TestModel、model-conformance、vectors、Queue、current-item、implementation-conformanceおよび実機HTTP/ブラウザ受入は not-run。意図的Redを認可実装の変更許可とみなさない。
+
+PR #11の独立合成Node検証は、旧実装でのRedから [Green run #42634450570](https://github.com/surumeneco/Eternalia_Novel/actions/runs/42634450570) で重複の異同2件と単一Cookieの1件がすべて成功（4/4 CI jobs）へ移行した。これは正式CAT Gateではなく、Cookie Pathの実ブラウザ再現、実Discord本人ログイン、実DBでの失効確認を代替しない。
