@@ -34,6 +34,15 @@ export function insertManuscriptMarkup(
     return last;
   };
   const isRegionalIndicator = (cp: number) => cp >= 0x1F1E6 && cp <= 0x1F1FF;
+  // UAX #29 GB9b: Prepend joins the next grapheme unless a control boundary
+  // takes precedence. Intl.Segmenter is preferred when available.
+  const isPrepend = (cp: number) =>
+    (cp >= 0x0600 && cp <= 0x0605) || cp === 0x06DD ||
+    cp === 0x070F || (cp >= 0x0890 && cp <= 0x0891) ||
+    cp === 0x08E2 || cp === 0x0D4E || cp === 0x110BD ||
+    cp === 0x110CD;
+  const isControlBoundary = (cp: number) =>
+    /[\p{Cc}\p{Zl}\p{Zp}]/u.test(String.fromCodePoint(cp));
   // Unicode grapheme rules GB6-GB8 for conjoining Hangul Jamo.
   const isHangulL = (cp: number) =>
     (cp >= 0x1100 && cp <= 0x115F) || (cp >= 0xA960 && cp <= 0xA97C);
@@ -59,6 +68,7 @@ export function insertManuscriptMarkup(
         // Emoji subdivision flags use supplementary tag code points that
         // are neither combining marks nor ZWJ. Keep the tag run attached.
         (next >= 0xE0020 && next <= 0xE007F)) return true;
+    if (isPrepend(previous) && !isControlBoundary(next)) return true;
     if ((isHangulL(previous) &&
           (isHangulL(next) || isHangulV(next) || isHangulLV(next) || isHangulLVT(next))) ||
         ((isHangulLV(previous) || isHangulV(previous)) &&
