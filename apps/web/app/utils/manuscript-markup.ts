@@ -51,6 +51,9 @@ export function insertManuscriptMarkup(
     const previous = codePointBefore(index);
     const next = source.codePointAt(index)!;
     if (previous === 0x200D || next === 0x200D ||
+        // ZWNJ is Grapheme_Cluster_Break Extend; its preceding boundary
+        // is protected even when Intl.Segmenter is unavailable.
+        next === 0x200C ||
         /\p{M}/u.test(String.fromCodePoint(next)) ||
         // Halfwidth kana voicing marks are modifier letters, not \p{M},
         // but Unicode grapheme segmentation joins them to the base kana.
