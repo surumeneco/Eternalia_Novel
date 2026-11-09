@@ -21,9 +21,14 @@ function digest(value: string): string {
   return createHash('sha256').update(value).digest('hex');
 }
 function cookieValue(raw: string | undefined, name: string): string | null {
-  const part = (raw || '').split(';').map(v => v.trim()).find(v => v.startsWith(name + '='));
-  const value = part?.slice(name.length + 1) ?? null;
-  return value && /^[0-9a-f]{48,128}$/.test(value) ? value : null;
+  // A request may carry same-name cookies from different Path scopes.
+  // Choosing the first depends on header order and can trust an ambiguous
+  // OAuth state or author-session credential. Fail closed before any DB lookup.
+  const matches = (raw || '').split(';').map(v => v.trim())
+    .filter(v => v.startsWith(name + '='));
+  if (matches.length !== 1) return null;
+  const value = matches[0]!.slice(name.length + 1);
+  return /^[0-9a-f]{48,128}$/.test(value) ? value : null;
 }
 function matchSecret(left: string, right: string): boolean {
   const a = Buffer.from(left), b = Buffer.from(right);
@@ -170,9 +175,18 @@ export class DiscordAuthService implements OnModuleDestroy {
     }
   }
   async logout(headers: RequestHeaders): Promise<void> {
-    const raw = cookieValue(headers.cookie,sessionCookie);
-    if (raw && this.pool) {
-      await this.pool.query('DELETE FROM author_sessions WHERE session_digest=$1', [digest(raw)]);
+    if (!this.pool) return;
+    // A browser can send several same-name cookies from different Path scopes.
+    // Authorization must reject that ambiguity, but logout should revoke every
+    // valid presented session instead of leaving additional sessions active.
+    const tokens = new Set(
+      (headers.cookie || '').split(';').map(part => part.trim())
+        .filter(part => part.startsWith(sessionCookie + '='))
+        .map(part => part.slice(sessionCookie.length + 1))
+        .filter(token => /^[0-9a-f]{64}$/.test(token)),
+    );
+    for (const token of tokens) {
+      await this.pool.query('DELETE FROM author_sessions WHERE session_digest=$1', [digest(token)]);
     }
   }
   async onModuleDestroy(): Promise<void> { await this.pool?.end(); }
