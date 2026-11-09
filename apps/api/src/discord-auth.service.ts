@@ -175,9 +175,18 @@ export class DiscordAuthService implements OnModuleDestroy {
     }
   }
   async logout(headers: RequestHeaders): Promise<void> {
-    const raw = cookieValue(headers.cookie,sessionCookie);
-    if (raw && this.pool) {
-      await this.pool.query('DELETE FROM author_sessions WHERE session_digest=$1', [digest(raw)]);
+    if (!this.pool) return;
+    // A browser can send several same-name cookies from different Path scopes.
+    // Authorization must reject that ambiguity, but logout should revoke every
+    // valid presented session instead of leaving additional sessions active.
+    const tokens = new Set(
+      (headers.cookie || '').split(';').map(part => part.trim())
+        .filter(part => part.startsWith(sessionCookie + '='))
+        .map(part => part.slice(sessionCookie.length + 1))
+        .filter(token => /^[0-9a-f]{64}$/.test(token)),
+    );
+    for (const token of tokens) {
+      await this.pool.query('DELETE FROM author_sessions WHERE session_digest=$1', [digest(token)]);
     }
   }
   async onModuleDestroy(): Promise<void> { await this.pool?.end(); }
