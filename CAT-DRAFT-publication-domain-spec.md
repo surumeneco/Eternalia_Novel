@@ -7,6 +7,7 @@ process: eternalia.publication
 source_refs:
   - https://drive.google.com/file/d/1YgJaY4gQQ5Stla9sdS5F05P-LMUTbZr_/view
   - https://drive.google.com/file/d/1LqX-Noytb_oWymIrpO01eO5PvThGlVGx/view
+refs: []
 base_revision: 7d23cbf43b37bcafef29abacdb6802657ae16cdc
 semantic_contract: markdown-v2
 language: ja

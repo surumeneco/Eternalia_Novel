@@ -127,6 +127,19 @@ export function createNode(library: Library, input: { id: string; kind: Kind; pa
   if (input.kind === 'tip' && parent) validateTipReferences(library, input.id, parent.id, content);
   if (input.kind === 'language') validateLanguageStructure(content);
   if (input.kind === 'category' && content.details.presets !== undefined) parsePresets(content.details.presets);
+  // Preset sections use a deterministic ID derived from the Tip's first 30
+  // characters. Two distinct Tip IDs can share that prefix: reject the second
+  // creation before mutating the library rather than creating ambiguous IDs.
+  const copiedPresets = input.kind === 'tip' && parent
+    ? parsePresets(parent.draft.details.presets ?? '[]') : [];
+  const generatedIds = copiedPresets.map((_, i) =>
+    `${input.id.slice(0, 30)}${i.toString().padStart(6, '0')}`);
+  if (generatedIds.length > 0) {
+    const existingIds = new Set(library.nodes.map(node => node.id));
+    if (generatedIds.some(id => id === input.id || existingIds.has(id))) {
+      domainError('bad-request', '設定項目のIDが既存データと重複しています。');
+    }
+  }
   const next = clone(library);
   const siblings = next.nodes.filter(n => n.parentId === (parent?.id ?? null) && n.kind === input.kind);
   next.nodes.push({ id: input.id, kind: input.kind, parentId: parent?.id ?? null,
@@ -135,9 +148,8 @@ export function createNode(library: Library, input: { id: string; kind: Kind; pa
     publicSince: null, updatedAt: input.now });
   // New Tip copies category presets once, with no future propagation.
   if (input.kind === 'tip' && parent) {
-    const presets = parsePresets(parent.draft.details.presets ?? '[]');
-    for (const [i, preset] of presets.entries()) {
-      next.nodes.push({ id: `${input.id.slice(0, 30)}${i.toString().padStart(6,'0')}`, kind: 'tipSection',
+    for (const [i, preset] of copiedPresets.entries()) {
+      next.nodes.push({ id: generatedIds[i]!, kind: 'tipSection',
         parentId: input.id, order: i, draft: { title: preset.title, body: preset.body, details: {} },
         revision: 1, published: null, isPublic: false, publicSince: null, updatedAt: input.now });
     }
