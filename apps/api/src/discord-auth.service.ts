@@ -21,9 +21,14 @@ function digest(value: string): string {
   return createHash('sha256').update(value).digest('hex');
 }
 function cookieValue(raw: string | undefined, name: string): string | null {
-  const part = (raw || '').split(';').map(v => v.trim()).find(v => v.startsWith(name + '='));
-  const value = part?.slice(name.length + 1) ?? null;
-  return value && /^[0-9a-f]{48,128}$/.test(value) ? value : null;
+  // A request may carry same-name cookies from different Path scopes.
+  // Choosing the first depends on header order and can trust an ambiguous
+  // OAuth state or author-session credential. Fail closed before any DB lookup.
+  const matches = (raw || '').split(';').map(v => v.trim())
+    .filter(v => v.startsWith(name + '='));
+  if (matches.length !== 1) return null;
+  const value = matches[0]!.slice(name.length + 1);
+  return /^[0-9a-f]{48,128}$/.test(value) ? value : null;
 }
 function matchSecret(left: string, right: string): boolean {
   const a = Buffer.from(left), b = Buffer.from(right);

@@ -15,10 +15,13 @@
     "alpha": "npm run build:contracts && node apps/preview/src/server.mjs",
     "test:alpha": "npm run build:contracts && node --test packages/contracts/exploratory/*.test.mjs apps/preview/tests/*.test.mjs && node --experimental-strip-types --test apps/web/tests/*.test.mjs",
     "check:alpha": "npm run test:alpha",
+    "check:ac-traceability": "node --test scripts/check-ac-traceability.test.mjs && node scripts/check-ac-traceability.mjs docs/alpha-ac-traceability.md",
+    "check:junit-tooling": "node --test scripts/run-test-junit.test.mjs",
     "alpha:offline": "node apps/preview/src/server.mjs",
     "seed:alpha": "node apps/preview/src/seed.mjs",
     "db:migrate": "node --env-file-if-exists=.env scripts/migrate.mjs",
-    "test:db": "node --test apps/api/tests/author-guard.test.mjs apps/api/tests/author-memos.test.mjs apps/api/tests/postgres-alpha.test.mjs apps/api/tests/tip-relations-postgres.test.mjs apps/api/tests/discord-oauth-token-failure.test.mjs apps/api/tests/discord-oauth-duplicate-cookie.test.mjs apps/api/tests/discord-author-duplicate-session-cookie.test.mjs",
+    "test:db": "node --test apps/api/tests/author-guard.test.mjs apps/api/tests/author-memos.test.mjs apps/api/tests/discord-oauth-lifecycle.test.mjs apps/api/tests/discord-oauth-token-failure.test.mjs apps/api/tests/discord-oauth-duplicate-cookie.test.mjs apps/api/tests/discord-author-duplicate-session-cookie.test.mjs apps/api/tests/postgres-alpha.test.mjs apps/api/tests/tip-relations-postgres.test.mjs",
+    "test:db:junit": "node scripts/run-test-junit.mjs postgres apps/api/tests/author-guard.test.mjs apps/api/tests/author-memos.test.mjs apps/api/tests/discord-oauth-lifecycle.test.mjs apps/api/tests/discord-oauth-token-failure.test.mjs apps/api/tests/discord-oauth-duplicate-cookie.test.mjs apps/api/tests/discord-author-duplicate-session-cookie.test.mjs apps/api/tests/postgres-alpha.test.mjs apps/api/tests/tip-relations-postgres.test.mjs",
     "test:http": "node --test apps/api/http-acceptance/http-acceptance.test.mjs"
   },
   "engines": {

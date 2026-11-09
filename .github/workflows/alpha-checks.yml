@@ -44,6 +44,10 @@ jobs:
         run: npm ci
       - name: Exercise existing alpha domain and HTTP tests
         run: npm run test:alpha
+      - name: Guard AC-01 through AC-78 acceptance evidence matrix
+        run: npm run check:ac-traceability
+      - name: Self-test JUnit evidence runner on Node 22
+        run: npm run check:junit-tooling
       - name: Build contracts, Nest and Nuxt
         run: npm run build
       - name: Check Nuxt types
@@ -110,8 +114,16 @@ jobs:
         run: npm run build -w @eternalia/api
       - name: Apply PostgreSQL migrations
         run: npm run db:migrate
-      - name: Verify PostgreSQL transactions and author guards
-        run: npm run test:db
+      - name: Verify PostgreSQL transactions and author guards with JUnit evidence
+        run: npm run test:db:junit
+      - name: Upload PostgreSQL JUnit receipts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: alpha-postgres-junit
+          path: artifacts/alpha-junit
+          if-no-files-found: warn
+          retention-days: 7
 
   http-ssr-acceptance:
     # Real built NestJS + Nuxt HTTP/SSR paths against an ephemeral PostgreSQL service.
@@ -167,4 +179,12 @@ jobs:
           name: alpha-ui-screenshots
           path: artifacts/alpha-ui
           if-no-files-found: ignore
+          retention-days: 7
+      - name: Upload HTTP and browser JUnit receipts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: alpha-http-browser-junit
+          path: artifacts/alpha-junit
+          if-no-files-found: warn
           retention-days: 7
