@@ -210,3 +210,47 @@ test('Chromium touch editor enforces GB4/GB5 fallback without Intl.Segmenter',
       } finally { await author.close(); }
     } finally { await browser.close(); }
   });
+
+test('Chromium touch editor respects Unicode fallback boundaries across scripts',
+  { timeout: 90_000 }, async () => {
+    const browser = await chromium.launch({ headless: true });
+    try {
+      const author = await authorContext(browser);
+      try {
+        const chapter = await createDraftChapter(author);
+        const page = await author.newPage();
+        await page.addInitScript(() => {
+          Object.defineProperty(Intl, 'Segmenter', { configurable: true, value: undefined });
+        });
+        await page.goto(base + '/studio?item=' + chapter);
+        assert.equal(await page.evaluate(() => typeof Intl.Segmenter), 'undefined');
+        const editor = page.getByRole('textbox', { name: '本文・説明', exact: true });
+        const marker = page.getByRole('button', { name: 'ページ区切りを挿入' });
+        await editor.waitFor();
+
+        const cases = [
+          { name: 'ZWNJ inside', source: '前a\u200Cb後', offset: 2, permitted: false },
+          { name: 'ZWNJ after', source: '前a\u200Cb後', offset: 3, permitted: true },
+          { name: 'Prepend inside', source: '前\u0600\u0627後', offset: 2, permitted: false },
+          { name: 'Prepend after', source: '前\u0600\u0627後', offset: 3, permitted: true },
+          { name: 'Indic inside', source: '前क्ष後', offset: 3, permitted: false },
+          { name: 'Indic after', source: '前क्ष後', offset: 4, permitted: true },
+          { name: 'non-emoji ZWJ after', source: '前a\u200Db後', offset: 3, permitted: true },
+          { name: 'emoji ZWJ inside', source: '前👩\u200D💻後', offset: 4, permitted: false },
+        ];
+        for (const scenario of cases) {
+          await editor.fill(scenario.source);
+          await editor.evaluate((el, index) => {
+            el.focus();
+            el.setSelectionRange(index, index);
+          }, scenario.offset);
+          await marker.tap();
+          const expected = scenario.permitted
+            ? scenario.source.slice(0, scenario.offset) + '[[page]]' +
+              scenario.source.slice(scenario.offset)
+            : scenario.source;
+          assert.equal(await editor.inputValue(), expected, scenario.name);
+        }
+      } finally { await author.close(); }
+    } finally { await browser.close(); }
+  });
