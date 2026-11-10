@@ -1,18 +1,27 @@
-# Eternalia_Novel α版 — 実装・検証引継ぎ
+# Eternalia_Novel α版 — 現行入口と開発履歴
 
-> 2026-10-29更新。CAT-TDDのconfirmed仕様、機械的Gate、α受入の完了証跡ではない。
-> 本記録のコード基準は `734e15ece6c5d16c372d256f220fe26f339bdcb3`（本記録更新の直前）。
-> 次回はGitHubの現在HEAD、PR、CIを再取得すること。
+## 現行の引継ぎ境界（2026-11-10）
 
-## 正本・開発境界
+- **受入確認対象は `develop`**。α版本体は [PR #3](https://github.com/surumeneco/Eternalia_Novel/pull/3)、年代区分フィルターのChromium検証は [PR #34](https://github.com/surumeneco/Eternalia_Novel/pull/34)、AC-68証拠台帳の更新は [PR #35](https://github.com/surumeneco/Eternalia_Novel/pull/35) でそれぞれ `develop` に統合済み。GitHubの現在HEADを作業開始時に必ず読み直す。
+- `develop` のα版実装統合後は [CI #42790743218](https://github.com/surumeneco/Eternalia_Novel/actions/runs/42790743218) の全4ジョブが成功。単体テスト・Nuxt/Nestビルド/型検査・PostgreSQL・Chromium/HTTPの**探索的検証**であり、CAT正式Gateや実Discord・IME・人間の受入を完了したものではない。
+- `main` は未リリースのまま。利用者が `develop` を受入確認し、別途OKとリリース指示を出すまでは `main` へ統合しない。
+- **CAT実行手段の旧ブロッカーは現在の事実ではない。** Chat用固定CATソース `896cae8313a533a3c74073a8c3150daad314ff90` の96ファイル・Gitツリーを検証し、正規 `cat_flow.py validate` と `route` を直接実行できる。ただし現在の各Workの正式Process Closure、Model Conformance、Implementation Conformanceが合格したという証拠ではない。
+- 作業入口: [README.md](README.md)、[Nuxt/Nest/PostgreSQL起動](docs/alpha-nuxt-setup.md)、[受入チェックリスト](docs/alpha-manual-acceptance.md)、[AC-01〜78トレーサビリティ](docs/alpha-ac-traceability.md)。年代区分間の年換算、設定カテゴリ所属変更時の公開反映、独立した削除/無効化等、未決の振る舞いは設計上の決定を得るまで自己確定しない。
+
+## 過去の引継ぎログ（2026-10-29〜31、各節は**当時**の観測・未実施・停止判断）
+
+> 以下の「Draft/open」「develop未統合」「CAT実行環境がない」「実ブラウザ未検証」等は**履歴であり現行の実行制約ではない**。その後に実装・検証・統合されている項目について、旧記述を実装が無い証拠や作業停止理由として用いない。
+> 当時のコード基準は `734e15ece6c5d16c372d256f220fe26f339bdcb3`。最新コード・CI・設計正本を優先して照合する。
+
+## 2026-10-29時点の正本・開発境界（履歴）
 
 - Repository: `surumeneco/Eternalia_Novel`
-- Branch: `feature/alpha-reimplementation-20261029`; PR: [#3](https://github.com/surumeneco/Eternalia_Novel/pull/3) → `develop`、Draft/open、未マージ
-- `develop` / `main` はリリース対象の受入を満たすまで変更しない。
-- 採用済み要件・設計・受入条件の正本はGoogle Driveの `forGPT/Eternalia_Novel/` 内、特に `100_機能仕様.md`、`200_情報構造・画面設計.md`、`220_ビジュアルデザイン・画面コンポーネント継承設計.md`、`300_データモデル.md`、`310_API・セキュリティ.md`、`400_受入検証計画.md`。段階計画は `430_α版段階的実装計画・引継ぎ_20261029.md`。
-- CAT-TDDは `cat-tdd-development` → `issue-work` または `spec-implementation`。本環境では正規実行系とローカルcheckout不在、GitHubのDNS解決不能。正規doctor/guard/Queue/Red/Green/implementation-conformanceは `not-run`。GitHub APIでのコード更新やActions成功はCATの代替ではない。
+- 当時のBranch: `feature/alpha-reimplementation-20261029`; 当時のPR [#3](https://github.com/surumeneco/Eternalia_Novel/pull/3) → `develop` はDraft/open・未マージだった（現在はマージ済み）。
+- 当時の保留方針は現在には適用しない。現在は `develop` に検証済み実装単位を随時統合し、`main` のみ受入後のリリース指示を待つ。
+- 採用済み要件・設計・受入条件の正本はGoogle Driveの `forGPT/Creating/Projects/Websites/Eternalia_Novel/` 内、特に `100_機能仕様.md`、`200_情報構造・画面設計.md`、`220_ビジュアルデザイン・画面コンポーネント継承設計.md`、`300_データモデル.md`、`310_API・セキュリティ.md`、`400_受入検証計画.md`。段階計画は `430_α版段階的実装計画・引継ぎ_20261029.md`。
+- 当時のCAT実行環境では正規CLIを取得できなかったが、現在は上記の固定配布物をChat Pythonで検証・実行できる。正式CAT Gateの合否は**各Workの実証拠**で独立に判断する。GitHub CIの成功はCAT Gate合格ではない。
 
-## 実装済み（ただしブラウザ受入未完了）
+## 2026-10-29時点の実装済み観測（後続CIによる検証は上の現行入口を参照）
 
 | Workの一部 | 実装・テスト |
 | --- | --- |
@@ -25,14 +34,14 @@
 | A6 共通 | 実公開データによる新着・更新情報（未公開/非公開を秘匿）、読者詳細から作者のみ編集へのリンク、未保存離脱確認 |
 | A6 メモ | **作者のみの別DBテーブル**・改訂競合検出・タグ付きメモ保存、一覧/検索/新規/編集UI、APIガード |
 
-## 現行CIの独立証拠
+## 2026-10-29時点のCI証拠（履歴）
 
 - `734e15ec` の Push [40864473111](https://github.com/surumeneco/Eternalia_Novel/actions/runs/40864473111) と PR [40864482955](https://github.com/surumeneco/Eternalia_Novel/actions/runs/40864482955) は `completed/success` を取得。
 - `npm run test:alpha`: ドメイン・公開境界・辞書意味/語源・言語の文字関係・年代区分内ソート等の探索的単体試験。
 - `npm run build`、Nuxt typecheck、`npm run db:migrate`、`npm run test:db`：CIで成功。PostgreSQLで下書き/公開版、競合、語源公開参照と作者メモの保存を検証。
 - **未実施**: 実Discordログインの本人/他人検証、ブラウザE2E、旧FEとの画像比較、デスクトップ/タブレット/スマートフォンの操作、長文/IME、CAT規範Gate、デプロイと実機受入。
 
-## α受入を満たすための残Work（優先）
+## 2026-10-29時点で挙げた残Work（現在の未完了一覧ではない）
 
 1. **公開設定の縦断E2E**: 全4領域の作成→保存→再読込→公開→匿名アクセス→非公開、時刻境界と関連経路、作者以外による拒否。実DB/ブラウザ/Discordの外部証拠が必要。
 2. **設定のタグ・設定間関連**: 参照先の実効公開に従った投影、作者編集、カテゴリ横断検索。前セッションの該当書込は安全性チェックで拒否。拒否された変更は未反映として扱い、回避はしない。
