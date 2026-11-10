@@ -2,7 +2,9 @@
 
 旧v0.3のデザイントークン／情報階層を引き継いだ **Nuxt 4 + NestJS + PostgreSQL** のα版です。最初のNode標準ライブラリによるローカルプレビューも比較・単体確認用に残してあります。
 
-現在の作業ブランチ: `feature/alpha-reimplementation-20261029`。ドラフトPR（feature → develop）: [#3](https://github.com/surumeneco/Eternalia_Novel/pull/3)。CAT-TDDの正規GateとDiscord実アカウント・実ブラウザ検証は未完了です。**mainへマージしていません**。
+**受入確認用ブランチは `develop` です。** α版の実装は2026-11-10に [PR #3](https://github.com/surumeneco/Eternalia_Novel/pull/3) で統合しました。実Chromiumブラウザの自動受入テストはCIで実施していますが、実機での操作確認・実Discordアカウント認証・CAT-TDD正式Gateは未完了です。**`main`にはマージしていません。**
+
+手元で確認する際は `git switch develop` → `git pull --ff-only origin develop` を実行してください。Nuxt/Nest/PostgreSQLの採用構成は [`docs/alpha-nuxt-setup.md`](docs/alpha-nuxt-setup.md) を参照してください。
 
 ## ブランチ運用
 
@@ -28,4 +30,4 @@
 
 GitHub Actions `Alpha checks`: npm固定インストール、既存探索的α試験、Nuxt/Nest/契約ビルド、Nuxt型検査、PostgreSQL 17のmigrationと公開スナップショット／競合処理の探索的結合試験、作者ガード単体試験。実測結果は**コミットごとのCIログ**で確認してください。
 
-未完了: CAT-TDD正規doctor・Guard／Conformance、Discord実アカウントOAuth2、UIのブラウザ操作とv0.3との実視覚比較、年表換算・意味別語源・管理マスタ等の詳細仕様。CI成功だけで正式α受入完了とは判断しません。詳しくは [`docs/alpha-check-evidence.md`](docs/alpha-check-evidence.md) と [`CAT-HANDOFF.md`](CAT-HANDOFF.md)。
+未完了: CAT-TDD正式Gate、Discord実アカウントOAuth2、実機の手動UI/IME操作とv0.3との実視覚比較、年表換算・管理マスタ等の詳細仕様。CIではChromiumによる自動ブラウザ受入テストを実行済みですが、CI成功だけで正式α受入完了とは判断しません。詳しくは [`docs/alpha-check-evidence.md`](docs/alpha-check-evidence.md) と [`CAT-HANDOFF.md`](CAT-HANDOFF.md)。
