@@ -1,0 +1,111 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import {
+  createNode, editNode, newLibrary, publishNode, setVisibility, toReader,
+} from '../dist/index.js';
+
+const ids = {
+  series: '81000000-0000-0000-0000-000000000001',
+  sourceCategory: '81000000-0000-0000-0000-000000000002',
+  targetCategory: '81000000-0000-0000-0000-000000000003',
+  source: '81000000-0000-0000-0000-000000000004',
+  target: '81000000-0000-0000-0000-000000000005',
+};
+const contentOf = (title, details = {}) => ({ title, body: title + '-body', details });
+const byId = (db, id) => db.nodes.find(node => node.id === id);
+
+function setupPublishedRelatedTips() {
+  let db = newLibrary();
+  db = createNode(db, { id: ids.series, kind: 'series', content: contentOf('Series'), now: 1000 });
+  db = createNode(db, { id: ids.sourceCategory, kind: 'category', parentId: ids.series,
+    content: contentOf('Source category'), now: 1001 });
+  db = createNode(db, { id: ids.targetCategory, kind: 'category', parentId: ids.series,
+    content: contentOf('Target category'), now: 1002 });
+  db = createNode(db, { id: ids.source, kind: 'tip', parentId: ids.sourceCategory,
+    content: contentOf('Source'), now: 1003 });
+  db = createNode(db, { id: ids.target, kind: 'tip', parentId: ids.targetCategory,
+    content: contentOf('Target'), now: 1004 });
+  for (const id of [ids.series, ids.sourceCategory, ids.targetCategory, ids.target]) {
+    db = publishNode(db, id, 1, 2000);
+  }
+  db = editNode(db, ids.source, 1,
+    contentOf('Source', { relatedTipIds: JSON.stringify([ids.target]) }), 2001);
+  db = publishNode(db, ids.source, 2, 2002);
+  return db;
+}
+const publicRelated = (db, now) =>
+  JSON.parse(toReader(db, ids.source, now).content.details.relatedTips).map(item => item.id);
+
+test('AC-06/31/70: cross-category related Tip respects target ancestor visibility', () => {
+  let db = setupPublishedRelatedTips();
+  assert.deepEqual(publicRelated(db, 3000), [ids.target]);
+  assert.equal(toReader(db, ids.target, 3000)?.id, ids.target);
+
+  db = setVisibility(db, ids.targetCategory, 1, false, null, 3001);
+  assert.equal(toReader(db, ids.target, 3002), null);
+  assert.deepEqual(publicRelated(db, 3002), []);
+  assert.equal(byId(db, ids.target).isPublic, true,
+    'hiding an ancestor must not overwrite a descendant publication flag');
+  assert.deepEqual(JSON.parse(byId(db, ids.source).draft.details.relatedTipIds), [ids.target],
+    'the author relation must remain intact');
+  assert.equal(toReader(db, ids.source, 3002).content.body, 'Source-body');
+
+  db = setVisibility(db, ids.targetCategory, 2, true, null, 3003);
+  assert.deepEqual(publicRelated(db, 3004), [ids.target]);
+  assert.equal(toReader(db, ids.target, 3004)?.id, ids.target);
+});
+
+test('AC-06: unpublished target category snapshot cannot leak via a published relation', () => {
+  let db = setupPublishedRelatedTips();
+  // Remove only the category publication snapshot in a fresh copy of the
+  // otherwise public fixture. Its descendant remains individually published.
+  const targetCategory = byId(db, ids.targetCategory);
+  db = { ...db, nodes: db.nodes.map(node => node.id === ids.targetCategory
+    ? { ...targetCategory, published: null }
+    : node) };
+  assert.equal(toReader(db, ids.target, 3000), null);
+  assert.deepEqual(publicRelated(db, 3000), []);
+});
+
+
+test('AC-06: cross-series Tip relationship is rejected without mutating the source', () => {
+  let db = setupPublishedRelatedTips();
+  const otherSeries = '82000000-0000-0000-0000-000000000001';
+  const otherCategory = '82000000-0000-0000-0000-000000000002';
+  const otherTip = '82000000-0000-0000-0000-000000000003';
+  db = createNode(db, { id: otherSeries, kind: 'series',
+    content: contentOf('Other series'), now: 3000 });
+  db = createNode(db, { id: otherCategory, kind: 'category', parentId: otherSeries,
+    content: contentOf('Other category'), now: 3001 });
+  db = createNode(db, { id: otherTip, kind: 'tip', parentId: otherCategory,
+    content: contentOf('Other tip'), now: 3002 });
+  const previousDraft = structuredClone(byId(db, ids.source).draft);
+  assert.throws(
+    () => editNode(db, ids.source, 2,
+      contentOf('Source', { relatedTipIds: JSON.stringify([otherTip]) }), 3003),
+    error => error?.code === 'bad-request' &&
+      /関連設定は同一シリーズ/.test(error.message),
+  );
+  assert.deepEqual(byId(db, ids.source).draft, previousDraft,
+    'rejected cross-series relation must not change the author draft');
+  assert.deepEqual(publicRelated(db, 3004), [ids.target],
+    'rejected cross-series relation must not change the public snapshot');
+});
+
+
+test('AC-06/69: a related Tip title changes publicly only after explicit publication', () => {
+  let db = setupPublishedRelatedTips();
+  const publicLinks = () => JSON.parse(toReader(db, ids.source, 4000).content.details.relatedTips);
+  assert.deepEqual(publicLinks(), [{ id: ids.target, title: 'Target' }]);
+
+  db = editNode(db, ids.target, 1, contentOf('Unpublished target title'), 3001);
+  assert.equal(byId(db, ids.target).draft.title, 'Unpublished target title');
+  assert.deepEqual(publicLinks(), [{ id: ids.target, title: 'Target' }],
+    'related links must not expose an unpublished title revision');
+
+  db = publishNode(db, ids.target, 2, 3002);
+  assert.deepEqual(publicLinks(), [{ id: ids.target, title: 'Unpublished target title' }],
+    'the related link must reflect the explicitly published target revision');
+  assert.deepEqual(JSON.parse(byId(db, ids.source).draft.details.relatedTipIds), [ids.target],
+    'publishing a related target must not mutate the source draft');
+});

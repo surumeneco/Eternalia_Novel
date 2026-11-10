@@ -1,0 +1,13 @@
+{
+  "name": "@eternalia/contracts",
+  "version": "0.0.0-draft",
+  "type": "module",
+  "private": true,
+  "exports": {".": "./dist/index.js"},
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "verify:exploratory": "node --test exploratory/*.test.mjs"
+  },
+  "devDependencies": {"typescript": "^5.9.0"}
+}

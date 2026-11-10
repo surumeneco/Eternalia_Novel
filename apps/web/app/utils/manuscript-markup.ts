@@ -1,0 +1,180 @@
+/** Selection offsets use UTF-16 code units, as provided by textarea.selectionStart. */
+export type ManuscriptInsertionKind = 'page' | 'ruby';
+export interface ManuscriptInsertion {
+  value: string;
+  selectionStart: number;
+  selectionEnd: number;
+}
+export function insertManuscriptMarkup(
+  source: string, start: number, end: number, kind: ManuscriptInsertionKind,
+): ManuscriptInsertion | null {
+  // Runtime callers may bypass TypeScript's erased union discriminator.
+  if (kind !== 'page' && kind !== 'ruby') return null;
+  if (!Number.isInteger(start) || !Number.isInteger(end) ||
+      start < 0 || end < start || end > source.length) return null;
+  // Textarea offsets are UTF-16 code units. Never split a surrogate pair.
+  const splitsPair = (index: number) => index > 0 && index < source.length &&
+    source.charCodeAt(index - 1) >= 0xD800 && source.charCodeAt(index - 1) <= 0xDBFF &&
+    source.charCodeAt(index) >= 0xDC00 && source.charCodeAt(index) <= 0xDFFF;
+  const splitsCrlf = (index: number) => index > 0 && index < source.length &&
+    source[index - 1] === '\r' && source[index] === '\n';
+  // Textarea offsets can also split combining kana, emoji ZWJ or flag clusters.
+  const graphemes = typeof Intl.Segmenter === 'function'
+    ? new Intl.Segmenter('ja', { granularity: 'grapheme' }).segment(source)
+    : null;
+  // Older WebViews may lack Intl.Segmenter. Preserve common Japanese/emoji
+  // clusters conservatively without changing textarea's UTF-16 offsets.
+  const codePointBefore = (index: number): number => {
+    const last = source.charCodeAt(index - 1);
+    if (last >= 0xDC00 && last <= 0xDFFF && index > 1) {
+      const first = source.charCodeAt(index - 2);
+      if (first >= 0xD800 && first <= 0xDBFF)
+        return 0x10000 + ((first - 0xD800) << 10) + last - 0xDC00;
+    }
+    return last;
+  };
+  const isRegionalIndicator = (cp: number) => cp >= 0x1F1E6 && cp <= 0x1F1FF;
+  // UAX #29 GB9b: a Prepend character belongs to the following grapheme.
+  const isPrepend = (cp: number) =>
+    (cp >= 0x0600 && cp <= 0x0605) || cp === 0x06DD ||
+    cp === 0x070F || (cp >= 0x0890 && cp <= 0x0891) ||
+    cp === 0x08E2 || cp === 0x0D4E || cp === 0x110BD ||
+    cp === 0x110CD;
+  // Unicode GB4/GB5 control boundaries outrank combining-mark joins in GB9.
+  const isControl = (cp: number) =>
+    /[\p{Cc}\p{Zl}\p{Zp}]/u.test(String.fromCodePoint(cp));
+  // Unicode grapheme rules GB6-GB8 for conjoining Hangul Jamo.
+  const isHangulL = (cp: number) =>
+    (cp >= 0x1100 && cp <= 0x115F) || (cp >= 0xA960 && cp <= 0xA97C);
+  const isHangulV = (cp: number) =>
+    (cp >= 0x1160 && cp <= 0x11A7) || (cp >= 0xD7B0 && cp <= 0xD7C6);
+  const isHangulT = (cp: number) =>
+    (cp >= 0x11A8 && cp <= 0x11FF) || (cp >= 0xD7CB && cp <= 0xD7FB);
+  const isHangulLV = (cp: number) =>
+    cp >= 0xAC00 && cp <= 0xD7A3 && (cp - 0xAC00) % 28 === 0;
+  const isHangulLVT = (cp: number) =>
+    cp >= 0xAC00 && cp <= 0xD7A3 && (cp - 0xAC00) % 28 !== 0;
+
+  // Restricted GB9c fallback for Devanagari and Bengali consonant/virama chains.
+  const indicScript = (cp: number): 0 | 1 | 2 =>
+    cp >= 0x0915 && cp <= 0x0939 ? 1 :
+    cp >= 0x0995 && cp <= 0x09B9 ? 2 : 0;
+  const splitsIndicConjunct = (index: number): boolean => {
+    const script = indicScript(source.codePointAt(index)!);
+    if (!script) return false;
+    let cursor = index;
+    let hasVirama = false;
+    while (cursor > 0) {
+      const cp = codePointBefore(cursor);
+      if ((script === 1 && cp === 0x094D) ||
+          (script === 2 && cp === 0x09CD)) {
+        hasVirama = true;
+      } else if (/[\p{M}]/u.test(String.fromCodePoint(cp)) || cp === 0x200D) {
+        // Extenders between consonants do not end the candidate chain.
+      } else {
+        return hasVirama && indicScript(cp) === script;
+      }
+      cursor -= cp > 0xFFFF ? 2 : 1;
+    }
+    return false;
+  };
+
+  // GB11 joins Extended_Pictographic Extend* ZWJ × Extended_Pictographic.
+  const isExtendedPictographic = (cp: number) =>
+    /\p{Extended_Pictographic}/u.test(String.fromCodePoint(cp));
+  const followsEmojiZwj = (index: number): boolean => {
+    if (!isExtendedPictographic(source.codePointAt(index)!)) return false;
+    let cursor = index - 1; // skip the ZWJ immediately before insertion
+    while (cursor > 0) {
+      const cp = codePointBefore(cursor);
+      if (/\p{M}/u.test(String.fromCodePoint(cp)) ||
+          (cp >= 0x1F3FB && cp <= 0x1F3FF)) {
+        cursor -= cp > 0xFFFF ? 2 : 1;
+        continue;
+      }
+      return isExtendedPictographic(cp);
+    }
+    return false;
+  };
+
+  const fallbackSplitsGrapheme = (index: number): boolean => {
+    if (index <= 0 || index >= source.length) return false;
+    const previous = codePointBefore(index);
+    const next = source.codePointAt(index)!;
+    // CR+LF remains indivisible via splitsCrlf in invalidMutationBoundary.
+    if (isControl(previous) || isControl(next)) return false;
+    if (isPrepend(previous)) return true;
+    if (splitsIndicConjunct(index)) return true;
+    if (next === 0x200D ||
+        (previous === 0x200D && followsEmojiZwj(index)) ||
+        // ZWNJ is Grapheme_Cluster_Break Extend; keep it attached to its base.
+        next === 0x200C ||
+        /\p{M}/u.test(String.fromCodePoint(next)) ||
+        // Halfwidth kana voicing marks are modifier letters, not \p{M},
+        // but Unicode grapheme segmentation joins them to the base kana.
+        next === 0xFF9E || next === 0xFF9F ||
+        (next >= 0x1F3FB && next <= 0x1F3FF) ||
+        // Emoji subdivision flags use supplementary tag code points that
+        // are neither combining marks nor ZWJ. Keep the tag run attached.
+        (next >= 0xE0020 && next <= 0xE007F)) return true;
+    if ((isHangulL(previous) &&
+          (isHangulL(next) || isHangulV(next) || isHangulLV(next) || isHangulLVT(next))) ||
+        ((isHangulLV(previous) || isHangulV(previous)) &&
+          (isHangulV(next) || isHangulT(next))) ||
+        ((isHangulLVT(previous) || isHangulT(previous)) && isHangulT(next)))
+      return true;
+    if (!isRegionalIndicator(previous) || !isRegionalIndicator(next)) return false;
+    // Pair consecutive regional indicators from the start of their run.
+    // The boundary after an odd count is inside a flag, after an even count is valid.
+    let count = 0;
+    let cursor = index;
+    while (cursor > 0) {
+      const cp = codePointBefore(cursor);
+      if (!isRegionalIndicator(cp)) break;
+      count++;
+      cursor -= cp > 0xFFFF ? 2 : 1;
+    }
+    return count % 2 === 1;
+  };
+  const splitsGrapheme = (index: number) => graphemes !== null
+    ? index > 0 && index < source.length && graphemes.containing(index)?.index !== index
+    : fallbackSplitsGrapheme(index);
+  const marker = '[[page]]';
+  const splitsMarker = (index: number) => {
+    const at = source.lastIndexOf(marker, index);
+    return at >= 0 && index > at && index < at + marker.length;
+  };
+  // Ruby replaces the selected range; page inserts only at selectionStart.
+  // Rejecting an unused page selectionEnd would break touch insertion when
+  // selection extends into an existing ruby token without modifying it.
+  const invalidMutationBoundary = (index: number) =>
+    splitsPair(index) || splitsGrapheme(index) ||
+    splitsCrlf(index) || splitsMarker(index);
+  if (invalidMutationBoundary(start) ||
+      (kind === 'ruby' && invalidMutationBoundary(end))) return null;
+  // Match the reader's inline ruby grammar before editing an existing token.
+  const rubyTokens = /｜([^｜《》\r\n\u0085\u2028\u2029]+)《([^｜《》\r\n\u0085\u2028\u2029]+)》/g;
+  for (const match of source.matchAll(rubyTokens)) {
+    const inside = (index: number) => index > match.index && index < match.index + match[0].length;
+    if (inside(start) || (kind === 'ruby' && inside(end))) return null;
+  }
+  const selected = source.slice(start, end);
+  if (kind === 'page') {
+    return {
+      value: source.slice(0, start) + marker + source.slice(start),
+      selectionStart: start + marker.length,
+      selectionEnd: start + marker.length,
+    };
+  }
+  // Ruby markup is a single inline text token. Do not silently rewrite multiline selections.
+  if (selected.includes(marker) || /[\r\n\u0085\u2028\u2029｜《》]/u.test(selected)) return null;
+  const base = selected || '文字';
+  const reading = 'よみ';
+  const markup = '｜' + base + '《' + reading + '》';
+  const selectionStart = selected ? start + 1 + base.length + 1 : start + 1;
+  const selectionEnd = selected ? selectionStart + reading.length : selectionStart + base.length;
+  return {
+    value: source.slice(0, start) + markup + source.slice(end),
+    selectionStart, selectionEnd,
+  };
+}
