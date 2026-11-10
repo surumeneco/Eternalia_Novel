@@ -1,0 +1,66 @@
+{
+  "schema": "cat-work/v1",
+  "id": "eternalia.editor.zwj-gb11",
+  "entry": "issue",
+  "flow": "issue-work",
+  "mode": "shadow",
+  "work_kind": "verification",
+  "issue_ref": "https://github.com/surumeneco/Eternalia_Novel/pull/12",
+  "project_entry_ref": "https://drive.google.com/file/d/1clwfVJ3e_t1_QKFfOWxxRIzE9WMFvTiM/view",
+  "normative": [
+    {
+      "uri": "https://drive.google.com/file/d/1LqX-Noytb_oWymIrpO01eO5PvThGlVGx/view"
+    }
+  ],
+  "evidence": [
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/pull/12"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/pull/29"
+    }
+  ],
+  "repositories": [
+    {
+      "name": "eternalia",
+      "path": "../../../..",
+      "branch_pattern": "feature/*",
+      "allowed_paths": [
+        "apps/web/app/utils/manuscript-markup.ts",
+        "apps/web/tests/manuscript-grapheme-zwj-gb11-fallback.test.mjs",
+        "docs/cat/drafts/alpha-editor-zwj-gb11-nonemoji.md",
+        "Lifecycle/Works/New/eternalia.editor.zwj-gb11/work.json"
+      ],
+      "production_paths": [
+        "apps/web/app/utils/manuscript-markup.ts"
+      ],
+      "test_paths": [
+        "apps/web/tests/manuscript-grapheme-zwj-gb11-fallback.test.mjs"
+      ]
+    }
+  ],
+  "scope": {
+    "process_ids": [
+      "eternalia.editor"
+    ],
+    "changed_ids": [
+      "editor.zwj-gb11-grapheme-boundary"
+    ],
+    "preserved_ids": [
+      "editor.utf16-offsets",
+      "editor.emoji-zwj-clusters"
+    ]
+  },
+  "specification": {
+    "status": "draft",
+    "decision_ref": null,
+    "artifact_refs": [
+      "docs/cat/drafts/alpha-editor-zwj-gb11-nonemoji.md"
+    ]
+  },
+  "technologies": [
+    "typescript"
+  ],
+  "checks": [],
+  "depends_on": []
+}
