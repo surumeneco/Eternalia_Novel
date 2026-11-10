@@ -1,0 +1,113 @@
+{
+  "schema": "cat-work/v1",
+  "id": "eternalia.reader.chapter-index",
+  "entry": "refactor",
+  "flow": "refactor",
+  "work_kind": "refactor",
+  "mode": "implementation",
+  "issue_ref": "https://github.com/surumeneco/Eternalia_Novel/pull/3",
+  "project_entry_ref": "https://drive.google.com/file/d/1clwfVJ3e_t1_QKFfOWxxRIzE9WMFvTiM/view",
+  "normative": [
+    {
+      "uri": "https://drive.google.com/file/d/1LqX-Noytb_oWymIrpO01eO5PvThGlVGx/view"
+    }
+  ],
+  "evidence": [
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/commit/ffd9667a229536be4fc9fe637bcd6166b3266ea7"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/actions/runs/42724994962"
+    }
+  ],
+  "scope": {
+    "process_ids": [
+      "eternalia.reader.navigation"
+    ],
+    "changed_ids": [
+      "reader.chapter-sequence.internal-index"
+    ],
+    "preserved_ids": [
+      "reader.chapter-sequence.ordering",
+      "reader.chapter-sequence.ancestor-visibility",
+      "reader.chapter-sequence.series-isolation"
+    ]
+  },
+  "specification": {
+    "status": "unknown",
+    "decision_ref": null,
+    "artifact_refs": []
+  },
+  "technologies": [
+    "TypeScript"
+  ],
+  "repositories": [
+    {
+      "name": "eternalia",
+      "path": "../../../..",
+      "branch_pattern": "feature/*",
+      "allowed_paths": [
+        "apps/web/app/utils/chapter-navigation.ts",
+        "Lifecycle/REF/Scopes/reader-chapter-sequence-index.md",
+        "Lifecycle/Works/New/eternalia.reader.chapter-index/work.json"
+      ],
+      "production_paths": [
+        "apps/web/app/utils/chapter-navigation.ts"
+      ],
+      "test_paths": [
+        "apps/web/tests/chapter-navigation.test.mjs"
+      ]
+    }
+  ],
+  "depends_on": [],
+  "checks": [
+    {
+      "id": "chapter-nav-baseline",
+      "stage": "refactor-baseline",
+      "runner": "junit",
+      "cwd": "@repo:eternalia",
+      "argv": [
+        "node",
+        "--experimental-strip-types",
+        "--test",
+        "--test-reporter=junit",
+        "--test-reporter-destination={report}",
+        "apps/web/tests/chapter-navigation.test.mjs"
+      ],
+      "input_paths": [
+        "apps/web/app/utils/chapter-navigation.ts",
+        "apps/web/tests/chapter-navigation.test.mjs"
+      ],
+      "timeout_seconds": 60,
+      "test_ids": [
+        "reader navigation continues through the next Part and Volume",
+        "only the supplied public tree participates; hidden paths and foreign series cannot appear",
+        "chapter ordering is deterministic for equal explicit positions"
+      ]
+    },
+    {
+      "id": "chapter-nav-regression",
+      "stage": "regression",
+      "runner": "junit",
+      "cwd": "@repo:eternalia",
+      "argv": [
+        "node",
+        "--experimental-strip-types",
+        "--test",
+        "--test-reporter=junit",
+        "--test-reporter-destination={report}",
+        "apps/web/tests/chapter-navigation.test.mjs"
+      ],
+      "input_paths": [
+        "apps/web/app/utils/chapter-navigation.ts",
+        "apps/web/tests/chapter-navigation.test.mjs"
+      ],
+      "timeout_seconds": 60,
+      "test_ids": [
+        "reader navigation continues through the next Part and Volume",
+        "only the supplied public tree participates; hidden paths and foreign series cannot appear",
+        "chapter ordering is deterministic for equal explicit positions"
+      ]
+    }
+  ]
+}
