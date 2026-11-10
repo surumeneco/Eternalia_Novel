@@ -1,0 +1,68 @@
+{
+  "schema": "cat-work/v1",
+  "id": "eternalia.editor.control-boundary",
+  "entry": "issue",
+  "flow": "issue-work",
+  "mode": "shadow",
+  "work_kind": "verification",
+  "issue_ref": "https://github.com/surumeneco/Eternalia_Novel/pull/15",
+  "project_entry_ref": "https://drive.google.com/file/d/1clwfVJ3e_t1_QKFfOWxxRIzE9WMFvTiM/view",
+  "normative": [
+    {
+      "uri": "https://drive.google.com/file/d/1LqX-Noytb_oWymIrpO01eO5PvThGlVGx/view"
+    }
+  ],
+  "evidence": [
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/pull/15"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/commit/7505b0ec962d765f7c2095a0d3bd93b19b51523b"
+    }
+  ],
+  "repositories": [
+    {
+      "name": "eternalia",
+      "path": "../../../..",
+      "branch_pattern": "feature/*",
+      "allowed_paths": [
+        "apps/web/app/utils/manuscript-markup.ts",
+        "apps/web/tests/manuscript-grapheme-control-mark-fallback.test.mjs",
+        "docs/cat/alpha-editor-control-combining-boundary.md",
+        "Lifecycle/Works/New/eternalia.editor.control-boundary/work.json",
+        "apps/web/browser-acceptance/mobile-touch-editor.test.mjs"
+      ],
+      "production_paths": [
+        "apps/web/app/utils/manuscript-markup.ts"
+      ],
+      "test_paths": [
+        "apps/web/tests/manuscript-grapheme-control-mark-fallback.test.mjs",
+        "apps/web/browser-acceptance/mobile-touch-editor.test.mjs"
+      ]
+    }
+  ],
+  "scope": {
+    "process_ids": [
+      "eternalia.editor"
+    ],
+    "changed_ids": [
+      "editor.control-grapheme-boundary"
+    ],
+    "preserved_ids": [
+      "editor.utf16-offsets",
+      "editor.crlf-atomicity"
+    ]
+  },
+  "specification": {
+    "status": "candidate",
+    "decision_ref": null,
+    "artifact_refs": [
+      "docs/cat/alpha-editor-control-combining-boundary.md"
+    ]
+  },
+  "technologies": [
+    "typescript"
+  ],
+  "checks": [],
+  "depends_on": []
+}
