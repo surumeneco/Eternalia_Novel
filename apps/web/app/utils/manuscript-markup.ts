@@ -34,6 +34,12 @@ export function insertManuscriptMarkup(
     return last;
   };
   const isRegionalIndicator = (cp: number) => cp >= 0x1F1E6 && cp <= 0x1F1FF;
+  // UAX #29 GB9b: a Prepend character belongs to the following grapheme.
+  const isPrepend = (cp: number) =>
+    (cp >= 0x0600 && cp <= 0x0605) || cp === 0x06DD ||
+    cp === 0x070F || (cp >= 0x0890 && cp <= 0x0891) ||
+    cp === 0x08E2 || cp === 0x0D4E || cp === 0x110BD ||
+    cp === 0x110CD;
   // Unicode GB4/GB5 control boundaries outrank combining-mark joins in GB9.
   const isControl = (cp: number) =>
     /[\p{Cc}\p{Zl}\p{Zp}]/u.test(String.fromCodePoint(cp));
@@ -55,6 +61,7 @@ export function insertManuscriptMarkup(
     const next = source.codePointAt(index)!;
     // CR+LF remains indivisible via splitsCrlf in invalidMutationBoundary.
     if (isControl(previous) || isControl(next)) return false;
+    if (isPrepend(previous)) return true;
     if (previous === 0x200D || next === 0x200D ||
         // ZWNJ is Grapheme_Cluster_Break Extend; keep it attached to its base.
         next === 0x200C ||
