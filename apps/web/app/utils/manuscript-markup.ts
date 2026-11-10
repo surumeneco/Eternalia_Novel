@@ -55,6 +55,30 @@ export function insertManuscriptMarkup(
   const isHangulLVT = (cp: number) =>
     cp >= 0xAC00 && cp <= 0xD7A3 && (cp - 0xAC00) % 28 !== 0;
 
+  // Restricted GB9c fallback for Devanagari and Bengali consonant/virama chains.
+  const indicScript = (cp: number): 0 | 1 | 2 =>
+    cp >= 0x0915 && cp <= 0x0939 ? 1 :
+    cp >= 0x0995 && cp <= 0x09B9 ? 2 : 0;
+  const splitsIndicConjunct = (index: number): boolean => {
+    const script = indicScript(source.codePointAt(index)!);
+    if (!script) return false;
+    let cursor = index;
+    let hasVirama = false;
+    while (cursor > 0) {
+      const cp = codePointBefore(cursor);
+      if ((script === 1 && cp === 0x094D) ||
+          (script === 2 && cp === 0x09CD)) {
+        hasVirama = true;
+      } else if (/[\p{M}]/u.test(String.fromCodePoint(cp)) || cp === 0x200D) {
+        // Extenders between consonants do not end the candidate chain.
+      } else {
+        return hasVirama && indicScript(cp) === script;
+      }
+      cursor -= cp > 0xFFFF ? 2 : 1;
+    }
+    return false;
+  };
+
   const fallbackSplitsGrapheme = (index: number): boolean => {
     if (index <= 0 || index >= source.length) return false;
     const previous = codePointBefore(index);
@@ -62,6 +86,7 @@ export function insertManuscriptMarkup(
     // CR+LF remains indivisible via splitsCrlf in invalidMutationBoundary.
     if (isControl(previous) || isControl(next)) return false;
     if (isPrepend(previous)) return true;
+    if (splitsIndicConjunct(index)) return true;
     if (previous === 0x200D || next === 0x200D ||
         // ZWNJ is Grapheme_Cluster_Break Extend; keep it attached to its base.
         next === 0x200C ||
