@@ -1,0 +1,42 @@
+name: Chat read-only Eternalia snapshot
+on:
+  push:
+    branches:
+      - infra/chat-eternalia-snapshot-20261110
+    paths:
+      - .github/workflows/chat-eternalia-snapshot.yml
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ffd9667a229536be4fc9fe637bcd6166b3266ea7
+          persist-credentials: false
+      - name: Verify exact immutable commit and archive tracked source
+        env:
+          EXPECTED_COMMIT: ffd9667a229536be4fc9fe637bcd6166b3266ea7
+          EXPECTED_TREE: 69f068321a9ba08bdce9a410567c2d385591407c
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_COMMIT"
+          test "$(git rev-parse HEAD^{tree})" = "$EXPECTED_TREE"
+          git archive --format=tar --output="$RUNNER_TEMP/source.tar" "$EXPECTED_COMMIT"
+          python3 - <<'PY'
+          import json, os, pathlib, zipfile
+          root = pathlib.Path(os.environ['RUNNER_TEMP'])
+          manifest = {'repository': 'surumeneco/Eternalia_Novel', 'commit': os.environ['EXPECTED_COMMIT'], 'tree': os.environ['EXPECTED_TREE']}
+          with zipfile.ZipFile(root / 'project-snapshot.zip', 'w', compression=zipfile.ZIP_DEFLATED) as z:
+              z.write(root / 'source.tar', arcname='source.tar')
+              z.writestr('manifest.json', json.dumps(manifest, sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: eternalia-snapshot-ffd9667a
+          path: ${{ runner.temp }}/project-snapshot.zip
+          retention-days: 1
+          if-no-files-found: error
