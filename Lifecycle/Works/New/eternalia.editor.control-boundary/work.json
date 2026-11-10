@@ -29,13 +29,15 @@
         "apps/web/app/utils/manuscript-markup.ts",
         "apps/web/tests/manuscript-grapheme-control-mark-fallback.test.mjs",
         "docs/cat/alpha-editor-control-combining-boundary.md",
-        "Lifecycle/Works/New/eternalia.editor.control-boundary/work.json"
+        "Lifecycle/Works/New/eternalia.editor.control-boundary/work.json",
+        "apps/web/browser-acceptance/mobile-touch-editor.test.mjs"
       ],
       "production_paths": [
         "apps/web/app/utils/manuscript-markup.ts"
       ],
       "test_paths": [
-        "apps/web/tests/manuscript-grapheme-control-mark-fallback.test.mjs"
+        "apps/web/tests/manuscript-grapheme-control-mark-fallback.test.mjs",
+        "apps/web/browser-acceptance/mobile-touch-editor.test.mjs"
       ]
     }
   ],
