@@ -178,3 +178,35 @@ test('reader shell preserves runtime colors and mobile navigation for keyboard a
       } finally { await reader.close(); }
     } finally { await browser.close(); }
   });
+
+test('Chromium touch editor enforces GB4/GB5 fallback without Intl.Segmenter',
+  { timeout: 90_000 }, async () => {
+    const browser = await chromium.launch({ headless: true });
+    try {
+      const author = await authorContext(browser);
+      try {
+        const chapter = await createDraftChapter(author);
+        const page = await author.newPage();
+        await page.addInitScript(() => {
+          Object.defineProperty(Intl, 'Segmenter', { configurable: true, value: undefined });
+        });
+        await page.goto(base + '/studio?item=' + chapter);
+        assert.equal(await page.evaluate(() => typeof Intl.Segmenter), 'undefined');
+        const editor = page.getByRole('textbox', { name: '本文・説明', exact: true });
+        const marker = page.getByRole('button', { name: 'ページ区切りを挿入' });
+        await editor.waitFor();
+
+        await editor.fill('前か\u3099後');
+        await editor.evaluate(el => { el.focus(); el.setSelectionRange(2, 2); });
+        await marker.tap();
+        assert.equal(await editor.inputValue(), '前か\u3099後',
+          'fallback must still reject insertion inside a kana combining cluster');
+
+        await editor.fill('前\n\u3099後');
+        await editor.evaluate(el => { el.focus(); el.setSelectionRange(2, 2); });
+        await marker.tap();
+        assert.equal(await editor.inputValue(), '前\n[[page]]\u3099後',
+          'fallback must allow an insertion at the LF/combining-mark boundary');
+      } finally { await author.close(); }
+    } finally { await browser.close(); }
+  });
