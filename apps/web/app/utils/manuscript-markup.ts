@@ -34,6 +34,9 @@ export function insertManuscriptMarkup(
     return last;
   };
   const isRegionalIndicator = (cp: number) => cp >= 0x1F1E6 && cp <= 0x1F1FF;
+  // Unicode GB4/GB5 control boundaries outrank combining-mark joins in GB9.
+  const isControl = (cp: number) =>
+    /[\p{Cc}\p{Zl}\p{Zp}]/u.test(String.fromCodePoint(cp));
   // Unicode grapheme rules GB6-GB8 for conjoining Hangul Jamo.
   const isHangulL = (cp: number) =>
     (cp >= 0x1100 && cp <= 0x115F) || (cp >= 0xA960 && cp <= 0xA97C);
@@ -50,6 +53,8 @@ export function insertManuscriptMarkup(
     if (index <= 0 || index >= source.length) return false;
     const previous = codePointBefore(index);
     const next = source.codePointAt(index)!;
+    // CR+LF remains indivisible via splitsCrlf in invalidMutationBoundary.
+    if (isControl(previous) || isControl(next)) return false;
     if (previous === 0x200D || next === 0x200D ||
         /\p{M}/u.test(String.fromCodePoint(next)) ||
         // Halfwidth kana voicing marks are modifier letters, not \p{M},
