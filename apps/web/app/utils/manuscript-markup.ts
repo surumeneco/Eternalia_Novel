@@ -56,6 +56,8 @@ export function insertManuscriptMarkup(
     // CR+LF remains indivisible via splitsCrlf in invalidMutationBoundary.
     if (isControl(previous) || isControl(next)) return false;
     if (previous === 0x200D || next === 0x200D ||
+        // ZWNJ is Grapheme_Cluster_Break Extend; keep it attached to its base.
+        next === 0x200C ||
         /\p{M}/u.test(String.fromCodePoint(next)) ||
         // Halfwidth kana voicing marks are modifier letters, not \p{M},
         // but Unicode grapheme segmentation joins them to the base kana.
