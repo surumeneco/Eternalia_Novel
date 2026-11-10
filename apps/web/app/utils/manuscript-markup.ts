@@ -79,6 +79,24 @@ export function insertManuscriptMarkup(
     return false;
   };
 
+  // GB11 joins Extended_Pictographic Extend* ZWJ × Extended_Pictographic.
+  const isExtendedPictographic = (cp: number) =>
+    /\p{Extended_Pictographic}/u.test(String.fromCodePoint(cp));
+  const followsEmojiZwj = (index: number): boolean => {
+    if (!isExtendedPictographic(source.codePointAt(index)!)) return false;
+    let cursor = index - 1; // skip the ZWJ immediately before insertion
+    while (cursor > 0) {
+      const cp = codePointBefore(cursor);
+      if (/\p{M}/u.test(String.fromCodePoint(cp)) ||
+          (cp >= 0x1F3FB && cp <= 0x1F3FF)) {
+        cursor -= cp > 0xFFFF ? 2 : 1;
+        continue;
+      }
+      return isExtendedPictographic(cp);
+    }
+    return false;
+  };
+
   const fallbackSplitsGrapheme = (index: number): boolean => {
     if (index <= 0 || index >= source.length) return false;
     const previous = codePointBefore(index);
@@ -87,7 +105,8 @@ export function insertManuscriptMarkup(
     if (isControl(previous) || isControl(next)) return false;
     if (isPrepend(previous)) return true;
     if (splitsIndicConjunct(index)) return true;
-    if (previous === 0x200D || next === 0x200D ||
+    if (next === 0x200D ||
+        (previous === 0x200D && followsEmojiZwj(index)) ||
         // ZWNJ is Grapheme_Cluster_Break Extend; keep it attached to its base.
         next === 0x200C ||
         /\p{M}/u.test(String.fromCodePoint(next)) ||
