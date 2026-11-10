@@ -1,6 +1,6 @@
 # α採用構成のローカル起動（Nuxt 4 / NestJS / PostgreSQL）
 
-**対象ブランチ**: `feature/alpha-reimplementation-20261029`（PR #3、統合先は`develop`）。Node.js 22以上、Docker/Compose、npmを利用します。リポジトリのルートで操作してください。
+**対象ブランチ**: `develop`（[α版PR #3](https://github.com/surumeneco/Eternalia_Novel/pull/3) は2026-11-10に統合済み）。Node.js 22以上、Docker/Compose、npmを利用します。既存のクローンで `git switch develop` → `git pull --ff-only origin develop` を実行し、リポジトリのルートで操作してください。
 
 ## 1. 依存と環境変数
 
@@ -55,7 +55,7 @@ DBは初期状態では空です。作者画面でシリーズを作成し、下
 
 ### HTTP/SSR統合試験（データを投入するため、空の検証専用DBだけで実施）
 
-CIは一時PostgreSQLに対し、NestJSとNuxtの実HTTP、公開・非公開、4領域の作者作成→保存→公開、公開稿/下書き分離、作者以外の拒否、ログアウト後の失効を検証します。ブラウザ操作や実Discord OAuth2ログインの試験ではありません。
+CIは一時PostgreSQLに対し、NestJSとNuxtの実HTTP、公開・非公開、4領域の作者作成→保存→公開、公開稿/下書き分離、作者以外の拒否、ログアウト後の失効を検証します。このHTTP/SSR試験と、後述のChromiumブラウザ操作試験は別の試験群です。実Discord OAuth2ログインの試験ではありません。
 
 ローカルでも試す場合は、既存の作品・作者セッションが一切入っていない、**破棄可能な専用DB**に `DATABASE_URL` を向け、`npm run build` と `npm run db:migrate` の後に実行してください。試験はDBに架空の作品とランダムな一時作者セッションを投入します。空でないDBへのシードは拒否します。
 
