@@ -24,22 +24,24 @@
       "branch_pattern": "feature/*",
       "allowed_paths": [
         "Lifecycle/Works/New/eternalia.dictionary.duplicate-redirect/work.json",
-        "docs/cat/drafts/word-duplicate-redirect.md",
-        "packages/contracts/src/novel.ts",
-        "packages/contracts/dist/novel.js",
-        "packages/contracts/dist/novel.d.ts",
-        "packages/contracts/src/spelling-diagnostics.ts",
-        "packages/contracts/dist/spelling-diagnostics.js",
-        "packages/contracts/exploratory/spelling.test.mjs",
         "apps/api/src/admin-nodes.controller.ts",
-        "apps/web/app/pages/studio.vue",
         "apps/web/app/composables/useUiLocale.ts",
-        "apps/web/tests/ui-locale.test.mjs",
-        "apps/web/browser-acceptance/word-duplicate-redirect.test.mjs",
-        "scripts/check-http-acceptance.mjs"
+        "apps/web/app/pages/studio.vue",
+        "apps/web/browser-acceptance/browser-acceptance.test.mjs",
+        "docs/cat/drafts/word-duplicate-redirect.md",
+        "packages/contracts/dist/novel.d.ts",
+        "packages/contracts/dist/novel.js",
+        "packages/contracts/dist/spelling-diagnostics.js",
+        "packages/contracts/dist/word-meanings.d.ts",
+        "packages/contracts/dist/word-meanings.js",
+        "packages/contracts/exploratory/spelling.test.mjs",
+        "packages/contracts/src/novel.ts",
+        "packages/contracts/src/spelling-diagnostics.ts",
+        "packages/contracts/src/word-meanings.ts"
       ],
       "production_paths": [
         "packages/contracts/src/novel.ts",
+        "packages/contracts/src/word-meanings.ts",
         "packages/contracts/src/spelling-diagnostics.ts",
         "apps/api/src/admin-nodes.controller.ts",
         "apps/web/app/pages/studio.vue",
@@ -47,8 +49,7 @@
       ],
       "test_paths": [
         "packages/contracts/exploratory/spelling.test.mjs",
-        "apps/web/browser-acceptance/word-duplicate-redirect.test.mjs",
-        "apps/web/tests/ui-locale.test.mjs"
+        "apps/web/browser-acceptance/browser-acceptance.test.mjs"
       ]
     }
   ],
