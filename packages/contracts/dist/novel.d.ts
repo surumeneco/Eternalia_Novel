@@ -5,6 +5,7 @@ export interface Content {
     title: string;
     body: string;
     details: Details;
+    pages?: string[];
 }
 export interface Snapshot {
     value: Content;
@@ -46,6 +47,7 @@ export declare function createNode(library: Library, input: {
     kind: Kind;
     parentId?: string | null;
     content: Content;
+    isPublic?: boolean;
     now: number;
 }): Library;
 export declare function parsePresets(raw: string): {
@@ -59,4 +61,9 @@ export declare function ancestorsOf(library: Library, id: string): NovelNode[];
 export declare function toReader(library: Library, id: string, now: number): ReaderNode | null;
 export declare function publicTree(library: Library, seriesId: string, now: number): ReaderNode[];
 export declare function publicSeries(library: Library, now: number): ReaderNode[];
+/**
+ * Recent public content is projected through the same ancestor/snapshot gate as
+ * individual item URLs. Never derive it from draft.updatedAt or raw node titles.
+ */
+export declare function publicRecent(library: Library, now: number, limit?: number): ReaderNode[];
 export declare function managedList(library: Library): NovelNode[];
