@@ -1,0 +1,83 @@
+{
+  "schema": "cat-work/v1",
+  "id": "eternalia.dictionary.duplicate-redirect",
+  "entry": "issue",
+  "flow": "issue-work",
+  "mode": "shadow",
+  "work_kind": "implementation",
+  "issue_ref": "https://github.com/surumeneco/Eternalia_Novel/issues/39",
+  "project_entry_ref": "https://drive.google.com/file/d/1clwfVJ3e_t1_QKFfOWxxRIzE9WMFvTiM/view",
+  "normative": [
+    {
+      "uri": "https://drive.google.com/file/d/1LqX-Noytb_oWymIrpO01eO5PvThGlVGx/view"
+    }
+  ],
+  "evidence": [
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/commit/033bf7a54c55685d72c015f627a101e837027c44"
+    }
+  ],
+  "repositories": [
+    {
+      "name": "eternalia",
+      "path": "../../../..",
+      "branch_pattern": "feature/*",
+      "allowed_paths": [
+        "Lifecycle/Works/New/eternalia.dictionary.duplicate-redirect/work.json",
+        "apps/api/src/admin-nodes.controller.ts",
+        "apps/web/app/composables/useUiLocale.ts",
+        "apps/web/app/pages/studio.vue",
+        "apps/web/browser-acceptance/browser-acceptance.test.mjs",
+        "docs/cat/drafts/word-duplicate-redirect.md",
+        "packages/contracts/dist/novel.d.ts",
+        "packages/contracts/dist/novel.js",
+        "packages/contracts/dist/spelling-diagnostics.js",
+        "packages/contracts/dist/word-meanings.d.ts",
+        "packages/contracts/dist/word-meanings.js",
+        "packages/contracts/exploratory/spelling.test.mjs",
+        "packages/contracts/src/novel.ts",
+        "packages/contracts/src/spelling-diagnostics.ts",
+        "packages/contracts/src/word-meanings.ts"
+      ],
+      "production_paths": [
+        "packages/contracts/src/novel.ts",
+        "packages/contracts/src/word-meanings.ts",
+        "packages/contracts/src/spelling-diagnostics.ts",
+        "apps/api/src/admin-nodes.controller.ts",
+        "apps/web/app/pages/studio.vue",
+        "apps/web/app/composables/useUiLocale.ts"
+      ],
+      "test_paths": [
+        "packages/contracts/exploratory/spelling.test.mjs",
+        "apps/web/browser-acceptance/browser-acceptance.test.mjs"
+      ]
+    }
+  ],
+  "scope": {
+    "process_ids": [
+      "eternalia.dictionary"
+    ],
+    "changed_ids": [
+      "dictionary.duplicate.create",
+      "dictionary.duplicate.redirect"
+    ],
+    "preserved_ids": [
+      "dictionary.language-isolation",
+      "publication.draft-snapshot-separation"
+    ]
+  },
+  "specification": {
+    "status": "draft",
+    "decision_ref": null,
+    "artifact_refs": [
+      "docs/cat/drafts/word-duplicate-redirect.md"
+    ]
+  },
+  "technologies": [
+    "typescript",
+    "vue",
+    "playwright"
+  ],
+  "checks": [],
+  "depends_on": []
+}

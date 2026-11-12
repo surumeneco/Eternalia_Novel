@@ -3,7 +3,7 @@ import type { AuthorNode } from '~/types/author';
 const { t } = useUiLocale();
 const studioRoute = useRoute();
 import type { ReaderKind } from '~/types/reader';
-import { parseLanguageWordClasses, diagnoseWordSpelling, pagesForChapter, joinChapterPages } from '@eternalia/contracts';
+import { parseLanguageWordClasses, diagnoseWordSpelling, appendDuplicateWordMeaning, pagesForChapter, joinChapterPages } from '@eternalia/contracts';
 import { insertManuscriptMarkup, type ManuscriptInsertionKind } from '~/utils/manuscript-markup';
 
 interface AuthState { configured: boolean; authenticated: boolean }
@@ -144,6 +144,8 @@ const createParentId = ref<string | null>(null);
 const createKind = ref<ReaderKind>('series');
 const createTitle = ref('');
 const createWordIsPublic = ref(true);
+const createWordPartOfSpeech = ref('');
+const createWordDefinition = ref('');
 const editorDirty = computed(() => {
   const draft = selected.value?.draft;
   if (!draft) return false;
@@ -157,7 +159,8 @@ const editorDirty = computed(() => {
     [...detailKeys].some(key => (currentDetails[key] ?? '') !== (originalDetails[key] ?? ''));
 });
 const creationDirty = computed(() => createOpen.value &&
-  (createTitle.value.trim().length > 0 || (createKind.value === 'word' && !createWordIsPublic.value)));
+  (createTitle.value.trim().length > 0 || (createKind.value === 'word' &&
+    (!createWordIsPublic.value || createWordPartOfSpeech.value.length > 0 || createWordDefinition.value.length > 0))));
 const hasUnsavedChanges = computed(() => editorDirty.value || creationDirty.value);
 function confirmDiscard(): boolean {
   return !hasUnsavedChanges.value || window.confirm(t('studioUnsavedDiscard'));
@@ -183,6 +186,8 @@ function cancelCreate() {
   if (creationDirty.value && !window.confirm(t('studioNewItemDiscard'))) return;
   createOpen.value = false;
   createTitle.value = '';
+  createWordPartOfSpeech.value = '';
+  createWordDefinition.value = '';
 }
 function beforeUnload(event: BeforeUnloadEvent) {
   if (!hasUnsavedChanges.value) return;
@@ -206,6 +211,14 @@ const creationChoices = computed(() =>
 );
 
 const byId = computed(() => new Map(nodes.value.map(node => [node.id,node])));
+const createWordClasses = computed(() => {
+  const language = createParentId.value ? byId.value.get(createParentId.value) : null;
+  if (language?.kind !== 'language') return [];
+  try {
+    return parseLanguageWordClasses(language.draft.details.wordClasses ?? '[]')
+      .map(entry => ({ id: entry.id, title: entry.name }));
+  } catch { return []; }
+});
 const activeWordLanguages = computed(() => {
   const language = selected.value?.parentId ? byId.value.get(selected.value.parentId) : null;
   return language?.kind === 'language'
@@ -320,28 +333,72 @@ function openCreate(parentId: string | null) {
   createKind.value = children[parent?.kind || 'root'][0] || 'series';
   createTitle.value = '';
   createWordIsPublic.value = true;
+  createWordPartOfSpeech.value = '';
+  createWordDefinition.value = '';
   createOpen.value = true;
 }
 async function createItem() {
   if (!createTitle.value.trim()) { errorText.value=t('studioCreateTitleRequired'); return; }
+  const attempt = {
+    partOfSpeech: createWordPartOfSpeech.value.trim(),
+    definition: createWordDefinition.value.trim(),
+  };
+  const duplicateOutcome: { wordId: string | null } = { wordId: null };
   await runChange(async () => {
-    const response = await $fetch<{id:string}>('/api/admin/nodes',{
-      method:'POST',
-      body:{
-        kind: createKind.value, parentId:createParentId.value,
-        ...(createKind.value === 'word' ? { isPublic: createWordIsPublic.value } : {}),
-        content:{
-          title:createTitle.value.trim(), body:'',
-          ...(createKind.value === 'chapter' ? {pages:['']} : {}),
-          details:createKind.value === 'category' ? {presets:'[]'} :
-            createKind.value === 'word' ? {meanings:'[]'} :
-            createKind.value === 'language' ? {characters:'[]',wordClasses:'[]'} : {},
+    let response: { id: string };
+    try {
+      response = await $fetch<{id:string}>('/api/admin/nodes', {
+        method:'POST',
+        body:{
+          kind: createKind.value, parentId:createParentId.value,
+          ...(createKind.value === 'word' ? { isPublic: createWordIsPublic.value } : {}),
+          content:{
+            title:createTitle.value.trim(), body:'',
+            ...(createKind.value === 'chapter' ? { pages:[''] } : {}),
+            details:createKind.value === 'category' ? { presets:'[]' } :
+              createKind.value === 'word' ? { meanings: attempt.partOfSpeech || attempt.definition
+                ? JSON.stringify([{id:crypto.randomUUID(),...attempt,etymologies:[]}]) : '[]' } :
+              createKind.value === 'language' ? {characters:'[]',wordClasses:'[]'} : {},
+          },
         },
-      },
-    });
-    createOpen.value=false;
-    selectedId.value=response.id;
+      });
+    } catch (error: unknown) {
+      const value = error as { statusCode?: number; data?: {
+        code?: string; existingWordId?: string } };
+      if (createKind.value === 'word' && value.statusCode === 409 &&
+          value.data?.code === 'duplicate-spelling' && value.data.existingWordId) {
+        duplicateOutcome.wordId = value.data.existingWordId;
+        return;
+      }
+      throw error;
+    }
+    createOpen.value = false;
+    selectedId.value = response.id;
   }, t('studioCreated'));
+  if (duplicateOutcome.wordId) {
+    const existing = nodes.value.find(node => node.id === duplicateOutcome.wordId &&
+      node.kind === 'word' && node.parentId === createParentId.value);
+    if (!existing) {
+      errorText.value = t('studioWordDuplicateNotFound');
+      statusText.value = '';
+      return;
+    }
+    // The rejected form is never saved. Only the local existing-word editor
+    // gets the attempted meaning, after Vue has processed selection watchers.
+    createOpen.value = false;
+    selectedId.value = existing.id;
+    await nextTick();
+    restoreEditor();
+    try {
+      wordMeanings.value = appendDuplicateWordMeaning(form.details.meanings ?? '[]', {
+        id: crypto.randomUUID(), ...attempt,
+      });
+      errorText.value = t('studioWordDuplicateRedirect');
+    } catch (error: unknown) {
+      errorText.value = t('studioWordDuplicateLimit');
+    }
+    statusText.value = '';
+  }
 }
 async function saveDraft() {
   const node = selected.value;
@@ -466,6 +523,18 @@ async function logout() {
                 {{ t('studioWordInitialVisibility') }}
               </label>
               <p v-if="createKind === 'word'" class="note">{{ t('studioWordInitialVisibilityNote') }}</p>
+              <template v-if="createKind === 'word'">
+                <label>{{ t('studioWordCreatePartOfSpeech') }}
+                  <select v-if="createWordClasses.length" v-model="createWordPartOfSpeech">
+                    <option value="">{{ t('wordUnspecified') }}</option>
+                    <option v-for="entry in createWordClasses" :key="entry.id" :value="entry.title">{{ entry.title }}</option>
+                  </select>
+                  <input v-else v-model="createWordPartOfSpeech" maxlength="80" />
+                </label>
+                <label>{{ t('studioWordCreateDefinition') }}
+                  <textarea v-model="createWordDefinition" maxlength="2000" rows="3" />
+                </label>
+              </template>
               <div class="action-row">
                 <button class="primary" type="submit" :disabled="busy">{{ t('studioCreate') }}</button>
                 <button class="inline-action" type="button" :disabled="busy" @click="cancelCreate">{{ t('studioCancel') }}</button>

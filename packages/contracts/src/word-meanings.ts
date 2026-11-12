@@ -66,3 +66,27 @@ export function parseWordMeanings(raw: string): WordMeaning[] {
     return { id, partOfSpeech, definition, etymologies };
   });
 }
+
+/**
+ * Proposed content of a rejected duplicate word is kept in the existing word's
+ * local editor buffer. Never writes the library or its published snapshot.
+ */
+export function appendDuplicateWordMeaning(
+  raw: string, entry: { id: string; partOfSpeech: string; definition: string },
+): string {
+  const existing = parseWordMeanings(raw || '[]');
+  if (existing.length >= 30) invalid('この単語に登録できる意味は最大30件です。');
+  if (!identifier.test(entry.id) || existing.some(meaning => meaning.id === entry.id)) {
+    invalid('追加入力の意味IDが不正です。');
+  }
+  const partOfSpeech = boundedText(entry.partOfSpeech, 80, '品詞');
+  const definition = boundedText(entry.definition, 2000, '意味');
+  const append = { id: entry.id, partOfSpeech, definition, etymologies: [] };
+  // Same-POS meanings should stay together, without changing their original IDs/order.
+  let lastMatch = -1;
+  for (let index = 0; index < existing.length; index++) {
+    if (existing[index]?.partOfSpeech === partOfSpeech) lastMatch = index;
+  }
+  existing.splice(lastMatch >= 0 ? lastMatch + 1 : existing.length, 0, append);
+  return JSON.stringify(existing);
+}

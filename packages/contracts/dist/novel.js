@@ -18,8 +18,8 @@ const parentKinds = {
     language: 'series', word: 'language', grammar: 'language',
     periodization: 'series', event: 'periodization',
 };
-export function domainError(code, message) {
-    throw { code, message };
+export function domainError(code, message, existingWordId) {
+    throw { code, message, ...(existingWordId ? { existingWordId } : {}) };
 }
 export function isKind(value) {
     return typeof value === 'string' && kinds.includes(value);
@@ -110,6 +110,13 @@ function find(library, id) {
         domainError('not-found', '項目が見つかりません。');
     return item;
 }
+/** A language owns a spelling; different languages may independently use the same spelling. */
+function rejectSameLanguageSpelling(library, languageId, title, editingWordId) {
+    const existing = library.nodes.find(node => node.kind === 'word' && node.parentId === languageId &&
+        node.id !== editingWordId && node.draft.title.trim() === title.trim());
+    if (existing)
+        domainError('duplicate-spelling', '同じ言語内に同じスペルの単語が登録されています。新規登録はできません。', existing.id);
+}
 function clone(value) { return structuredClone(value); }
 function assertLibrary(library) {
     if (!library || !Array.isArray(library.nodes))
@@ -130,6 +137,8 @@ export function createNode(library, input) {
     if (parentKind === null ? parent !== null : parent?.kind !== parentKind)
         domainError('bad-request', '親子階層が不正です。');
     const content = normalizeContent(input.content, input.kind);
+    if (input.kind === 'word' && parent)
+        rejectSameLanguageSpelling(library, parent.id, content.title);
     if (input.kind === 'word' && parent)
         validateMeaningReferences(library, parent.id, content);
     if (input.kind === 'tip' && parent)
@@ -189,6 +198,8 @@ export function editNode(library, id, expectedRevision, content, now) {
     if (!Number.isSafeInteger(expectedRevision) || expectedRevision !== item.revision)
         domainError('conflict', '他の編集により更新されています。');
     item.draft = normalizeContent(content, item.kind);
+    if (item.kind === 'word' && item.parentId)
+        rejectSameLanguageSpelling(next, item.parentId, item.draft.title, id);
     if (item.kind === 'language')
         validateLanguageStructure(item.draft);
     if (item.kind === 'word' && item.parentId) {
