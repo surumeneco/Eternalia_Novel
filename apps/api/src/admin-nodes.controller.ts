@@ -26,6 +26,9 @@ function translate(error: unknown): never {
     if (value.code === 'bad-request') throw new BadRequestException(value.message);
     if (value.code === 'not-found') throw new NotFoundException(value.message);
     if (value.code === 'conflict') throw new ConflictException(value.message);
+    if (value.code === 'duplicate-spelling') throw new ConflictException({
+      code: 'duplicate-spelling', message: value.message, existingWordId: value.existingWordId,
+    });
   }
   throw error;
 }

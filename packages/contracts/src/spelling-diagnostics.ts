@@ -7,8 +7,9 @@ export interface SpellingWarning {
 }
 
 /**
- * Diagnostics only; rejected vs accepted spellings have not been normatively
- * decided. Never mutate a word or overwrite author content.
+ * Only phonotactic failures remain warnings. Same-language duplicate spelling
+ * is rejected by the domain write boundary; this editor diagnostic is advisory.
+ * Never mutate a word or overwrite author content.
  */
 export function diagnoseWordSpelling(library: Library, wordId: string, rawSpell: string): SpellingWarning[] {
   const target=library.nodes.find(node => node.id===wordId && node.kind==='word');
@@ -21,7 +22,7 @@ export function diagnoseWordSpelling(library: Library, wordId: string, rawSpell:
     node.draft.title.trim()===spell);
   if (duplicates.length) warnings.push({
     code:'duplicate-spelling',
-    message:'同じ言語内に同じ綴りの単語があります。意味と登録対象を確認してください。',
+    message:'同じ言語内に同じスペルの単語が登録されています。保存できません。',
   });
   const language=library.nodes.find(node => node.id===target.parentId && node.kind==='language');
   if (!language?.draft.details.characters) return warnings;
