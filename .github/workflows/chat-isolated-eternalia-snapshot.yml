@@ -1,0 +1,36 @@
+name: Chat isolated Eternalia source snapshot
+on:
+  push:
+    branches:
+      - infra/chat-snapshot-eternalia-20261112
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: a7cf9bd9726fc5e90705a7763c79f98e436632d7
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Verify exact source identity and archive tracked source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "a7cf9bd9726fc5e90705a7763c79f98e436632d7"
+          test "$(git rev-parse HEAD^{tree})" = "0eb67b6053a7092937e117ed61d3eafa9fdfeee5"
+          git archive --format=tar.gz --prefix=project/ --output=project-source.tar.gz "a7cf9bd9726fc5e90705a7763c79f98e436632d7"
+          printf '{"repository":"surumeneco/Eternalia_Novel","commit":"a7cf9bd9726fc5e90705a7763c79f98e436632d7","tree":"0eb67b6053a7092937e117ed61d3eafa9fdfeee5"}\n' > snapshot-manifest.json
+          sha256sum project-source.tar.gz > snapshot.sha256
+          cat snapshot.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chat-eternalia-source-a7cf9bd9
+          path: |
+            project-source.tar.gz
+            snapshot-manifest.json
+            snapshot.sha256
+          retention-days: 1
+          if-no-files-found: error
