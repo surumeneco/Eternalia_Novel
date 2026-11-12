@@ -7,6 +7,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
+import { randomUUID } from 'node:crypto';
 import { chromium } from 'playwright';
 
 const fixture = JSON.parse(await readFile(process.env.HTTP_FIXTURE_FILE, 'utf8'));
@@ -1357,7 +1358,7 @@ test('dictionary browser keeps identical spellings separate by language filter',
 });
 
 
-test('word editor shows and clears same-language duplicate spelling warnings', { timeout: 60_000 }, async () => {
+test('AC-09: duplicate registration rejects with existing word, then redirects unsaved meaning to matching POS', { timeout: 90_000 }, async () => {
   assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
   const browser = await chromium.launch({ headless: true });
   try {
@@ -1366,38 +1367,76 @@ test('word editor shows and clears same-language duplicate spelling warnings', {
       name: 'eternalia_author', value: fixture.authorToken, url: base,
       httpOnly: true, sameSite: 'Lax',
     }]);
+    const anon = await browser.newContext();
     const prefix = fixture.prefix + '-duplicate-spelling';
-    async function create(kind, parentId, title) {
+    async function create(kind, parentId, title, details = {}) {
       const response = await author.request.post(base + '/api/admin/nodes', {
         headers: { Origin: base },
-        data: { kind, parentId, content: { title, body: '', details: {} } },
+        data: { kind, parentId, content: { title, body: '', details } },
       });
       assert.equal(response.status(), 201, await response.text());
       return (await response.json()).id;
     }
+    async function publish(id) {
+      const response = await author.request.post(base + '/api/admin/nodes/' + id + '/publish', {
+        headers: { Origin: base }, data: { expectedRevision: 1 },
+      });
+      assert.equal(response.status(), 200, await response.text());
+    }
     const series = await create('series', null, prefix + '-series');
     const language = await create('language', series, prefix + '-language');
-    await create('word', language, prefix + '-same');
-    const second = await create('word', language, prefix + '-same');
-    const page = await author.newPage();
-    await page.goto(base + '/studio?item=' + second);
-    const warnings = page.locator('.spelling-warnings');
-    await warnings.getByText('同じ言語内に同じ綴りの単語があります。意味と登録対象を確認してください。').waitFor();
-    assert.equal(await warnings.locator('li').count(), 1, 'one duplicate warning should be displayed');
+    const otherLanguage = await create('language', series, prefix + '-other-language');
+    const title = prefix + '-same';
+    const originalMeanings = [{id: randomUUID(),partOfSpeech:'名詞',definition:'元の意味',etymologies:[]}];
+    const word = await create('word', language, title, {meanings:JSON.stringify(originalMeanings)});
+    for (const id of [series, language, word]) await publish(id);
+    const originalPublic = await (await anon.request.get(base + '/api/public/items/' + word)).json();
+    const rejected = await author.request.post(base + '/api/admin/nodes', {
+      headers: { Origin: base },
+      data: { kind:'word', parentId:language, content: {title,body:'',details:{}} },
+    });
+    assert.equal(rejected.status(), 409, await rejected.text());
+    const conflict = await rejected.json();
+    assert.equal(conflict.code, 'duplicate-spelling');
+    assert.equal(conflict.existingWordId, word);
+    const sameInOtherLanguage = await create('word', otherLanguage, title);
+    assert.notEqual(sameInOtherLanguage, word);
 
-    const title = page.getByRole('textbox', { name: '名称・見出し', exact: true });
-    await title.fill(prefix + '-unique');
-    await warnings.waitFor({ state: 'hidden' });
-    await title.fill(prefix + '-same');
-    await warnings.waitFor({ state: 'visible' });
-    assert.equal(await warnings.locator('li').count(), 1, 'warning should return for duplicate spelling');
+    const page = await author.newPage();
+    await page.goto(base + '/studio?item=' + language);
+    await page.getByRole('heading', { name: '言語：' + prefix + '-language' }).waitFor();
+    await page.getByRole('button', {name:'子項目を追加'}).click();
+    await page.getByRole('textbox', {name:'タイトル'}).fill(title);
+    await page.getByRole('textbox', {name:'新しい意味の品詞'}).fill('名詞');
+    await page.getByRole('textbox', {name:'新しい意味・説明'}).fill('追加した未保存の名詞');
+    await page.getByRole('button', {name:'作成',exact:true}).click();
+    await page.getByRole('alert').getByText('同じ言語に同じスペルが登録済みのため、新規登録できません。既存単語の編集に移りました。追記内容は未保存です。').waitFor();
+    await page.getByRole('heading', {name:'単語：' + title}).waitFor();
+    const meanings = page.locator('.word-meaning');
+    assert.equal(await meanings.count(), 2);
+    assert.equal(await meanings.nth(0).getByRole('textbox', {name:'意味・説明'}).inputValue(), '元の意味');
+    assert.equal(await meanings.nth(1).getByRole('textbox', {name:'意味・説明'}).inputValue(), '追加した未保存の名詞');
+    assert.equal(await meanings.nth(1).getByRole('textbox', {name:'品詞'}).inputValue(), '名詞');
+    const authorList = await (await author.request.get(base + '/api/admin/nodes')).json();
+    const persisted = authorList.find(node => node.id === word);
+    assert.deepEqual(JSON.parse(persisted.draft.details.meanings), originalMeanings,
+      'rejecting a duplicate must leave the original draft intact until explicit save');
+    assert.deepEqual((await (await anon.request.get(base + '/api/public/items/' + word)).json()).content,
+      originalPublic.content, 'duplicate attempt must leave the existing public snapshot intact');
+    await page.getByRole('button', {name:'下書きを保存'}).click();
+    await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
+    const afterSave = (await (await author.request.get(base + '/api/admin/nodes')).json())
+      .find(node => node.id === word);
+    assert.equal(JSON.parse(afterSave.draft.details.meanings).length,2);
+    assert.deepEqual((await (await anon.request.get(base + '/api/public/items/' + word)).json()).content,
+      originalPublic.content, 'explicit draft save must not publish the proposed meaning');
     await page.close();
     await author.close();
+    await anon.close();
   } finally {
     await browser.close();
   }
 });
-
 
 test('two same-class word meanings retain independent etymologies through draft and publication', { timeout: 90_000 }, async () => {
   assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
