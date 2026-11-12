@@ -247,18 +247,16 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
     assert.equal(await chapterBody.inputValue(), '東京',
       'Undo must revert only the ruby toolbar insertion');
 
-    await chapterBody.fill('');
-    await chapterBody.pressSequentially('甲乙');
-    await chapterBody.evaluate(element => {
-      element.focus();
-      element.setSelectionRange(1, 2);
-    });
-    await manuscript.getByRole('button', { name: 'ページ区切りを挿入' }).click();
-    assert.equal(await chapterBody.inputValue(), '甲[[page]]乙',
-      'page marker insertion must preserve the selected manuscript text');
-    await chapterBody.press('Control+z');
-    assert.equal(await chapterBody.inputValue(), '甲乙',
-      'Undo must revert only the page marker insertion');
+    // AC-03/33/57: pages are real ordered data rather than markers edited
+    // inside a single textarea. Insertion and reordering preserve contents.
+    await chapterBody.fill('甲乙');
+    await manuscript.getByRole('button', { name: 'このページの後に追加' }).click();
+    assert.equal(await chapterBody.inputValue(), '', 'new page is initially empty');
+    await chapterBody.fill('第二頁');
+    await manuscript.getByRole('button', { name: '前へ移動' }).click();
+    assert.equal(await chapterBody.inputValue(), '第二頁');
+    await manuscript.getByRole('button', { name: '次のページ' }).click();
+    assert.equal(await chapterBody.inputValue(), '甲乙', 'reordering must preserve the other page');
 
     await chapterBody.dispatchEvent('compositionstart');
     assert.equal(await manuscript.getByRole('button', { name: '選択文字にルビを付ける' }).isDisabled(), true,

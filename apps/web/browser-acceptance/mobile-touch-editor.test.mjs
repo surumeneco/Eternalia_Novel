@@ -49,7 +49,7 @@ test('touch toolbar preserves selected Japanese text and separates draft from pu
         await page.goto(base + '/studio?item=' + chapter);
         const editor = page.getByRole('textbox', { name: '本文・説明', exact: true });
         const ruby = page.getByRole('button', { name: '選択文字にルビを付ける' });
-        const marker = page.getByRole('button', { name: 'ページ区切りを挿入' });
+        const marker = page.getByRole('button', { name: 'このページの後に追加' });
         await editor.waitFor();
         assert.equal(await editor.inputValue(), '前漢字後');
 
@@ -70,11 +70,15 @@ test('touch toolbar preserves selected Japanese text and separates draft from pu
         assert.equal(await marker.isDisabled(), true, 'do not insert markers during composition');
         await editor.dispatchEvent('compositionend');
         assert.equal(await marker.isEnabled(), true);
-        await editor.evaluate(el => { el.focus(); el.setSelectionRange(1, 4); });
+        const firstPage = await editor.inputValue();
         await marker.tap();
-        const body = await editor.inputValue();
-        assert.equal(body, '前[[page]]｜漢字《かんじ》後',
-          'touch marker insertion must not delete the selected text');
+        assert.equal(await editor.inputValue(), '', 'new page begins empty');
+        await editor.fill('二頁');
+        await page.getByRole('button', { name: '前のページ' }).tap();
+        assert.equal(await editor.inputValue(), firstPage,
+          'touch page navigation must preserve the ruby page');
+        await page.getByRole('button', { name: '次のページ' }).tap();
+        assert.equal(await editor.inputValue(), '二頁');
 
         await page.getByRole('button', { name: '下書きを保存' }).tap();
         await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
@@ -85,9 +89,11 @@ test('touch toolbar preserves selected Japanese text and separates draft from pu
         await page.getByText('公開スナップショットを更新しました。').waitFor();
         publicResponse = await author.request.get(base + '/api/public/items/' + chapter);
         assert.equal(publicResponse.status(), 200, 'published chapter must be visible to readers');
-        assert.equal((await publicResponse.json()).content.body, body);
+        assert.deepEqual((await publicResponse.json()).content.pages, [firstPage, '二頁']);
         await page.reload();
-        assert.equal(await editor.inputValue(), body, 'mobile touch edit must persist after reload');
+        assert.equal(await editor.inputValue(), firstPage, 'first page survives reload');
+        await page.getByRole('button', { name: '次のページ' }).tap();
+        assert.equal(await editor.inputValue(), '二頁', 'second page survives reload');
       } finally { await author.close(); }
     } finally { await browser.close(); }
   });
@@ -193,20 +199,20 @@ test('Chromium touch editor enforces GB4/GB5 fallback without Intl.Segmenter',
         await page.goto(base + '/studio?item=' + chapter);
         assert.equal(await page.evaluate(() => typeof Intl.Segmenter), 'undefined');
         const editor = page.getByRole('textbox', { name: '本文・説明', exact: true });
-        const marker = page.getByRole('button', { name: 'ページ区切りを挿入' });
+        const marker = page.getByRole('button', { name: '選択文字にルビを付ける' });
         await editor.waitFor();
 
         await editor.fill('前か\u3099後');
         await editor.evaluate(el => { el.focus(); el.setSelectionRange(2, 2); });
         await marker.tap();
         assert.equal(await editor.inputValue(), '前か\u3099後',
-          'fallback must still reject insertion inside a kana combining cluster');
+          'ruby fallback must still reject insertion inside a kana combining cluster');
 
         await editor.fill('前\n\u3099後');
         await editor.evaluate(el => { el.focus(); el.setSelectionRange(2, 2); });
         await marker.tap();
-        assert.equal(await editor.inputValue(), '前\n[[page]]\u3099後',
-          'fallback must allow an insertion at the LF/combining-mark boundary');
+        assert.equal(await editor.inputValue(), '前\n｜文字《よみ》\u3099後',
+          'ruby fallback must allow an insertion at the LF/combining-mark boundary');
       } finally { await author.close(); }
     } finally { await browser.close(); }
   });
@@ -225,7 +231,7 @@ test('Chromium touch editor respects Unicode fallback boundaries across scripts'
         await page.goto(base + '/studio?item=' + chapter);
         assert.equal(await page.evaluate(() => typeof Intl.Segmenter), 'undefined');
         const editor = page.getByRole('textbox', { name: '本文・説明', exact: true });
-        const marker = page.getByRole('button', { name: 'ページ区切りを挿入' });
+        const marker = page.getByRole('button', { name: '選択文字にルビを付ける' });
         await editor.waitFor();
 
         const cases = [
@@ -246,7 +252,7 @@ test('Chromium touch editor respects Unicode fallback boundaries across scripts'
           }, scenario.offset);
           await marker.tap();
           const expected = scenario.permitted
-            ? scenario.source.slice(0, scenario.offset) + '[[page]]' +
+            ? scenario.source.slice(0, scenario.offset) + '｜文字《よみ》' +
               scenario.source.slice(scenario.offset)
             : scenario.source;
           assert.equal(await editor.inputValue(), expected, scenario.name);
