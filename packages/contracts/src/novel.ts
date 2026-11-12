@@ -31,15 +31,15 @@ export interface NovelNode {
 }
 export interface Library { nodes: NovelNode[]; }
 export interface ReaderNode { id: string; kind: Kind; parentId: string | null; order: number; content: Content; publishedAt: number; }
-export interface DomainError { code: 'bad-request' | 'not-found' | 'conflict'; message: string; }
+export interface DomainError { code: 'bad-request' | 'not-found' | 'conflict' | 'duplicate-spelling'; message: string; existingWordId?: string; }
 const parentKinds: Record<Kind, Kind | null> = {
   series: null, volume: 'series', part: 'volume', chapter: 'part',
   category: 'series', tip: 'category', tipSection: 'tip',
   language: 'series', word: 'language', grammar: 'language',
   periodization: 'series', event: 'periodization',
 };
-export function domainError(code: DomainError['code'], message: string): never {
-  throw { code, message } as DomainError;
+export function domainError(code: DomainError['code'], message: string, existingWordId?: string): never {
+  throw { code, message, ...(existingWordId ? { existingWordId } : {}) } as DomainError;
 }
 export function isKind(value: unknown): value is Kind {
   return typeof value === 'string' && (kinds as readonly string[]).includes(value);
@@ -114,6 +114,13 @@ function find(library: Library, id: string): NovelNode {
   if (!item) domainError('not-found', '項目が見つかりません。');
   return item;
 }
+/** A language owns a spelling; different languages may independently use the same spelling. */
+function rejectSameLanguageSpelling(library: Library, languageId: string, title: string, editingWordId?: string): void {
+  const existing = library.nodes.find(node => node.kind === 'word' && node.parentId === languageId &&
+    node.id !== editingWordId && node.draft.title.trim() === title.trim());
+  if (existing) domainError('duplicate-spelling',
+    '同じ言語内に同じスペルの単語が登録されています。新規登録はできません。', existing.id);
+}
 function clone<T>(value: T): T { return structuredClone(value); }
 function assertLibrary(library: Library): void {
   if (!library || !Array.isArray(library.nodes)) domainError('bad-request', 'データベース形式が不正です。');
@@ -130,6 +137,7 @@ export function createNode(library: Library, input: { id: string; kind: Kind; pa
   const parent = input.parentId ? find(library, input.parentId) : null;
   if (parentKind === null ? parent !== null : parent?.kind !== parentKind) domainError('bad-request', '親子階層が不正です。');
   const content = normalizeContent(input.content, input.kind);
+  if (input.kind === 'word' && parent) rejectSameLanguageSpelling(library, parent.id, content.title);
   if (input.kind === 'word' && parent) validateMeaningReferences(library, parent.id, content);
   if (input.kind === 'tip' && parent) validateTipReferences(library, input.id, parent.id, content);
   if (input.kind === 'language') validateLanguageStructure(content);
@@ -178,6 +186,7 @@ export function editNode(library: Library, id: string, expectedRevision: number,
   const item = find(next, id);
   if (!Number.isSafeInteger(expectedRevision) || expectedRevision !== item.revision) domainError('conflict', '他の編集により更新されています。');
   item.draft = normalizeContent(content, item.kind);
+  if (item.kind === 'word' && item.parentId) rejectSameLanguageSpelling(next, item.parentId, item.draft.title, id);
   if (item.kind === 'language') validateLanguageStructure(item.draft);
   if (item.kind === 'word' && item.parentId) {
     validateMeaningReferences(next, item.parentId, item.draft);

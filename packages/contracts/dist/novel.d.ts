@@ -36,10 +36,11 @@ export interface ReaderNode {
     publishedAt: number;
 }
 export interface DomainError {
-    code: 'bad-request' | 'not-found' | 'conflict';
+    code: 'bad-request' | 'not-found' | 'conflict' | 'duplicate-spelling';
     message: string;
+    existingWordId?: string;
 }
-export declare function domainError(code: DomainError['code'], message: string): never;
+export declare function domainError(code: DomainError['code'], message: string, existingWordId?: string): never;
 export declare function isKind(value: unknown): value is Kind;
 export declare function newLibrary(): Library;
 export declare function createNode(library: Library, input: {
