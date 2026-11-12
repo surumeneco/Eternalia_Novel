@@ -10,6 +10,7 @@ export interface ReaderNode {
   content: {
     title: string;
     body: string;
+    pages?: string[];
     details: Record<string, string>;
   };
   publishedAt: number;

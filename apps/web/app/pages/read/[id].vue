@@ -52,7 +52,7 @@ function chapterLink(chapterId: string) {
         <h1>{{ chapter.content.title }}</h1>
         <AuthorEditLink :item-id="chapter.id" />
         <p class="note">公開：<time :datetime="new Date(chapter.publishedAt).toISOString()">{{ new Date(chapter.publishedAt).toLocaleDateString('ja-JP') }}</time></p>
-        <RichContent :source="chapter.content.body" paged />
+        <RichContent :source="chapter.content.body" :pages="chapter.content.pages" paged />
         <div v-if="ancestryError || treeError" role="alert" class="navigation-error">
           <p>章の前後関係を取得できませんでした。本文の閲覧は引き続き可能です。</p>
           <button type="button" class="inline-action"

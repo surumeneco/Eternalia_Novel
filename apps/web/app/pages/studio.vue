@@ -3,7 +3,7 @@ import type { AuthorNode } from '~/types/author';
 const { t } = useUiLocale();
 const studioRoute = useRoute();
 import type { ReaderKind } from '~/types/reader';
-import { parseLanguageWordClasses, diagnoseWordSpelling } from '@eternalia/contracts';
+import { parseLanguageWordClasses, diagnoseWordSpelling, pagesForChapter, joinChapterPages } from '@eternalia/contracts';
 import { insertManuscriptMarkup, type ManuscriptInsertionKind } from '~/utils/manuscript-markup';
 
 interface AuthState { configured: boolean; authenticated: boolean }
@@ -36,6 +36,8 @@ type Filter = keyof typeof filters;
 const nodes = ref<AuthorNode[]>([]);
 const selectedId = ref<string | null>(null);
 const selected = computed(() => nodes.value.find(n => n.id === selectedId.value) ?? null);
+const publicationStatus = computed(() => !selected.value?.published ? t('studioUnpublished')
+  : selected.value.isPublic ? t('studioPublishedState') : t('studioPrivateState'));
 const filter = ref<Filter>('all');
 const busy = ref(false);
 const errorText = ref('');
@@ -45,33 +47,66 @@ const form = reactive<{ title:string; body:string; details:Record<string,string>
 });
 const bodyTextarea = ref<HTMLTextAreaElement | null>(null);
 const composingBody = ref(false);
+const chapterPages = ref<string[]>(['']);
+const selectedPage = ref(0);
+const selectedPageBody = computed<string>({
+  get: () => chapterPages.value[selectedPage.value] ?? '',
+  set: value => { chapterPages.value[selectedPage.value] = value; },
+});
+const chapterBodyLength = computed(() => joinChapterPages(chapterPages.value).length);
+function jumpPage(index: number) {
+  if (busy.value || composingBody.value || index < 0 || index >= chapterPages.value.length) return;
+  selectedPage.value = index;
+  nextTick(() => bodyTextarea.value?.focus());
+}
+function addPageAfter() {
+  if (busy.value || composingBody.value || chapterPages.value.length >= 1000 ||
+      chapterBodyLength.value + '[[page]]'.length > 100000) {
+    errorText.value = t('studioBodyTooLong');
+    return;
+  }
+  chapterPages.value.splice(selectedPage.value + 1, 0, '');
+  selectedPage.value++;
+  errorText.value = '';
+  nextTick(() => bodyTextarea.value?.focus());
+}
+function reorderPage(delta: number) {
+  if (busy.value || composingBody.value) return;
+  const current = selectedPage.value, next = current + delta;
+  if (next < 0 || next >= chapterPages.value.length) return;
+  // Move complete page values, never recreate them from substrings or a marker.
+  const [page] = chapterPages.value.splice(current, 1);
+  chapterPages.value.splice(next, 0, page ?? '');
+  selectedPage.value = next;
+  nextTick(() => bodyTextarea.value?.focus());
+}
 function insertMarkup(kind: ManuscriptInsertionKind) {
   const el = bodyTextarea.value;
   if (!el || composingBody.value || busy.value) return;
   const start = el.selectionStart;
   const end = el.selectionEnd;
-  const result = insertManuscriptMarkup(form.body, start, end, kind);
+  const body = selectedPageBody.value;
+  const result = insertManuscriptMarkup(body, start, end, kind);
   if (!result) {
     errorText.value = t('studioRubyInvalid');
     return;
   }
-  if (result.value.length > 100000) {
+  if (chapterBodyLength.value - body.length + result.value.length > 100000) {
     errorText.value = t('studioBodyTooLong');
     return;
   }
   // A direct v-model assignment (and setRangeText) bypasses the browser's
   // native Undo history. insertText preserves a single undoable edit in
   // Chromium; retain a value fallback for browsers where it is unavailable.
-  // Page markers insert before the selection without replacing its text.
-  const replaceEnd = kind === 'page' ? start : end;
-  const insertedText = result.value.slice(start, result.value.length - (form.body.length - replaceEnd));
+  const replaceEnd = end;
+  const insertedText = result.value.slice(start, result.value.length - (body.length - replaceEnd));
   el.focus();
   el.setSelectionRange(start, replaceEnd);
   let nativeInserted = false;
   try {
     nativeInserted = document.execCommand('insertText', false, insertedText);
   } catch { /* Unsupported editing command; use the model fallback below. */ }
-  form.body = nativeInserted && el.value === result.value ? el.value : result.value;
+  selectedPageBody.value = nativeInserted && el.value === result.value ? el.value : result.value;
   errorText.value = '';
   nextTick(() => {
     const current = bodyTextarea.value;
@@ -115,7 +150,10 @@ const editorDirty = computed(() => {
   const currentDetails = form.details;
   const originalDetails = draft.details ?? {};
   const detailKeys = new Set([...Object.keys(currentDetails), ...Object.keys(originalDetails)]);
-  return form.title !== draft.title || form.body !== draft.body ||
+  const bodyDirty = selected.value?.kind === 'chapter'
+    ? JSON.stringify(chapterPages.value) !== JSON.stringify(pagesForChapter(draft))
+    : form.body !== draft.body;
+  return form.title !== draft.title || bodyDirty ||
     [...detailKeys].some(key => (currentDetails[key] ?? '') !== (originalDetails[key] ?? ''));
 });
 const creationDirty = computed(() => createOpen.value &&
@@ -127,6 +165,9 @@ function confirmDiscard(): boolean {
 function restoreEditor() {
   form.title = selected.value?.draft.title ?? '';
   form.body = selected.value?.draft.body ?? '';
+  chapterPages.value = selected.value?.kind === 'chapter'
+    ? pagesForChapter(selected.value.draft) : [''];
+  selectedPage.value = 0;
   form.details = { ...(selected.value?.draft.details ?? {}) };
 }
 function selectNode(nodeId: string) {
@@ -291,6 +332,7 @@ async function createItem() {
         ...(createKind.value === 'word' ? { isPublic: createWordIsPublic.value } : {}),
         content:{
           title:createTitle.value.trim(), body:'',
+          ...(createKind.value === 'chapter' ? {pages:['']} : {}),
           details:createKind.value === 'category' ? {presets:'[]'} :
             createKind.value === 'word' ? {meanings:'[]'} :
             createKind.value === 'language' ? {characters:'[]',wordClasses:'[]'} : {},
@@ -304,11 +346,18 @@ async function createItem() {
 async function saveDraft() {
   const node = selected.value;
   if (!node) return;
+  if (node.kind === 'chapter' && (chapterPages.value.length > 1000 || chapterBodyLength.value > 100000)) {
+    errorText.value = t('studioBodyTooLong');
+    return;
+  }
   await runChange(async () => {
     await $fetch('/api/admin/nodes/' + node.id, {
       method:'PATCH',
       body: { expectedRevision:node.revision,content:{
-        title:form.title,body:form.body,details:{...form.details},
+        title:form.title,
+        body:node.kind === 'chapter' ? joinChapterPages(chapterPages.value) : form.body,
+        ...(node.kind === 'chapter' ? { pages: [...chapterPages.value] } : {}),
+        details:{...form.details},
       }},
     });
   }, t('studioDraftSaved'));
@@ -424,7 +473,7 @@ async function logout() {
             </form>
             <template v-else-if="selected">
               <h2>{{ kinds[selected.kind] }}：{{ selected.draft.title }}</h2>
-              <p class="note">{{ t('studioDraftRevision') }} {{ selected.revision }} ／ {{ selected.published ? t('studioPublishedSnapshot') : t('studioUnpublished') }}</p>
+              <p class="note">{{ t('studioDraftRevision') }} {{ selected.revision }} ／ {{ publicationStatus }}{{ selected.published ? '（' + t('studioPublishedSnapshot') + '）' : '' }}</p>
               <form @submit.prevent="saveDraft">
                 <label>{{ t('studioNameHeading') }}<input v-model="form.title" maxlength="150" required /></label>
                 <ul v-if="selected.kind === 'word' && spellingWarnings.length" class="spelling-warnings" :aria-label="t('studioSpellingWarnings')">
@@ -432,11 +481,27 @@ async function logout() {
                 </ul>
                 <div v-if="selected.kind === 'chapter'" class="manuscript-toolbar" role="group" :aria-label="t('studioManuscriptToolbar')">
                   <button type="button" class="inline-action" :disabled="busy || composingBody" @mousedown.prevent @click="insertMarkup('ruby')">{{ t('studioRubyButton') }}</button>
-                  <button type="button" class="inline-action" :disabled="busy || composingBody" @mousedown.prevent @click="insertMarkup('page')">{{ t('studioPageButton') }}</button>
+                  <nav class="page-controls" :aria-label="t('studioPageControls')">
+                    <button type="button" class="inline-action" :disabled="busy || composingBody || selectedPage === 0" @click="jumpPage(selectedPage - 1)">{{ t('studioPagePrevious') }}</button>
+                    <label>{{ t('studioPageSelect') }}
+                      <select :value="selectedPage" :disabled="busy || composingBody" @change="jumpPage(Number(($event.target as HTMLSelectElement).value))">
+                        <option v-for="(_, index) in chapterPages" :key="index" :value="index">{{ index + 1 }} / {{ chapterPages.length }}</option>
+                      </select>
+                    </label>
+                    <button type="button" class="inline-action" :disabled="busy || composingBody || selectedPage === chapterPages.length - 1" @click="jumpPage(selectedPage + 1)">{{ t('studioPageNext') }}</button>
+                    <button type="button" class="inline-action" :disabled="busy || composingBody" @click="addPageAfter">{{ t('studioPageButton') }}</button>
+                    <button type="button" class="inline-action" :disabled="busy || composingBody || selectedPage === 0" @click="reorderPage(-1)">{{ t('studioPageMoveUp') }}</button>
+                    <button type="button" class="inline-action" :disabled="busy || composingBody || selectedPage === chapterPages.length - 1" @click="reorderPage(1)">{{ t('studioPageMoveDown') }}</button>
+                  </nav>
                 </div>
-                <label>{{ t('studioBodyLabel') }}<textarea ref="bodyTextarea" v-model="form.body" rows="14" maxlength="100000"
-                  @compositionstart="composingBody = true" @compositionend="composingBody = false"
-                  :placeholder="t('studioMarkupPlaceholder')"></textarea></label>
+                <label v-if="selected.kind === 'chapter'">{{ t('studioBodyLabel') }}
+                  <textarea ref="bodyTextarea" v-model="selectedPageBody" rows="14" maxlength="100000"
+                    @compositionstart="composingBody = true" @compositionend="composingBody = false"
+                    :placeholder="t('studioMarkupPlaceholder')"></textarea>
+                </label>
+                <label v-else>{{ t('studioBodyLabel') }}
+                  <textarea v-model="form.body" rows="14" maxlength="100000"></textarea>
+                </label>
                 <CategoryPresetEditor v-if="selected.kind === 'category'" v-model="categoryPresets" />
                 <TipLinksEditor v-if="selected.kind === 'tip'"
                   v-model:tags="tipTags" v-model:related-tip-ids="tipRelatedTipIds"
@@ -472,7 +537,7 @@ async function logout() {
               <button class="inline-action" type="button" :disabled="busy || !selected.published" @click="schedule">{{ t('studioSetDate') }}</button>
               <hr />
               <h3>{{ t('studioDraftPreview') }}</h3>
-              <RichContent :source="form.body" />
+              <RichContent :source="form.body" :pages="selected.kind === 'chapter' ? chapterPages : undefined" />
             </template>
             <div v-else>
               <h2>{{ t('studioChooseItem') }}</h2>
@@ -506,7 +571,9 @@ textarea { min-height:6rem;resize:vertical;line-height:1.7; }
 .create-visibility-option { display:flex;align-items:center;gap:.6rem; }
 .create-visibility-option input { display:inline-block;width:auto;margin:0; }
 .action-row { display:flex;flex-wrap:wrap;gap:.6rem;margin:1rem 0; }
-.manuscript-toolbar { display:flex;flex-wrap:wrap;gap:.4rem;margin:1rem 0 .4rem; }
+.manuscript-toolbar { display:flex;flex-wrap:wrap;gap:.4rem;margin:1rem 0 .4rem;align-items:center; }
+.page-controls { display:flex;flex-wrap:wrap;gap:.35rem;align-items:end; }
+.page-controls select { margin-top:.2rem;min-width:5rem; }
 .primary,.login-link { display:inline-block;background:#00698c;border:1px solid var(--color-concept-main);color:#fff;padding:.45rem .8rem;text-decoration:none; }
 .status-success { color:#bfffd4; }
 hr { border:0;border-top:1px solid var(--color-border-base);margin:1.5rem 0; }

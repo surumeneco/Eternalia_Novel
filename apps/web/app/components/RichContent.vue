@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { tokenizeRichContent } from '~/utils/rich-content-tokenizer';
-const props = withDefaults(defineProps<{ source: string; paged?: boolean }>(), { paged: false });
-const pages = computed(() => props.source.split('[[page]]').map(tokenizeRichContent));
+const props = withDefaults(defineProps<{ source: string; pages?: string[]; paged?: boolean }>(), { paged: false });
+const pages = computed(() => (props.pages ?? props.source.split('[[page]]')).map(tokenizeRichContent));
 const currentPage = ref(0);
-watch(() => props.source, () => { currentPage.value = 0; });
+watch(() => [props.source, props.pages], () => { currentPage.value = 0; });
 const displayed = computed(() => props.paged
   ? [pages.value[currentPage.value] ?? []] : pages.value);
 function move(delta: number) {

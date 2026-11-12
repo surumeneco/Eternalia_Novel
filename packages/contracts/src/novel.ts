@@ -4,6 +4,7 @@
  * preview and the future Nuxt/Nest/PostgreSQL implementation.
  */
 import { canReadPublished } from './publication.js';
+import { joinChapterPages, pagesForChapter, validateChapterPages } from './manuscript-pages.js';
 import { parseWordMeanings, type WordMeaning } from './word-meanings.js';
 import { parseTipTags, parseTipRelationIds } from './tip-links.js';
 import { parseLanguageCharacters, parseLanguageWordClasses } from './language-structure.js';
@@ -14,7 +15,7 @@ export const kinds = [
 ] as const;
 export type Kind = (typeof kinds)[number];
 export type Details = Record<string, string>;
-export interface Content { title: string; body: string; details: Details; }
+export interface Content { title: string; body: string; details: Details; pages?: string[]; }
 export interface Snapshot { value: Content; sourceRevision: number; publishedAt: number; }
 export interface NovelNode {
   id: string;
@@ -47,7 +48,7 @@ function bounded(value: unknown, maximum: number): string {
   if (typeof value !== 'string' || value.length > maximum) domainError('bad-request', '文字数または型が不正です。');
   return value;
 }
-function normalizeContent(raw: unknown): Content {
+function normalizeContent(raw: unknown, kind: Kind): Content {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) domainError('bad-request', '入力データが不正です。');
   const value = raw as Record<string, unknown>;
   const title = bounded(value.title, 150).trim();
@@ -63,6 +64,12 @@ function normalizeContent(raw: unknown): Content {
       details[key] = bounded(val, 10000);
     }
   }
+  if (kind === 'chapter') {
+    const pages = value.pages === undefined ? validateChapterPages(body.split('[[page]]'))
+      : validateChapterPages(value.pages);
+    return { title, body: joinChapterPages(pages), details, pages };
+  }
+  if (value.pages !== undefined) domainError('bad-request', 'ページ配列は章にのみ指定できます。');
   return { title, body, details };
 }
 /** Referential integrity for a source language and word within one Series. */
@@ -122,7 +129,7 @@ export function createNode(library: Library, input: { id: string; kind: Kind; pa
   const parentKind = parentKinds[input.kind];
   const parent = input.parentId ? find(library, input.parentId) : null;
   if (parentKind === null ? parent !== null : parent?.kind !== parentKind) domainError('bad-request', '親子階層が不正です。');
-  const content = normalizeContent(input.content);
+  const content = normalizeContent(input.content, input.kind);
   if (input.kind === 'word' && parent) validateMeaningReferences(library, parent.id, content);
   if (input.kind === 'tip' && parent) validateTipReferences(library, input.id, parent.id, content);
   if (input.kind === 'language') validateLanguageStructure(content);
@@ -170,7 +177,7 @@ export function editNode(library: Library, id: string, expectedRevision: number,
   const next = clone(library);
   const item = find(next, id);
   if (!Number.isSafeInteger(expectedRevision) || expectedRevision !== item.revision) domainError('conflict', '他の編集により更新されています。');
-  item.draft = normalizeContent(content);
+  item.draft = normalizeContent(content, item.kind);
   if (item.kind === 'language') validateLanguageStructure(item.draft);
   if (item.kind === 'word' && item.parentId) {
     validateMeaningReferences(next, item.parentId, item.draft);
@@ -293,7 +300,8 @@ export function toReader(library: Library, id: string, now: number): ReaderNode 
   }
   if (node.kind === 'event' && published.details.year !== undefined) details.year = published.details.year;
   return { id: node.id, kind: node.kind, parentId: node.parentId,
-    order: node.order, content: { title: published.title, body: published.body, details },
+    order: node.order, content: { title: published.title, body: published.body, details,
+      ...(node.kind === 'chapter' ? { pages: pagesForChapter(published) } : {}) },
     publishedAt: node.published.publishedAt };
 }
 export function publicTree(library: Library, seriesId: string, now: number): ReaderNode[] {

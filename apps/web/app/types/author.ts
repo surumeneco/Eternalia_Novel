@@ -5,9 +5,9 @@ export interface AuthorNode {
   kind: ReaderKind;
   parentId: string | null;
   order: number;
-  draft: { title: string; body: string; details: Record<string,string> };
+  draft: { title: string; body: string; details: Record<string,string>; pages?: string[] };
   revision: number;
-  published: { value: { title: string; body: string; details: Record<string,string> }; sourceRevision: number; publishedAt: number } | null;
+  published: { value: { title: string; body: string; details: Record<string,string>; pages?: string[] }; sourceRevision: number; publishedAt: number } | null;
   isPublic: boolean;
   publicSince: number | null;
   updatedAt: number;
