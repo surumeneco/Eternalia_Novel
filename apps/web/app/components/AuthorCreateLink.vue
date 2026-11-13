@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { ReaderKind } from '~/types/reader';
 
-const { t } = useUiLocale();
 const props = defineProps<{
   kind: ReaderKind;
   label: string;
