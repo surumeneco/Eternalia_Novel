@@ -1,0 +1,70 @@
+{
+  "schema": "cat-work/v1",
+  "id": "eternalia.publication.search-schedule-browser",
+  "entry": "issue",
+  "flow": "issue-work",
+  "mode": "shadow",
+  "work_kind": "verification",
+  "issue_ref": "https://github.com/surumeneco/Eternalia_Novel/issues/1",
+  "project_entry_ref": "https://drive.google.com/file/d/1clwfVJ3e_t1_QKFfOWxxRIzE9WMFvTiM/view",
+  "normative": [
+    {
+      "uri": "https://drive.google.com/file/d/1LqX-Noytb_oWymIrpO01eO5PvThGlVGx/view"
+    },
+    {
+      "uri": "https://drive.google.com/file/d/14no6MWmkFuyWYPVS6QdcRmbLbrUBbOpc/view"
+    }
+  ],
+  "evidence": [
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/commit/a5be3b587c8f81d8b1eb8af513fb5aa1b86346c1"
+    }
+  ],
+  "repositories": [
+    {
+      "name": "eternalia",
+      "path": "../../../..",
+      "branch_pattern": "feature/*",
+      "allowed_paths": [
+        "Lifecycle/Works/New/eternalia.publication.search-schedule-browser/work.json",
+        "docs/cat/drafts/publication-search-schedule-browser.md",
+        "apps/web/browser-acceptance/publication-search-privacy.test.mjs",
+        "scripts/check-http-acceptance.mjs"
+      ],
+      "production_paths": [],
+      "test_paths": [
+        "apps/web/browser-acceptance/publication-search-privacy.test.mjs"
+      ]
+    }
+  ],
+  "scope": {
+    "process_ids": [
+      "eternalia.publication"
+    ],
+    "changed_ids": [
+      "PUB-SEARCH-01",
+      "PUB-SEARCH-02",
+      "PUB-SEARCH-03"
+    ],
+    "preserved_ids": [
+      "publication.snapshot-separation",
+      "publication.ancestor-visible",
+      "publication.unauthorized-writes"
+    ]
+  },
+  "specification": {
+    "status": "draft",
+    "decision_ref": null,
+    "artifact_refs": [
+      "docs/cat/drafts/publication-search-schedule-browser.md"
+    ]
+  },
+  "technologies": [
+    "typescript",
+    "vue",
+    "playwright",
+    "postgresql"
+  ],
+  "checks": [],
+  "depends_on": []
+}

@@ -18,6 +18,8 @@ test('CM-08: header switches ja/en and preserves published author text on reload
       const authoredTitle=(await reader.json()).content.title;
       const page=await context.newPage();
       await page.goto(base+'/series/'+fixture.seriesA);
+      // SSR markup can precede Nuxt/Vue hydration; wait until click handlers are mounted.
+      await page.waitForFunction(() => Boolean(document.querySelector('#__nuxt')?.__vue_app__));
       await page.getByRole('button',{name:'英語に切り替え'}).waitFor();
       await page.locator('html[lang="ja"]').waitFor();
       assert.equal(await page.locator('html').getAttribute('lang'),'ja');
@@ -32,6 +34,7 @@ test('CM-08: header switches ja/en and preserves published author text on reload
       assert.ok((await page.locator('main').innerText()).includes(authoredTitle),
         'English interface must not translate author-created content');
       await page.reload();
+      await page.waitForFunction(() => Boolean(document.querySelector('#__nuxt')?.__vue_app__));
       await page.getByRole('button',{name:'Switch to Japanese'}).waitFor();
       await page.locator('html[lang="en"]').waitFor();
       assert.equal(await page.locator('html').getAttribute('lang'),'en');
