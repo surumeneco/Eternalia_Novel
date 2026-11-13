@@ -252,6 +252,8 @@ export const uiMessages = {
     langAddClass: "品詞を追加",
     shellSearch: "検索",
     shellLanguageSwitch: '表示言語',
+    shellSwitchToEnglish: '英語に切り替え',
+    shellSwitchToJapanese: '日本語に切り替え',
     shellGlobalNav: "グローバルナビゲーション",
     shellAside: "補助情報",
     shellResourceTypes: "資料の種類",
