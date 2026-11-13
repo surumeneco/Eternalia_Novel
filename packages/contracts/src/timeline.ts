@@ -1,4 +1,4 @@
-/** Relative years are comparable only within the same periodization.
+/** Integer relative years are comparable only within the same periodization.
  * Cross-periodization conversion requires a separately approved epoch model.
  */
 export interface RelativeYearEvent {
@@ -8,9 +8,9 @@ export interface RelativeYearEvent {
 }
 
 export function parseRelativeYear(raw: string | undefined): number | null {
-  if (raw === undefined || !/^[+-]?\d+(?:\.\d+)?$/.test(raw.trim())) return null;
+  if (raw === undefined || !/^[+-]?\d+$/.test(raw.trim())) return null;
   const year = Number(raw.trim());
-  return Number.isFinite(year) ? year : null;
+  return Number.isSafeInteger(year) ? year : null;
 }
 
 export function compareEventsWithinPeriod(a: RelativeYearEvent, b: RelativeYearEvent): number {
