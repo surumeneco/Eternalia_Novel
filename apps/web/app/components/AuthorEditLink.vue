@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { t } = useUiLocale();
 const props = defineProps<{ itemId: string }>();
 const isAuthor = ref(false);
 onMounted(async () => {
@@ -13,7 +14,7 @@ onMounted(async () => {
 
 <template>
   <NuxtLink v-if="isAuthor" :to="{ path: '/studio', query: { item: props.itemId } }" class="author-edit-link">
-    この項目を編集
+    {{ t('readerAuthorEdit') }}
   </NuxtLink>
 </template>
 

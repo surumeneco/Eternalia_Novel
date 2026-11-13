@@ -47,7 +47,7 @@ const sections = computed(() => [
     </ReaderPanel>
     <ReaderPanel class="reader-panel-spaced">
       <h2 class="section-heading">{{ t('recent') }}</h2>
-      <ReadingSkeleton v-if="recentPending" label="更新情報を読み込んでいます。" />
+      <ReadingSkeleton v-if="recentPending" :label="t('readerLoadingRecent')" />
       <div v-else-if="recentError" role="alert">
         <p class="error-text">{{ t('recentLoadError') }}</p>
         <button class="inline-action" type="button" @click="refreshRecent()">{{ t('retry') }}</button>

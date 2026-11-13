@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ReaderNode } from '~/types/reader';
-const { t } = useUiLocale();
+const { t, language } = useUiLocale();
 const route = useRoute();
 const { data: item, pending, error, refresh } = await useFetch<ReaderNode>(
   () => '/api/public/items/' + encodeURIComponent(String(route.params.id)),
@@ -32,27 +32,30 @@ const crumbs = computed(() => {
     })),
   ];
 });
-const kindNames: Record<string,string> = {
-  volume: '編', part: '部', chapter: '章', category: 'カテゴリ',
-  tip: '設定', tipSection: '設定項目', language: '言語', word: '単語',
-  grammar: '文法', periodization: '年代区分', event: '出来事',
-};
+const kindNames = computed<Record<string,string>>(() => ({
+  volume: t('readerKindVolume'), part: t('readerKindPart'),
+  chapter: t('readerKindChapter'), category: t('readerKindCategory'),
+  tip: t('readerKindTip'), tipSection: t('readerKindTipSection'),
+  language: t('readerKindLanguage'), word: t('readerKindWord'),
+  grammar: t('readerKindGrammar'), periodization: t('readerKindPeriodization'),
+  event: t('readerKindEvent'),
+}));
 </script>
 <template>
   <div>
     <TopicPath :items="crumbs" />
     <ReaderPanel>
-      <ReadingSkeleton v-if="pending" label="公開項目を読み込んでいます。" />
+      <ReadingSkeleton v-if="pending" :label="t('readerLoadingItem')" />
       <div v-else-if="error" role="alert">
-        <h1>項目を表示できません</h1>
-        <p class="error-text">存在しないか、現在公開されていない可能性があります。</p>
+        <h1>{{ t('readerErrorItem') }}</h1>
+        <p class="error-text">{{ t('readerErrorNotPublic') }}</p>
         <button class="inline-action" type="button" @click="refresh()">{{ t('retry') }}</button>
       </div>
       <template v-else-if="item">
         <p class="note">{{ kindNames[item.kind] || item.kind }}</p>
         <h1>{{ item.content.title }}</h1>
         <AuthorEditLink :item-id="item.id" />
-        <p class="note">公開版更新：<time :datetime="new Date(item.publishedAt).toISOString()">{{ new Date(item.publishedAt).toLocaleString('ja-JP') }}</time></p>
+        <p class="note">{{ t('readerPublishedUpdated') }}<time :datetime="new Date(item.publishedAt).toISOString()">{{ new Date(item.publishedAt).toLocaleString(language === 'en' ? 'en-US' : 'ja-JP') }}</time></p>
         <RichContent :source="item.content.body" />
         <TipLinksReader v-if="item.kind === 'tip'" :tags="item.content.details.tags"
           :related-tips="item.content.details.relatedTips" />

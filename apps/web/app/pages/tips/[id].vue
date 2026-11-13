@@ -62,55 +62,55 @@ const groups = computed(() => categories.value
     <TopicPath :items="[
       { label: t('home'), to: '/' },
       { label: t('tips'), to: '/tips' },
-      { label: series?.content.title ?? 'シリーズ' },
+      { label: series?.content.title ?? t('readerKindSeries') },
     ]" />
     <ReaderPanel>
-      <ReadingSkeleton v-if="pending" label="設定集を読み込んでいます。" />
+      <ReadingSkeleton v-if="pending" :label="t('readerLoadingTips')" />
       <div v-else-if="error || !series" role="alert">
-        <h1>設定集を表示できません</h1>
-        <p class="error-text">シリーズが存在しないか、公開されていません。</p>
+        <h1>{{ t('readerErrorTips') }}</h1>
+        <p class="error-text">{{ t('readerSeriesUnavailable') }}</p>
         <button class="inline-action" type="button" @click="refresh()">{{ t('retry') }}</button>
       </div>
       <template v-else>
-        <h1>{{ series.content.title }} — 設定集</h1>
+        <h1>{{ series.content.title }} — {{ t('tips') }}</h1>
         <div class="tip-filters">
           <label>
-            設定を検索
-            <input v-model="search" type="search" placeholder="名称・概要・項目名" />
+            {{ t('readerTipSearch') }}
+            <input v-model="search" type="search" :placeholder="t('readerTipSearchPlaceholder')" />
           </label>
           <label>
-            カテゴリ
+            {{ t('readerCategoryFilter') }}
             <select v-model="selectedCategory">
-              <option value="">すべてのカテゴリ</option>
+              <option value="">{{ t('readerAllCategories') }}</option>
               <option v-for="category in categories" :key="category.id" :value="category.id">
                 {{ category.content.title }}
               </option>
             </select>
           </label>
-          <label>タグ
+          <label>{{ t('readerTagFilter') }}
             <select v-model="selectedTag">
-              <option value="">すべてのタグ</option>
+              <option value="">{{ t('readerAllTags') }}</option>
               <option v-for="tag in allTags" :key="tag" :value="tag">{{ tag }}</option>
             </select>
           </label>
-          <label>並び順
+          <label>{{ t('readerSortFilter') }}
             <select v-model="tipOrder">
-              <option value="manual">設定された順序</option>
-              <option value="title">名称順</option>
-              <option value="recent">公開版の更新が新しい順</option>
+              <option value="manual">{{ t('searchManual') }}</option>
+              <option value="title">{{ t('searchTitleSort') }}</option>
+              <option value="recent">{{ t('searchRecent') }}</option>
             </select>
           </label>
         </div>
-        <p v-if="!categories.length">現在公開中のカテゴリはありません。</p>
-        <p v-else-if="!groups.length">条件に一致する公開設定はありません。</p>
+        <p v-if="!categories.length">{{ t('readerNoCategories') }}</p>
+        <p v-else-if="!groups.length">{{ t('readerNoTipsMatch') }}</p>
         <section v-for="group in groups" :key="group.category.id" class="tip-category">
           <h2 class="section-heading">{{ group.category.content.title }}</h2>
           <p v-if="group.category.content.body" class="tip-description">{{ group.category.content.body }}</p>
-          <p v-if="!group.tips.length" class="note">このカテゴリに公開中の設定はありません。</p>
+          <p v-if="!group.tips.length" class="note">{{ t('readerNoTipsInCategory') }}</p>
           <article v-for="tip in group.tips" :key="tip.id" class="tip-entry">
             <h3><NuxtLink :to="'/items/' + tip.id">{{ tip.content.title }}</NuxtLink></h3>
             <p v-if="tip.content.body" class="tip-description">{{ tip.content.body }}</p>
-            <ul v-if="tagsFor(tip).length" class="tip-tag-list" :aria-label="tip.content.title + 'のタグ'">
+            <ul v-if="tagsFor(tip).length" class="tip-tag-list" :aria-label="tip.content.title + t('readerTagsSuffix')">
               <li v-for="tag in tagsFor(tip)" :key="tag">{{ tag }}</li>
             </ul>
             <dl v-if="children(tip.id, 'tipSection').length" class="tip-sections">

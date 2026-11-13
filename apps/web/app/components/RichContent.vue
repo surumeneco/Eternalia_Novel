@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { tokenizeRichContent } from '~/utils/rich-content-tokenizer';
+const { t } = useUiLocale();
 const props = withDefaults(defineProps<{ source: string; pages?: string[]; paged?: boolean }>(), { paged: false });
 const pages = computed(() => (props.pages ?? props.source.split('[[page]]')).map(tokenizeRichContent));
 const currentPage = ref(0);
@@ -13,14 +14,14 @@ function move(delta: number) {
 <template>
   <div class="rich-content">
     <template v-if="paged && pages.length > 1">
-      <nav class="reading-pages" aria-label="本文のページ移動">
-        <button type="button" class="inline-action" :disabled="currentPage === 0" @click="move(-1)">前のページ</button>
+      <nav class="reading-pages" :aria-label="t('readerPagesNav')">
+        <button type="button" class="inline-action" :disabled="currentPage === 0" @click="move(-1)">{{ t('readerPreviousPage') }}</button>
         <span aria-live="polite">{{ currentPage + 1 }} / {{ pages.length }}</span>
-        <button type="button" class="inline-action" :disabled="currentPage === pages.length - 1" @click="move(1)">次のページ</button>
+        <button type="button" class="inline-action" :disabled="currentPage === pages.length - 1" @click="move(1)">{{ t('readerNextPage') }}</button>
       </nav>
     </template>
     <section v-for="(page, pageIndex) in displayed" :key="paged ? currentPage : pageIndex" class="rich-page">
-      <p v-if="!paged && pages.length > 1" class="note">ページ {{ pageIndex + 1 }} / {{ pages.length }}</p>
+      <p v-if="!paged && pages.length > 1" class="note">{{ t('readerPage') }} {{ pageIndex + 1 }} / {{ pages.length }}</p>
       <p class="rich-body">
         <template v-for="(token, tokenIndex) in page" :key="tokenIndex">
           <ruby v-if="token.reading">{{ token.base }}<rt>{{ token.reading }}</rt></ruby>

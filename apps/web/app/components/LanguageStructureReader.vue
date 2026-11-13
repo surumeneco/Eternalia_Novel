@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { LanguageCharacter, LanguageWordClass } from '@eternalia/contracts';
 
+const { t } = useUiLocale();
 const props = defineProps<{ characters?: string; wordClasses?: string }>();
 function readArray<T>(raw: string | undefined): T[] {
   if (!raw) return [];
@@ -20,18 +21,18 @@ function nextSymbols(symbol: LanguageCharacter): string {
 <template>
   <div class="language-profile">
     <section v-if="symbols.length">
-      <h2>文字・音韻</h2>
+      <h2>{{ t('readerCharacters') }}</h2>
       <div class="language-table-wrap">
         <table class="language-table">
           <thead>
-            <tr><th scope="col">文字</th><th scope="col">発音</th><th scope="col">語頭</th><th scope="col">語末</th><th scope="col">後続可能な文字</th></tr>
+            <tr><th scope="col">{{ t('readerGlyph') }}</th><th scope="col">{{ t('readerPronunciation') }}</th><th scope="col">{{ t('readerStartAllowed') }}</th><th scope="col">{{ t('readerEndAllowed') }}</th><th scope="col">{{ t('readerFollowingChars') }}</th></tr>
           </thead>
           <tbody>
             <tr v-for="symbol in symbols" :key="symbol.id">
               <th scope="row">{{ symbol.glyph }}</th>
               <td>{{ symbol.pronunciation || '—' }}</td>
-              <td>{{ symbol.canStart ? '可' : '不可' }}</td>
-              <td>{{ symbol.canEnd ? '可' : '不可' }}</td>
+              <td>{{ symbol.canStart ? t('readerYes') : t('readerNo') }}</td>
+              <td>{{ symbol.canEnd ? t('readerYes') : t('readerNo') }}</td>
               <td>{{ nextSymbols(symbol) || '—' }}</td>
             </tr>
           </tbody>
@@ -39,7 +40,7 @@ function nextSymbols(symbol: LanguageCharacter): string {
       </div>
     </section>
     <section v-if="classes.length">
-      <h2>品詞</h2>
+      <h2>{{ t('readerWordClasses') }}</h2>
       <dl class="language-classes">
         <div v-for="entry in classes" :key="entry.id">
           <dt>{{ entry.name }}</dt>

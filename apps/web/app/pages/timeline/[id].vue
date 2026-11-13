@@ -30,26 +30,26 @@ function eventsOf(period: ReaderNode) {
     <TopicPath :items="[
       { label: t('home'), to: '/' },
       { label: t('timeline'), to: '/timeline' },
-      { label: series?.content.title ?? 'シリーズ' },
+      { label: series?.content.title ?? t('readerKindSeries') },
     ]" />
     <ReaderPanel>
-      <ReadingSkeleton v-if="pending" label="年表を読み込んでいます。" />
+      <ReadingSkeleton v-if="pending" :label="t('readerLoadingTimeline')" />
       <div v-else-if="error || !series" role="alert">
-        <h1>年表を表示できません</h1>
-        <p class="error-text">シリーズが存在しないか、公開されていません。</p>
+        <h1>{{ t('readerErrorTimeline') }}</h1>
+        <p class="error-text">{{ t('readerSeriesUnavailable') }}</p>
         <button type="button" class="inline-action" @click="refresh()">{{ t('retry') }}</button>
       </div>
       <template v-else>
-        <h1>{{ series.content.title }} — 年表</h1>
-        <label class="period-filter">年代区分
+        <h1>{{ series.content.title }} — {{ t('timeline') }}</h1>
+        <label class="period-filter">{{ t('readerPeriodFilter') }}
           <select v-model="periodId">
-            <option value="">すべての年代区分</option>
+            <option value="">{{ t('readerAllPeriods') }}</option>
             <option v-for="period in periods" :key="period.id" :value="period.id">
               {{ period.content.title }}
             </option>
           </select>
         </label>
-        <p v-if="!periods.length">現在公開中の年代区分はありません。</p>
+        <p v-if="!periods.length">{{ t('readerNoPeriods') }}</p>
         <section v-for="period in visiblePeriods" :key="period.id" class="period-group">
           <h2 class="section-heading">
             <NuxtLink :to="'/items/' + period.id">{{ period.content.title }}</NuxtLink>
@@ -58,13 +58,13 @@ function eventsOf(period: ReaderNode) {
           <ol v-if="eventsOf(period).length" class="event-list">
             <li v-for="event in eventsOf(period)" :key="event.id">
               <span v-if="event.content.details.year" class="note event-year">
-                相対年 {{ event.content.details.year }}
+                {{ t('readerRelativeYear') }} {{ event.content.details.year }}
               </span>
               <NuxtLink :to="'/items/' + event.id">{{ event.content.title }}</NuxtLink>
               <p v-if="event.content.body" class="event-description">{{ event.content.body }}</p>
             </li>
           </ol>
-          <p v-else class="note">この年代区分に公開中の出来事はありません。</p>
+          <p v-else class="note">{{ t('readerNoEventsInPeriod') }}</p>
         </section>
       </template>
     </ReaderPanel>

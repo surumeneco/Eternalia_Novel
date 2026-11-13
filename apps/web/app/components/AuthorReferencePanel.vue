@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { AuthorNode } from '~/types/author';
+const { t } = useUiLocale();
 const props=defineProps<{ selectedId:string; nodes:AuthorNode[] }>();
 const query=ref('');
 const kindFilter=ref<'all'|'tip'|'word'|'grammar'>('all');
@@ -42,28 +43,28 @@ const activeSections=computed(()=>active.value?.kind==='tip'
   ? props.nodes.filter(node=>node.kind==='tipSection' && node.parentId===active.value?.id)
       .sort((a,b)=>a.order-b.order || a.draft.title.localeCompare(b.draft.title,'ja'))
   : []);
-const labels={tip:'設定',word:'単語',grammar:'文法'} as const;
+const labels = computed(() => ({tip:t('readerKindTip'),word:t('readerKindWord'),grammar:t('readerKindGrammar')}));
 watch(()=>props.selectedId,()=>{highlightedId.value='';});
 </script>
 
 <template>
-  <section class="author-reference" aria-label="執筆資料の参照">
-    <h3>同じシリーズの資料を参照</h3>
-    <p class="note">作者用の下書きを表示します。参照操作だけでは公開版は変更されません。</p>
+  <section class="author-reference" :aria-label="t('readerRefAria')">
+    <h3>{{ t('readerRefTitle') }}</h3>
+    <p class="note">{{ t('readerRefDescription') }}</p>
     <div class="reference-filters">
-      <label>検索
-        <input v-model="query" type="search" placeholder="設定・単語・文法" />
+      <label>{{ t('searchQueryLabel') }}
+        <input v-model="query" type="search" :placeholder="t('readerRefSearchPlaceholder')" />
       </label>
-      <label>種類
+      <label>{{ t('readerRefKind') }}
         <select v-model="kindFilter">
-          <option value="all">すべて</option>
-          <option value="tip">設定</option>
-          <option value="word">単語</option>
-          <option value="grammar">文法</option>
+          <option value="all">{{ t('studioFilterAll') }}</option>
+          <option value="tip">{{ t('readerKindTip') }}</option>
+          <option value="word">{{ t('readerKindWord') }}</option>
+          <option value="grammar">{{ t('readerKindGrammar') }}</option>
         </select>
       </label>
     </div>
-    <p v-if="!entries.length" class="note">該当する資料はありません。</p>
+    <p v-if="!entries.length" class="note">{{ t('readerRefNone') }}</p>
     <ul v-else class="reference-list">
       <li v-for="entry in entries" :key="entry.id">
         <button type="button" class="inline-action" :aria-pressed="highlightedId===entry.id"
@@ -74,13 +75,13 @@ watch(()=>props.selectedId,()=>{highlightedId.value='';});
     </ul>
     <article v-if="active && active.id!==selectedId" class="reference-detail">
       <h4>{{ active.draft.title }}</h4>
-      <p class="note">{{ active.published?'公開版あり':'未公開' }}（作者の下書き）</p>
-      <p class="reference-body">{{ active.draft.body || '本文はありません。' }}</p>
+      <p class="note">{{ active.published ? t('readerRefHasSnapshot') : t('studioUnpublished') }}{{ t('readerRefDraft') }}</p>
+      <p class="reference-body">{{ active.draft.body || t('readerRefEmptyBody') }}</p>
       <WordMeaningsReader v-if="active.kind==='word'" :serialized="active.draft.details.meanings" />
       <dl v-if="activeSections.length" class="reference-sections">
         <div v-for="section in activeSections" :key="section.id">
           <dt>{{ section.draft.title }}</dt>
-          <dd>{{ section.draft.body || '内容は未入力です。' }}</dd>
+          <dd>{{ section.draft.body || t('readerRefEmptySection') }}</dd>
         </div>
       </dl>
     </article>

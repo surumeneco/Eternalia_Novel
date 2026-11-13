@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { WordMeaning, WordEtymology } from '@eternalia/contracts';
 
+const { t } = useUiLocale();
 const props = defineProps<{ serialized?: string }>();
 const meanings = computed<WordMeaning[]>(() => {
   if (!props.serialized) return [];
@@ -16,14 +17,14 @@ function visibleOrigins(meaning: WordMeaning): WordEtymology[] {
 </script>
 
 <template>
-  <section v-if="meanings.length" class="meaning-reader" aria-label="単語の意味">
-    <h2>意味</h2>
+  <section v-if="meanings.length" class="meaning-reader" :aria-label="t('readerWordMeanings')">
+    <h2>{{ t('readerMeanings') }}</h2>
     <ol class="meaning-list">
       <li v-for="meaning in meanings" :key="meaning.id">
         <p v-if="meaning.partOfSpeech" class="note meaning-class">{{ meaning.partOfSpeech }}</p>
         <p class="meaning-definition">{{ meaning.definition }}</p>
         <div v-if="visibleOrigins(meaning).length" class="meaning-origins">
-          <h3>語源</h3>
+          <h3>{{ t('readerEtymology') }}</h3>
           <ul>
             <li v-for="origin in visibleOrigins(meaning)" :key="origin.id">
               <template v-if="origin.languageId && origin.languageTitle">

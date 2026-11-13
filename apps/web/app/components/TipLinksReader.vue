@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { parseTipTags } from '@eternalia/contracts';
+const { t } = useUiLocale();
 const props = defineProps<{ tags?: string; relatedTips?: string }>();
 const tags = computed(() => {
   try { return parseTipTags(props.tags || '[]'); } catch { return []; }
@@ -14,14 +15,14 @@ const related = computed(() => {
 </script>
 <template>
   <div v-if="tags.length || related.length" class="tip-links">
-    <section v-if="tags.length" aria-label="タグ">
-      <h2>タグ</h2>
+    <section v-if="tags.length" :aria-label="t('readerTags')">
+      <h2>{{ t('readerTags') }}</h2>
       <ul class="tag-list">
         <li v-for="tag in tags" :key="tag">{{ tag }}</li>
       </ul>
     </section>
-    <section v-if="related.length" aria-label="関連する設定">
-      <h2>関連する設定</h2>
+    <section v-if="related.length" :aria-label="t('readerRelatedTips')">
+      <h2>{{ t('readerRelatedTips') }}</h2>
       <ol>
         <li v-for="item in related" :key="item.id">
           <NuxtLink :to="'/items/' + encodeURIComponent(item.id)">{{ item.title }}</NuxtLink>
