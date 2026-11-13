@@ -1,7 +1,7 @@
 /** Localize fixed interface text without translating user-authored content.
  * Japanese and English are shipped; other locales fall back to Japanese.
  */
-import { enUiMessages } from './ui-messages-en';
+import { enUiMessages } from './ui-messages-en.ts';
 export const uiMessages = {
   ja: {
     home: 'ホーム',
@@ -321,11 +321,17 @@ export function translateUiMessage(
 }
 
 export function useUiLocale() {
-  const language = useCookie<string>('eternalia-ui-language', {
+  const stored = useCookie<string>('eternalia-ui-language', {
     default: () => 'ja',
     sameSite: 'lax',
     path: '/',
   });
+  // A single Nuxt-wide reactive ref keeps every page's fixed labels in sync
+  // immediately; independent useCookie refs do not guarantee cross-component
+  // updates until a reload.
+  const language = useState<string>('eternalia-ui-language-active',
+    () => stored.value === 'en' ? 'en' : 'ja');
+  watch(language, value => { stored.value = value === 'en' ? 'en' : 'ja'; });
   const t = (key: UiMessageKey) => translateUiMessage(key, language.value);
   return { language, t };
 }
