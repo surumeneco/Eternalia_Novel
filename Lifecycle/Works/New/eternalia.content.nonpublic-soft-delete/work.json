@@ -1,0 +1,91 @@
+{
+  "schema": "cat-work/v1",
+  "id": "eternalia.content.nonpublic-soft-delete",
+  "entry": "issue",
+  "flow": "issue-work",
+  "mode": "shadow",
+  "work_kind": "implementation",
+  "issue_ref": "https://github.com/surumeneco/Eternalia_Novel/issues/1",
+  "project_entry_ref": "https://drive.google.com/file/d/1clwfVJ3e_t1_QKFfOWxxRIzE9WMFvTiM/view",
+  "normative": [
+    {
+      "uri": "https://drive.google.com/file/d/1LqX-Noytb_oWymIrpO01eO5PvThGlVGx/view"
+    },
+    {
+      "uri": "https://drive.google.com/file/d/14no6MWmkFuyWYPVS6QdcRmbLbrUBbOpc/view"
+    }
+  ],
+  "evidence": [
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/commit/dbeb9222f372e6c690b862503440c982a7d0960f"
+    }
+  ],
+  "repositories": [
+    {
+      "name": "eternalia",
+      "path": "../../../..",
+      "branch_pattern": "feature/*",
+      "allowed_paths": [
+        "Lifecycle/Works/New/eternalia.content.nonpublic-soft-delete/work.json",
+        "docs/cat/drafts/nonpublic-soft-delete.md",
+        "packages/contracts/src/novel.ts",
+        "packages/contracts/src/reorder.ts",
+        "packages/contracts/exploratory/nonpublic-soft-delete.test.mjs",
+        "apps/api/src/postgres-library.service.ts",
+        "apps/api/src/admin-nodes.controller.ts",
+        "apps/web/app/pages/studio.vue",
+        "apps/web/app/composables/useUiLocale.ts",
+        "apps/web/app/types/author.ts",
+        "apps/web/browser-acceptance/author-soft-delete.test.mjs",
+        "db/migrations/005_soft_delete.sql",
+        "scripts/check-http-acceptance.mjs"
+      ],
+      "production_paths": [
+        "packages/contracts/src/novel.ts",
+        "packages/contracts/src/reorder.ts",
+        "apps/api/src/postgres-library.service.ts",
+        "apps/api/src/admin-nodes.controller.ts",
+        "apps/web/app/pages/studio.vue",
+        "apps/web/app/composables/useUiLocale.ts",
+        "apps/web/app/types/author.ts",
+        "db/migrations/005_soft_delete.sql"
+      ],
+      "test_paths": [
+        "packages/contracts/exploratory/nonpublic-soft-delete.test.mjs",
+        "apps/web/browser-acceptance/author-soft-delete.test.mjs"
+      ]
+    }
+  ],
+  "scope": {
+    "process_ids": [
+      "eternalia.content",
+      "eternalia.publication"
+    ],
+    "changed_ids": [
+      "delete.nonpublic-only",
+      "delete.no-dependent",
+      "delete.tombstone",
+      "delete.no-reader-leak",
+      "delete.auth-revision"
+    ],
+    "preserved_ids": [
+      "publication.snapshot-separation",
+      "category.move.public-ancestry"
+    ]
+  },
+  "specification": {
+    "status": "draft",
+    "decision_ref": null,
+    "artifact_refs": [
+      "docs/cat/drafts/nonpublic-soft-delete.md"
+    ]
+  },
+  "technologies": [
+    "typescript",
+    "vue",
+    "postgresql",
+    "playwright"
+  ],
+  "checks": [],
+  "depends_on": []
+}
