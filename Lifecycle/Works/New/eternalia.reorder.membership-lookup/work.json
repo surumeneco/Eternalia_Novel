@@ -1,0 +1,111 @@
+{
+  "schema": "cat-work/v1",
+  "id": "eternalia.reorder.membership-lookup",
+  "entry": "refactor",
+  "flow": "refactor",
+  "work_kind": "refactor",
+  "mode": "implementation",
+  "issue_ref": "https://github.com/surumeneco/Eternalia_Novel",
+  "project_entry_ref": "https://drive.google.com/file/d/1clwfVJ3e_t1_QKFfOWxxRIzE9WMFvTiM/view",
+  "normative": [
+    {
+      "uri": "https://drive.google.com/file/d/1LqX-Noytb_oWymIrpO01eO5PvThGlVGx/view"
+    }
+  ],
+  "evidence": [
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/commit/884b15fce8069828d277cc72f46e8ac75eaae529"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/actions/runs/43248067919"
+    }
+  ],
+  "scope": {
+    "process_ids": [
+      "eternalia.author.reorder"
+    ],
+    "changed_ids": [
+      "author.reorder.sibling-membership-search"
+    ],
+    "preserved_ids": [
+      "author.reorder.same-parent-and-kind",
+      "author.reorder.exact-set-and-revision",
+      "author.reorder.published-projection"
+    ]
+  },
+  "specification": {
+    "status": "unknown",
+    "decision_ref": null,
+    "artifact_refs": []
+  },
+  "technologies": [
+    "TypeScript"
+  ],
+  "repositories": [
+    {
+      "name": "eternalia",
+      "path": "../../../..",
+      "branch_pattern": "feature/*",
+      "allowed_paths": [
+        "packages/contracts/src/reorder.ts",
+        "Lifecycle/REF/Scopes/reorder-sibling-membership-lookup.md",
+        "Lifecycle/Works/New/eternalia.reorder.membership-lookup/work.json"
+      ],
+      "production_paths": [
+        "packages/contracts/src/reorder.ts"
+      ],
+      "test_paths": [
+        "packages/contracts/exploratory/reorder.test.mjs"
+      ]
+    }
+  ],
+  "depends_on": [],
+  "checks": [
+    {
+      "id": "reorder-membership-baseline",
+      "stage": "refactor-baseline",
+      "runner": "junit",
+      "cwd": "@repo:eternalia",
+      "argv": [
+        "node",
+        "--test",
+        "--test-reporter=junit",
+        "--test-reporter-destination={report}",
+        "packages/contracts/exploratory/reorder.test.mjs"
+      ],
+      "input_paths": [
+        "packages/contracts/src/reorder.ts",
+        "packages/contracts/exploratory/reorder.test.mjs"
+      ],
+      "timeout_seconds": 60,
+      "test_ids": [
+        "ordering changes only the requested sibling kind in one parent",
+        "reorder rejects partial, duplicate, cross-parent and stale revision sets",
+        "ordering of unpublished work does not reveal its title via public readers"
+      ]
+    },
+    {
+      "id": "reorder-membership-regression",
+      "stage": "regression",
+      "runner": "junit",
+      "cwd": "@repo:eternalia",
+      "argv": [
+        "node",
+        "--test",
+        "--test-reporter=junit",
+        "--test-reporter-destination={report}",
+        "packages/contracts/exploratory/reorder.test.mjs"
+      ],
+      "input_paths": [
+        "packages/contracts/src/reorder.ts",
+        "packages/contracts/exploratory/reorder.test.mjs"
+      ],
+      "timeout_seconds": 60,
+      "test_ids": [
+        "ordering changes only the requested sibling kind in one parent",
+        "reorder rejects partial, duplicate, cross-parent and stale revision sets",
+        "ordering of unpublished work does not reveal its title via public readers"
+      ]
+    }
+  ]
+}
