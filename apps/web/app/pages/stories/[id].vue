@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ReaderNode } from '~/types/reader';
+const { t } = useUiLocale();
 const route = useRoute();
 const id = computed(() => String(route.params.id));
 const { data: tree, pending, error, refresh } = await useFetch<ReaderNode[]>(
@@ -15,20 +16,20 @@ const chaptersOf = (partId: string) => sorted(partId, 'chapter');
 </script>
 <template>
   <div>
-    <TopicPath :items="[{ label: 'ホーム', to: '/' }, { label: 'ストーリー', to: '/stories' }, { label: series?.content.title ?? 'シリーズ' }]" />
+    <TopicPath :items="[{ label: t('home'), to: '/' }, { label: t('stories'), to: '/stories' }, { label: series?.content.title ?? t('readerKindSeries') }]" />
     <ReaderPanel>
-      <ReadingSkeleton v-if="pending" label="目次を読み込んでいます。" />
+      <ReadingSkeleton v-if="pending" :label="t('readerLoadingToc')" />
       <div v-else-if="error || !series" role="alert">
-        <h1>ストーリーを表示できません</h1>
-        <p class="error-text">シリーズが存在しないか、公開されていません。</p>
-        <button type="button" class="inline-action" @click="refresh()">再試行</button>
+        <h1>{{ t('readerErrorStories') }}</h1>
+        <p class="error-text">{{ t('readerSeriesUnavailable') }}</p>
+        <button type="button" class="inline-action" @click="refresh()">{{ t('retry') }}</button>
       </div>
       <template v-else>
         <h1>{{ series.content.title }}</h1>
         <AuthorEditLink :item-id="series.id" />
         <RichContent v-if="series.content.body" :source="series.content.body" />
-        <h2 class="section-heading">目次</h2>
-        <p v-if="!volumes.length">公開中の編はありません。</p>
+        <h2 class="section-heading">{{ t('readerToc') }}</h2>
+        <p v-if="!volumes.length">{{ t('readerNoVolumes') }}</p>
         <section v-for="volume in volumes" :key="volume.id" class="story-volume">
           <h3><NuxtLink :to="'/items/' + volume.id">{{ volume.content.title }}</NuxtLink></h3>
           <p v-if="volume.content.body" class="note story-summary">{{ volume.content.body }}</p>
@@ -40,7 +41,7 @@ const chaptersOf = (partId: string) => sorted(partId, 'chapter');
                 <NuxtLink :to="{ path: '/read/' + chapter.id, query: { series: id } }">{{ chapter.content.title }}</NuxtLink>
               </li>
             </ul>
-            <p v-else class="note">公開中の章はありません。</p>
+            <p v-else class="note">{{ t('readerNoChapters') }}</p>
           </div>
         </section>
       </template>
