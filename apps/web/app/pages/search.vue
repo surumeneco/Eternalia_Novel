@@ -9,25 +9,25 @@ const selectedSeriesId = ref(typeof route.query.series === 'string' ? route.quer
 const query = ref('');
 const domain = ref<Domain>('all');
 const sortOrder = ref<SortOrder>('recent');
-const domains: Array<{ id: Domain; label: string }> = [
+const domains = computed<Array<{ id: Domain; label: string }>>(() => [
   { id: 'all', label: t('studioFilterAll') },
   { id: 'stories', label: t('stories') },
   { id: 'tips', label: t('tips') },
   { id: 'dictionaries', label: t('dictionaries') },
   { id: 'timeline', label: t('timeline') },
-];
+]);
 const domainKinds: Record<Exclude<Domain, 'all'>, ReaderKind[]> = {
   stories: ['volume', 'part', 'chapter'],
   tips: ['category', 'tip', 'tipSection'],
   dictionaries: ['language', 'word', 'grammar'],
   timeline: ['periodization', 'event'],
 };
-const kindLabels: Record<ReaderKind, string> = {
+const kindLabels = computed<Record<ReaderKind, string>>(() => ({ 
   series: t('studioKindSeries'), volume: t('studioKindVolume'), part: t('studioKindPart'), chapter: t('chapter'),
   category: t('studioKindCategory'), tip: t('tip'), tipSection: t('tipSection'),
   language: t('studioKindLanguage'), word: t('word'), grammar: t('grammar'),
   periodization: t('studioKindPeriodization'), event: t('event'),
-};
+}));
 const { data: series, pending: seriesPending, error: seriesError, refresh: refreshSeries } =
   await useFetch<ReaderNode[]>('/api/public/series');
 const { data: tree, pending: treePending, error: treeError, refresh: refreshTree } =

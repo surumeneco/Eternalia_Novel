@@ -1,0 +1,72 @@
+{
+  "schema": "cat-work/v1",
+  "id": "eternalia.ui.reactive-public-search-locale",
+  "entry": "issue",
+  "flow": "issue-work",
+  "mode": "shadow",
+  "work_kind": "implementation",
+  "issue_ref": "https://github.com/surumeneco/Eternalia_Novel/issues/1",
+  "project_entry_ref": "https://drive.google.com/file/d/1clwfVJ3e_t1_QKFfOWxxRIzE9WMFvTiM/view",
+  "normative": [
+    {
+      "uri": "https://drive.google.com/file/d/1LqX-Noytb_oWymIrpO01eO5PvThGlVGx/view"
+    },
+    {
+      "uri": "https://drive.google.com/file/d/14no6MWmkFuyWYPVS6QdcRmbLbrUBbOpc/view"
+    }
+  ],
+  "evidence": [
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/commit/cb1de87301f193703e21c750e9866ad04beb3b0a"
+    }
+  ],
+  "repositories": [
+    {
+      "name": "eternalia",
+      "path": "../../../..",
+      "branch_pattern": "feature/*",
+      "allowed_paths": [
+        "Lifecycle/Works/New/eternalia.ui.reactive-public-search-locale/work.json",
+        "docs/cat/drafts/reactive-public-search-locale.md",
+        "apps/web/app/pages/search.vue",
+        "apps/web/browser-acceptance/search-locale-live.test.mjs",
+        "scripts/check-http-acceptance.mjs"
+      ],
+      "production_paths": [
+        "apps/web/app/pages/search.vue"
+      ],
+      "test_paths": [
+        "apps/web/browser-acceptance/search-locale-live.test.mjs"
+      ]
+    }
+  ],
+  "scope": {
+    "process_ids": [
+      "eternalia.ui"
+    ],
+    "changed_ids": [
+      "SEARCH-01",
+      "SEARCH-02",
+      "SEARCH-03",
+      "SEARCH-04"
+    ],
+    "preserved_ids": [
+      "reader.publication-gate",
+      "reader.author-content-isolation"
+    ]
+  },
+  "specification": {
+    "status": "draft",
+    "decision_ref": null,
+    "artifact_refs": [
+      "docs/cat/drafts/reactive-public-search-locale.md"
+    ]
+  },
+  "technologies": [
+    "typescript",
+    "vue",
+    "playwright"
+  ],
+  "checks": [],
+  "depends_on": []
+}
