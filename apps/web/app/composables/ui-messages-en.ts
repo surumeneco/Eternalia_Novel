@@ -111,6 +111,7 @@ export const enUiMessages = {
   "studioHide": "Make private",
   "studioShow": "Make public",
   "studioPublicStartDate": "Publication start date and time",
+  "pubJstZoneNote": "Japan Standard Time (JST)",
   "studioSetDate": "Set date",
   "studioDraftPreview": "Draft preview",
   "studioChooseItem": "Select an item to edit",

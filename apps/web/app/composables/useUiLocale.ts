@@ -114,6 +114,7 @@ export const uiMessages = {
     studioHide: "非公開にする",
     studioShow: "公開に戻す",
     studioPublicStartDate: "公開開始日時",
+    pubJstZoneNote: "日本時間（JST）",
     studioSetDate: "日時を設定",
     studioDraftPreview: "下書きプレビュー",
     studioChooseItem: "編集する項目を選択してください",

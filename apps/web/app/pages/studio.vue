@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { AuthorNode } from '~/types/author';
 import { localizeApiError } from '~/utils/api-error-localization';
+import { parseJstLocalDateTime, formatJstLocalDateTime } from '~/utils/jst-publication-time';
 const { t, language } = useUiLocale();
 const studioRoute = useRoute();
 import type { ReaderKind } from '~/types/reader';
@@ -430,8 +431,8 @@ watch(() => JSON.stringify({ id: selectedId.value, title: form.title,
 
 const scheduledLocal = ref('');
 watch(selected, node => {
-  scheduledLocal.value = node?.publicSince
-    ? new Date(node.publicSince - new Date().getTimezoneOffset() * 60000).toISOString().slice(0,16)
+  scheduledLocal.value = node?.publicSince != null
+    ? (formatJstLocalDateTime(node.publicSince) ?? '')
     : '';
 }, { immediate: true });
 
@@ -636,11 +637,11 @@ async function softDeleteSelected() {
   }, t('studioSoftDeleted'));
 }
 async function schedule() {
-  if (scheduledLocal.value && !Number.isFinite(new Date(scheduledLocal.value).getTime())) {
+  const instant = scheduledLocal.value ? parseJstLocalDateTime(scheduledLocal.value) : null;
+  if (scheduledLocal.value && instant === null) {
     errorText.value=t('studioInvalidDate'); return;
   }
-  await changeVisibility(selected.value?.isPublic ?? false,
-    scheduledLocal.value ? new Date(scheduledLocal.value).getTime() : null);
+  await changeVisibility(selected.value?.isPublic ?? false, instant);
 }
 async function logout() {
   if (!confirmDiscard()) return;
@@ -825,7 +826,7 @@ async function logout() {
                   {{ selected.isPublic ? t('studioHide') : t('studioShow') }}
                 </button>
               </div>
-              <label>{{ t('studioPublicStartDate') }}
+              <label>{{ t('studioPublicStartDate') }} — {{ t('pubJstZoneNote') }}
                 <input v-model="scheduledLocal" type="datetime-local" />
               </label>
               <button class="inline-action" type="button" :disabled="busy || autosavingChapter || !selected.published" @click="schedule">{{ t('studioSetDate') }}</button>
