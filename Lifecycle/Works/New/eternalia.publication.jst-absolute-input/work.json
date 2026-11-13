@@ -35,7 +35,8 @@
         "apps/web/app/composables/ui-messages-en.ts",
         "apps/web/tests/jst-publication-time.test.mjs",
         "apps/web/browser-acceptance/author-jst-publication.test.mjs",
-        "scripts/check-http-acceptance.mjs"
+        "scripts/check-http-acceptance.mjs",
+        "packages/contracts/exploratory/publication-crossdomain-boundary.test.mjs"
       ],
       "production_paths": [
         "apps/web/app/utils/jst-publication-time.ts",
@@ -46,7 +47,8 @@
       ],
       "test_paths": [
         "apps/web/tests/jst-publication-time.test.mjs",
-        "apps/web/browser-acceptance/author-jst-publication.test.mjs"
+        "apps/web/browser-acceptance/author-jst-publication.test.mjs",
+        "packages/contracts/exploratory/publication-crossdomain-boundary.test.mjs"
       ]
     }
   ],
