@@ -1,8 +1,9 @@
 <script setup lang="ts">
+import { localizeApiError } from '~/utils/api-error-localization';
 import type { AuthorNode } from '~/types/author';
 import type { ReaderKind } from '~/types/reader';
 import { canReadPublished } from '@eternalia/contracts';
-const { t } = useUiLocale();
+const { t, language } = useUiLocale();
 
 interface AuthState { configured: boolean; authenticated: boolean }
 const { data: auth, pending: authPending, refresh: refreshAuth } = await useFetch<AuthState>('/api/auth/me');
@@ -160,10 +161,7 @@ async function action(node: AuthorNode, kind: 'publish' | 'visibility') {
     }
     if (await load()) successText.value = t('pubUpdated');
   } catch (error: unknown) {
-    const response = error as { data?: { message?: string | string[] }; statusCode?: number };
-    const message = response.data?.message;
-    errorText.value = Array.isArray(message) ? message.join(' / ') :
-      typeof message === 'string' ? message : t('pubUpdateFailed');
+    errorText.value = localizeApiError(error, language.value, t, t('pubUpdateFailed'));
   } finally {
     busyId.value = null;
   }
