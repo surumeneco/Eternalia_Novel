@@ -798,6 +798,9 @@ async function logout() {
                 </label>
                 <WordMeaningsEditor v-if="selected.kind === 'word'" v-model="wordMeanings"
                   :languages="activeWordLanguages" :words="activeWordReferences" :word-classes="activeWordClasses" />
+                <label v-if="selected.kind === 'periodization'">{{ t('studioPeriodRelativeYears') }}
+                  <input v-model="form.details.relativeYears" maxlength="10000" />
+                </label>
                 <label v-if="selected.kind === 'event'">{{ t('studioRelativeYear') }}
                   <input v-model="form.details.year" maxlength="10000" />
                 </label>
