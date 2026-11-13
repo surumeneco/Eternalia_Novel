@@ -79,6 +79,7 @@ test('PUB-SEARCH-01/02/03: scheduled item and scheduled ancestor stay out of ano
       async function openSearch() {
         const page = await context.newPage();
         await page.goto(base + '/search?series=' + seriesId);
+        await page.waitForFunction(() => Boolean(document.querySelector('#__nuxt')?.__vue_app__));
         const seriesSelect = page.locator('.search-filters select').first();
         await seriesSelect.waitFor();
         return { page, seriesSelect };
