@@ -76,6 +76,7 @@ test('CM-09: author-only home and area creation paths use validated existing Stu
         const newArc=fixture.prefix+'-created-from-collection';
         await page.locator('form.create-form input[maxlength="150"]').fill(newArc);
         await page.getByRole('button',{name:'作成',exact:true}).click();
+        await page.getByRole('heading',{name:'編：'+newArc}).waitFor();
         const item=(await list()).find(n=>n.draft.title===newArc);
         assert.ok(item);
         assert.equal(item.parentId,fixture.seriesA);
