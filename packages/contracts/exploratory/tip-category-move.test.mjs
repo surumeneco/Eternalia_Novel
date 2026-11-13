@@ -61,3 +61,17 @@ test('AC-46: stale revisions, cross-world and invalid types are rejected without
  assert.throws(()=>moveTip(db,id.section,1,id.b,now+1),e=>e?.code==='bad-request');
  assert.deepEqual(db.nodes.find(n=>n.id===id.tip),tip);
 });
+
+test('AC-46: draft move does not reorder old published list; explicit publish appends in destination',()=>{
+ const targetTip='88888888-8888-4888-8888-888888888888';
+ let db=setup();
+ db=createNode(db,{id:targetTip,kind:'tip',parentId:id.b,content:{title:'別の設定',body:'既存の本文',details:{}},now});
+ db=publishNode(db,targetTip,db.nodes.find(n=>n.id===targetTip).revision,now);
+ const previous=db.nodes.find(n=>n.id===id.tip);
+ db=moveTip(db,id.tip,previous.revision,id.b,now+1);
+ assert.equal(db.nodes.find(n=>n.id===id.tip).order,previous.order);
+ assert.equal(publicTree(db,id.s,now+2).find(n=>n.id===id.tip).order,previous.order);
+ db=publishNode(db,id.tip,db.nodes.find(n=>n.id===id.tip).revision,now+3);
+ assert.equal(toReader(db,id.tip,now+4).order,1);
+ assert.equal(toReader(db,targetTip,now+4).order,0);
+});
