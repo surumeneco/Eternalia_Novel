@@ -14,6 +14,7 @@
   - AC-03/15/33: [PR #6](https://github.com/surumeneco/Eternalia_Novel/pull/6) HEAD `05fffd3c78267c64593e24fe38998d4635c96d51`、[CI #41319432331](https://github.com/surumeneco/Eternalia_Novel/actions/runs/41319432331) success。Nodeの原稿挿入回帰はUTF-16、CRLF、ルビ・ページマーカー、Unicode grapheme境界を検査。実Android日本語IME/Undo・実ブラウザ全操作は未検証。
   - AC-12/16/17: [PR #7](https://github.com/surumeneco/Eternalia_Novel/pull/7) HEAD `c31fad235d84b511b5ee71c58090656923aaaf6c`、[CI #41313228546](https://github.com/surumeneco/Eternalia_Novel/actions/runs/41313228546) success。合成作者セッションと実PostgreSQL/HTTPで公開・可視性のstale revision 409と公開稿不変を検証。実Discord OAuth2/PKCEは未検証。
 - 2026-11-10 AC-68部分証拠: `develop` への [PR #34](https://github.com/surumeneco/Eternalia_Novel/pull/34) 統合前HEAD `0a67a6e7cf83b0618ec7e2a5b6d92360d312d0e0` の Push [CI #42790204301](https://github.com/surumeneco/Eternalia_Novel/actions/runs/42790204301)・PR [CI #42790273108](https://github.com/surumeneco/Eternalia_Novel/actions/runs/42790273108) は各4ジョブ全成功。ブラウザ新規1件のJUnitログで `ok 1`、0失敗を確認。実機・CAT正式Gate・年代区分間換算の受入判定ではない。
+- 2026-11-13 現行照合: ページ配列PR #38、重複単語PR #40、章自動保存PR #43/#44は`develop`へ統合済み。CIと探索的試験の部分証拠を各行へ反映。AC-45/54の日時条件、AC-59/75のja/en、AC-76の論理削除規則は2026-11-12に採用済みであり、`pending-decision` でなく**実装・受入未完了**と判定する。年表換算式（AC-10/42）と作者UI視覚承認（AC-78）はなお決定待ち。今回の更新はCAT正式Gateや実機受入のpassではない。
 - 判定: `not-run` は**AC全体を受け入れるだけの網羅的証拠がまだない**ことを示す。右欄のB/H/DB/CIは探索的な**部分証拠候補**であり、該当ACのpassを意味しない。`pending-decision` は設計決定が必要。`scope-excluded` は明示除外。失敗は実測した場合のみ `fail` にする。
 - 各ACのpassへ更新する前に `テストID / コード箇所 / 環境 / 同一HEAD / CI run / 手動証拠 / 判定` を照合する。現在の本表はACを欠落させないための基線であり、CAT正式Gateやユーザー受入ではない。
 
@@ -21,13 +22,13 @@
 | --- | --- | --- | --- | --- |
 | AC-01 | シリーズ内で編・部・章を作成し本文を書いて保存・再読込 | apps/web/browser-acceptance/browser-acceptance.test.mjs; docs/cat/ac01-author-hierarchy-draft.md | B: 作者UIでシリーズ→編→部→章を作成し日本語本文の下書き保存・再読込を検証（CI #41286577405 success、正式CAT Gate/人間受入は未実施） | not-run |
 | AC-02 | シリーズ内の編・部・章の名称・表示順を変更 | apps/web/browser-acceptance/browser-acceptance.test.mjs; docs/cat/ac02-volume-order-and-rename-draft.md; docs/cat/ac02-part-chapter-order-rename-draft.md | B: 編の順序・改名・再読込はCI #41286577405成功。部の順序・改名、章の改名・親ID保持をChromiumで検証（CI #41296684451 success）。章の兄弟順序変更は既存ブラウザー試験で検証。正式CAT Gate・全公開稿境界は未検証 | not-run |
-| AC-03 | ページ配列の本文にルビ等の書式を付し、ページ間移動・途中挿入・順序変更後に保存 | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 既存のruby/page boundaryの部分証拠あり。ページ配列としての挿入・並べ替え・保存・再読込／実IME操作は**未検証**（2026-11-12仕様確定） | not-run |
+| AC-03 | ページ配列の本文にルビ等の書式を付し、ページ間移動・途中挿入・順序変更後に保存 | apps/web/browser-acceptance/browser-acceptance.test.mjs | Domain/B: `packages/contracts/exploratory/manuscript-pages.test.mjs` は順序付き `Content.pages[]` の保存・公開スナップショット独立・後続下書き非漏洩を検証。Chromiumの `browser-acceptance.test.mjs` はページ追加・途中挿入・移動・編集・保存を操作（PR #38 → develop `033bf7a54c55`、CI #43233778516 4/4 success）。実日本語IME・正式CAT Gate・人間受入は未実施。 | not-run |
 | AC-04 | 本文編集中に設定・辞書を検索・参照 | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 同一シリーズの未公開設定・単語を参照中も未保存原稿を保持（CI #41275713765 success） | not-run |
 | AC-05 | カテゴリ・設定・項目・プリセット・タグを作成・編集 | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: category preset editor; タグ・所属変更の全件未検証 | not-run |
 | AC-06 | 設定を相互参照し、改名・削除する | packages/contracts/exploratory/related-tip-ancestor-privacy.test.mjs; apps/web/browser-acceptance/browser-acceptance.test.mjs; apps/api/http-acceptance/http-acceptance.test.mjs; docs/cat/ac06-related-ancestor-privacy-draft.md | Domain/B/H: 同一シリーズ・異カテゴリの関連Tip、祖先非公開時の参照秘匿、別シリーズ参照拒否、未公開改名の秘匿、関連順序/除去後の明示公開を検証（CI #41296684451 success）。設定そのものの削除操作・正式CAT Gate・人間受入は未検証 | not-run |
 | AC-07 | 同じスペルを異なる言語に登録 | apps/web/browser-acceptance/browser-acceptance.test.mjs、apps/api/tests/postgres-alpha.test.mjs | B/DB: 同綴語の言語別選択・固有ID/本文分離（CI #41275393712 success） | not-run |
 | AC-08 | 複数の意味・品詞・語源を登録・辿る | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 同品詞2意味・意味別語源の独立保存と明示公開（CI #41275713765 success） | not-run |
-| AC-09 | 音韻規則・重複規則に違反する単語を入力 | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 同言語重複綴り警告の表示/消去/再表示（CI #41275713765 success） | not-run |
+| AC-09 | 音韻規則・重複規則に違反する単語を入力 | apps/web/browser-acceptance/browser-acceptance.test.mjs | Domain/B/HTTP: 同一言語同綴の新規作成/改名を409拒否し既存Word IDを返す。作者UIが同品詞欄末尾に未保存の意味を引継ぎ、公開稿を更新しない。別言語同綴は許容、音韻違反は警告（PR #40 → develop `884b15fce806`、CI #43248067919 4/4 success）。実Discord・正式CAT Gate・人間受入は未実施。 | not-run |
 | AC-10 | 異なる年代区分で同じ出来事を表示 | 未特定 | — | pending-decision |
 | AC-11 | 編集失敗・通信切断・再接続を発生させる | apps/web/browser-acceptance/browser-acceptance.test.mjs; apps/web/browser-acceptance/author-chapter-autosave.test.mjs; apps/web/tests/chapter-autosave.test.mjs; docs/cat/ac11-save-network-retry-draft.md; docs/cat/drafts/chapter-autosave-recovery.md | B/PG: 従来の合成通信断→手動再送に加え、章編集の自動PATCH→改訂読戻し、合成通信障害時のタブ内入力保持→再読込後の明示復元、別編集元による409競合時の無通知上書き防止と確認付き保存、匿名公開版不変を一時PostgreSQL・Nest/Nuxt・Chromiumで検証（PR #43 head `5949361844214d3b68e5abe96e263285af46d020`、Push CI #43354441722・PR CI #43354875767 とも4/4成功）。実Discord・実ネットワーク断・実機IME・正式CAT Gate・人間受入は未実施 | not-run |
 | AC-12 | 同一レコードを複数編集元から更新 | apps/web/browser-acceptance/browser-acceptance.test.mjs、apps/api/tests/postgres-alpha.test.mjs; apps/api/http-acceptance/author-revision-conflict.test.mjs | B/DB: 2タブ競合、保存済み本文維持、未保存入力保持（実端末は未検証）。H+PG: Nest/Nuxt同時PATCHの200/409、rev+1のみ永続化、旧版公開/可視性変更409（CI #42346968728 success、実2ブラウザタブは未実施） | not-run |
@@ -51,7 +52,7 @@
 | AC-30 | 親が公開、子が非公開の状態と、親が非公開、子が公開の状態を比較する | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 子自身の非公開と祖先非公開を区別、親再公開でも子自身の設定維持（CI #41275269669 success） | not-run |
 | AC-31 | 公開済み親を非公開へ変更し、一覧・検索・直接URL・関連リンク・キャッシュを再取得する | apps/web/browser-acceptance/browser-acceptance.test.mjs、apps/api/http-acceptance/http-acceptance.test.mjs | B/H: 直URL/検索/関連リンクでの非公開遮断（CI #41275269669 success、キャッシュ全経路未網羅） | not-run |
 | AC-32 | 非公開化した親を再公開する | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 祖先再公開で子の独立した非公開設定を保持（CI #41275269669 success） | not-run |
-| AC-33 | 章本文のページ間移動・末尾追加・途中挿入・順序変更を行い、章の公開版を更新する | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 旧実装のページ境界に限る部分証拠あり。順序付きページデータ配列の追加・途中挿入・並べ替え・公開版保持は**未検証**。ページごとの公開状態は設けない（2026-11-12採用） | not-run |
+| AC-33 | 章本文のページ間移動・末尾追加・途中挿入・順序変更を行い、章の公開版を更新する | apps/web/browser-acceptance/browser-acceptance.test.mjs | Domain/B: 章の正本 `Content.pages[]` を末尾・途中へ追加、前後移動・再保存・明示公開し、読者ページ順と章単位の公開を確認。旧 `[[page]]` 入力は互換変換のみ（PR #38 → develop `033bf7a54c55`、CI #43233778516 success）。実機IME・正式CAT Gate・人間受入は未実施。 | not-run |
 | AC-34 | 公開済み章を非公開にする | apps/web/browser-acceptance/browser-acceptance.test.mjs; apps/api/http-acceptance/http-acceptance.test.mjs; docs/cat/ac34-chapter-visibility-toggle-draft.md | B+H: 章単独非公開で匿名直API/ツリーから消失、兄弟章は維持、再公開後は未公開の新稿ではなく旧公開版を復元（CI #41293550881 success）。ページ別の全経路は未網羅 | not-run |
 | AC-35 | 公開カテゴリ・公開設定の一部項目のみ非公開にする | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: TipSection A非公開でも兄弟Bは公開（CI #41275269669 success） | not-run |
 | AC-36 | 設定またはカテゴリを非公開にし、配下の設定項目を公開指定のままにする | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: Tip非公開で配下TipSectionが匿名404（CI #41275269669 success） | not-run |
@@ -63,7 +64,7 @@
 | AC-42 | 同じシリーズに複数年代区分と出来事を登録し、区分ごと／統合表示を切り替える | 未特定 | — | pending-decision |
 | AC-43 | 年代区分を非公開にし、所属出来事が公開のまま読者アクセスする | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 年代区分非公開時に配下Eventが匿名404（CI #41275269669 success） | not-run |
 | AC-44 | 公開年代区分で一部出来事のみ非公開にする | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: Event A非公開でも兄弟Event Bは公開（CI #41275269669 success） | not-run |
-| AC-45 | 年代区分・出来事の公開日時を設定し、時刻境界の前後で取得する | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 年代区分の未来公開日時による配下Event遮断（CI #41275713765 success・境界値未検証） | pending-decision |
+| AC-45 | 年代区分・出来事の公開日時を設定し、時刻境界の前後で取得する | apps/web/browser-acceptance/browser-acceptance.test.mjs | 仕様確定: PB-05により入力JST、UTC保存/比較、指定時刻と等号で公開可、祖先も同じ境界。既存B: 未来時刻の年代区分によるEvent遮断の部分証拠あり（CI #41275713765）。時刻前/直前/等号/直後の実HTTP・Chromium全経路は未検証。 | not-run |
 | AC-46 | 一つのカテゴリに複数の設定を登録し、ある設定の所属先を変更する | 未特定 | — | not-run |
 | AC-47 | カテゴリを作成・編集し、カテゴリの中へさらにカテゴリを追加しようとする | apps/web/browser-acceptance/browser-acceptance.test.mjs; apps/api/http-acceptance/http-acceptance.test.mjs; docs/cat/ac47-category-nesting-boundary-draft.md | B+H: カテゴリ編集・再読込、子作成UIにTipのみ表示、カテゴリ内カテゴリのPOSTは400かつDB全体不変（CI #41293701037 success）。正式CAT Gate未実施 | not-run |
 | AC-48 | 異なるカテゴリの設定に同一のタグを付け、タグに基づいて横断的に分類する | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 同タグの公開Tipを複数カテゴリ横断検索し個別非公開を検証（CI #41276226834 success） | not-run |
@@ -72,12 +73,12 @@
 | AC-51 | 公開中の設定で一部TipSectionだけを非公開にする | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: TipSection個別非公開・兄弟公開のUI/API確認（CI #41275269669 success） | not-run |
 | AC-52 | 公開言語の文法項目Aだけ公開・文法項目Bを非公開にし、その後に親の言語を非公開にする | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 文法個別非公開/兄弟公開と親言語の非公開伝播（CI #41275269669 success） | not-run |
 | AC-53 | 同一単語に同じ品詞の異なる複数意味を登録し、意味ごとに語源を関連付ける | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 同品詞の複数意味・意味別語源の独立IDと公開稿（CI #41275713765 success） | not-run |
-| AC-54 | 各領域で未来公開日時を指定し、指定時刻の前後に匿名閲覧する | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: シリーズ未来公開日時による全4領域遮断（CI #41275269669 success、時刻境界未検証） | pending-decision |
+| AC-54 | 各領域で未来公開日時を指定し、指定時刻の前後に匿名閲覧する | apps/web/browser-acceptance/browser-acceptance.test.mjs | 仕様確定: PB-05、2026-11-12採用。公開日時はJST入力、UTC保存/比較、等号を含み、本人・全祖先と公開稿の条件が必要。既存B: 未来公開のシリーズによる全4領域遮断（CI #41275269669）。全4領域の境界時刻と読者API/検索/URLの横断証拠は未完了。 | not-run |
 | AC-55 | 新着投稿表示・ジャンプ・公開管理の一覧を匿名読者で使う | apps/web/browser-acceptance/browser-acceptance.test.mjs; apps/api/http-acceptance/http-acceptance.test.mjs; packages/contracts/exploratory/public-recent-privacy.test.mjs; docs/cat/ac55-public-recent-privacy-draft.md | B+H+Domain: 公開章リンク・非公開後除外、Tip/Word/Eventの新着、非公開祖先・未公開下書きの遮断を確認（CI #41293919427 success）。未来公開日時のWordは新着から除外、解除後は旧公開稿が復帰（CI #41294048995 success）。予約時刻の厳密境界・全ジャンプ導線は未網羅 | not-run |
 | AC-56 | 作者がホーム・一覧・詳細・管理トップから作成・編集画面へ移動する | apps/web/browser-acceptance/browser-acceptance.test.mjs; docs/cat/ac56-author-navigation-boundary-draft.md | B: 公開ホーム・一覧・シリーズ詳細・本文・設定集・辞書・年表の共通作者導線から書斎へ遷移し、匿名では作者UIと管理APIを拒否（CI #41297215950 success）。管理トップからの全導線・項目直編集リンク・実Discord本人認証は未網羅 | not-run |
-| AC-57 | 章本文ページの追加・途中挿入・順序変更、TipSection・単語意味と語源を編集し保存・再取得する | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 意味別語源と長文の下書き保存/再読込の部分証拠あり。ページID・本文・順序の非破壊的な挿入/並べ替えと他領域の全フィールドは未検証 | not-run |
+| AC-57 | 章本文ページの追加・途中挿入・順序変更、TipSection・単語意味と語源を編集し保存・再取得する | apps/web/browser-acceptance/browser-acceptance.test.mjs | Domain/B: 章ページ配列の挿入・並べ替え・下書き/公開稿の独立性はPR #38（CI #43233778516）で検証。意味別語源/TipSectionの既存ブラウザ試験は別HEADに部分証拠。全項目の変更対象外フィールド・同一HEAD横断受入、実機・正式CAT Gateは未完了。 | not-run |
 | AC-58 | 公開情報一覧・新着表示・タグ・区分マスタ・作者用メモを確認する | apps/web/browser-acceptance/browser-acceptance.test.mjs; apps/api/http-acceptance/http-acceptance.test.mjs; apps/api/tests/author-memos.test.mjs | B/H/DB: 公開新着、カテゴリ横断タグ検索、作者メモのタグ保存・再取得と読み戻し障害時の表示を個別に試験。区分マスタ・全画面導線・実Discord本人認可を含むAC全体は未検証 | not-run |
-| AC-59 | 画面の読込中とローカライズ対象の固定文言を確認する | 未特定 | — | pending-decision |
+| AC-59 | 画面の読込中とローカライズ対象の固定文言を確認する | 未特定 | 仕様確定: CM-08はαの基幹固定UI/エラー文言をja/enで提供し、作者本文等は翻訳しない（2026-11-12採用）。既存 `useUiLocale.ts` 等の実装はあるが画面/エラー全体のja/en切替・失敗状態・スケルトンの統合受入は未完了。 | not-run |
 | AC-60 | DS-01、v0.3 VisualDesignConcept、200/220 | apps/web/app/assets/css/eternalia.css、apps/web/tests/legacy-design-tokens.test.mjs | CI: 11枚の画面撮影・旧色トークン照合（旧v0.3画像との人間の比較は未実施） | not-run |
 | AC-61 | DS-02、旧FE `_pallet/_color.scss` | apps/web/tests/legacy-design-tokens.test.mjs | CI: v0.3 palette SCSSの色値・意味ロールを稼働CSSと照合（旧UI実画面の比較は未実施） | not-run |
 | AC-62 | DS-02、旧FE `_font-size/_margin/_radius.scss` | apps/web/tests/legacy-design-tokens.test.mjs | CI: v0.3の文字サイズ6段階・余白・角丸を稼働CSSと照合（画面幅別の視覚確認は未実施） | not-run |
@@ -93,8 +94,8 @@
 | AC-72 | 215・210 | .github/workflows/alpha-checks.yml; apps/web/browser-acceptance/author-csrf-oauth.test.mjs; apps/api/tests/discord-oauth-lifecycle.test.mjs | CI: Node22/Nuxt/Nest/PG17/Chromium 4ジョブ成功、実Discord OAuth未検証。CI #42346968728: Node22/Nuxt4/Nest/PG/Chromiumの4ジョブsuccess、PG 11/11、Chromium 35/35と追加ブラウザOrigin/OAuth 2/2成功。実Discord認証は未実施 | not-run |
 | AC-73 | 010 UI構造試験導入 | 未特定 | — | not-run |
 | AC-74 | 910/920継承監査 | 未特定 | — | not-run |
-| AC-75 | CM-02/03/08/09 | 未特定 | — | pending-decision |
-| AC-76 | CM-10、v0.3全体共通「非公開済データの削除」 | 未特定 | — | pending-decision |
+| AC-75 | CM-02/03/08/09 | 未特定 | 仕様確定: CM-02/08/09・2026-11-12採用。メモ/新着/マスタ、基幹固定UI/エラーja/enが対象。ゴミ箱UIと独立Disabledは対象外、論理削除はAC-76へ。既存メモ・新着の部分証拠はあるがマスタ・全画面・ja/enの横断受入未完了。 | not-run |
+| AC-76 | CM-10、v0.3全体共通「非公開済データの削除」 | 未特定 | 仕様確定: CM-10により非公開済み対象のみ論理削除可能。公開中、子孫あり、参照元ありは拒否し連鎖削除しない。通常公開状態と削除済み管理情報を分離、ゴミ箱復旧UIは対象外。現行 `packages/contracts/src/novel.ts` に対応する削除操作はなく実装・自動/実機受入は未完了。 | not-run |
 | AC-77 | CM-11、v0.3全体共通「無効化フラグ」 | **2026-11-12利用者が不採用と決定** | 通常の公開状態は未公開／公開済／非公開を使用する。独立した無効化／再有効化の実装・テストは不要。削除はAC-76で別途検証する | scope-excluded |
 | AC-78 | DS-01、200/220、旧UI・v0.3デザイン | apps/web/app/assets/css/eternalia.css、apps/web/browser-acceptance/browser-acceptance.test.mjs | CI: 作者3画面幅のスクリーンショット取得（編集キャンバスの設計承認は未実施） | pending-decision |
 
