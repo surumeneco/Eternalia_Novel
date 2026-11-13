@@ -222,9 +222,9 @@ export function moveTip(library: Library, id: string, expectedRevision: number, 
   const draft = find(next, id);
   // Backfill legacy snapshot ancestry before changing the draft parent.
   if (draft.published && draft.published.parentId === undefined) draft.published.parentId = draft.parentId;
-  const siblings = next.nodes.filter(n => n.kind === 'tip' && n.parentId === categoryId);
+  // Keep the old published list order until explicit publication. A draft Tip
+  // may temporarily share an order value with destination siblings.
   draft.parentId = categoryId;
-  draft.order = siblings.reduce((max,n) => Math.max(max,n.order),-1) + 1;
   draft.revision += 1;
   draft.updatedAt = now;
   // No new presets and no changes to child TipSections, tags or published value.
@@ -234,6 +234,13 @@ export function publishNode(library: Library, id: string, expectedRevision: numb
   const next = clone(library);
   const item = find(next, id);
   if (expectedRevision !== item.revision) domainError('conflict', '変更が競合しています。');
+  // An explicitly published category switch appends the Tip in the destination;
+  // the earlier draft move must not change the old public list ordering.
+  if (item.kind === 'tip' && item.published && item.published.parentId !== undefined &&
+      item.published.parentId !== item.parentId) {
+    const peers = next.nodes.filter(n => n.kind === 'tip' && n.parentId === item.parentId && n.id !== id);
+    item.order = peers.reduce((max,n) => Math.max(max,n.order), -1) + 1;
+  }
   item.published = { value: clone(item.draft), sourceRevision: item.revision, publishedAt: now, parentId: item.parentId };
   // Publishing a word snapshot must not override an explicitly private word.
   // Other kinds retain their established publish-to-visible behavior.
