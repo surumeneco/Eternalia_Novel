@@ -87,7 +87,7 @@ test('PUB-SEARCH-01/02/03: scheduled item and scheduled ancestor stay out of ano
       async function readSearch(visible) {
         const { page, seriesSelect } = await openSearch();
         try {
-          await seriesSelect.locator('option[value="' + seriesId + '"]').waitFor();
+          await seriesSelect.locator('option[value="' + seriesId + '"]').waitFor({ state: 'attached' });
           // Wait for client hydration, not merely SSR's initial select value.
           await page.getByRole('button', { name: '英語に切り替え' }).click();
           await page.getByRole('button', { name: 'Switch to Japanese' }).waitFor();
