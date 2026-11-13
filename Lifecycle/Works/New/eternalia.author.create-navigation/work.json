@@ -35,7 +35,8 @@
         "apps/web/app/composables/useUiLocale.ts",
         "apps/web/app/composables/ui-messages-en.ts",
         "apps/web/browser-acceptance/author-create-navigation.test.mjs",
-        "scripts/check-http-acceptance.mjs"
+        "scripts/check-http-acceptance.mjs",
+        "apps/web/browser-acceptance/search-locale-live.test.mjs"
       ],
       "production_paths": [
         "apps/web/app/components/AuthorCreateLink.vue",
@@ -46,7 +47,8 @@
         "apps/web/app/composables/ui-messages-en.ts"
       ],
       "test_paths": [
-        "apps/web/browser-acceptance/author-create-navigation.test.mjs"
+        "apps/web/browser-acceptance/author-create-navigation.test.mjs",
+        "apps/web/browser-acceptance/search-locale-live.test.mjs"
       ]
     }
   ],
