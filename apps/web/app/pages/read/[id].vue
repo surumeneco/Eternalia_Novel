@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ReaderNode } from '~/types/reader';
+import { formatJstDisplay } from '~/utils/jst-publication-time';
 import { publishedChapterSequence } from '~/utils/chapter-navigation';
 const { t, language } = useUiLocale();
 const route = useRoute();
@@ -51,7 +52,7 @@ function chapterLink(chapterId: string) {
       <article v-else>
         <h1>{{ chapter.content.title }}</h1>
         <AuthorEditLink :item-id="chapter.id" />
-        <p class="note">{{ t('readerPublishedOn') }}<time :datetime="new Date(chapter.publishedAt).toISOString()">{{ new Date(chapter.publishedAt).toLocaleDateString(language === 'en' ? 'en-US' : 'ja-JP') }}</time></p>
+        <p class="note">{{ t('readerPublishedOn') }}<time :datetime="new Date(chapter.publishedAt).toISOString()">{{ formatJstDisplay(chapter.publishedAt, language) }}</time></p>
         <RichContent :source="chapter.content.body" :pages="chapter.content.pages" paged />
         <div v-if="ancestryError || treeError" role="alert" class="navigation-error">
           <p>{{ t('readerChapterNavUnavailable') }}</p>
