@@ -1,0 +1,72 @@
+{
+  "schema": "cat-work/v1",
+  "id": "eternalia.publication.ssr-no-store",
+  "entry": "issue",
+  "flow": "issue-work",
+  "mode": "shadow",
+  "work_kind": "implementation",
+  "issue_ref": "https://github.com/surumeneco/Eternalia_Novel/issues/1",
+  "project_entry_ref": "https://drive.google.com/file/d/1clwfVJ3e_t1_QKFfOWxxRIzE9WMFvTiM/view",
+  "normative": [
+    {
+      "uri": "https://drive.google.com/file/d/1LqX-Noytb_oWymIrpO01eO5PvThGlVGx/view"
+    },
+    {
+      "uri": "https://drive.google.com/file/d/14no6MWmkFuyWYPVS6QdcRmbLbrUBbOpc/view"
+    }
+  ],
+  "evidence": [
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/commit/ab7ade70cb94df4200ee12d1a044746116224072"
+    }
+  ],
+  "repositories": [
+    {
+      "name": "eternalia",
+      "path": "../../../..",
+      "branch_pattern": "feature/*",
+      "allowed_paths": [
+        "Lifecycle/Works/New/eternalia.publication.ssr-no-store/work.json",
+        "docs/cat/drafts/public-ssr-no-store.md",
+        "apps/web/server/middleware/public-ssr-no-store.ts",
+        "apps/api/http-acceptance/http-acceptance.test.mjs"
+      ],
+      "production_paths": [
+        "apps/web/server/middleware/public-ssr-no-store.ts"
+      ],
+      "test_paths": [
+        "apps/api/http-acceptance/http-acceptance.test.mjs"
+      ]
+    }
+  ],
+  "scope": {
+    "process_ids": [
+      "eternalia.publication"
+    ],
+    "changed_ids": [
+      "SSR-CACHE-01",
+      "SSR-CACHE-02",
+      "SSR-CACHE-03"
+    ],
+    "preserved_ids": [
+      "publication.ancestor-visible",
+      "publication.snapshot-separation",
+      "author.unauthorized-write-rejected"
+    ]
+  },
+  "specification": {
+    "status": "draft",
+    "decision_ref": null,
+    "artifact_refs": [
+      "docs/cat/drafts/public-ssr-no-store.md"
+    ]
+  },
+  "technologies": [
+    "typescript",
+    "nuxt",
+    "nest",
+    "node"
+  ],
+  "checks": [],
+  "depends_on": []
+}
