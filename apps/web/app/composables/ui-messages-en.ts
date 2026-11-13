@@ -396,5 +396,10 @@ export const enUiMessages = {
   "readerRefDraft": "(writer's draft)",
   "readerRefEmptyBody": "No body text.",
   "readerRefEmptySection": "No content entered.",
-  "readerLoadingRecent": "Loading recent updates…"
+  "readerLoadingRecent": "Loading recent updates…",
+  "readerBreadcrumbs": "Breadcrumbs",
+  "readerPagesNav": "Manuscript page navigation",
+  "readerPreviousPage": "Previous page",
+  "readerNextPage": "Next page",
+  "readerPage": "Page"
 } as const satisfies UiMessageCatalog;
