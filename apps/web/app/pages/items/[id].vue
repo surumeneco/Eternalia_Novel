@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ReaderNode } from '~/types/reader';
+import { formatJstDisplay } from '~/utils/jst-publication-time';
 const { t, language } = useUiLocale();
 const route = useRoute();
 const { data: item, pending, error, refresh } = await useFetch<ReaderNode>(
@@ -55,7 +56,7 @@ const kindNames = computed<Record<string,string>>(() => ({
         <p class="note">{{ kindNames[item.kind] || item.kind }}</p>
         <h1>{{ item.content.title }}</h1>
         <AuthorEditLink :item-id="item.id" />
-        <p class="note">{{ t('readerPublishedUpdated') }}<time :datetime="new Date(item.publishedAt).toISOString()">{{ new Date(item.publishedAt).toLocaleString(language === 'en' ? 'en-US' : 'ja-JP') }}</time></p>
+        <p class="note">{{ t('readerPublishedUpdated') }}<time :datetime="new Date(item.publishedAt).toISOString()">{{ formatJstDisplay(item.publishedAt, language) }}</time></p>
         <RichContent :source="item.content.body" />
         <TipLinksReader v-if="item.kind === 'tip'" :tags="item.content.details.tags"
           :related-tips="item.content.details.relatedTips" />
