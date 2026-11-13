@@ -25,6 +25,8 @@ test('CM-08: header switches ja/en and preserves published author text on reload
       await page.getByRole('button',{name:'Display language'}).waitFor();
       assert.equal(await page.locator('html').getAttribute('lang'),'en');
       assert.equal(await page.locator('#global-navigation a[href="/stories"]').innerText(),'Stories');
+      assert.equal(await page.locator('main a[href="/tips/'+fixture.seriesA+'"]').innerText(),'Worldbuilding',
+        'the series page must update without a reload as well as the shared shell');
       assert.ok((await page.locator('main').innerText()).includes(authoredTitle),
         'English interface must not translate author-created content');
       await page.reload();
@@ -36,6 +38,7 @@ test('CM-08: header switches ja/en and preserves published author text on reload
       await page.getByRole('button',{name:'表示言語'}).waitFor();
       assert.equal(await page.locator('html').getAttribute('lang'),'ja');
       assert.equal(await page.locator('#global-navigation a[href="/stories"]').innerText(),'ストーリー');
+      assert.equal(await page.locator('main a[href="/tips/'+fixture.seriesA+'"]').innerText(),'設定集');
       assert.ok((await page.locator('main').innerText()).includes(authoredTitle));
       await context.close();
     }finally{await browser.close();}
