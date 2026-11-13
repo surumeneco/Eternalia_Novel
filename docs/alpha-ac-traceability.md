@@ -29,7 +29,7 @@
 | AC-08 | 複数の意味・品詞・語源を登録・辿る | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 同品詞2意味・意味別語源の独立保存と明示公開（CI #41275713765 success） | not-run |
 | AC-09 | 音韻規則・重複規則に違反する単語を入力 | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 同言語重複綴り警告の表示/消去/再表示（CI #41275713765 success） | not-run |
 | AC-10 | 異なる年代区分で同じ出来事を表示 | 未特定 | — | pending-decision |
-| AC-11 | 編集失敗・通信切断・再接続を発生させる | apps/web/browser-acceptance/browser-acceptance.test.mjs; docs/cat/ac11-save-network-retry-draft.md | B: 作者下書きPATCHの合成通信断→入力保持・DB未変更→再送・再読込成功（CI #41286691284 success、実回線・全条件は未検証） | not-run |
+| AC-11 | 編集失敗・通信切断・再接続を発生させる | apps/web/browser-acceptance/browser-acceptance.test.mjs; apps/web/browser-acceptance/author-chapter-autosave.test.mjs; apps/web/tests/chapter-autosave.test.mjs; docs/cat/ac11-save-network-retry-draft.md; docs/cat/drafts/chapter-autosave-recovery.md | B/PG: 従来の合成通信断→手動再送に加え、章編集の自動PATCH→改訂読戻し、合成通信障害時のタブ内入力保持→再読込後の明示復元、別編集元による409競合時の無通知上書き防止と確認付き保存、匿名公開版不変を一時PostgreSQL・Nest/Nuxt・Chromiumで検証（PR #43 head `5949361844214d3b68e5abe96e263285af46d020`、Push CI #43354441722・PR CI #43354875767 とも4/4成功）。実Discord・実ネットワーク断・実機IME・正式CAT Gate・人間受入は未実施 | not-run |
 | AC-12 | 同一レコードを複数編集元から更新 | apps/web/browser-acceptance/browser-acceptance.test.mjs、apps/api/tests/postgres-alpha.test.mjs; apps/api/http-acceptance/author-revision-conflict.test.mjs | B/DB: 2タブ競合、保存済み本文維持、未保存入力保持（実端末は未検証）。H+PG: Nest/Nuxt同時PATCHの200/409、rev+1のみ永続化、旧版公開/可視性変更409（CI #42346968728 success、実2ブラウザタブは未実施） | not-run |
 | AC-13 | 保留：ゴミ箱・ゴミ箱からの復元（当面実装・受入試験の対象外） | 未特定 | — | scope-excluded |
 | AC-14 | 検証エラー・API失敗・権限不足を発生させる | apps/api/http-acceptance/http-acceptance.test.mjs | H: 不正意味JSONの400拒否・下書き/公開稿非破壊（CI #41275713765 success） | not-run |
