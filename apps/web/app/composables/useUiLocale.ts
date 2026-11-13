@@ -1,7 +1,7 @@
 /** Localize fixed interface text without translating user-authored content.
- * Only Japanese messages are shipped. Additional locales require reviewed
- * translations and an explicit product decision.
+ * Japanese and English are shipped; other locales fall back to Japanese.
  */
+import { enUiMessages } from './ui-messages-en';
 export const uiMessages = {
   ja: {
     home: 'ホーム',
@@ -251,6 +251,7 @@ export const uiMessages = {
     langDescription: "説明",
     langAddClass: "品詞を追加",
     shellSearch: "検索",
+    shellLanguageSwitch: '表示言語',
     shellGlobalNav: "グローバルナビゲーション",
     shellAside: "補助情報",
     shellResourceTypes: "資料の種類",
@@ -315,6 +316,7 @@ export function translateUiMessage(
   if (language !== 'ja' && Object.prototype.hasOwnProperty.call(additionalCatalogs, language)) {
     return additionalCatalogs[language]![key];
   }
+  if (language === 'en') return enUiMessages[key];
   return uiMessages.ja[key];
 }
 
