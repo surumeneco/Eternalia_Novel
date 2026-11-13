@@ -61,44 +61,44 @@ watch(languageId, () => { partOfSpeech.value = ''; });
     <TopicPath :items="[
       { label: t('home'), to: '/' },
       { label: t('dictionaries'), to: '/dictionaries' },
-      { label: series?.content.title ?? 'シリーズ' },
+      { label: series?.content.title ?? t('readerKindSeries') },
     ]" />
     <ReaderPanel>
-      <ReadingSkeleton v-if="pending" label="辞書を読み込んでいます。" />
+      <ReadingSkeleton v-if="pending" :label="t('readerLoadingDictionary')" />
       <div v-else-if="error || !series" role="alert">
-        <h1>辞書を表示できません</h1>
-        <p class="error-text">シリーズが存在しないか、公開されていません。</p>
+        <h1>{{ t('readerErrorDictionary') }}</h1>
+        <p class="error-text">{{ t('readerSeriesUnavailable') }}</p>
         <button class="inline-action" type="button" @click="refresh()">{{ t('retry') }}</button>
       </div>
       <template v-else>
-        <h1>{{ series.content.title }} — 辞書</h1>
+        <h1>{{ series.content.title }} — {{ t('dictionaries') }}</h1>
         <div class="dictionary-filters">
-          <label>言語
+          <label>{{ t('readerDictionaryLanguageFilter') }}
             <select v-model="languageId">
-              <option value="">すべての言語</option>
+              <option value="">{{ t('readerAllLanguages') }}</option>
               <option v-for="language in languages" :key="language.id" :value="language.id">
                 {{ language.content.title }}
               </option>
             </select>
           </label>
-          <label>単語を検索
-            <input v-model="query" type="search" placeholder="綴り・説明" />
+          <label>{{ t('readerWordSearch') }}
+            <input v-model="query" type="search" :placeholder="t('readerWordSearchPlaceholder')" />
           </label>
-          <label>品詞
+          <label>{{ t('readerPartOfSpeechFilter') }}
             <select v-model="partOfSpeech">
-              <option value="">すべての品詞</option>
+              <option value="">{{ t('readerAllPartsOfSpeech') }}</option>
               <option v-for="part in partsOfSpeech" :key="part" :value="part">{{ part }}</option>
             </select>
           </label>
         </div>
-        <p v-if="!languages.length">現在公開中の言語はありません。</p>
+        <p v-if="!languages.length">{{ t('readerNoLanguages') }}</p>
         <template v-else>
           <section v-for="language in activeLanguages" :key="language.id" class="dictionary-language">
             <h2 class="section-heading">
               <NuxtLink :to="'/items/' + language.id">{{ language.content.title }}</NuxtLink>
             </h2>
             <p v-if="language.content.body" class="dictionary-description">{{ language.content.body }}</p>
-            <h3>単語</h3>
+            <h3>{{ t('readerKindWord') }}</h3>
             <ul v-if="visibleWords.some(entry => entry.language.id === language.id)" class="reader-list">
               <li v-for="entry in visibleWords.filter(entry => entry.language.id === language.id)" :key="entry.word.id">
                 <NuxtLink :to="'/items/' + entry.word.id">{{ entry.word.content.title }}</NuxtLink>
@@ -111,15 +111,15 @@ watch(languageId, () => { partOfSpeech.value = ''; });
                 </ul>
               </li>
             </ul>
-            <p v-else class="note">条件に一致する公開単語はありません。</p>
-            <h3>文法</h3>
+            <p v-else class="note">{{ t('readerNoWords') }}</p>
+            <h3>{{ t('readerKindGrammar') }}</h3>
             <ul v-if="visibleGrammar.some(entry => entry.language.id === language.id)" class="reader-list">
               <li v-for="entry in visibleGrammar.filter(entry => entry.language.id === language.id)" :key="entry.grammar.id">
                 <NuxtLink :to="'/items/' + entry.grammar.id">{{ entry.grammar.content.title }}</NuxtLink>
                 <p v-if="entry.grammar.content.body" class="dictionary-description">{{ entry.grammar.content.body }}</p>
               </li>
             </ul>
-            <p v-else class="note">公開中の文法項目はありません。</p>
+            <p v-else class="note">{{ t('readerNoGrammar') }}</p>
           </section>
         </template>
       </template>
