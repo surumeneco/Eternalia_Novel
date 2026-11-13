@@ -33,10 +33,10 @@ export function reorderSiblings(library: Library, request: ReorderRequest, now: 
     ? null : library.nodes.find(node => node.id === request.parentId);
   if (parentKinds[request.kind] === null
     ? request.parentId !== null
-    : !parent || parent.kind !== parentKinds[request.kind]) {
+    : !parent || parent.deletedAt != null || parent.kind !== parentKinds[request.kind]) {
     domainError('bad-request', '並べ替え対象の親子階層が不正です。');
   }
-  const siblings = library.nodes.filter(n => n.parentId === request.parentId && n.kind === request.kind)
+  const siblings = library.nodes.filter(n => n.deletedAt == null && n.parentId === request.parentId && n.kind === request.kind)
     .sort((a,b) => a.order - b.order || a.id.localeCompare(b.id));
   const orderedIdSet = new Set(request.orderedIds);
   if (siblings.length !== request.orderedIds.length || orderedIdSet.size !== siblings.length ||
