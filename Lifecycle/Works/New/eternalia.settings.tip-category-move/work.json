@@ -1,0 +1,89 @@
+{
+  "schema": "cat-work/v1",
+  "id": "eternalia.settings.tip-category-move",
+  "entry": "issue",
+  "flow": "issue-work",
+  "mode": "shadow",
+  "work_kind": "implementation",
+  "issue_ref": "https://github.com/surumeneco/Eternalia_Novel/issues/1",
+  "project_entry_ref": "https://drive.google.com/file/d/1clwfVJ3e_t1_QKFfOWxxRIzE9WMFvTiM/view",
+  "normative": [
+    {
+      "uri": "https://drive.google.com/file/d/1LqX-Noytb_oWymIrpO01eO5PvThGlVGx/view"
+    },
+    {
+      "uri": "https://drive.google.com/file/d/15X2GtGxr7iO4HrFgi5tmqqRGCKeC5flY/view"
+    }
+  ],
+  "evidence": [
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/commit/6a4912f0a3d9167d7dcf033b7bcceb8117efb814"
+    }
+  ],
+  "repositories": [
+    {
+      "name": "eternalia",
+      "path": "../../../..",
+      "branch_pattern": "feature/*",
+      "allowed_paths": [
+        "Lifecycle/Works/New/eternalia.settings.tip-category-move/work.json",
+        "docs/cat/drafts/tip-category-move.md",
+        "packages/contracts/src/novel.ts",
+        "packages/contracts/src/public-path.ts",
+        "packages/contracts/exploratory/tip-category-move.test.mjs",
+        "apps/api/src/postgres-library.service.ts",
+        "apps/api/src/admin-nodes.controller.ts",
+        "apps/api/http-acceptance/tip-category-move.test.mjs",
+        "db/migrations/004_published_parent.sql",
+        "apps/web/app/pages/studio.vue",
+        "apps/web/app/composables/useUiLocale.ts",
+        "apps/web/browser-acceptance/browser-acceptance.test.mjs"
+      ],
+      "production_paths": [
+        "packages/contracts/src/novel.ts",
+        "packages/contracts/src/public-path.ts",
+        "apps/api/src/postgres-library.service.ts",
+        "apps/api/src/admin-nodes.controller.ts",
+        "apps/web/app/pages/studio.vue",
+        "apps/web/app/composables/useUiLocale.ts"
+      ],
+      "test_paths": [
+        "packages/contracts/exploratory/tip-category-move.test.mjs",
+        "apps/api/http-acceptance/tip-category-move.test.mjs",
+        "apps/web/browser-acceptance/browser-acceptance.test.mjs"
+      ]
+    }
+  ],
+  "scope": {
+    "process_ids": [
+      "eternalia.settings",
+      "eternalia.publication"
+    ],
+    "changed_ids": [
+      "category.move.target",
+      "category.move.draft",
+      "category.move.publish",
+      "category.move.auth"
+    ],
+    "preserved_ids": [
+      "publication.draft-snapshot-separation",
+      "category.preset-nonpropagation",
+      "settings.related-tip-privacy"
+    ]
+  },
+  "specification": {
+    "status": "draft",
+    "decision_ref": null,
+    "artifact_refs": [
+      "docs/cat/drafts/tip-category-move.md"
+    ]
+  },
+  "technologies": [
+    "typescript",
+    "vue",
+    "postgresql",
+    "playwright"
+  ],
+  "checks": [],
+  "depends_on": []
+}
