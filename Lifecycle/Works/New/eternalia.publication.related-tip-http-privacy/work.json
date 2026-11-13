@@ -29,11 +29,13 @@
         "Lifecycle/Works/New/eternalia.publication.related-tip-http-privacy/work.json",
         "docs/cat/drafts/related-tip-http-privacy.md",
         "apps/api/http-acceptance/related-tip-http-privacy.test.mjs",
-        "scripts/check-http-acceptance.mjs"
+        "scripts/check-http-acceptance.mjs",
+        "apps/web/browser-acceptance/reactive-common-locale.test.mjs"
       ],
       "production_paths": [],
       "test_paths": [
-        "apps/api/http-acceptance/related-tip-http-privacy.test.mjs"
+        "apps/api/http-acceptance/related-tip-http-privacy.test.mjs",
+        "apps/web/browser-acceptance/reactive-common-locale.test.mjs"
       ]
     }
   ],
