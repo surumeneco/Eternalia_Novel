@@ -37,7 +37,9 @@
         "db/migrations/004_published_parent.sql",
         "apps/web/app/pages/studio.vue",
         "apps/web/app/composables/useUiLocale.ts",
-        "apps/web/browser-acceptance/browser-acceptance.test.mjs"
+        "apps/web/browser-acceptance/browser-acceptance.test.mjs",
+        "apps/web/browser-acceptance/author-tip-category-move.test.mjs",
+        "scripts/check-http-acceptance.mjs"
       ],
       "production_paths": [
         "packages/contracts/src/novel.ts",
@@ -45,12 +47,14 @@
         "apps/api/src/postgres-library.service.ts",
         "apps/api/src/admin-nodes.controller.ts",
         "apps/web/app/pages/studio.vue",
-        "apps/web/app/composables/useUiLocale.ts"
+        "apps/web/app/composables/useUiLocale.ts",
+        "db/migrations/004_published_parent.sql"
       ],
       "test_paths": [
         "packages/contracts/exploratory/tip-category-move.test.mjs",
         "apps/api/http-acceptance/tip-category-move.test.mjs",
-        "apps/web/browser-acceptance/browser-acceptance.test.mjs"
+        "apps/web/browser-acceptance/browser-acceptance.test.mjs",
+        "apps/web/browser-acceptance/author-tip-category-move.test.mjs"
       ]
     }
   ],
