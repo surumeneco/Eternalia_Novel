@@ -30,7 +30,7 @@ test('SEARCH-01/02/03/04: search domain options and result kinds react instantly
     assert.match(await result.locator('span.note').innerText(),/編/);
     await page.getByRole('button',{name:'英語に切り替え'}).click();
     await page.getByRole('button',{name:'Switch to Japanese'}).waitFor();
-    await domain.locator('option[value="stories"]').getByText('Stories').waitFor();
+    assert.equal(await domain.locator('option[value="stories"]').textContent(),'Stories');
     assert.deepEqual((await domain.locator('option').allTextContents()).map(x=>x.trim()),
       ['All','Stories','Worldbuilding','Dictionary','Timeline']);
     await result.locator('span.note').getByText('Arc',{exact:false}).waitFor();
@@ -42,7 +42,7 @@ test('SEARCH-01/02/03/04: search domain options and result kinds react instantly
       'published search must never include private content');
     await page.getByRole('button',{name:'Switch to Japanese'}).click();
     await page.getByRole('button',{name:'英語に切り替え'}).waitFor();
-    await domain.locator('option[value="stories"]').getByText('ストーリー').waitFor();
+    assert.equal(await domain.locator('option[value="stories"]').textContent(),'ストーリー');
     assert.match(await result.locator('span.note').innerText(),/編/);
     assert.equal(await search.inputValue(),fixture.prefix+'-book-A');
     assert.equal(await result.locator('a').innerText(),originalTitle);
