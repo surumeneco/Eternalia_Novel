@@ -38,6 +38,14 @@ test('SEARCH-01/02/03/04: search domain options and result kinds react instantly
     assert.equal(await seriesControl.inputValue(),fixture.seriesA);
     await domain.selectOption('stories');
     await search.fill(fixture.prefix+'-book-A');
+    await page.waitForTimeout(1100); // temporary diagnostic to capture live state
+    console.log('SEARCH_UI_DIAGNOSTIC',JSON.stringify({
+      series:await selects.first().inputValue(),
+      domain:await domain.inputValue(),
+      search:await search.inputValue(),
+      results:await page.locator('.search-result').count(),
+      main:(await page.locator('main').innerText()).slice(0,1600),
+    }));
     const result=page.locator('.search-result').first();
     await result.locator('a').getByText(fixture.prefix+'-book-A').waitFor();
     const originalTitle=await result.locator('a').innerText();
