@@ -33,13 +33,15 @@
         "apps/web/app/pages/index.vue",
         "apps/web/app/pages/search.vue",
         "apps/web/browser-acceptance/reactive-common-locale.test.mjs",
-        "scripts/check-http-acceptance.mjs"
+        "scripts/check-http-acceptance.mjs",
+        "apps/web/app/components/PublicCollectionPage.vue"
       ],
       "production_paths": [
         "apps/web/app/pages/studio.vue",
         "apps/web/app/pages/dictionaries.vue",
         "apps/web/app/pages/index.vue",
-        "apps/web/app/pages/search.vue"
+        "apps/web/app/pages/search.vue",
+        "apps/web/app/components/PublicCollectionPage.vue"
       ],
       "test_paths": [
         "apps/web/browser-acceptance/reactive-common-locale.test.mjs"
