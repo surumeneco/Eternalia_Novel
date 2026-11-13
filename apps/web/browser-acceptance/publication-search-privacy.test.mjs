@@ -88,9 +88,8 @@ test('PUB-SEARCH-01/02/03: scheduled item and scheduled ancestor stay out of ano
         const { page, seriesSelect } = await openSearch();
         try {
           await seriesSelect.locator('option[value="' + seriesId + '"]').waitFor({ state: 'attached' });
-          // Wait for client hydration, not merely SSR's initial select value.
-          await page.getByRole('button', { name: '英語に切り替え' }).click();
-          await page.getByRole('button', { name: 'Switch to Japanese' }).waitFor();
+          // openSearch already waits for Vue hydration; do not toggle and
+          // persist an unrelated UI-language cookie across reader pages.
           await seriesSelect.selectOption('');
           await seriesSelect.selectOption(seriesId);
           await page.locator('.search-filters input[type="search"]').fill(tipTitle);
