@@ -1,7 +1,7 @@
 /** Localize fixed interface text without translating user-authored content.
- * Only Japanese messages are shipped. Additional locales require reviewed
- * translations and an explicit product decision.
+ * Japanese and English are shipped; other locales fall back to Japanese.
  */
+import { enUiMessages } from './ui-messages-en.ts';
 export const uiMessages = {
   ja: {
     home: 'ホーム',
@@ -251,6 +251,9 @@ export const uiMessages = {
     langDescription: "説明",
     langAddClass: "品詞を追加",
     shellSearch: "検索",
+    shellLanguageSwitch: '表示言語',
+    shellSwitchToEnglish: '英語に切り替え',
+    shellSwitchToJapanese: '日本語に切り替え',
     shellGlobalNav: "グローバルナビゲーション",
     shellAside: "補助情報",
     shellResourceTypes: "資料の種類",
@@ -315,15 +318,22 @@ export function translateUiMessage(
   if (language !== 'ja' && Object.prototype.hasOwnProperty.call(additionalCatalogs, language)) {
     return additionalCatalogs[language]![key];
   }
+  if (language === 'en') return enUiMessages[key];
   return uiMessages.ja[key];
 }
 
 export function useUiLocale() {
-  const language = useCookie<string>('eternalia-ui-language', {
+  const stored = useCookie<string>('eternalia-ui-language', {
     default: () => 'ja',
     sameSite: 'lax',
     path: '/',
   });
+  // A single Nuxt-wide reactive ref keeps every page's fixed labels in sync
+  // immediately; independent useCookie refs do not guarantee cross-component
+  // updates until a reload.
+  const language = useState<string>('eternalia-ui-language-active',
+    () => stored.value === 'en' ? 'en' : 'ja');
+  watch(language, value => { stored.value = value === 'en' ? 'en' : 'ja'; });
   const t = (key: UiMessageKey) => translateUiMessage(key, language.value);
   return { language, t };
 }

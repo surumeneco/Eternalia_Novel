@@ -1,6 +1,11 @@
 <script setup lang="ts">
 const menuOpen = ref(false);
-const { t } = useUiLocale();
+const { t, language } = useUiLocale();
+function toggleLanguage() {
+  language.value = language.value === 'en' ? 'ja' : 'en';
+  menuOpen.value = false;
+}
+useHead({ htmlAttrs: { lang: computed(() => language.value === 'en' ? 'en' : 'ja') } });
 const navigation = computed(() => [
   { to: '/', label: t('home') },
   { to: '/stories', label: t('stories') },
@@ -23,6 +28,8 @@ const navigation = computed(() => [
             {{ link.label }}
           </NuxtLink>
         </nav>
+        <button type="button" class="locale-switch" :aria-label="language === 'en' ? t('shellSwitchToJapanese') : t('shellSwitchToEnglish')"
+          @click="toggleLanguage">{{ language === 'en' ? '日本語' : 'English' }}</button>
       </div>
     </header>
     <div class="site-content">
@@ -46,3 +53,13 @@ const navigation = computed(() => [
     </footer>
   </div>
 </template>
+
+<style scoped>
+.locale-switch { margin-left: auto; flex-shrink: 0; white-space: nowrap; border: 1px solid #003f58;
+  border-radius: var(--radius-input, 4px); background: #f8fcff; color: #08232c; padding: .35rem .5rem;
+  font: inherit; cursor: pointer; }
+.locale-switch:focus-visible { outline: 3px solid #003f58; outline-offset: 2px; }
+@media (max-width: 720px) {
+  .locale-switch { margin-left: 0; font-size: .875rem; }
+}
+</style>
