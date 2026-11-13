@@ -10,8 +10,12 @@ const JAPAN_DATETIME = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/;
 export function parseJstLocalDateTime(value: string): number | null {
   const match = JAPAN_DATETIME.exec(value);
   if (!match) return null;
-  const [year, month, day, hour, minute, second] =
-    match.slice(1).map(component => component === undefined ? 0 : Number(component));
+  const year = Number(match[1]!);
+  const month = Number(match[2]!);
+  const day = Number(match[3]!);
+  const hour = Number(match[4]!);
+  const minute = Number(match[5]!);
+  const second = Number(match[6] ?? '0');
   if (month < 1 || month > 12 || day < 1 || day > 31 ||
       hour > 23 || minute > 59 || second > 59) return null;
 
