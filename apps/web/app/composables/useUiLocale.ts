@@ -24,6 +24,7 @@ export const uiMessages = {
     studioMoveCategory: 'カテゴリを変更',
     studioMoveCategorySaved: '下書きのカテゴリを移動しました。公開所属は明示公開まで変更されません。',
     studioMoveSaveFirst: '未保存の変更を保存してからカテゴリを移動してください。',
+    studioPeriodRelativeYears: '年代区分の相対年数（整数・年0・負年を使用可）',
     studioSoftDelete: 'この非公開項目を削除',
     studioSoftDeleteConfirm: 'この項目を論理削除します。復元画面はありません。子要素や参照元が残る場合は削除できません。続けますか？',
     studioSoftDeleted: '論理削除しました。公開版と下書きは監査用に保存され、通常の画面からは除外されます。',
