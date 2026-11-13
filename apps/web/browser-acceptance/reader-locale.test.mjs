@@ -26,7 +26,8 @@ test('READER-01/02/03: public series and reader areas localize immediately witho
 
    await page.goto(base+'/dictionaries/'+fixture.seriesA);
    await page.getByRole('heading',{name:title+' — Dictionary'}).waitFor();
-   await page.getByLabel('Language',{exact:true}).selectOption(fixture.language);
+   assert.ok((await page.locator('.dictionary-filters label').first().innerText()).includes('Language'));
+   await page.locator('.dictionary-filters select').first().selectOption(fixture.language);
    await page.getByLabel('Search words').fill(fixture.prefix+'-visible-word');
    assert.equal(await page.locator('.dictionary-language .reader-list li').first().locator('a').innerText(),fixture.prefix+'-visible-word');
 
@@ -37,7 +38,8 @@ test('READER-01/02/03: public series and reader areas localize immediately witho
 
    await page.goto(base+'/timeline/'+fixture.seriesA);
    await page.getByRole('heading',{name:title+' — Timeline'}).waitFor();
-   await page.getByLabel('Period',{exact:true}).selectOption(fixture.period);
+   assert.ok((await page.locator('.period-filter').innerText()).includes('Period'));
+   await page.locator('.period-filter select').selectOption(fixture.period);
    assert.ok((await page.locator('main').innerText()).includes('Relative year 12'));
 
    await page.goto(base+'/read/'+fixture.chapter);
@@ -52,7 +54,8 @@ test('READER-01/02/03: public series and reader areas localize immediately witho
    await page.getByRole('button',{name:'次のページ'}).waitFor();
    assert.ok((await page.locator('main').innerText()).includes(chapterTitle));
    await page.goto(base+'/dictionaries/'+fixture.seriesA);
-   await page.getByLabel('言語',{exact:true}).selectOption(fixture.language);
+   assert.ok((await page.locator('.dictionary-filters label').first().innerText()).includes('言語'));
+   await page.locator('.dictionary-filters select').first().selectOption(fixture.language);
    await ctx.close();
   } finally { await browser.close(); }
 });
