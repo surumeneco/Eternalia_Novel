@@ -297,5 +297,6 @@ export const enUiMessages = {
   "storiesCollectionDescription": "Browse arcs, volumes, chapters and text within each series.",
   "tipsCollectionDescription": "Browse categories, settings and sections within each series.",
   "dictionaryCollectionDescription": "Browse the languages, vocabulary and grammar of each series.",
-  "timelineCollectionDescription": "Browse periods and events of each series."
+  "timelineCollectionDescription": "Browse periods and events of each series.",
+  "shellLanguageSwitch": "Display language"
 } as const satisfies UiMessageCatalog;
