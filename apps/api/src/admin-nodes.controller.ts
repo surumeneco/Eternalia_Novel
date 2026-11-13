@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import {
-  createNode, editNode, isKind, managedList, publishNode, setVisibility,
+  createNode, editNode, isKind, managedList, moveTip, publishNode, setVisibility,
   type Content, type DomainError, type Kind,
 } from '@eternalia/contracts';
 import { AuthorGuard } from './author.guard';
@@ -71,6 +71,18 @@ export class AdminNodesController {
     return withinDomain(async () => {
       await this.storage.mutate(db => editNode(
         db, id, input.expectedRevision as number, input.content as Content, Date.now(),
+      ));
+      return { ok: true };
+    });
+  }
+
+  @Post('nodes/:id/move-category')
+  @HttpCode(200)
+  async moveCategory(@Param('id') id: string, @Body() raw: unknown) {
+    const input = record(raw);
+    return withinDomain(async () => {
+      await this.storage.mutate(db => moveTip(
+        db, id, input.expectedRevision as number, input.targetCategoryId as string, Date.now(),
       ));
       return { ok: true };
     });
