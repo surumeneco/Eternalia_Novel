@@ -19,10 +19,12 @@ test('CM-08: header switches ja/en and preserves published author text on reload
       const page=await context.newPage();
       await page.goto(base+'/series/'+fixture.seriesA);
       await page.getByRole('button',{name:'英語に切り替え'}).waitFor();
+      await page.locator('html[lang="ja"]').waitFor();
       assert.equal(await page.locator('html').getAttribute('lang'),'ja');
       assert.ok((await page.locator('main').innerText()).includes(authoredTitle));
       await page.getByRole('button',{name:'英語に切り替え'}).click();
       await page.getByRole('button',{name:'Switch to Japanese'}).waitFor();
+      await page.locator('html[lang="en"]').waitFor();
       assert.equal(await page.locator('html').getAttribute('lang'),'en');
       assert.equal(await page.locator('#global-navigation a[href="/stories"]').innerText(),'Stories');
       assert.equal(await page.locator('main a[href="/tips/'+fixture.seriesA+'"]').innerText(),'Worldbuilding',
@@ -31,11 +33,13 @@ test('CM-08: header switches ja/en and preserves published author text on reload
         'English interface must not translate author-created content');
       await page.reload();
       await page.getByRole('button',{name:'Switch to Japanese'}).waitFor();
+      await page.locator('html[lang="en"]').waitFor();
       assert.equal(await page.locator('html').getAttribute('lang'),'en');
       assert.equal(await page.locator('#global-navigation a[href="/stories"]').innerText(),'Stories');
       assert.ok((await page.locator('main').innerText()).includes(authoredTitle));
       await page.getByRole('button',{name:'Switch to Japanese'}).click();
       await page.getByRole('button',{name:'英語に切り替え'}).waitFor();
+      await page.locator('html[lang="ja"]').waitFor();
       assert.equal(await page.locator('html').getAttribute('lang'),'ja');
       assert.equal(await page.locator('#global-navigation a[href="/stories"]').innerText(),'ストーリー');
       assert.equal(await page.locator('main a[href="/tips/'+fixture.seriesA+'"]').innerText(),'設定集');
