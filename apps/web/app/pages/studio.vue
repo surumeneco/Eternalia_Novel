@@ -5,6 +5,7 @@ const studioRoute = useRoute();
 import type { ReaderKind } from '~/types/reader';
 import { parseLanguageWordClasses, diagnoseWordSpelling, appendDuplicateWordMeaning, pagesForChapter, joinChapterPages } from '@eternalia/contracts';
 import { insertManuscriptMarkup, type ManuscriptInsertionKind } from '~/utils/manuscript-markup';
+import { chapterRecoveryKey, chapterRecoveryMatches, chapterRecoveryPrefix, isAutosaveRevisionConflict, parseChapterRecovery, type ChapterRecovery } from '~/utils/chapter-autosave';
 
 interface AuthState { configured: boolean; authenticated: boolean }
 const { data: auth, pending: authPending, refresh: refreshAuth } =
@@ -47,6 +48,123 @@ const form = reactive<{ title:string; body:string; details:Record<string,string>
 });
 const bodyTextarea = ref<HTMLTextAreaElement | null>(null);
 const composingBody = ref(false);
+const autosavingChapter = ref(false);
+const autosaveStatus = ref<'idle'|'pending'|'saved'|'failed'|'conflict'>('idle');
+const chapterRecovery = ref<ChapterRecovery | null>(null);
+let autosaveTimer: ReturnType<typeof setTimeout> | null = null;
+let autosaveConflict = false;
+function cancelAutosaveTimer() {
+  if (autosaveTimer !== null) clearTimeout(autosaveTimer);
+  autosaveTimer = null;
+}
+function recoveryFromTab(nodeId: string): ChapterRecovery | null {
+  if (typeof sessionStorage === 'undefined') return null;
+  try { return parseChapterRecovery(sessionStorage.getItem(chapterRecoveryKey(nodeId)), nodeId); }
+  catch { return null; }
+}
+function clearChapterRecovery(nodeId: string) {
+  if (typeof sessionStorage === 'undefined') return;
+  try { sessionStorage.removeItem(chapterRecoveryKey(nodeId)); } catch { /* storage unavailable */ }
+  if (chapterRecovery.value?.nodeId === nodeId) chapterRecovery.value = null;
+}
+function persistChapterRecovery() {
+  const node = selected.value;
+  if (typeof sessionStorage === 'undefined' || !auth.value?.authenticated || node?.kind !== 'chapter') return;
+  if (!editorDirty.value) return;
+  const previous = recoveryFromTab(node.id);
+  const state: ChapterRecovery = {
+    version: 1, nodeId: node.id,
+    baseRevision: autosaveConflict && previous ? previous.baseRevision : node.revision,
+    savedAt: Date.now(), title: form.title,
+    pages: [...chapterPages.value], details: { ...form.details },
+  };
+  try { sessionStorage.setItem(chapterRecoveryKey(node.id), JSON.stringify(state)); }
+  catch { /* Server autosave still runs if tab storage is unavailable. */ }
+}
+function showRecoveryIfPresent() {
+  const node = selected.value;
+  chapterRecovery.value = node?.kind === 'chapter' && auth.value?.authenticated
+    ? recoveryFromTab(node.id) : null;
+  if (node?.kind === 'chapter' && chapterRecovery.value &&
+      chapterRecoveryMatches(chapterRecovery.value, {
+        title: node.draft.title, pages: pagesForChapter(node.draft), details: node.draft.details ?? {},
+      })) clearChapterRecovery(node.id);
+  autosaveConflict = false;
+  autosaveStatus.value = 'idle';
+}
+function restoreChapterRecovery() {
+  const recovery = chapterRecovery.value;
+  const node = selected.value;
+  if (!recovery || !node || node.kind !== 'chapter' || node.id !== recovery.nodeId) return;
+  form.title = recovery.title;
+  form.details = { ...recovery.details };
+  chapterPages.value = [...recovery.pages];
+  selectedPage.value = 0;
+  chapterRecovery.value = null;
+  // Never silently overwrite a newer server draft with recovered tab data.
+  if (recovery.baseRevision !== node.revision) {
+    autosaveConflict = true;
+    autosaveStatus.value = 'conflict';
+  } else scheduleChapterAutosave();
+}
+function scheduleChapterAutosave(delayMs = 1500) {
+  cancelAutosaveTimer();
+  if (autosaveConflict || busy.value || autosavingChapter.value || composingBody.value ||
+      !auth.value?.authenticated || selected.value?.kind !== 'chapter' || !editorDirty.value) return;
+  autosaveStatus.value = 'pending';
+  autosaveTimer = setTimeout(() => { autosaveTimer = null; void autosaveChapter(); }, delayMs);
+}
+async function autosaveChapter() {
+  const node = selected.value;
+  if (!node || node.kind !== 'chapter' || !editorDirty.value || autosavingChapter.value ||
+      busy.value || composingBody.value || autosaveConflict || !auth.value?.authenticated) return;
+  if (chapterPages.value.length > 1000 || chapterBodyLength.value > 100000) {
+    autosaveStatus.value = 'failed';
+    errorText.value = t('studioBodyTooLong');
+    return;
+  }
+  const nodeId = node.id;
+  const content = {
+    title: form.title, body: joinChapterPages(chapterPages.value),
+    pages: [...chapterPages.value], details: { ...form.details },
+  };
+  persistChapterRecovery();
+  autosavingChapter.value = true;
+  autosaveStatus.value = 'pending';
+  let success = false;
+  try {
+    await $fetch('/api/admin/nodes/' + nodeId, {
+      method: 'PATCH', body: { expectedRevision: node.revision, content },
+    });
+    // A successful PATCH without readback is not proof of the current revision.
+    if (!await load()) throw new Error('post-save-readback-failed');
+    success = true;
+    if (selected.value?.id === nodeId && !editorDirty.value) {
+      clearChapterRecovery(nodeId);
+      autosaveStatus.value = 'saved';
+    }
+  } catch (error: unknown) {
+    autosaveStatus.value = isAutosaveRevisionConflict(error) ? 'conflict' : 'failed';
+    if (autosaveStatus.value === 'conflict') autosaveConflict = true;
+    errorText.value = autosaveStatus.value === 'conflict'
+      ? t('studioAutosaveConflict') : t('studioAutosaveFailure');
+  } finally {
+    autosavingChapter.value = false;
+    if (success && selected.value?.id === nodeId && editorDirty.value) scheduleChapterAutosave();
+  }
+}
+function retryChapterAutosave() {
+  if (!autosaveConflict && autosaveStatus.value === 'failed') scheduleChapterAutosave(0);
+}
+function clearAllChapterRecoveries() {
+  if (typeof sessionStorage === 'undefined') return;
+  try {
+    const keys = Object.keys(sessionStorage).filter(key => key.startsWith(chapterRecoveryPrefix));
+    for (const key of keys) sessionStorage.removeItem(key);
+  } catch { /* storage unavailable */ }
+  chapterRecovery.value = null;
+}
+
 const chapterPages = ref<string[]>(['']);
 const selectedPage = ref(0);
 const selectedPageBody = computed<string>({
@@ -172,11 +290,14 @@ function restoreEditor() {
     ? pagesForChapter(selected.value.draft) : [''];
   selectedPage.value = 0;
   form.details = { ...(selected.value?.draft.details ?? {}) };
+  showRecoveryIfPresent();
 }
 function selectNode(nodeId: string) {
-  if (busy.value) return;
+  if (busy.value || autosavingChapter.value) return;
   if (selectedId.value === nodeId && !createOpen.value) return;
   if (!confirmDiscard()) return;
+  if (selected.value?.kind === 'chapter') clearChapterRecovery(selected.value.id);
+  cancelAutosaveTimer();
   createOpen.value = false;
   selectedId.value = nodeId;
   restoreEditor();
@@ -194,17 +315,27 @@ function beforeUnload(event: BeforeUnloadEvent) {
   event.preventDefault();
   event.returnValue = '';
 }
-onBeforeRouteLeave(() => confirmDiscard());
+onBeforeRouteLeave(() => {
+  if (!confirmDiscard()) return false;
+  cancelAutosaveTimer();
+  if (selected.value?.kind === 'chapter') clearChapterRecovery(selected.value.id);
+});
 // /studio/child is a nested route: its parent stays mounted, so the leave
 // guard alone does not protect unsaved editor input on child navigation.
 onBeforeRouteUpdate((to, from) => {
   if (from.path !== '/studio' || to.fullPath === from.fullPath) return;
   if (!confirmDiscard()) return false;
+  cancelAutosaveTimer();
+  if (selected.value?.kind === 'chapter') clearChapterRecovery(selected.value.id);
   createOpen.value = false;
   createTitle.value = '';
   restoreEditor();
 });
-onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload));
+onBeforeUnmount(() => {
+  cancelAutosaveTimer();
+  window.removeEventListener('beforeunload', beforeUnload);
+  window.removeEventListener('online', retryChapterAutosave);
+});
 
 const creationChoices = computed(() =>
   children[createParentId.value ? nodes.value.find(n => n.id === createParentId.value)?.kind || 'root' : 'root']
@@ -272,7 +403,20 @@ const ordered = computed(() => {
 });
 // Refreshing the current node after publication must preserve the editing buffer.
 // Loading a different item initializes that item's saved draft instead.
-watch(() => selected.value?.id, () => restoreEditor(), { immediate: true });
+watch(() => selected.value?.id, () => { cancelAutosaveTimer(); restoreEditor(); }, { immediate: true });
+// Watch the complete chapter form (including the page array), not just a dirty
+// boolean that remains true through successive edits.
+watch(() => JSON.stringify({ id: selectedId.value, title: form.title,
+  pages: chapterPages.value, details: form.details }), () => {
+  if (selected.value?.kind !== 'chapter' || !auth.value?.authenticated) return;
+  if (editorDirty.value) {
+    persistChapterRecovery();
+    scheduleChapterAutosave();
+  } else if (!autosavingChapter.value && !chapterRecovery.value) {
+    clearChapterRecovery(selected.value.id);
+  }
+}, { flush: 'post' });
+
 
 const scheduledLocal = ref('');
 watch(selected, node => {
@@ -297,6 +441,7 @@ onMounted(async () => {
   window.addEventListener('beforeunload', beforeUnload);
   if (auth.value?.authenticated) {
     await load();
+    window.addEventListener('online', retryChapterAutosave);
     const requested = useRoute().query.item;
     if (typeof requested === 'string' && nodes.value.some(node => node.id === requested)) {
       selectedId.value = requested;
@@ -305,16 +450,26 @@ onMounted(async () => {
 });
 async function reloadNodes() {
   if (!confirmDiscard()) return;
-  if (await load()) restoreEditor();
+  cancelAutosaveTimer();
+  if (await load()) {
+    if (selected.value?.kind === 'chapter') clearChapterRecovery(selected.value.id);
+    restoreEditor();
+  }
 }
 
 async function runChange(work: () => Promise<void>, okText:string, reloadAfter = true) {
-  if (busy.value) return;
+  if (busy.value || autosavingChapter.value) return;
+  cancelAutosaveTimer();
   busy.value = true; errorText.value=''; statusText.value='';
   try {
     await work();
     if (!reloadAfter || await load()) {
       statusText.value = okText;
+      if (selected.value?.kind === 'chapter' && !editorDirty.value) {
+        clearChapterRecovery(selected.value.id);
+        autosaveConflict = false;
+        autosaveStatus.value = 'saved';
+      }
     } else {
       errorText.value = t('studioPostUpdateRefreshError');
     }
@@ -323,10 +478,15 @@ async function runChange(work: () => Promise<void>, okText:string, reloadAfter =
     errorText.value = Array.isArray(info.data?.message)
       ? info.data.message.join(' / ')
       : info.data?.message || t('studioSaveError');
-  } finally { busy.value = false; }
+  } finally {
+    busy.value = false;
+    if (selected.value?.kind === 'chapter' && editorDirty.value) scheduleChapterAutosave();
+  }
 }
 function openCreate(parentId: string | null) {
-  if (busy.value || !confirmDiscard()) return;
+  if (busy.value || autosavingChapter.value || !confirmDiscard()) return;
+  if (selected.value?.kind === 'chapter') clearChapterRecovery(selected.value.id);
+  cancelAutosaveTimer();
   restoreEditor();
   createParentId.value = parentId;
   const parent = parentId ? byId.value.get(parentId) : null;
@@ -401,8 +561,14 @@ async function createItem() {
   }
 }
 async function saveDraft() {
-  const node = selected.value;
-  if (!node) return;
+  let node = selected.value;
+  if (!node || autosavingChapter.value) return;
+  if (node.kind === 'chapter' && autosaveConflict) {
+    if (!window.confirm(t('studioAutosaveConflictConfirm'))) return;
+    if (!await load()) return;
+    node = selected.value;
+    if (!node) return;
+  }
   if (node.kind === 'chapter' && (chapterPages.value.length > 1000 || chapterBodyLength.value > 100000)) {
     errorText.value = t('studioBodyTooLong');
     return;
@@ -448,6 +614,8 @@ async function logout() {
   if (!confirmDiscard()) return;
   await runChange(async () => {
     await $fetch('/api/auth/logout',{method:'POST',body:{}});
+    cancelAutosaveTimer();
+    clearAllChapterRecoveries();
     selectedId.value=null;
     nodes.value=[];
     await refreshAuth();
@@ -488,7 +656,7 @@ async function logout() {
           <aside class="studio-sidebar" :aria-label="t('studioAuthorLibrary')">
             <div class="section-header">
               <h2>{{ t('studioLibrary') }}</h2>
-              <button class="inline-action" type="button" :disabled="busy" @click="reloadNodes">{{ t('studioReload') }}</button>
+              <button class="inline-action" type="button" :disabled="busy || autosavingChapter" @click="reloadNodes">{{ t('studioReload') }}</button>
             </div>
             <div class="filter-row" role="group" :aria-label="t('studioMaterialType')">
               <button v-for="(f, key) in filters" :key="key" class="inline-action"
@@ -496,7 +664,7 @@ async function logout() {
             </div>
             <ul class="node-list">
               <li v-for="entry in ordered" :key="entry.node.id">
-                <button class="node-button" type="button" :disabled="busy" :aria-pressed="selectedId === entry.node.id"
+                <button class="node-button" type="button" :disabled="busy || autosavingChapter" :aria-pressed="selectedId === entry.node.id"
                   :style="{ paddingInlineStart: 10 + entry.depth * 13 + 'px' }"
                   @click="selectNode(entry.node.id)">
                   <small class="note">{{ kinds[entry.node.kind] }}</small>
@@ -505,9 +673,9 @@ async function logout() {
               </li>
             </ul>
             <p v-if="!nodes.length" class="note">{{ t('studioEmpty') }}</p>
-            <button class="primary" type="button" :disabled="busy" @click="openCreate(null)">{{ t('studioNewSeries') }}</button>
+            <button class="primary" type="button" :disabled="busy || autosavingChapter" @click="openCreate(null)">{{ t('studioNewSeries') }}</button>
             <button v-if="selected && children[selected.kind].length" class="inline-action" type="button"
-              :disabled="busy" @click="openCreate(selected.id)">{{ t('studioAddChild') }}</button>
+              :disabled="busy || autosavingChapter" @click="openCreate(selected.id)">{{ t('studioAddChild') }}</button>
           </aside>
           <section class="studio-editor" :aria-label="t('studioEditorForm')">
             <form v-if="createOpen" class="create-form" @submit.prevent="createItem">
@@ -543,6 +711,17 @@ async function logout() {
             <template v-else-if="selected">
               <h2>{{ kinds[selected.kind] }}：{{ selected.draft.title }}</h2>
               <p class="note">{{ t('studioDraftRevision') }} {{ selected.revision }} ／ {{ publicationStatus }}{{ selected.published ? '（' + t('studioPublishedSnapshot') + '）' : '' }}</p>
+              <div v-if="selected.kind === 'chapter'" class="chapter-autosave" role="status">
+                <p v-if="chapterRecovery">{{ t('studioRecoveryAvailable') }}
+                  <button type="button" class="inline-action" @click="restoreChapterRecovery">{{ t('studioRecoverDraft') }}</button>
+                </p>
+                <p v-if="autosaveStatus === 'pending'">{{ t('studioAutosavePending') }}</p>
+                <p v-else-if="autosaveStatus === 'saved'">{{ t('studioAutosaveSaved') }}</p>
+                <p v-else-if="autosaveStatus === 'failed'" class="error-text">{{ t('studioAutosaveFailure') }}
+                  <button type="button" class="inline-action" @click="retryChapterAutosave">{{ t('studioAutosaveRetry') }}</button>
+                </p>
+                <p v-else-if="autosaveStatus === 'conflict'" class="error-text" role="alert">{{ t('studioAutosaveConflict') }}</p>
+              </div>
               <form @submit.prevent="saveDraft">
                 <label>{{ t('studioNameHeading') }}<input v-model="form.title" maxlength="150" required /></label>
                 <ul v-if="selected.kind === 'word' && spellingWarnings.length" class="spelling-warnings" :aria-label="t('studioSpellingWarnings')">
@@ -565,7 +744,7 @@ async function logout() {
                 </div>
                 <label v-if="selected.kind === 'chapter'">{{ t('studioBodyLabel') }}
                   <textarea ref="bodyTextarea" v-model="selectedPageBody" rows="14" maxlength="100000"
-                    @compositionstart="composingBody = true" @compositionend="composingBody = false"
+                    @compositionstart="composingBody = true" @compositionend="composingBody = false; scheduleChapterAutosave()"
                     :placeholder="t('studioMarkupPlaceholder')"></textarea>
                 </label>
                 <label v-else>{{ t('studioBodyLabel') }}
@@ -588,14 +767,14 @@ async function logout() {
                 <label v-if="selected.kind === 'event'">{{ t('studioRelativeYear') }}
                   <input v-model="form.details.year" maxlength="10000" />
                 </label>
-                <div class="action-row"><button class="primary" type="submit" :disabled="busy">{{ t('studioSaveDraft') }}</button></div>
+                <div class="action-row"><button class="primary" type="submit" :disabled="busy || autosavingChapter">{{ t('studioSaveDraft') }}</button></div>
               </form>
               <hr />
               <h3>{{ t('studioPublicationSettings') }}</h3>
               <p class="note">{{ t('studioPublicationNote') }}</p>
               <div class="action-row">
-                <button class="primary" type="button" :disabled="busy" @click="publish">{{ t('studioApplyPublishedDraft') }}</button>
-                <button class="inline-action" type="button" :disabled="busy || !selected.published"
+                <button class="primary" type="button" :disabled="busy || autosavingChapter" @click="publish">{{ t('studioApplyPublishedDraft') }}</button>
+                <button class="inline-action" type="button" :disabled="busy || autosavingChapter || !selected.published"
                   @click="changeVisibility(!selected.isPublic, selected.publicSince)">
                   {{ selected.isPublic ? t('studioHide') : t('studioShow') }}
                 </button>
@@ -603,7 +782,7 @@ async function logout() {
               <label>{{ t('studioPublicStartDate') }}
                 <input v-model="scheduledLocal" type="datetime-local" />
               </label>
-              <button class="inline-action" type="button" :disabled="busy || !selected.published" @click="schedule">{{ t('studioSetDate') }}</button>
+              <button class="inline-action" type="button" :disabled="busy || autosavingChapter || !selected.published" @click="schedule">{{ t('studioSetDate') }}</button>
               <hr />
               <h3>{{ t('studioDraftPreview') }}</h3>
               <RichContent :source="form.body" :pages="selected.kind === 'chapter' ? chapterPages : undefined" />
