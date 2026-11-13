@@ -18,11 +18,33 @@ test('SEARCH-01/02/03/04: search domain options and result kinds react instantly
     const domain=selects.nth(1);
     const search=page.locator('.search-filters input[type="search"]');
     await domain.waitFor();
+    // Prove the seeded reader-side tree is available before inspecting UI state.
+    const treeHttp = await context.request.get(base+'/api/public/series/'+fixture.seriesA+'/tree');
+    assert.equal(treeHttp.status(),200);
+    assert.ok((await treeHttp.json()).some(node=>node.content.title===fixture.prefix+'-book-A'),
+      'test fixture volume must be visible to anonymous readers');
+    // The header is SSR-rendered, so explicitly await client hydration by
+    // making a reactive language change before controlling the search fields.
+    await page.getByRole('button',{name:'英語に切り替え'}).click();
+    await page.getByRole('button',{name:'Switch to Japanese'}).waitFor();
+    await page.getByRole('button',{name:'Switch to Japanese'}).click();
     await page.getByRole('button',{name:'英語に切り替え'}).waitFor();
+    // SSR may already display the query-series selection before hydration.
+    // Force a client-side series change and wait for the reactive tree fetch
+    // before evaluating the search result; do not rely on SSR's initial value.
+    const seriesControl = selects.first();
+    await seriesControl.selectOption('');
+    await seriesControl.selectOption(fixture.seriesA);
+    assert.equal(await seriesControl.inputValue(),fixture.seriesA);
     await domain.selectOption('stories');
     await search.fill(fixture.prefix+'-book-A');
-    const result=page.locator('.search-result').first();
-    await result.locator('a').getByText(fixture.prefix+'-book-A').waitFor();
+    // Equal publication timestamps are ordered by random UUID. Select the
+    // expected item by its actual title, not nondeterministic list position.
+    const result=page.locator('.search-result').filter({
+      has:page.getByRole('link',{name:fixture.prefix+'-book-A',exact:true}),
+    });
+    await result.waitFor();
+    assert.equal(await result.count(),1);
     const originalTitle=await result.locator('a').innerText();
     const originalHref=await result.locator('a').getAttribute('href');
     const optionsJa=await domain.locator('option').allTextContents();

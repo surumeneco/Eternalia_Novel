@@ -453,9 +453,25 @@ onMounted(async () => {
   if (auth.value?.authenticated) {
     await load();
     window.addEventListener('online', retryChapterAutosave);
-    const requested = useRoute().query.item;
-    if (typeof requested === 'string' && nodes.value.some(node => node.id === requested)) {
-      selectedId.value = requested;
+    const requestedCreate = studioRoute.query.create;
+    if (requestedCreate !== undefined) {
+      const queryParent = studioRoute.query.parent;
+      const parentId = queryParent === undefined ? null :
+        typeof queryParent === 'string' ? queryParent : undefined;
+      const parent = parentId ? byId.value.get(parentId) : null;
+      const parentKind = parentId === null ? 'root' : parent?.kind;
+      if (typeof requestedCreate === 'string' && parentId !== undefined && parentKind &&
+          children[parentKind].includes(requestedCreate as ReaderKind)) {
+        openCreate(parentId);
+        createKind.value = requestedCreate as ReaderKind;
+      } else {
+        errorText.value = t('studioInvalidCreateLink');
+      }
+    } else {
+      const requested = studioRoute.query.item;
+      if (typeof requested === 'string' && nodes.value.some(node => node.id === requested)) {
+        selectedId.value = requested;
+      }
     }
   }
 });
@@ -512,6 +528,7 @@ async function createItem() {
     definition: createWordDefinition.value.trim(),
   };
   const duplicateOutcome: { wordId: string | null } = { wordId: null };
+  let createdId = '';
   await runChange(async () => {
     let response: { id: string };
     try {
@@ -542,7 +559,12 @@ async function createItem() {
     }
     createOpen.value = false;
     selectedId.value = response.id;
+    createdId = response.id;
   }, t('studioCreated'));
+  if (createdId && studioRoute.query.create) {
+    await nextTick();
+    await navigateTo({path:'/studio',query:{item:createdId}}, {replace:true});
+  }
   if (duplicateOutcome.wordId) {
     const existing = nodes.value.find(node => node.id === duplicateOutcome.wordId &&
       node.kind === 'word' && node.parentId === createParentId.value);

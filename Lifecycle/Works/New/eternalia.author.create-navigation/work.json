@@ -1,0 +1,85 @@
+{
+  "schema": "cat-work/v1",
+  "id": "eternalia.author.create-navigation",
+  "entry": "issue",
+  "flow": "issue-work",
+  "mode": "shadow",
+  "work_kind": "implementation",
+  "issue_ref": "https://github.com/surumeneco/Eternalia_Novel/issues/1",
+  "project_entry_ref": "https://drive.google.com/file/d/1clwfVJ3e_t1_QKFfOWxxRIzE9WMFvTiM/view",
+  "normative": [
+    {
+      "uri": "https://drive.google.com/file/d/1LqX-Noytb_oWymIrpO01eO5PvThGlVGx/view"
+    },
+    {
+      "uri": "https://drive.google.com/file/d/14no6MWmkFuyWYPVS6QdcRmbLbrUBbOpc/view"
+    }
+  ],
+  "evidence": [
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/commit/cfee2034b9978cc4e4582f75a79444df2809a863"
+    }
+  ],
+  "repositories": [
+    {
+      "name": "eternalia",
+      "path": "../../../..",
+      "branch_pattern": "feature/*",
+      "allowed_paths": [
+        "Lifecycle/Works/New/eternalia.author.create-navigation/work.json",
+        "docs/cat/drafts/author-create-navigation.md",
+        "apps/web/app/components/AuthorCreateLink.vue",
+        "apps/web/app/pages/index.vue",
+        "apps/web/app/components/PublicCollectionPage.vue",
+        "apps/web/app/pages/studio.vue",
+        "apps/web/app/composables/useUiLocale.ts",
+        "apps/web/app/composables/ui-messages-en.ts",
+        "apps/web/browser-acceptance/author-create-navigation.test.mjs",
+        "scripts/check-http-acceptance.mjs",
+        "apps/web/browser-acceptance/search-locale-live.test.mjs"
+      ],
+      "production_paths": [
+        "apps/web/app/components/AuthorCreateLink.vue",
+        "apps/web/app/pages/index.vue",
+        "apps/web/app/components/PublicCollectionPage.vue",
+        "apps/web/app/pages/studio.vue",
+        "apps/web/app/composables/useUiLocale.ts",
+        "apps/web/app/composables/ui-messages-en.ts"
+      ],
+      "test_paths": [
+        "apps/web/browser-acceptance/author-create-navigation.test.mjs",
+        "apps/web/browser-acceptance/search-locale-live.test.mjs"
+      ]
+    }
+  ],
+  "scope": {
+    "process_ids": [
+      "eternalia.author"
+    ],
+    "changed_ids": [
+      "CREATE-01",
+      "CREATE-02",
+      "CREATE-03",
+      "CREATE-04",
+      "CREATE-05"
+    ],
+    "preserved_ids": [
+      "author.server-side-access-control",
+      "author.draft-publication-separation"
+    ]
+  },
+  "specification": {
+    "status": "draft",
+    "decision_ref": null,
+    "artifact_refs": [
+      "docs/cat/drafts/author-create-navigation.md"
+    ]
+  },
+  "technologies": [
+    "typescript",
+    "vue",
+    "playwright"
+  ],
+  "checks": [],
+  "depends_on": []
+}
