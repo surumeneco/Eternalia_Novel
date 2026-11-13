@@ -38,7 +38,7 @@ test('ERROR-01/02/04: stale revision in Studio is English or Japanese without lo
     await page.getByRole('button',{name:'Switch to Japanese'}).click();
     await page.getByRole('button',{name:'英語に切り替え'}).waitFor();
     await page.getByRole('button',{name:'下書きを保存'}).click();
-    await page.getByRole('alert').getByText('変更が競合しています。',{exact:false}).waitFor();
+    await page.getByRole('alert').getByText('他の編集により更新されています。',{exact:false}).waitFor();
     assert.equal(await page.getByRole('textbox',{name:'名称・見出し'}).inputValue(),title+'-unsaved-local');
     const latest=await(await context.request.get(base+'/api/admin/nodes')).json();
     const node=latest.find(n=>n.id===fixture.tip);
