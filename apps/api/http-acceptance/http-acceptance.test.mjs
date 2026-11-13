@@ -231,6 +231,34 @@ test('authenticated non-author session cannot mutate author resources', async ()
     'denied publication must not change the anonymous snapshot');
 });
 
+test('SSR-CACHE-01/02/03: HTML reader and author routes are no-store, private SSR cannot be cached', async () => {
+  const publicPages = [
+    '/',
+    '/stories/' + fixture.seriesA,
+    '/search?series=' + fixture.seriesA,
+    '/read/' + fixture.chapter,
+    '/items/' + fixture.tip,
+    '/studio',
+  ];
+  for (const path of publicPages) {
+    const result = await get(path);
+    assert.equal(result.status, 200, 'SSR page ' + path);
+    const control = result.headers.get('cache-control') ?? '';
+    assert.match(control, /(?:^|[,\\s])no-store(?:[,\\s]|$)/i, 'no-store required on ' + path);
+    assert.match(control, /(?:^|[,\\s])private(?:[,\\s]|$)/i, 'private required on ' + path);
+  }
+  const hidden = await get('/read/' + fixture.scheduled);
+  assert.match(hidden.headers.get('cache-control') ?? '', /no-store/i);
+  assert.ok(!hidden.body.includes(fixture.prefix + '-scheduled-secret'),
+    'SSR cannot expose scheduled chapter name even in an error page');
+  for (const origin of [base, api]) {
+    const response = await get('/api/public/series', origin);
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get('cache-control') ?? '', /no-store/i,
+      'existing API cache protection must hold at ' + origin);
+  }
+});
+
 test('real API returns no-store responses and unauthenticated session', async () => {
   const response = await get('/api/public/series', api);
   assert.equal(response.status, 200);
