@@ -21,11 +21,12 @@ type StorageRow = {
   source_draft_revision: number | null;
   published_parent_id: string | null;
   published_at: Date | null;
+  deleted_at: Date | null;
 };
 
 const selectNodes = `
   SELECT n.id, n.kind, n.parent_id, n.sort_order, n.draft_content,
-    n.draft_revision, n.is_public, n.public_since, n.updated_at,
+    n.draft_revision, n.is_public, n.public_since, n.updated_at, n.deleted_at,
     p.snapshot, p.source_draft_revision, p.published_at,
     p.parent_id AS published_parent_id
   FROM content_nodes n
@@ -51,6 +52,7 @@ function toNode(row: StorageRow): NovelNode {
     isPublic: row.is_public,
     publicSince: row.public_since === null ? null : row.public_since.getTime(),
     updatedAt: row.updated_at.getTime(),
+    deletedAt: row.deleted_at === null ? null : row.deleted_at.getTime(),
   };
 }
 
@@ -91,18 +93,20 @@ export class PostgresLibraryService implements OnModuleDestroy {
         await client.query(`
           INSERT INTO content_nodes (
             id,kind,parent_id,sort_order,draft_content,draft_revision,
-            is_public,public_since,updated_at
-          ) VALUES ($1,$2,$3,$4,$5::jsonb,$6,$7,$8,$9)
+            is_public,public_since,updated_at,deleted_at
+          ) VALUES ($1,$2,$3,$4,$5::jsonb,$6,$7,$8,$9,$10)
           ON CONFLICT (id) DO UPDATE SET
             kind=EXCLUDED.kind,parent_id=EXCLUDED.parent_id,
             sort_order=EXCLUDED.sort_order,draft_content=EXCLUDED.draft_content,
             draft_revision=EXCLUDED.draft_revision,is_public=EXCLUDED.is_public,
-            public_since=EXCLUDED.public_since,updated_at=EXCLUDED.updated_at
+            public_since=EXCLUDED.public_since,updated_at=EXCLUDED.updated_at,
+            deleted_at=EXCLUDED.deleted_at
         `, [
           node.id, node.kind, node.parentId, node.order, JSON.stringify(node.draft),
           node.revision, node.isPublic,
           node.publicSince === null ? null : new Date(node.publicSince),
           new Date(node.updatedAt),
+          node.deletedAt == null ? null : new Date(node.deletedAt),
         ]);
         if (node.published) {
           const snapshot = node.published;
