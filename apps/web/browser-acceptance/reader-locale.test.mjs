@@ -19,6 +19,7 @@ test('READER-01/02/03: public series and reader areas localize immediately witho
    await page.getByRole('heading',{name:title}).waitFor();
    assert.equal(await page.locator('main .series-areas a[href="/stories/'+fixture.seriesA+'"]').innerText(),'ストーリーの目次');
    await page.getByRole('button',{name:'英語に切り替え'}).click();
+   await page.getByRole('link',{name:'Story table of contents'}).waitFor();
    assert.equal(await page.locator('main .series-areas a[href="/stories/'+fixture.seriesA+'"]').innerText(),'Story table of contents');
    assert.equal(await page.locator('.reader-list small').first().innerText(),'Arc');
    assert.ok((await page.locator('main').innerText()).includes(title),'author title must remain identical');
@@ -43,10 +44,10 @@ test('READER-01/02/03: public series and reader areas localize immediately witho
    const chapterTitle=fixture.prefix+'-chapter-A';
    await page.getByRole('heading',{name:chapterTitle}).waitFor();
    assert.ok((await page.locator('main').innerText()).includes(fixture.prefix+'-published-body'));
-   assert.ok((await page.locator('main').innerText()).includes('Back to contents'));
+   await page.getByRole('link',{name:'Back to contents'}).waitFor();
 
    await page.getByRole('button',{name:'Switch to Japanese'}).click();
-   assert.ok((await page.locator('main').innerText()).includes('目次へ戻る'));
+   await page.getByRole('link',{name:'目次へ戻る'}).waitFor();
    assert.ok((await page.locator('main').innerText()).includes(chapterTitle));
    await page.goto(base+'/dictionaries/'+fixture.seriesA);
    await page.getByLabel('言語',{exact:true}).selectOption(fixture.language);
