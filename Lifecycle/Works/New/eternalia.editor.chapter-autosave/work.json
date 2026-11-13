@@ -1,0 +1,75 @@
+{
+  "schema": "cat-work/v1",
+  "id": "eternalia.editor.chapter-autosave",
+  "entry": "issue",
+  "flow": "issue-work",
+  "mode": "shadow",
+  "work_kind": "implementation",
+  "issue_ref": "https://github.com/surumeneco/Eternalia_Novel/issues/41",
+  "project_entry_ref": "https://drive.google.com/file/d/1clwfVJ3e_t1_QKFfOWxxRIzE9WMFvTiM/view",
+  "normative": [
+    {
+      "uri": "https://drive.google.com/file/d/1LqX-Noytb_oWymIrpO01eO5PvThGlVGx/view"
+    }
+  ],
+  "evidence": [
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/commit/3bd41d4521256120dffb978da9732093803593f3"
+    }
+  ],
+  "repositories": [
+    {
+      "name": "eternalia",
+      "path": "../../../..",
+      "branch_pattern": "feature/*",
+      "allowed_paths": [
+        "Lifecycle/Works/New/eternalia.editor.chapter-autosave/work.json",
+        "docs/cat/drafts/chapter-autosave-recovery.md",
+        "apps/web/app/pages/studio.vue",
+        "apps/web/app/composables/useUiLocale.ts",
+        "apps/web/app/utils/chapter-autosave.ts",
+        "apps/web/tests/chapter-autosave.test.mjs",
+        "apps/web/browser-acceptance/author-chapter-autosave.test.mjs",
+        "scripts/check-http-acceptance.mjs"
+      ],
+      "production_paths": [
+        "apps/web/app/pages/studio.vue",
+        "apps/web/app/utils/chapter-autosave.ts",
+        "apps/web/app/composables/useUiLocale.ts",
+        "scripts/check-http-acceptance.mjs"
+      ],
+      "test_paths": [
+        "apps/web/tests/chapter-autosave.test.mjs",
+        "apps/web/browser-acceptance/author-chapter-autosave.test.mjs"
+      ]
+    }
+  ],
+  "scope": {
+    "process_ids": [
+      "eternalia.editor"
+    ],
+    "changed_ids": [
+      "editor.chapter.autosave",
+      "editor.chapter.recovery"
+    ],
+    "preserved_ids": [
+      "editor.chapter.pages",
+      "publication.draft-snapshot-separation",
+      "auth.author-only"
+    ]
+  },
+  "specification": {
+    "status": "draft",
+    "decision_ref": null,
+    "artifact_refs": [
+      "docs/cat/drafts/chapter-autosave-recovery.md"
+    ]
+  },
+  "technologies": [
+    "TypeScript",
+    "Vue",
+    "Playwright"
+  ],
+  "checks": [],
+  "depends_on": []
+}
