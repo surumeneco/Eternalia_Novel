@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { localizeApiError } from '~/utils/api-error-localization';
+import { parseJstLocalDateTime, formatJstLocalDateTime, formatJstDisplay } from '~/utils/jst-publication-time';
 import type { AuthorNode } from '~/types/author';
 import type { ReaderKind } from '~/types/reader';
 import { canReadPublished } from '@eternalia/contracts';
@@ -16,10 +17,6 @@ const section = ref('all');
 const statusFilter = ref('all');
 const search = ref('');
 const scheduled = reactive<Record<string, string>>({});
-function localDateTime(ms: number): string {
-  const date = new Date(ms);
-  return new Date(ms - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
-}
 
 const types: Record<ReaderKind, string> = {
   series: t('studioKindSeries'), volume: t('studioKindVolume'), part: t('studioKindPart'), chapter: t('chapter'),
@@ -97,7 +94,7 @@ async function load(): Promise<boolean> {
   try {
     nodes.value = await $fetch<AuthorNode[]>('/api/admin/nodes');
     for (const node of nodes.value) {
-      scheduled[node.id] = node.publicSince === null ? '' : localDateTime(node.publicSince);
+      scheduled[node.id] = node.publicSince === null ? '' : (formatJstLocalDateTime(node.publicSince) ?? '');
     }
     return true;
   } catch {
@@ -116,8 +113,8 @@ async function saveSchedule(node: AuthorNode) {
   const input = scheduled[node.id];
   // Empty means clear the future schedule. The domain visibility contract
   // normalizes null to the current time for an already-published public item.
-  const time = input ? new Date(input).getTime() : null;
-  if (time !== null && (!Number.isSafeInteger(time) || time < 0)) {
+  const time = input ? parseJstLocalDateTime(input) : null;
+  if (input && time === null) {
     errorText.value = t('pubDateRequired');
     return;
   }
@@ -226,7 +223,7 @@ async function action(node: AuthorNode, kind: 'publish' | 'visibility') {
                 <p class="note publication-path">{{ pathTitle(node) }}</p>
                 <p class="note">
                   {{ t('pubSelfLabel') }}{{ node.isPublic ? t('pubPublic') : t('pubPrivate') }} ／ {{ t('pubSnapshotLabel') }}{{ node.published ? t('pubYes') : t('pubNo') }}
-                  ／ {{ t('pubDateLabel') }}{{ node.publicSince === null ? t('pubUnset') : new Date(node.publicSince).toLocaleString('ja-JP') }}
+                  ／ {{ t('pubDateLabel') }}{{ node.publicSince === null ? t('pubUnset') : formatJstDisplay(node.publicSince, language) }}
                 </p>
               </div>
               <div class="publication-actions">
@@ -236,7 +233,7 @@ async function action(node: AuthorNode, kind: 'publish' | 'visibility') {
                 <button type="button" class="inline-action" :disabled="!!busyId" @click="action(node, 'visibility')">
                   {{ node.isPublic ? t('studioHide') : t('pubMakePublic') }}
                 </button>
-                <label class="schedule-field">{{ t('studioPublicStartDate') }}
+                <label class="schedule-field">{{ t('studioPublicStartDate') }} — {{ t('pubJstZoneNote') }}
                   <input v-model="scheduled[node.id]" type="datetime-local" :disabled="!!busyId || !node.published" />
                 </label>
                 <button type="button" class="inline-action" :disabled="!!busyId || !node.published" @click="saveSchedule(node)">
