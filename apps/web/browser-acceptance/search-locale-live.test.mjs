@@ -1,0 +1,51 @@
+/** CM-08/AC-59/75: public search locale updates without losing filters or user-authored content. */
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { chromium } from 'playwright';
+
+const fixture=JSON.parse(await readFile(process.env.HTTP_FIXTURE_FILE,'utf8'));
+const base=process.env.HTTP_BASE_URL;
+test('SEARCH-01/02/03/04: search domain options and result kinds react instantly across ja/en',
+ {timeout:90_000},async()=>{
+  assert.ok(base?.startsWith('http://127.0.0.1:'));
+  const browser=await chromium.launch({headless:true});
+  try{
+    const context=await browser.newContext({viewport:{width:390,height:844}});
+    const page=await context.newPage();
+    await page.goto(base+'/search?series='+fixture.seriesA);
+    const selects=page.locator('.search-filters select');
+    const domain=selects.nth(1);
+    const search=page.locator('.search-filters input[type="search"]');
+    await domain.waitFor();
+    await page.getByRole('button',{name:'英語に切り替え'}).waitFor();
+    await domain.selectOption('stories');
+    await search.fill(fixture.prefix+'-book-A');
+    const result=page.locator('.search-result').first();
+    await result.locator('a').getByText(fixture.prefix+'-book-A').waitFor();
+    const originalTitle=await result.locator('a').innerText();
+    const originalHref=await result.locator('a').getAttribute('href');
+    const optionsJa=await domain.locator('option').allTextContents();
+    assert.deepEqual(optionsJa.map(x=>x.trim()),['すべて','ストーリー','設定集','辞書','年表']);
+    assert.match(await result.locator('span.note').innerText(),/編/);
+    await page.getByRole('button',{name:'英語に切り替え'}).click();
+    await page.getByRole('button',{name:'Switch to Japanese'}).waitFor();
+    await domain.locator('option[value="stories"]').getByText('Stories').waitFor();
+    assert.deepEqual((await domain.locator('option').allTextContents()).map(x=>x.trim()),
+      ['All','Stories','Worldbuilding','Dictionary','Timeline']);
+    await result.locator('span.note').getByText('Arc',{exact:false}).waitFor();
+    assert.equal(await domain.inputValue(),'stories');
+    assert.equal(await search.inputValue(),fixture.prefix+'-book-A');
+    assert.equal(await result.locator('a').innerText(),originalTitle);
+    assert.equal(await result.locator('a').getAttribute('href'),originalHref);
+    assert.ok(!(await page.locator('main').innerText()).includes(fixture.prefix+'-private-tip'),
+      'published search must never include private content');
+    await page.getByRole('button',{name:'Switch to Japanese'}).click();
+    await page.getByRole('button',{name:'英語に切り替え'}).waitFor();
+    await domain.locator('option[value="stories"]').getByText('ストーリー').waitFor();
+    assert.match(await result.locator('span.note').innerText(),/編/);
+    assert.equal(await search.inputValue(),fixture.prefix+'-book-A');
+    assert.equal(await result.locator('a').innerText(),originalTitle);
+    await context.close();
+  }finally{await browser.close()}
+});
