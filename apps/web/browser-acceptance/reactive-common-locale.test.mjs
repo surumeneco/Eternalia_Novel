@@ -18,7 +18,7 @@ test('LABEL-01/02/03/04: writer filter/kind labels and public fixed dates follow
     const title=fixture.prefix+'-visible-setting';
     await page.goto(base+'/studio?item='+fixture.tip);
     await page.getByRole('heading',{name:'設定：'+title}).waitFor();
-    await page.getByRole('button',{name:'設定集'}).waitFor();
+    await page.getByRole('group',{name:'資料種別'}).getByRole('button',{name:'設定',exact:true}).waitFor();
     const input=page.getByRole('textbox',{name:'名称・見出し'});
     await input.fill(title+'-local-unsaved');
     await page.getByRole('button',{name:'英語に切り替え'}).click();
