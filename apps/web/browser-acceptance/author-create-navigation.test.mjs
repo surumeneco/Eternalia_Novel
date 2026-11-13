@@ -28,7 +28,7 @@ test('CM-09: author-only home and area creation paths use validated existing Stu
     assert.equal(await anon.getByRole('link',{name:'新規シリーズ'}).count(),0);
     assert.equal(await anon.getByRole('link',{name:types.stories.label}).count(),0);
     await anon.goto(base+'/studio?create=series');
-    await anon.getByText('作者としてログインしてください。',{exact:false}).waitFor();
+    await anon.getByText('編集するには、許可された作者のDiscordアカウントで認証してください。',{exact:false}).waitFor();
     assert.equal(await anon.locator('form.create-form').count(),0);
     await anonymous.close();
 
@@ -62,7 +62,8 @@ test('CM-09: author-only home and area creation paths use validated existing Stu
       await page.goto(base+'/'+area);
       await page.getByRole('heading',{name:area==='stories'?'ストーリー':
         area==='tips'?'設定集':area==='dictionaries'?'辞書':'年表'}).waitFor();
-      const link=page.getByRole('link',{name:expected.label}).first();
+      const link=page.locator('.reader-list li').filter({has:page.getByRole('link',{name:fixture.prefix+'-world-A'})})
+        .getByRole('link',{name:expected.label});
       await link.waitFor();
       const href=await link.getAttribute('href');
       const params=new URL(href,base).searchParams;
@@ -92,7 +93,7 @@ test('CM-09: author-only home and area creation paths use validated existing Stu
     await page.getByRole('link',{name:types.stories.label}).first().waitFor();
     await page.getByRole('button',{name:'英語に切り替え'}).click();
     await page.getByRole('link',{name:'Create a new arc in this series'}).first().waitFor();
-    await page.getByRole('link',{name:newSeries}).waitFor();
+    await page.getByRole('link',{name:fixture.prefix+'-world-A'}).waitFor();
     await context.close();
   }finally{await browser.close()}
 });
