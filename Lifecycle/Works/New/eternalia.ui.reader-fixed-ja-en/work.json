@@ -1,0 +1,106 @@
+{
+  "schema": "cat-work/v1",
+  "id": "eternalia.ui.reader-fixed-ja-en",
+  "entry": "issue",
+  "flow": "issue-work",
+  "mode": "shadow",
+  "work_kind": "implementation",
+  "issue_ref": "https://github.com/surumeneco/Eternalia_Novel/issues/1",
+  "project_entry_ref": "https://drive.google.com/file/d/1clwfVJ3e_t1_QKFfOWxxRIzE9WMFvTiM/view",
+  "normative": [
+    {
+      "uri": "https://drive.google.com/file/d/1LqX-Noytb_oWymIrpO01eO5PvThGlVGx/view"
+    },
+    {
+      "uri": "https://drive.google.com/file/d/14no6MWmkFuyWYPVS6QdcRmbLbrUBbOpc/view"
+    }
+  ],
+  "evidence": [
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/commit/80cd405ea6229bce935f7ee915f8fbd3cdf9555b"
+    }
+  ],
+  "repositories": [
+    {
+      "name": "eternalia",
+      "path": "../../../..",
+      "branch_pattern": "feature/*",
+      "allowed_paths": [
+        "Lifecycle/Works/New/eternalia.ui.reader-fixed-ja-en/work.json",
+        "docs/cat/drafts/reader-fixed-ui-ja-en.md",
+        "apps/web/app/composables/useUiLocale.ts",
+        "apps/web/app/composables/ui-messages-en.ts",
+        "apps/web/app/pages/series/[id].vue",
+        "apps/web/app/pages/items/[id].vue",
+        "apps/web/app/pages/read/[id].vue",
+        "apps/web/app/pages/stories/[id].vue",
+        "apps/web/app/pages/timeline/[id].vue",
+        "apps/web/app/pages/dictionaries/[id].vue",
+        "apps/web/app/pages/tips/[id].vue",
+        "apps/web/app/components/ReadingSkeleton.vue",
+        "apps/web/app/components/TipLinksReader.vue",
+        "apps/web/app/components/LanguageStructureReader.vue",
+        "apps/web/app/components/WordMeaningsReader.vue",
+        "apps/web/app/components/AuthorEditLink.vue",
+        "apps/web/app/components/AuthorReferencePanel.vue",
+        "apps/web/app/pages/index.vue",
+        "apps/web/app/tests/reader-ui-locale.test.mjs",
+        "apps/web/tests/reader-ui-locale.test.mjs",
+        "apps/web/browser-acceptance/reader-locale.test.mjs",
+        "scripts/check-http-acceptance.mjs"
+      ],
+      "production_paths": [
+        "apps/web/app/composables/useUiLocale.ts",
+        "apps/web/app/composables/ui-messages-en.ts",
+        "apps/web/app/pages/series/[id].vue",
+        "apps/web/app/pages/items/[id].vue",
+        "apps/web/app/pages/read/[id].vue",
+        "apps/web/app/pages/stories/[id].vue",
+        "apps/web/app/pages/timeline/[id].vue",
+        "apps/web/app/pages/dictionaries/[id].vue",
+        "apps/web/app/pages/tips/[id].vue",
+        "apps/web/app/components/ReadingSkeleton.vue",
+        "apps/web/app/components/TipLinksReader.vue",
+        "apps/web/app/components/LanguageStructureReader.vue",
+        "apps/web/app/components/WordMeaningsReader.vue",
+        "apps/web/app/components/AuthorEditLink.vue",
+        "apps/web/app/components/AuthorReferencePanel.vue",
+        "apps/web/app/pages/index.vue"
+      ],
+      "test_paths": [
+        "apps/web/tests/reader-ui-locale.test.mjs",
+        "apps/web/browser-acceptance/reader-locale.test.mjs"
+      ]
+    }
+  ],
+  "scope": {
+    "process_ids": [
+      "eternalia.ui"
+    ],
+    "changed_ids": [
+      "READER-01",
+      "READER-02",
+      "READER-03",
+      "READER-04",
+      "READER-05"
+    ],
+    "preserved_ids": [
+      "content.no-auto-translate",
+      "reader.publication-visibility"
+    ]
+  },
+  "specification": {
+    "status": "draft",
+    "decision_ref": null,
+    "artifact_refs": [
+      "docs/cat/drafts/reader-fixed-ui-ja-en.md"
+    ]
+  },
+  "technologies": [
+    "typescript",
+    "vue",
+    "playwright"
+  ],
+  "checks": [],
+  "depends_on": []
+}
