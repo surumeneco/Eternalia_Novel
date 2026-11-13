@@ -19,6 +19,13 @@ test('SEARCH-01/02/03/04: search domain options and result kinds react instantly
     const search=page.locator('.search-filters input[type="search"]');
     await domain.waitFor();
     await page.getByRole('button',{name:'英語に切り替え'}).waitFor();
+    // SSR may already display the query-series selection before hydration.
+    // Force a client-side series change and wait for the reactive tree fetch
+    // before evaluating the search result; do not rely on SSR's initial value.
+    const seriesControl = selects.first();
+    await seriesControl.selectOption('');
+    await seriesControl.selectOption(fixture.seriesA);
+    assert.equal(await seriesControl.inputValue(),fixture.seriesA);
     await domain.selectOption('stories');
     await search.fill(fixture.prefix+'-book-A');
     const result=page.locator('.search-result').first();
