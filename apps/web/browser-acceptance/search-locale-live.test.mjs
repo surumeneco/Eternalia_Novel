@@ -18,6 +18,16 @@ test('SEARCH-01/02/03/04: search domain options and result kinds react instantly
     const domain=selects.nth(1);
     const search=page.locator('.search-filters input[type="search"]');
     await domain.waitFor();
+    // Prove the seeded reader-side tree is available before inspecting UI state.
+    const treeHttp = await context.request.get(base+'/api/public/series/'+fixture.seriesA+'/tree');
+    assert.equal(treeHttp.status(),200);
+    assert.ok((await treeHttp.json()).some(node=>node.content.title===fixture.prefix+'-book-A'),
+      'test fixture volume must be visible to anonymous readers');
+    // The header is SSR-rendered, so explicitly await client hydration by
+    // making a reactive language change before controlling the search fields.
+    await page.getByRole('button',{name:'英語に切り替え'}).click();
+    await page.getByRole('button',{name:'Switch to Japanese'}).waitFor();
+    await page.getByRole('button',{name:'Switch to Japanese'}).click();
     await page.getByRole('button',{name:'英語に切り替え'}).waitFor();
     // SSR may already display the query-series selection before hydration.
     // Force a client-side series change and wait for the reactive tree fetch
