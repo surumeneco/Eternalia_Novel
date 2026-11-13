@@ -1,12 +1,12 @@
 <script setup lang="ts">
-withDefaults(defineProps<{ label?: string; lines?: number }>(), {
-  label:'公開コンテンツを読み込んでいます。',
+const { t } = useUiLocale();
+const props = withDefaults(defineProps<{ label?: string; lines?: number }>(), {
   lines:3,
 });
 </script>
 <template>
   <div class="reading-skeleton" role="status" aria-live="polite" aria-busy="true">
-    <p class="loading-label">{{ label }}</p>
+    <p class="loading-label">{{ props.label ?? t('readerLoadingContent') }}</p>
     <div class="skeleton-lines" aria-hidden="true">
       <span v-for="i in Math.min(Math.max(lines,1),8)" :key="i" class="skeleton-line"
         :class="{ 'short': i===lines }"></span>
