@@ -15,6 +15,7 @@
   - AC-12/16/17: [PR #7](https://github.com/surumeneco/Eternalia_Novel/pull/7) HEAD `c31fad235d84b511b5ee71c58090656923aaaf6c`、[CI #41313228546](https://github.com/surumeneco/Eternalia_Novel/actions/runs/41313228546) success。合成作者セッションと実PostgreSQL/HTTPで公開・可視性のstale revision 409と公開稿不変を検証。実Discord OAuth2/PKCEは未検証。
 - 2026-11-10 AC-68部分証拠: `develop` への [PR #34](https://github.com/surumeneco/Eternalia_Novel/pull/34) 統合前HEAD `0a67a6e7cf83b0618ec7e2a5b6d92360d312d0e0` の Push [CI #42790204301](https://github.com/surumeneco/Eternalia_Novel/actions/runs/42790204301)・PR [CI #42790273108](https://github.com/surumeneco/Eternalia_Novel/actions/runs/42790273108) は各4ジョブ全成功。ブラウザ新規1件のJUnitログで `ok 1`、0失敗を確認。実機・CAT正式Gate・年代区分間換算の受入判定ではない。
 - 2026-11-13 現行照合: ページ配列PR #38、重複単語PR #40、章自動保存PR #43/#44は`develop`へ統合済み。CIと探索的試験の部分証拠を各行へ反映。AC-45/54の日時条件、AC-59/75のja/en、AC-76の論理削除規則は2026-11-12に採用済みであり、`pending-decision` でなく**実装・受入未完了**と判定する。年表換算式（AC-10/42）と作者UI視覚承認（AC-78）はなお決定待ち。今回の更新はCAT正式Gateや実機受入のpassではない。
+- 2026-11-13 追加実装証拠: PR #46（設定下書きのカテゴリ間移動）、PR #47（非公開済み対象の論理削除）、PR #48（年0/負年の整数入力・年代区分RelativeYears保持）が`develop`へ統合済み。各AC行にCI実測と未受入境界を追記した。**TL-03の区分間換算式自体は未決**。CAT Draftの構文検査と正式規範Gate、人間実機受入を混同しない。
 - 判定: `not-run` は**AC全体を受け入れるだけの網羅的証拠がまだない**ことを示す。右欄のB/H/DB/CIは探索的な**部分証拠候補**であり、該当ACのpassを意味しない。`pending-decision` は設計決定が必要。`scope-excluded` は明示除外。失敗は実測した場合のみ `fail` にする。
 - 各ACのpassへ更新する前に `テストID / コード箇所 / 環境 / 同一HEAD / CI run / 手動証拠 / 判定` を照合する。現在の本表はACを欠落させないための基線であり、CAT正式Gateやユーザー受入ではない。
 
@@ -29,7 +30,7 @@
 | AC-07 | 同じスペルを異なる言語に登録 | apps/web/browser-acceptance/browser-acceptance.test.mjs、apps/api/tests/postgres-alpha.test.mjs | B/DB: 同綴語の言語別選択・固有ID/本文分離（CI #41275393712 success） | not-run |
 | AC-08 | 複数の意味・品詞・語源を登録・辿る | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 同品詞2意味・意味別語源の独立保存と明示公開（CI #41275713765 success） | not-run |
 | AC-09 | 音韻規則・重複規則に違反する単語を入力 | apps/web/browser-acceptance/browser-acceptance.test.mjs | Domain/B/HTTP: 同一言語同綴の新規作成/改名を409拒否し既存Word IDを返す。作者UIが同品詞欄末尾に未保存の意味を引継ぎ、公開稿を更新しない。別言語同綴は許容、音韻違反は警告（PR #40 → develop `884b15fce806`、CI #43248067919 4/4 success）。実Discord・正式CAT Gate・人間受入は未実施。 | not-run |
-| AC-10 | 異なる年代区分で同じ出来事を表示 | 未特定 | — | pending-decision |
+| AC-10 | 異なる年代区分で同じ出来事を表示 | 未特定 | Partial Domain/B/PG: Year 0/負年/正年の安全整数のみ許可し、端数・指数・範囲外を拒否。Periodization.RelativeYearsとEvent.Yearを別フィールドで作者編集、下書き保存・再読込・明示公開の境界を検証（PR #48、CI #43363054125 4/4 success、Chromium 1/1）。**区分間の相対年の正負方向と換算式が未決であり、本AC全体はpending-decision。** | pending-decision |
 | AC-11 | 編集失敗・通信切断・再接続を発生させる | apps/web/browser-acceptance/browser-acceptance.test.mjs; apps/web/browser-acceptance/author-chapter-autosave.test.mjs; apps/web/tests/chapter-autosave.test.mjs; docs/cat/ac11-save-network-retry-draft.md; docs/cat/drafts/chapter-autosave-recovery.md | B/PG: 従来の合成通信断→手動再送に加え、章編集の自動PATCH→改訂読戻し、合成通信障害時のタブ内入力保持→再読込後の明示復元、別編集元による409競合時の無通知上書き防止と確認付き保存、匿名公開版不変を一時PostgreSQL・Nest/Nuxt・Chromiumで検証（PR #43 head `5949361844214d3b68e5abe96e263285af46d020`、Push CI #43354441722・PR CI #43354875767 とも4/4成功）。実Discord・実ネットワーク断・実機IME・正式CAT Gate・人間受入は未実施 | not-run |
 | AC-12 | 同一レコードを複数編集元から更新 | apps/web/browser-acceptance/browser-acceptance.test.mjs、apps/api/tests/postgres-alpha.test.mjs; apps/api/http-acceptance/author-revision-conflict.test.mjs | B/DB: 2タブ競合、保存済み本文維持、未保存入力保持（実端末は未検証）。H+PG: Nest/Nuxt同時PATCHの200/409、rev+1のみ永続化、旧版公開/可視性変更409（CI #42346968728 success、実2ブラウザタブは未実施） | not-run |
 | AC-13 | 保留：ゴミ箱・ゴミ箱からの復元（当面実装・受入試験の対象外） | 未特定 | — | scope-excluded |
@@ -61,11 +62,11 @@
 | AC-39 | 公開言語で単語のみ非公開にする | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 単語自身の非公開と他言語資料の公開維持（CI #41275269669 success、意味/語源全経路未網羅） | not-run |
 | AC-40 | 非公開言語・シリーズに公開設定の単語を登録する | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 言語/シリーズ非公開時に公開指定の単語を匿名404（CI #41275269669 success） | not-run |
 | AC-41 | 公開単語の意味・語源を編集する | apps/web/browser-acceptance/browser-acceptance.test.mjs; docs/cat/ac08-53-multi-meaning-etymology-draft.md | B: 同品詞の2意味と各語源を保存・公開後、第1義のみ改訂し、下書き保存時の公開稿不変と明示公開後の第2義/語源ID保持を確認（CI #41287408802 success）。実Discord/全編集操作は未検証 | not-run |
-| AC-42 | 同じシリーズに複数年代区分と出来事を登録し、区分ごと／統合表示を切り替える | 未特定 | — | pending-decision |
+| AC-42 | 同じシリーズに複数年代区分と出来事を登録し、区分ごと／統合表示を切り替える | 未特定 | Partial Domain/B/PG: 複数年代区分は既存の絞り込みブラウザ試験（PR #34）があり、区分相対年/年0/負年の入力・保存はPR #48、CI #43363054125で確認。**年代区分間の共通年への換算・統合時系列は未決のため未実装**。正式CAT Gate・実機受入は別。 | pending-decision |
 | AC-43 | 年代区分を非公開にし、所属出来事が公開のまま読者アクセスする | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 年代区分非公開時に配下Eventが匿名404（CI #41275269669 success） | not-run |
 | AC-44 | 公開年代区分で一部出来事のみ非公開にする | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: Event A非公開でも兄弟Event Bは公開（CI #41275269669 success） | not-run |
 | AC-45 | 年代区分・出来事の公開日時を設定し、時刻境界の前後で取得する | apps/web/browser-acceptance/browser-acceptance.test.mjs | 仕様確定: PB-05により入力JST、UTC保存/比較、指定時刻と等号で公開可、祖先も同じ境界。既存B: 未来時刻の年代区分によるEvent遮断の部分証拠あり（CI #41275713765）。時刻前/直前/等号/直後の実HTTP・Chromium全経路は未検証。 | not-run |
-| AC-46 | 一つのカテゴリに複数の設定を登録し、ある設定の所属先を変更する | 未特定 | — | not-run |
+| AC-46 | 一つのカテゴリに複数の設定を登録し、ある設定の所属先を変更する | 未特定 | Domain/B/PG: 同一シリーズ内のTip下書きカテゴリ変更、Tip ID・本文・配下TipSection不変、旧公開所属とパンくず維持、明示公開後のみ新所属へ切替。越境・古い改訂・匿名操作拒否を実HTTP/Chromiumで検証（PR #46、CI #43360507803 4/4 success、追加Chromium 1/1 pass）。実機・正式CAT Gate・人間受入は未完了。 | not-run |
 | AC-47 | カテゴリを作成・編集し、カテゴリの中へさらにカテゴリを追加しようとする | apps/web/browser-acceptance/browser-acceptance.test.mjs; apps/api/http-acceptance/http-acceptance.test.mjs; docs/cat/ac47-category-nesting-boundary-draft.md | B+H: カテゴリ編集・再読込、子作成UIにTipのみ表示、カテゴリ内カテゴリのPOSTは400かつDB全体不変（CI #41293701037 success）。正式CAT Gate未実施 | not-run |
 | AC-48 | 異なるカテゴリの設定に同一のタグを付け、タグに基づいて横断的に分類する | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 同タグの公開Tipを複数カテゴリ横断検索し個別非公開を検証（CI #41276226834 success） | not-run |
 | AC-49 | カテゴリに項目プリセットの見出し・表示順・テンプレートテキストを登録・変更し設定作成に利用する | apps/web/browser-acceptance/browser-acceptance.test.mjs; apps/api/http-acceptance/http-acceptance.test.mjs; packages/contracts/exploratory/category-preset-create.test.mjs | B+H+Domain: プリセット編集後の新規Tipへの適用と、無効JSON更新の400拒否・既存DB不変を検証（CI #41293843303 success）。全表示順/テンプレート操作は未網羅 | not-run |
@@ -87,7 +88,7 @@
 | AC-65 | DS-05、WR-02/05 | apps/web/browser-acceptance/browser-acceptance.test.mjs | B: 4公開領域を320/390/768/1280pxで実ブラウザ検証し水平はみ出しなし、320/390/1280pxのスクリーンショットを保存。作者Studioは320/390pxで検証（CI #41294267990 success）。実IME・人間の視覚評価は未検証 | not-run |
 | AC-66 | v0.3共通、PB-06、CM-09 | 未特定 | — | not-run |
 | AC-67 | v0.3設定・辞書、ST-03/05/06/09、LG-05〜08 | 未特定 | — | not-run |
-| AC-68 | v0.3 Timeline、TL-01〜06 | apps/web/browser-acceptance/timeline-period-filter.test.mjs; packages/contracts/exploratory/timeline.test.mjs | B+Domain: 匿名Chromiumで公開年代区分の選択/全件復帰、区分内相対年ソート、年代区分非公開後のイベントUI/API遮断、他区分の公開維持を検証（PR #34、Push [CI #42790204301](https://github.com/surumeneco/Eternalia_Novel/actions/runs/42790204301)・PR [CI #42790273108](https://github.com/surumeneco/Eternalia_Novel/actions/runs/42790273108) とも4ジョブsuccess）。年代区分間換算と統合時系列、全画面操作、実機・正式CAT Gateは未検証 | not-run |
+| AC-68 | v0.3 Timeline、TL-01〜06 | apps/web/browser-acceptance/timeline-period-filter.test.mjs; packages/contracts/exploratory/timeline.test.mjs | B+Domain: 匿名Chromiumで年代区分選択/全件復帰、区分内の相対年ソート・非公開の秘匿・他区分維持を検証（PR #34、CI #42790273108 success）。加えて年0/負年/整数のみの作者保存と公開稿不変をPR #48（CI #43363054125 4/4、Chromium1/1）で検証。区分間換算・統合時系列・実機・正式CAT Gateは未完了。 | not-run |
 | AC-69 | PB-18、215承認済み公開更新方式 | apps/web/browser-acceptance/browser-acceptance.test.mjs; apps/api/http-acceptance/author-revision-conflict.test.mjs | B: 章/TipSection/単語/文法/出来事の下書き・再読込・明示公開・非公開/復帰（実UI全経路未網羅）。H+PG: 明示公開前の下書きは404、公開後にrev3下書きを保存しても公開稿不変、旧revで再公開/非公開を拒否（CI #42346968728 success、利用者実機は未実施） | not-run |
 | AC-70 | PB-10〜17、PB-18 | apps/web/browser-acceptance/browser-acceptance.test.mjs、apps/api/http-acceptance/http-acceptance.test.mjs | B/H: 全4領域の祖先/子非公開、未来予定、直URL/検索（CI #41275269669 success、全経路未網羅） | not-run |
 | AC-71 | 旧Backend develop/920 | 未特定 | — | not-run |
@@ -95,7 +96,7 @@
 | AC-73 | 010 UI構造試験導入 | 未特定 | — | not-run |
 | AC-74 | 910/920継承監査 | 未特定 | — | not-run |
 | AC-75 | CM-02/03/08/09 | 未特定 | 仕様確定: CM-02/08/09・2026-11-12採用。メモ/新着/マスタ、基幹固定UI/エラーja/enが対象。ゴミ箱UIと独立Disabledは対象外、論理削除はAC-76へ。既存メモ・新着の部分証拠はあるがマスタ・全画面・ja/enの横断受入未完了。 | not-run |
-| AC-76 | CM-10、v0.3全体共通「非公開済データの削除」 | 未特定 | 仕様確定: CM-10により非公開済み対象のみ論理削除可能。公開中、子孫あり、参照元ありは拒否し連鎖削除しない。通常公開状態と削除済み管理情報を分離、ゴミ箱復旧UIは対象外。現行 `packages/contracts/src/novel.ts` に対応する削除操作はなく実装・自動/実機受入は未完了。 | not-run |
+| AC-76 | CM-10、v0.3全体共通「非公開済データの削除」 | 未特定 | Domain/B/PG: 非公開済みで公開稿のある依存先なしレコードにdeleted_atを保存し、元稿は監査保管、作者通常一覧・匿名直URL/ツリー/パンくずから排除。公開中/未公開、旧改訂、子孫・旧公開親・設定関連/語源参照を拒否。実PostgreSQL+Chromiumで作者UIの確認付き削除と非作者拒否を試験（PR #47、CI #43362250051 4/4 success、Chromium 1/1）。公開状態とは独立した削除済み管理情報。ゴミ箱復元UIは対象外。正式CAT Gate・実機・人間受入は未完了。 | not-run |
 | AC-77 | CM-11、v0.3全体共通「無効化フラグ」 | **2026-11-12利用者が不採用と決定** | 通常の公開状態は未公開／公開済／非公開を使用する。独立した無効化／再有効化の実装・テストは不要。削除はAC-76で別途検証する | scope-excluded |
 | AC-78 | DS-01、200/220、旧UI・v0.3デザイン | apps/web/app/assets/css/eternalia.css、apps/web/browser-acceptance/browser-acceptance.test.mjs | CI: 作者3画面幅のスクリーンショット取得（編集キャンバスの設計承認は未実施） | pending-decision |
 
