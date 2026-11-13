@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ReaderNode } from '~/types/reader';
 import { publishedChapterSequence } from '~/utils/chapter-navigation';
-const { t } = useUiLocale();
+const { t, language } = useUiLocale();
 const route = useRoute();
 const id = computed(() => String(route.params.id));
 const { data: chapter, pending, error, refresh } = await useFetch<ReaderNode>(
@@ -42,26 +42,26 @@ function chapterLink(chapterId: string) {
       { label: chapter?.content.title ?? t('chapter') },
     ]" />
     <ReaderPanel>
-      <ReadingSkeleton v-if="pending" label="本文を読み込んでいます。" />
+      <ReadingSkeleton v-if="pending" :label="t('readerLoadingChapter')" />
       <div v-else-if="error || chapter?.kind !== 'chapter'" role="alert">
-        <h1>章を表示できません</h1>
-        <p class="error-text">章が存在しないか、公開されていません。</p>
+        <h1>{{ t('readerErrorChapter') }}</h1>
+        <p class="error-text">{{ t('readerChapterUnavailable') }}</p>
         <button class="inline-action" type="button" @click="refresh()">{{ t('retry') }}</button>
       </div>
       <article v-else>
         <h1>{{ chapter.content.title }}</h1>
         <AuthorEditLink :item-id="chapter.id" />
-        <p class="note">公開：<time :datetime="new Date(chapter.publishedAt).toISOString()">{{ new Date(chapter.publishedAt).toLocaleDateString('ja-JP') }}</time></p>
+        <p class="note">{{ t('readerPublishedOn') }}<time :datetime="new Date(chapter.publishedAt).toISOString()">{{ new Date(chapter.publishedAt).toLocaleDateString(language === 'en' ? 'en-US' : 'ja-JP') }}</time></p>
         <RichContent :source="chapter.content.body" :pages="chapter.content.pages" paged />
         <div v-if="ancestryError || treeError" role="alert" class="navigation-error">
-          <p>章の前後関係を取得できませんでした。本文の閲覧は引き続き可能です。</p>
+          <p>{{ t('readerChapterNavUnavailable') }}</p>
           <button type="button" class="inline-action"
-            @click="ancestryError ? refreshAncestry() : refreshTree()">章一覧を再読込</button>
+            @click="ancestryError ? refreshAncestry() : refreshTree()">{{ t('readerChapterReloadList') }}</button>
         </div>
-        <nav v-if="seriesId && !treeError" class="chapter-navigation" aria-label="章の移動">
-          <NuxtLink v-if="previous" :to="chapterLink(previous.id)">前の章：{{ previous.content.title }}</NuxtLink>
-          <NuxtLink :to="'/stories/' + seriesId">目次へ戻る</NuxtLink>
-          <NuxtLink v-if="next" :to="chapterLink(next.id)">次の章：{{ next.content.title }}</NuxtLink>
+        <nav v-if="seriesId && !treeError" class="chapter-navigation" :aria-label="t('readerChapterNavigation')">
+          <NuxtLink v-if="previous" :to="chapterLink(previous.id)">{{ t('readerPreviousChapter') }}{{ previous.content.title }}</NuxtLink>
+          <NuxtLink :to="'/stories/' + seriesId">{{ t('readerBackToToc') }}</NuxtLink>
+          <NuxtLink v-if="next" :to="chapterLink(next.id)">{{ t('readerNextChapter') }}{{ next.content.title }}</NuxtLink>
         </nav>
       </article>
     </ReaderPanel>
