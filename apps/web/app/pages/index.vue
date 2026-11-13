@@ -33,6 +33,7 @@ const sections = computed(() => [
     </ReaderPanel>
     <ReaderPanel class="reader-panel-spaced">
       <h2 class="section-heading">{{ t('publishedSeries') }}</h2>
+      <AuthorCreateLink kind="series" :label="t('studioNewSeries')" />
       <ReadingSkeleton v-if="pending" :label="t('loading')" />
       <div v-else-if="error" role="alert">
         <p class="error-text">{{ t('seriesLoadError') }}</p>
