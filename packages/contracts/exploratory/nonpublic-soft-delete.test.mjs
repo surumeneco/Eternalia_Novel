@@ -30,6 +30,7 @@ function setup() {
  for(const id of [series,category,tip,language,word]) {
   db=setVisibility(db,id,db.nodes.find(n=>n.id===id).revision,true,t0,t0);
  }
+ db=setVisibility(db,leaf,db.nodes.find(n=>n.id===leaf).revision,false,null,t0);
  return {get db(){return db},set db(value){db=value},ids:{series,category,tip,leaf,language,word},add,publish,hide};
 }
 const current=(db,id)=>db.nodes.find(n=>n.id===id);
