@@ -28,7 +28,7 @@ const navigation = computed(() => [
             {{ link.label }}
           </NuxtLink>
         </nav>
-        <button type="button" class="locale-switch" :aria-label="t('shellLanguageSwitch')"
+        <button type="button" class="locale-switch" :aria-label="language === 'en' ? t('shellSwitchToJapanese') : t('shellSwitchToEnglish')"
           @click="toggleLanguage">{{ language === 'en' ? '日本語' : 'English' }}</button>
       </div>
     </header>
