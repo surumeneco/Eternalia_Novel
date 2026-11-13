@@ -16,7 +16,7 @@ export const kinds = [
 export type Kind = (typeof kinds)[number];
 export type Details = Record<string, string>;
 export interface Content { title: string; body: string; details: Details; pages?: string[]; }
-export interface Snapshot { value: Content; sourceRevision: number; publishedAt: number; }
+export interface Snapshot { value: Content; sourceRevision: number; publishedAt: number; parentId?: string | null; }
 export interface NovelNode {
   id: string;
   kind: Kind;
@@ -199,11 +199,49 @@ export function editNode(library: Library, id: string, expectedRevision: number,
   item.updatedAt = now;
   return next;
 }
+/** Move only a Tip's draft membership. Existing public projections keep the
+ * snapshot parent until the author explicitly republishes the Tip. */
+export function moveTip(library: Library, id: string, expectedRevision: number, categoryId: string, now: number): Library {
+  assertLibrary(library);
+  if (typeof categoryId !== 'string' || !Number.isSafeInteger(now) || now < 0) {
+    domainError('bad-request', '移動先または更新日時が不正です。');
+  }
+  const tip = find(library, id);
+  if (tip.kind !== 'tip' || !tip.parentId || categoryId === tip.parentId) {
+    domainError('bad-request', '設定の移動元・移動先が不正です。');
+  }
+  if (!Number.isSafeInteger(expectedRevision) || expectedRevision !== tip.revision) {
+    domainError('conflict', '別の編集によって改訂されています。');
+  }
+  const category = find(library, categoryId);
+  if (category.kind !== 'category' ||
+      ancestorsOf(library, tip.parentId)[0]?.id !== ancestorsOf(library, category.id)[0]?.id) {
+    domainError('bad-request', '移動先は同じシリーズのカテゴリに限定されます。');
+  }
+  const next = clone(library);
+  const draft = find(next, id);
+  // Backfill legacy snapshot ancestry before changing the draft parent.
+  if (draft.published && draft.published.parentId === undefined) draft.published.parentId = draft.parentId;
+  // Keep the old published list order until explicit publication. A draft Tip
+  // may temporarily share an order value with destination siblings.
+  draft.parentId = categoryId;
+  draft.revision += 1;
+  draft.updatedAt = now;
+  // No new presets and no changes to child TipSections, tags or published value.
+  return next;
+}
 export function publishNode(library: Library, id: string, expectedRevision: number, now: number): Library {
   const next = clone(library);
   const item = find(next, id);
   if (expectedRevision !== item.revision) domainError('conflict', '変更が競合しています。');
-  item.published = { value: clone(item.draft), sourceRevision: item.revision, publishedAt: now };
+  // An explicitly published category switch appends the Tip in the destination;
+  // the earlier draft move must not change the old public list ordering.
+  if (item.kind === 'tip' && item.published && item.published.parentId !== undefined &&
+      item.published.parentId !== item.parentId) {
+    const peers = next.nodes.filter(n => n.kind === 'tip' && n.parentId === item.parentId && n.id !== id);
+    item.order = peers.reduce((max,n) => Math.max(max,n.order), -1) + 1;
+  }
+  item.published = { value: clone(item.draft), sourceRevision: item.revision, publishedAt: now, parentId: item.parentId };
   // Publishing a word snapshot must not override an explicitly private word.
   // Other kinds retain their established publish-to-visible behavior.
   if (item.kind !== 'word') item.isPublic = true;
@@ -224,7 +262,7 @@ export function setVisibility(library: Library, id: string, expectedRevision: nu
   item.updatedAt = now;
   return next;
 }
-export function ancestorsOf(library: Library, id: string): NovelNode[] {
+function ancestry(library: Library, id: string, usePublishedParent: boolean): NovelNode[] {
   const chain: NovelNode[] = [];
   const visited = new Set<string>();
   let current: NovelNode | null = find(library, id);
@@ -232,14 +270,18 @@ export function ancestorsOf(library: Library, id: string): NovelNode[] {
     if (visited.has(current.id) || chain.length > 32) domainError('bad-request', '階層に循環があります。');
     visited.add(current.id);
     chain.unshift(current);
-    current = current.parentId ? find(library, current.parentId) : null;
+    const parent: string | null = usePublishedParent && current.published?.parentId !== undefined
+      ? current.published.parentId : current.parentId;
+    current = parent ? find(library, parent) : null;
   }
   return chain;
 }
+export function ancestorsOf(library: Library, id: string): NovelNode[] { return ancestry(library, id, false); }
+export function publicAncestorsOf(library: Library, id: string): NovelNode[] { return ancestry(library, id, true); }
 /** Resolve an etymology reference without recursively projecting other word etymologies. */
 function readableReference(library: Library, id: string, kind: Kind, now: number): NovelNode | null {
   let chain: NovelNode[];
-  try { chain = ancestorsOf(library, id); } catch { return null; }
+  try { chain = publicAncestorsOf(library, id); } catch { return null; }
   const node = chain[chain.length - 1];
   if (!node || node.kind !== kind || !node.published) return null;
   return canReadPublished(
@@ -271,7 +313,7 @@ function publicMeaning(library: Library, meaning: WordMeaning, now: number): Wor
 }
 export function toReader(library: Library, id: string, now: number): ReaderNode | null {
   let path: NovelNode[];
-  try { path = ancestorsOf(library, id); } catch { return null; }
+  try { path = publicAncestorsOf(library, id); } catch { return null; }
   if (!canReadPublished(path.map(n => ({ isPublic: n.isPublic, publicSinceEpochMs: n.publicSince })),
       path.every(n => n.published !== null), now)) return null;
   const node = path[path.length - 1];
@@ -308,7 +350,7 @@ export function toReader(library: Library, id: string, now: number): ReaderNode 
     }
   }
   if (node.kind === 'event' && published.details.year !== undefined) details.year = published.details.year;
-  return { id: node.id, kind: node.kind, parentId: node.parentId,
+  return { id: node.id, kind: node.kind, parentId: node.published.parentId !== undefined ? node.published.parentId : node.parentId,
     order: node.order, content: { title: published.title, body: published.body, details,
       ...(node.kind === 'chapter' ? { pages: pagesForChapter(published) } : {}) },
     publishedAt: node.published.publishedAt };
@@ -319,10 +361,12 @@ export function publicTree(library: Library, seriesId: string, now: number): Rea
   // Walk only descendants of the selected series; unrelated worlds never
   // need public projection or ancestry lookup during this request.
   const children = new Map<string, NovelNode[]>();
-  for (const node of library.nodes) if (node.parentId) {
-    const siblings = children.get(node.parentId) ?? [];
+  for (const node of library.nodes) {
+    const parentId = node.published?.parentId !== undefined ? node.published.parentId : node.parentId;
+    if (!parentId) continue;
+    const siblings = children.get(parentId) ?? [];
     siblings.push(node);
-    children.set(node.parentId, siblings);
+    children.set(parentId, siblings);
   }
   const result: ReaderNode[] = [series];
   const visited = new Set<string>([seriesId]);

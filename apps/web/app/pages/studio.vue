@@ -37,6 +37,15 @@ type Filter = keyof typeof filters;
 const nodes = ref<AuthorNode[]>([]);
 const selectedId = ref<string | null>(null);
 const selected = computed(() => nodes.value.find(n => n.id === selectedId.value) ?? null);
+const moveCategoryTarget = ref('');
+const movableCategories = computed(() => {
+  const tip = selected.value;
+  if (tip?.kind !== 'tip') return [];
+  const origin = nodes.value.find(n => n.id === tip.parentId);
+  if (origin?.kind !== 'category') return [];
+  return nodes.value.filter(n => n.kind === 'category' && n.parentId === origin.parentId);
+});
+watch(() => selected.value?.parentId, parent => { moveCategoryTarget.value = parent ?? ''; }, { immediate: true });
 const publicationStatus = computed(() => !selected.value?.published ? t('studioUnpublished')
   : selected.value.isPublic ? t('studioPublishedState') : t('studioPrivateState'));
 const filter = ref<Filter>('all');
@@ -585,6 +594,20 @@ async function saveDraft() {
     });
   }, t('studioDraftSaved'));
 }
+async function moveTipCategory() {
+  const node = selected.value;
+  if (!node || node.kind !== 'tip' || moveCategoryTarget.value === node.parentId) return;
+  if (editorDirty.value) {
+    errorText.value = t('studioMoveSaveFirst');
+    return;
+  }
+  const categoryId = moveCategoryTarget.value;
+  await runChange(async () => {
+    await $fetch('/api/admin/nodes/' + node.id + '/move-category', {
+      method: 'POST', body: { expectedRevision: node.revision, targetCategoryId: categoryId },
+    });
+  }, t('studioMoveCategorySaved'));
+}
 async function publish() {
   const node=selected.value;
   if (!node || !confirm(t('studioPublishConfirm'))) return;
@@ -769,6 +792,17 @@ async function logout() {
                 </label>
                 <div class="action-row"><button class="primary" type="submit" :disabled="busy || autosavingChapter">{{ t('studioSaveDraft') }}</button></div>
               </form>
+              <div v-if="selected.kind === 'tip' && movableCategories.length > 1" class="move-category-controls">
+                <label>{{ t('studioCategoryTarget') }}
+                  <select v-model="moveCategoryTarget" :disabled="busy">
+                    <option v-for="category in movableCategories" :key="category.id" :value="category.id">{{ category.draft.title }}</option>
+                  </select>
+                </label>
+                <button class="inline-action" type="button"
+                  :disabled="busy || editorDirty || moveCategoryTarget === selected.parentId"
+                  @click="moveTipCategory">{{ t('studioMoveCategory') }}</button>
+                <p v-if="editorDirty" class="note">{{ t('studioMoveSaveFirst') }}</p>
+              </div>
               <hr />
               <h3>{{ t('studioPublicationSettings') }}</h3>
               <p class="note">{{ t('studioPublicationNote') }}</p>
