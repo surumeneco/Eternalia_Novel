@@ -244,8 +244,9 @@ test('SSR-CACHE-01/02/03: HTML reader and author routes are no-store, private SS
     const result = await get(path);
     assert.equal(result.status, 200, 'SSR page ' + path);
     const control = result.headers.get('cache-control') ?? '';
-    assert.match(control, /(?:^|[,\\s])no-store(?:[,\\s]|$)/i, 'no-store required on ' + path);
-    assert.match(control, /(?:^|[,\\s])private(?:[,\\s]|$)/i, 'private required on ' + path);
+    const directives = control.toLowerCase().split(',').map(value => value.trim());
+    assert.ok(directives.includes('no-store'), 'no-store required on ' + path + ': ' + control);
+    assert.ok(directives.includes('private'), 'private required on ' + path + ': ' + control);
   }
   const hidden = await get('/read/' + fixture.scheduled);
   assert.match(hidden.headers.get('cache-control') ?? '', /no-store/i);
