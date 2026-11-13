@@ -19,13 +19,15 @@ type StorageRow = {
   updated_at: Date;
   snapshot: Content | null;
   source_draft_revision: number | null;
+  published_parent_id: string | null;
   published_at: Date | null;
 };
 
 const selectNodes = `
   SELECT n.id, n.kind, n.parent_id, n.sort_order, n.draft_content,
     n.draft_revision, n.is_public, n.public_since, n.updated_at,
-    p.snapshot, p.source_draft_revision, p.published_at
+    p.snapshot, p.source_draft_revision, p.published_at,
+    p.parent_id AS published_parent_id
   FROM content_nodes n
   LEFT JOIN published_snapshots p ON p.node_id = n.id
   ORDER BY n.sort_order, n.id`;
@@ -44,6 +46,7 @@ function toNode(row: StorageRow): NovelNode {
           value: row.snapshot,
           sourceRevision: Number(row.source_draft_revision),
           publishedAt: row.published_at.getTime(),
+          parentId: row.published_parent_id,
         },
     isPublic: row.is_public,
     publicSince: row.public_since === null ? null : row.public_since.getTime(),
@@ -104,12 +107,13 @@ export class PostgresLibraryService implements OnModuleDestroy {
         if (node.published) {
           const snapshot = node.published;
           await client.query(`
-            INSERT INTO published_snapshots (node_id,source_draft_revision,snapshot,published_at)
-            VALUES ($1,$2,$3::jsonb,$4)
+            INSERT INTO published_snapshots (node_id,source_draft_revision,snapshot,published_at,parent_id)
+            VALUES ($1,$2,$3::jsonb,$4,$5)
             ON CONFLICT (node_id) DO UPDATE SET
               source_draft_revision=EXCLUDED.source_draft_revision,
-              snapshot=EXCLUDED.snapshot,published_at=EXCLUDED.published_at
-          `, [node.id,snapshot.sourceRevision,JSON.stringify(snapshot.value),new Date(snapshot.publishedAt)]);
+              snapshot=EXCLUDED.snapshot,published_at=EXCLUDED.published_at,
+              parent_id=EXCLUDED.parent_id
+          `, [node.id,snapshot.sourceRevision,JSON.stringify(snapshot.value),new Date(snapshot.publishedAt),snapshot.parentId ?? node.parentId]);
         } else if (prior?.published) {
           await client.query('DELETE FROM published_snapshots WHERE node_id=$1', [node.id]);
         }
