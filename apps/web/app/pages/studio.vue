@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { AuthorNode } from '~/types/author';
-const { t } = useUiLocale();
+import { localizeApiError } from '~/utils/api-error-localization';
+const { t, language } = useUiLocale();
 const studioRoute = useRoute();
 import type { ReaderKind } from '~/types/reader';
 import { parseLanguageWordClasses, diagnoseWordSpelling, appendDuplicateWordMeaning, pagesForChapter, joinChapterPages } from '@eternalia/contracts';
@@ -483,10 +484,7 @@ async function runChange(work: () => Promise<void>, okText:string, reloadAfter =
       errorText.value = t('studioPostUpdateRefreshError');
     }
   } catch (e: unknown) {
-    const info = e as { data?: { message?: string | string[] } };
-    errorText.value = Array.isArray(info.data?.message)
-      ? info.data.message.join(' / ')
-      : info.data?.message || t('studioSaveError');
+    errorText.value = localizeApiError(e, language.value, t, t('studioSaveError'));
   } finally {
     busy.value = false;
     if (selected.value?.kind === 'chapter' && editorDirty.value) scheduleChapterAutosave();
