@@ -26,6 +26,7 @@ function collectionLink(id: string) {
     <TopicPath :items="[{ label: t('home'), to: '/' }, { label: props.title }]" />
     <ReaderPanel>
       <h1>{{ props.title }}</h1>
+      <p class="note">{{ props.description }}</p>
       <AuthorCreateLink kind="series" :label="t('studioNewSeries')" />
       <ReadingSkeleton v-if="pending" :label="t('collectionLoading')" />
       <div v-else-if="error" role="alert">

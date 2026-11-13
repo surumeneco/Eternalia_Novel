@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ReaderNode } from '~/types/reader';
-const { t } = useUiLocale();
+import { formatJstDisplay } from '~/utils/jst-publication-time';
+const { t, language } = useUiLocale();
 const { data: series, pending, error, refresh } = await useFetch<ReaderNode[]>('/api/public/series');
 const { data: recent, pending: recentPending, error: recentError, refresh: refreshRecent } =
   await useFetch<ReaderNode[]>('/api/public/recent');
@@ -57,7 +58,7 @@ const sections = computed(() => [
         <li v-for="item in recent" :key="item.id">
           <NuxtLink :to="contentLink(item)">{{ item.content.title }}</NuxtLink>
           <span class="note"> · {{ kindNames[item.kind] ?? item.kind }}
-            · <time :datetime="new Date(item.publishedAt).toISOString()">{{ new Date(item.publishedAt).toLocaleDateString('ja-JP') }}</time>
+            · <time :datetime="new Date(item.publishedAt).toISOString()">{{ formatJstDisplay(item.publishedAt, language) }}</time>
           </span>
         </li>
       </ol>

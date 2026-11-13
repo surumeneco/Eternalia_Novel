@@ -13,12 +13,12 @@ interface AuthState { configured: boolean; authenticated: boolean }
 const { data: auth, pending: authPending, refresh: refreshAuth } =
   await useFetch<AuthState>('/api/auth/me');
 
-const kinds: Record<ReaderKind, string> = {
+const kinds = computed<Record<ReaderKind, string>>(() => ({
   series: t('studioKindSeries'), volume: t('studioKindVolume'), part: t('studioKindPart'), chapter: t('chapter'),
   category: t('studioKindCategory'), tip: t('tip'), tipSection: t('tipSection'),
   language: t('studioKindLanguage'), word: t('word'), grammar: t('grammar'),
   periodization: t('studioKindPeriodization'), event: t('event'),
-};
+}));
 const children: Record<ReaderKind | 'root', ReaderKind[]> = {
   root: ['series'],
   series: ['volume', 'category', 'language', 'periodization'],
@@ -27,14 +27,14 @@ const children: Record<ReaderKind | 'root', ReaderKind[]> = {
   language: ['word', 'grammar'], word: [], grammar: [],
   periodization: ['event'], event: [],
 };
-const filters = {
-  all: { label: t('studioFilterAll'), kinds: Object.keys(kinds) as ReaderKind[] },
+const filters = computed(() => ({ 
+  all: { label: t('studioFilterAll'), kinds: Object.keys(kinds.value) as ReaderKind[] },
   stories: { label: t('studioFilterStories'), kinds: ['series','volume','part','chapter'] as ReaderKind[] },
   tips: { label: t('studioFilterTips'), kinds: ['series','category','tip','tipSection'] as ReaderKind[] },
   dictionaries: { label: t('studioFilterDictionaries'), kinds: ['series','language','word','grammar'] as ReaderKind[] },
   timeline: { label: t('studioFilterTimeline'), kinds: ['series','periodization','event'] as ReaderKind[] },
-};
-type Filter = keyof typeof filters;
+}));
+type Filter = keyof typeof filters.value;
 
 const nodes = ref<AuthorNode[]>([]);
 const selectedId = ref<string | null>(null);
@@ -405,7 +405,7 @@ const ordered = computed(() => {
     for (const node of indexed.get(parentId) ?? []) {
       if (visited.has(node.id) || depth > 12) continue;
       visited.add(node.id);
-      if (filters[filter.value].kinds.includes(node.kind)) out.push({node,depth});
+      if (filters.value[filter.value].kinds.includes(node.kind)) out.push({node,depth});
       visit(node.id, depth+1);
     }
   }

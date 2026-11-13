@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import type { ReaderKind, ReaderNode } from '~/types/reader';
+import { formatJstDisplay } from '~/utils/jst-publication-time';
 
 type Domain = 'all' | 'stories' | 'tips' | 'dictionaries' | 'timeline';
 type SortOrder = 'recent' | 'title' | 'manual';
-const { t } = useUiLocale();
+const { t, language } = useUiLocale();
 const route = useRoute();
 const selectedSeriesId = ref(typeof route.query.series === 'string' ? route.query.series : '');
 const query = ref('');
@@ -162,7 +163,7 @@ function parentName(node: ReaderNode): string {
               </span>
               <p v-if="item.content.body" class="result-summary">{{ item.content.body }}</p>
               <small class="note">{{ t('searchPublishedUpdated') }}
-                <time :datetime="new Date(item.publishedAt).toISOString()">{{ new Date(item.publishedAt).toLocaleDateString('ja-JP') }}</time>
+                <time :datetime="new Date(item.publishedAt).toISOString()">{{ formatJstDisplay(item.publishedAt, language) }}</time>
               </small>
             </li>
           </ul>
