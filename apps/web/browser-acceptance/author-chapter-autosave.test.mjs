@@ -49,6 +49,7 @@ test('AC-11 chapter autosave, offline recovery, conflict and unpublished snapsho
     const cacheBefore = await page.evaluate(id => sessionStorage.getItem('eternalia:chapter-recovery:' + id), fixture.chapter);
     assert.ok(cacheBefore?.includes(offline), 'offline local recovery must contain the full unsaved input');
     await page.unroute('**/api/admin/nodes/' + fixture.chapter);
+    page.once('dialog', dialog => dialog.accept());
     await page.reload();
     await page.getByRole('button', { name: '未保存原稿を復元' }).waitFor({timeout:15_000});
     await page.getByRole('button', { name: '未保存原稿を復元' }).click();
@@ -62,6 +63,7 @@ test('AC-11 chapter autosave, offline recovery, conflict and unpublished snapsho
     const otherContent = { ...beforeConflict.draft, pages:['別タブの章'], body:'別タブの章' };
     const remote = await context.request.patch(base + '/api/admin/nodes/' + fixture.chapter, {
       data: { expectedRevision: beforeConflict.revision, content: otherContent },
+      headers: { Origin: base },
     });
     assert.equal(remote.status(), 200);
     const local = '競合時に失わない原稿-' + fixture.prefix;
