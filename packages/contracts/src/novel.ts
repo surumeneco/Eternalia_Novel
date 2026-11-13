@@ -28,6 +28,7 @@ export interface NovelNode {
   isPublic: boolean;
   publicSince: number | null;
   updatedAt: number;
+  deletedAt?: number | null;
 }
 export interface Library { nodes: NovelNode[]; }
 export interface ReaderNode { id: string; kind: Kind; parentId: string | null; order: number; content: Content; publishedAt: number; }
@@ -111,13 +112,13 @@ function validateLanguageStructure(content: Content): void {
 }
 function find(library: Library, id: string): NovelNode {
   const item = library.nodes.find(n => n.id === id);
-  if (!item) domainError('not-found', '項目が見つかりません。');
+  if (!item || item.deletedAt != null) domainError('not-found', '項目が見つかりません。');
   return item;
 }
 /** A language owns a spelling; different languages may independently use the same spelling. */
 function rejectSameLanguageSpelling(library: Library, languageId: string, title: string, editingWordId?: string): void {
   const existing = library.nodes.find(node => node.kind === 'word' && node.parentId === languageId &&
-    node.id !== editingWordId && node.draft.title.trim() === title.trim());
+    node.id !== editingWordId && node.deletedAt == null && node.draft.title.trim() === title.trim());
   if (existing) domainError('duplicate-spelling',
     '同じ言語内に同じスペルの単語が登録されています。新規登録はできません。', existing.id);
 }
@@ -156,9 +157,10 @@ export function createNode(library: Library, input: { id: string; kind: Kind; pa
     }
   }
   const next = clone(library);
-  const siblings = next.nodes.filter(n => n.parentId === (parent?.id ?? null) && n.kind === input.kind);
+  const siblings = next.nodes.filter(n => n.deletedAt == null && n.parentId === (parent?.id ?? null) && n.kind === input.kind);
   next.nodes.push({ id: input.id, kind: input.kind, parentId: parent?.id ?? null,
     order: siblings.length, draft: content, revision: 1, published: null,
+    deletedAt: null,
     isPublic: input.kind === 'word' ? (input.isPublic ?? true) : false,
     publicSince: null, updatedAt: input.now });
   // New Tip copies category presets once, with no future propagation.
@@ -201,6 +203,47 @@ export function editNode(library: Library, id: string, expectedRevision: number,
 }
 /** Move only a Tip's draft membership. Existing public projections keep the
  * snapshot parent until the author explicitly republishes the Tip. */
+/** AC-76: mark a previously published, now private leaf as deleted.
+ * Keep its draft and snapshot in the DB for audit; reader/admin projections and
+ * future mutations must no longer resolve this ID. Never cascade. */
+export function softDeleteNode(library: Library, id: string, expectedRevision: number, now: number): Library {
+  assertLibrary(library);
+  if (!Number.isSafeInteger(now) || now < 0) domainError('bad-request', '削除日時が不正です。');
+  const item = find(library, id);
+  if (!Number.isSafeInteger(expectedRevision) || expectedRevision !== item.revision) {
+    domainError('conflict', '別の編集によって改訂されています。');
+  }
+  if (!item.published || item.isPublic) {
+    domainError('bad-request', '公開済みで現在非公開の対象のみ削除できます。');
+  }
+  // Both draft and published ancestry must be free of dependents.
+  for (const other of library.nodes) {
+    if (other.id === id) continue;
+    if (other.parentId === id || other.published?.parentId === id) {
+      domainError('bad-request', '子要素が残っている対象は削除できません。');
+    }
+    for (const content of [other.draft, other.published?.value]) {
+      if (!content) continue;
+      if (other.kind === 'tip' && content.details.relatedTipIds !== undefined &&
+          parseTipRelationIds(content.details.relatedTipIds).includes(id)) {
+        domainError('bad-request', '関連設定として参照されている対象は削除できません。');
+      }
+      if (other.kind === 'word' && content.details.meanings !== undefined) {
+        for (const meaning of parseWordMeanings(content.details.meanings)) {
+          if (meaning.etymologies.some(origin => origin.languageId === id || origin.wordId === id)) {
+            domainError('bad-request', '語源として参照されている対象は削除できません。');
+          }
+        }
+      }
+    }
+  }
+  const next = clone(library);
+  const target = find(next, id);
+  target.deletedAt = now;
+  target.revision += 1;
+  target.updatedAt = now;
+  return next;
+}
 export function moveTip(library: Library, id: string, expectedRevision: number, categoryId: string, now: number): Library {
   assertLibrary(library);
   if (typeof categoryId !== 'string' || !Number.isSafeInteger(now) || now < 0) {
@@ -408,4 +451,4 @@ export function publicRecent(library: Library, now: number, limit = 10): ReaderN
   }
   return recent;
 }
-export function managedList(library: Library): NovelNode[] { return clone(library.nodes); }
+export function managedList(library: Library): NovelNode[] { return clone(library.nodes.filter(n => n.deletedAt == null)); }
