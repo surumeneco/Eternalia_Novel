@@ -81,3 +81,28 @@ test('AC-76: old published parent remains a dependent during draft category move
  const target=f.ids.category;
  f.db= (awaitMove => awaitMove)(f.db); // fixed by subsequent operation below
 });
+test('AC-76: both draft and published Tip references block source deletion',()=>{
+ const f=setup(),{tip,leaf}=f.ids;
+ f.db=editNode(f.db,tip,current(f.db,tip).revision,
+   {title:'対象',body:'参照を保持',details:{relatedTipIds:JSON.stringify([leaf])}},t0+1);
+ assert.throws(()=>softDeleteNode(f.db,leaf,current(f.db,leaf).revision,t0+2),e=>e?.code==='bad-request');
+ f.publish(tip);
+ // Remove the reference from draft, but still keep it in the public snapshot.
+ f.db=editNode(f.db,tip,current(f.db,tip).revision,
+   {title:'対象',body:'参照を解除',details:{relatedTipIds:'[]'}},t0+3);
+ assert.throws(()=>softDeleteNode(f.db,leaf,current(f.db,leaf).revision,t0+4),e=>e?.code==='bad-request');
+});
+test('AC-76: a word etymology in draft or published data blocks deleting the reference word',()=>{
+ const f=setup(),{language,word}=f.ids;
+ f.hide(word);
+ const used=f.add('word',language,'借用語');
+ const meanings=[{id:uuid(90),partOfSpeech:'名詞',definition:'借用',etymologies:[
+   {id:uuid(91),languageId:language,wordId:word,note:'語源'}]}];
+ f.db=editNode(f.db,used,current(f.db,used).revision,
+   {title:'借用語',body:'',details:{meanings:JSON.stringify(meanings)}},t0+1);
+ assert.throws(()=>softDeleteNode(f.db,word,current(f.db,word).revision,t0+2),e=>e?.code==='bad-request');
+ f.publish(used);
+ f.db=editNode(f.db,used,current(f.db,used).revision,
+   {title:'借用語',body:'',details:{meanings:'[]'}},t0+3);
+ assert.throws(()=>softDeleteNode(f.db,word,current(f.db,word).revision,t0+4),e=>e?.code==='bad-request');
+});
