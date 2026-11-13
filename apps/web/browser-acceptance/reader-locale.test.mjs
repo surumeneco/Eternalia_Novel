@@ -44,10 +44,12 @@ test('READER-01/02/03: public series and reader areas localize immediately witho
    const chapterTitle=fixture.prefix+'-chapter-A';
    await page.getByRole('heading',{name:chapterTitle}).waitFor();
    assert.ok((await page.locator('main').innerText()).includes(fixture.prefix+'-published-body'));
+   await page.getByRole('button',{name:'Next page'}).waitFor();
    await page.getByRole('link',{name:'Back to contents'}).waitFor();
 
    await page.getByRole('button',{name:'Switch to Japanese'}).click();
    await page.getByRole('link',{name:'目次へ戻る'}).waitFor();
+   await page.getByRole('button',{name:'次のページ'}).waitFor();
    assert.ok((await page.locator('main').innerText()).includes(chapterTitle));
    await page.goto(base+'/dictionaries/'+fixture.seriesA);
    await page.getByLabel('言語',{exact:true}).selectOption(fixture.language);
