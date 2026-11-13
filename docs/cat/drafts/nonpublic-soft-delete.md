@@ -1,4 +1,5 @@
 ---
+cat_version: '0.3'
 kind: domain-spec
 id: eternalia.content.soft-delete
 status: draft
@@ -9,6 +10,8 @@ source_refs:
   - https://drive.google.com/file/d/14no6MWmkFuyWYPVS6QdcRmbLbrUBbOpc/view
   - https://drive.google.com/file/d/15X2GtGxr7iO4HrFgi5tmqqRGCKeC5flY/view
 refs: []
+semantic_contract: markdown-v2
+language: ja
 ---
 
 # CM-10 / AC-76: 非公開済みデータの論理削除（Draft）
