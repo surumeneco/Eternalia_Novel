@@ -626,6 +626,17 @@ async function changeVisibility(isPublic:boolean,publicSince:number | null) {
     });
   }, t('studioVisibilityChanged'));
 }
+async function softDeleteSelected() {
+  const node = selected.value;
+  if (!node || !node.published || node.isPublic || !confirmDiscard() ||
+      !window.confirm(t('studioSoftDeleteConfirm'))) return;
+  await runChange(async () => {
+    await $fetch('/api/admin/nodes/' + node.id + '/soft-delete', {
+      method: 'POST', body: { expectedRevision: node.revision },
+    });
+    if (node.kind === 'chapter') clearChapterRecovery(node.id);
+  }, t('studioSoftDeleted'));
+}
 async function schedule() {
   if (scheduledLocal.value && !Number.isFinite(new Date(scheduledLocal.value).getTime())) {
     errorText.value=t('studioInvalidDate'); return;
@@ -817,6 +828,10 @@ async function logout() {
                 <input v-model="scheduledLocal" type="datetime-local" />
               </label>
               <button class="inline-action" type="button" :disabled="busy || autosavingChapter || !selected.published" @click="schedule">{{ t('studioSetDate') }}</button>
+              <div v-if="selected.published && !selected.isPublic" class="action-row">
+                <button class="inline-action" type="button" :disabled="busy || autosavingChapter"
+                  @click="softDeleteSelected">{{ t('studioSoftDelete') }}</button>
+              </div>
               <hr />
               <h3>{{ t('studioDraftPreview') }}</h3>
               <RichContent :source="form.body" :pages="selected.kind === 'chapter' ? chapterPages : undefined" />
