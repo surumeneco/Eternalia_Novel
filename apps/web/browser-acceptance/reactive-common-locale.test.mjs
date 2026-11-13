@@ -17,6 +17,7 @@ test('LABEL-01/02/03/04: writer filter/kind labels and public fixed dates follow
     const page=await context.newPage();
     const title=fixture.prefix+'-visible-setting';
     await page.goto(base+'/studio?item='+fixture.tip);
+    await page.waitForFunction(() => Boolean(document.querySelector('#__nuxt')?.__vue_app__));
     await page.getByRole('heading',{name:'設定：'+title}).waitFor();
     await page.getByRole('group',{name:'資料種別'}).getByRole('button',{name:'設定',exact:true}).waitFor();
     const input=page.getByRole('textbox',{name:'名称・見出し'});
@@ -33,6 +34,7 @@ test('LABEL-01/02/03/04: writer filter/kind labels and public fixed dates follow
     // Do not navigate away without dismissing the intentional unsaved buffer.
     page.once('dialog',dialog=>dialog.accept());
     await page.goto(base+'/dictionaries');
+    await page.waitForFunction(() => Boolean(document.querySelector('#__nuxt')?.__vue_app__));
     await page.getByRole('heading',{name:'辞書',exact:true}).waitFor();
     await page.getByText('シリーズの創作言語、単語、文法を閲覧します。').waitFor();
     await page.getByRole('button',{name:'英語に切り替え'}).click();
@@ -42,6 +44,7 @@ test('LABEL-01/02/03/04: writer filter/kind labels and public fixed dates follow
       'authored series title remains untranslated');
 
     await page.goto(base+'/');
+    await page.waitForFunction(() => Boolean(document.querySelector('#__nuxt')?.__vue_app__));
     await page.getByRole('heading',{name:'Recent updates'}).waitFor();
     const recentDate=page.locator('ol.reader-list time').first();
     await recentDate.waitFor();
