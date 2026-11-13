@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ReaderNode } from '~/types/reader';
+import type { ReaderNode, ReaderKind } from '~/types/reader';
 const { t } = useUiLocale();
 const props = defineProps<{
   title: string;
@@ -7,6 +7,12 @@ const props = defineProps<{
   section: 'stories' | 'tips' | 'dictionaries' | 'timeline';
 }>();
 const { data: series, pending, error, refresh } = await useFetch<ReaderNode[]>('/api/public/series');
+const childKind = computed<ReaderKind>(() =>
+  props.section === 'stories' ? 'volume' : props.section === 'tips' ? 'category' :
+  props.section === 'dictionaries' ? 'language' : 'periodization');
+const childLabel = computed(() =>
+  props.section === 'stories' ? t('studioNewVolume') : props.section === 'tips' ? t('studioNewCategory') :
+  props.section === 'dictionaries' ? t('studioNewLanguage') : t('studioNewPeriodization'));
 function collectionLink(id: string) {
   if (props.section === 'stories') return '/stories/' + id;
   if (props.section === 'tips') return '/tips/' + id;
@@ -20,6 +26,7 @@ function collectionLink(id: string) {
     <TopicPath :items="[{ label: t('home'), to: '/' }, { label: props.title }]" />
     <ReaderPanel>
       <h1>{{ props.title }}</h1>
+      <AuthorCreateLink kind="series" :label="t('studioNewSeries')" />
       <ReadingSkeleton v-if="pending" :label="t('collectionLoading')" />
       <div v-else-if="error" role="alert">
         <p class="error-text">{{ t('seriesLoadError') }}</p>
@@ -28,6 +35,7 @@ function collectionLink(id: string) {
       <ul v-else-if="series?.length" class="reader-list">
         <li v-for="item in series" :key="item.id">
           <NuxtLink :to="collectionLink(item.id)">{{ item.content.title }}</NuxtLink>
+          <AuthorCreateLink :kind="childKind" :parent-id="item.id" :label="childLabel" />
         </li>
       </ul>
       <p v-else>{{ t('collectionEmpty') }}</p>
