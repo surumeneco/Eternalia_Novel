@@ -1,12 +1,30 @@
 # Eternalia_Novel α版 — 現行入口と開発履歴
 
-## 現行の引継ぎ境界（2026-11-10）
+## 現行の引継ぎ境界（2026-11-13照合）
 
-- **受入確認対象は `develop`**。α版本体は [PR #3](https://github.com/surumeneco/Eternalia_Novel/pull/3)、年代区分フィルターのChromium検証は [PR #34](https://github.com/surumeneco/Eternalia_Novel/pull/34)、AC-68証拠台帳の更新は [PR #35](https://github.com/surumeneco/Eternalia_Novel/pull/35) でそれぞれ `develop` に統合済み。GitHubの現在HEADを作業開始時に必ず読み直す。
-- `develop` のα版実装統合後は [CI #42790743218](https://github.com/surumeneco/Eternalia_Novel/actions/runs/42790743218) の全4ジョブが成功。単体テスト・Nuxt/Nestビルド/型検査・PostgreSQL・Chromium/HTTPの**探索的検証**であり、CAT正式Gateや実Discord・IME・人間の受入を完了したものではない。
-- `main` は未リリースのまま。利用者が `develop` を受入確認し、別途OKとリリース指示を出すまでは `main` へ統合しない。
-- **CAT実行手段の旧ブロッカーは現在の事実ではない。** Chat用固定CATソース `896cae8313a533a3c74073a8c3150daad314ff90` の96ファイル・Gitツリーを検証し、正規 `cat_flow.py validate` と `route` を直接実行できる。ただし現在の各Workの正式Process Closure、Model Conformance、Implementation Conformanceが合格したという証拠ではない。
-- 作業入口: [README.md](README.md)、[Nuxt/Nest/PostgreSQL起動](docs/alpha-nuxt-setup.md)、[受入チェックリスト](docs/alpha-manual-acceptance.md)、[AC-01〜78トレーサビリティ](docs/alpha-ac-traceability.md)。年代区分間の年換算、設定カテゴリ所属変更時の公開反映、独立した削除/無効化等、未決の振る舞いは設計上の決定を得るまで自己確定しない。
+- **受入確認対象は `develop`**。照合したHEAD: `603ec319b592c8bbb4e52ae8186933aec7d20989`（PR #53まで統合）。現在オープンPRなし。`main`は`7d23cbf43b37bcafef29abacdb6802657ae16cdc`で未リリース。作業開始時に再取得し、ここに書いた固定SHAを将来の最新状態と扱わない。
+- 実装済みの主な後続機能: 章ページ配列（PR #38）、同一言語重複語の拒否と既存編集への未保存引継ぎ（#40）、章自動保存/復旧（#43/#44）、Tipのカテゴリ間下書き移動/公開所属の分離（#46）、非公開済み対象の論理削除（#47）、年0/負年を含む整数入力・年代区分相対年の保存（#48）、固定UIのja/en切替・公開画面（#50/#51）、作者画面のAPIエラー表示言語化（#53）。
+- 最新のPR #53は[Actions #43375845656](https://github.com/surumeneco/Eternalia_Novel/actions/runs/43375845656)で4/4ジョブ成功。**マージ後の**develop HEADについては[Actions #43389064668](https://github.com/surumeneco/Eternalia_Novel/actions/runs/43389064668)を結果確定まで確認し、PR HEADのCI成功と区別する。
+- [AC-01〜78台帳](docs/alpha-ac-traceability.md)は**not-run 73件、pending-decision 3件、scope-excluded 2件**。not-runは「未実装73件」ではなく、部分的な自動試験の証拠があっても**人間受入または正式Gateを完了していない**という意味。[MAN-01〜15](docs/alpha-manual-acceptance.md)はすべてnot-run。
+- CATの正規CLI/固定ソースの取得は可能であり、各WorkのDraft・Work契約/構文検査と規範Process Closure / Model Conformance / Implementation Conformanceの**合格は別**。Confirmedに昇格するには根拠となる意思決定が必要。ローカルテスト、GitHub CI、合成作者セッション、実Discord OAuth、実機IMEを混同しない。
+- 機能決定の正本はDrive `forGPT/Creating/Projects/Websites/Eternalia_Novel/10_要件定義/100_機能仕様.md`、検証条件は同`40_開発・検証/400_受入検証計画.md`、実装状態は現在のコード/CI。v0.3原則継承、独立Disabledなし、ゴミ箱復元UIなし、作者作成本文は翻訳しない。**年代区分間の厳密な換算式と作者画面の最終視覚判断は未決**。
+
+## α版 残Workと依存関係（実施対象を混同しない）
+
+この表は**現状に対する作業順序と受入条件**の実行入口である。仕様正本ではなく、要件・承認状態やACの正式判定は各正本を優先する。独立Workは小さいPRに分け、CIと差分を検証して随時`develop`へ統合し、`main`は利用者の受入・リリース指示まで変更しない。
+
+| 順位/Work | 現状・対象 | 次の実作業と完了条件 | 対応する証拠・依存 |
+| --- | --- | --- | --- |
+| **R0 現状と受入台帳の同期** | PR #38〜53の一部統合証拠が台帳の古い記述のまま。#39/#41は**実装統合後も**正式Gate/人間受入の残件としてopen | AC-59/75への#53部分証拠反映は本整理PRで実施。次は#39/#41の正式Gate・実機受入残件を独立管理し、develop HEADの4ジョブを再確認する。AC判定を勝手にpassにしない | [AC台帳](docs/alpha-ac-traceability.md)、[Actions](https://github.com/surumeneco/Eternalia_Novel/actions) |
+| **R1 公開境界と横断経路の自動試験不足を埋める** | 主要な祖先非公開・公開日時・下書き隔離テストは既存。ただし**時刻の直前/等号/直後の4領域横断**、関連/検索/URL/新着、残存する同一HEAD証拠に不足 | AC-45/54/55/57/69/70を経路別に差分監査し、JST入力→UTC保存/比較と境界時刻を固定時計で検証。公開稿・親/子を含む負例で漏洩0、再現可能なCIログを残す | PR #47/#48などへの回帰、AC-45/54 |
+| **R2 v0.3共通機能・構造継承の残差監査** | AC-66/67/71/73/74の受入台帳には十分な証拠がなく、**未実装の断定ではなく照合不足**。マスタ/検索/導線・旧APIのエラーエンベロープとRequestId・UI6分類などを確認する | 旧版と現行ルート/API/画面/テストの対応表を作り、必要なマスタ管理・作者/読者導線・エラー/アクセシビリティ/構造の不足があれば独立Workとして実装。既存機能は再実装しない。AC-58/66/67/71/73/74を試験証拠で記録 | [旧継承対応](docs/legacy-ui-asset-map.md)、Drive 900/910/920、Issue #1 |
+| **R3 年代区分間の厳密換算・統合時系列** | TL-03/TL-06、AC-10/42/68。年0/負年/安全整数・区分別表示は実装済み。**`RelativeYears`の符号・基準位置・換算式、未設定時・公開投影が未決** | まず旧v0.3の定義・例を再点検し、採用案/反例/受入ベクトルを用意して権限ある決定を取得。決定後、シリーズ内だけを換算・統合ソートし、区分非公開/予約公開の情報が漏れないAPI/画面・自動試験を実装 | [Issue #5](https://github.com/surumeneco/Eternalia_Novel/issues/5)、AC-10/42/68 |
+| **R4 CAT-TDD正式検証** | 多数のDomainSpec/WorkはDraft、既存のCIは探索的検証。正式なClosure/Model/Queue/Conformanceの全件成功証拠は未確認 | 各機能の規範Artifactと決定根拠を照合、承認が必要なDraftは保持し、正規CATスクリプトで可能なGateを実行し入力ハッシュ/結果をWorkに保持。未承認は`blocked`/未実行を明記して誤昇格しない。今後の新規実装はWorkごとに並行して実施 | `Lifecycle/Works/`、`docs/cat/`、CAT各正規CLI |
+| **R5 実Discord認証・実端末での操作受入** | Discord API模擬・合成セッション・Chromiumと、実Discord/Windows/Android IME操作は独立。MAN-01〜09/11〜15は未実施 | 実作者/非作者アカウントでOAuth・ログアウト/403を検証。長文・ルビ/ページ編集・日本語IME変換中・2タブ競合・通信断復旧・カテゴリ移動・論理削除・ja/en切替を実機で記録。秘密値をIssue/ログへ残さない | [MAN台帳](docs/alpha-manual-acceptance.md)、AC-18/19/65/72/75 |
+| **R6 v0.3視覚設計の対照・利用性受入** | 旧SCSSトークンと実CSS対照/スクリーンショット取得は自動化済み。**旧画面との比較判断と作者編集キャンバス承認は未実施** | 旧v0.3と現行のホーム/4領域/作者画面を320/390/768/1280pxで対比し差分を明記、必要な修正を独立PRで反映。コントラスト・フォーカス・横幅と長文編集を検証。作者画面の未決デザインを無断採用しない | AC-60〜65/78、[旧UI原典](docs/legacy-ui-asset-map.md)、MAN-10 |
+| **R7 最終受入とリリース判定** | 実装統合は受入ではなく、`main`未リリース | 主要必須ACの規範/自動/人間受入を区別して結果を記録し、全残件を判定。利用者が`develop`の対象機能にOKを出しリリースを指示した場合に限って承認範囲を`main`へ統合 | AC台帳、MAN台帳、develop CI |
+
+**直近の着手順**: R0 → R1とR2を独立PRで進める。R3の未決式は決定まで実装保留（準備調査・テストベクトル整理は可能）。R4は各Workと併走して正式証拠を増やし、R5/R6はユーザーの実機・デザイン受入段階で確定する。Issue #39/#41は機能再実装待ちとして扱わず、残る正式Gate・実機受入を追跡する。
 
 ## 過去の引継ぎログ（2026-10-29〜31、各節は**当時**の観測・未実施・停止判断）
 
