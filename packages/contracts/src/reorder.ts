@@ -38,8 +38,9 @@ export function reorderSiblings(library: Library, request: ReorderRequest, now: 
   }
   const siblings = library.nodes.filter(n => n.parentId === request.parentId && n.kind === request.kind)
     .sort((a,b) => a.order - b.order || a.id.localeCompare(b.id));
-  if (siblings.length !== request.orderedIds.length || new Set(request.orderedIds).size !== siblings.length ||
-    !siblings.every(n => request.orderedIds.includes(n.id))) {
+  const orderedIdSet = new Set(request.orderedIds);
+  if (siblings.length !== request.orderedIds.length || orderedIdSet.size !== siblings.length ||
+    !siblings.every(n => orderedIdSet.has(n.id))) {
     domainError('bad-request', '同じ階層の全項目を指定する必要があります。');
   }
   for (const sibling of siblings) {
