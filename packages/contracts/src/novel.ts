@@ -8,6 +8,7 @@ import { joinChapterPages, pagesForChapter, validateChapterPages } from './manus
 import { parseWordMeanings, type WordMeaning } from './word-meanings.js';
 import { parseTipTags, parseTipRelationIds } from './tip-links.js';
 import { parseLanguageCharacters, parseLanguageWordClasses } from './language-structure.js';
+import { parseRelativeYear } from './timeline.js';
 
 export const kinds = [
   'series', 'volume', 'part', 'chapter', 'category', 'tip', 'tipSection',
@@ -64,6 +65,14 @@ function normalizeContent(raw: unknown, kind: Kind): Content {
       if (!/^[a-zA-Z][a-zA-Z0-9_]{0,39}$/.test(key)) domainError('bad-request', '詳細項目キーが不正です。');
       details[key] = bounded(val, 10000);
     }
+  }
+  // TL-03: preserve unset year values, but reject non-integer values when
+  // provided. RelativeYears and Event.Year remain separate until the approved
+  // cross-period conversion contract is decided.
+  const yearKey = kind === 'event' ? 'year' : kind === 'periodization' ? 'relativeYears' : null;
+  if (yearKey && details[yearKey] !== undefined && details[yearKey]!.trim() !== '' &&
+      parseRelativeYear(details[yearKey]) === null) {
+    domainError('bad-request', '年数は0と負数を含む整数で入力してください。');
   }
   if (kind === 'chapter') {
     const pages = value.pages === undefined ? validateChapterPages(body.split('[[page]]'))
