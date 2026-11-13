@@ -38,7 +38,7 @@ test('SEARCH-01/02/03/04: search domain options and result kinds react instantly
     assert.equal(await seriesControl.inputValue(),fixture.seriesA);
     await domain.selectOption('stories');
     await search.fill(fixture.prefix+'-book-A');
-    await page.getByRole('status').getByText(/：2 件の公開資料/).waitFor();
+    await page.locator('p[role="status"]').filter({hasText:/：2 件の公開資料/}).waitFor();
     const result=page.locator('.search-result').first();
     await result.locator('a').getByText(fixture.prefix+'-book-A').waitFor();
     const originalTitle=await result.locator('a').innerText();
