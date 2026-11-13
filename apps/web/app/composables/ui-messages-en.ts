@@ -298,5 +298,7 @@ export const enUiMessages = {
   "tipsCollectionDescription": "Browse categories, settings and sections within each series.",
   "dictionaryCollectionDescription": "Browse the languages, vocabulary and grammar of each series.",
   "timelineCollectionDescription": "Browse periods and events of each series.",
-  "shellLanguageSwitch": "Display language"
+  "shellLanguageSwitch": "Display language",
+  "shellSwitchToEnglish": "Switch to English",
+  "shellSwitchToJapanese": "Switch to Japanese"
 } as const satisfies UiMessageCatalog;
