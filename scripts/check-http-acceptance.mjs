@@ -89,6 +89,7 @@ try {
     await command(['scripts/run-test-junit.mjs', 'browser-locale-switch', 'apps/web/browser-acceptance/locale-switch.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-reader-locale', 'apps/web/browser-acceptance/reader-locale.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-author-error-locale', 'apps/web/browser-acceptance/author-api-error-locale.test.mjs']);
+    await command(['scripts/run-test-junit.mjs', 'browser-publication-jst', 'apps/web/browser-acceptance/author-jst-publication.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-timeline-period', 'apps/web/browser-acceptance/timeline-period-filter.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser', 'apps/web/browser-acceptance/browser-acceptance.test.mjs']);
   }
