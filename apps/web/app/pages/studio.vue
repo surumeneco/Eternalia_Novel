@@ -34,7 +34,7 @@ const filters = computed(() => ({
   dictionaries: { label: t('studioFilterDictionaries'), kinds: ['series','language','word','grammar'] as ReaderKind[] },
   timeline: { label: t('studioFilterTimeline'), kinds: ['series','periodization','event'] as ReaderKind[] },
 }));
-type Filter = keyof ReturnType<typeof filters['valueOf']>;
+type Filter = keyof typeof filters.value;
 
 const nodes = ref<AuthorNode[]>([]);
 const selectedId = ref<string | null>(null);
