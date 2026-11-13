@@ -11,7 +11,7 @@ export function parseJstLocalDateTime(value: string): number | null {
   const match = JAPAN_DATETIME.exec(value);
   if (!match) return null;
   const [year, month, day, hour, minute, second] =
-    match.slice(1).map(Number);
+    match.slice(1).map(component => component === undefined ? 0 : Number(component));
   if (month < 1 || month > 12 || day < 1 || day > 31 ||
       hour > 23 || minute > 59 || second > 59) return null;
 
