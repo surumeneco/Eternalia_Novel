@@ -1,0 +1,74 @@
+{
+  "schema": "cat-work/v1",
+  "id": "eternalia.studio.manuscript-writing-surface",
+  "entry": "issue",
+  "flow": "issue-work",
+  "mode": "shadow",
+  "work_kind": "implementation",
+  "issue_ref": "https://github.com/surumeneco/Eternalia_Novel/issues/1",
+  "project_entry_ref": "https://drive.google.com/file/d/1clwfVJ3e_t1_QKFfOWxxRIzE9WMFvTiM/view",
+  "normative": [
+    {
+      "uri": "https://drive.google.com/file/d/1I7o6XHzRCqDZXxnL265oA1hZ8VifoNrA/view"
+    },
+    {
+      "uri": "https://drive.google.com/file/d/14no6MWmkFuyWYPVS6QdcRmbLbrUBbOpc/view"
+    }
+  ],
+  "evidence": [
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/commit/5e514e13677e71dda34dda6d64120fb4c1528d01"
+    }
+  ],
+  "repositories": [
+    {
+      "name": "eternalia",
+      "path": "../../../..",
+      "branch_pattern": "feature/*",
+      "allowed_paths": [
+        "Lifecycle/Works/New/eternalia.studio.manuscript-writing-surface/work.json",
+        "docs/cat/drafts/studio-manuscript-writing-surface.md",
+        "apps/web/app/pages/studio.vue",
+        "apps/web/browser-acceptance/mobile-touch-editor.test.mjs",
+        "docs/alpha-ac-traceability.md",
+        "CAT-HANDOFF.md"
+      ],
+      "production_paths": [
+        "apps/web/app/pages/studio.vue"
+      ],
+      "test_paths": [
+        "apps/web/browser-acceptance/mobile-touch-editor.test.mjs"
+      ]
+    }
+  ],
+  "scope": {
+    "process_ids": [
+      "eternalia.studio"
+    ],
+    "changed_ids": [
+      "MANUSCRIPT-UX-01",
+      "MANUSCRIPT-UX-02",
+      "MANUSCRIPT-UX-03",
+      "MANUSCRIPT-UX-04"
+    ],
+    "preserved_ids": [
+      "publication.snapshot-separation",
+      "studio.ime-composition",
+      "studio.chapter-autosave"
+    ]
+  },
+  "specification": {
+    "status": "draft",
+    "decision_ref": null,
+    "artifact_refs": [
+      "docs/cat/drafts/studio-manuscript-writing-surface.md"
+    ]
+  },
+  "technologies": [
+    "vue",
+    "playwright",
+    "node"
+  ],
+  "checks": [],
+  "depends_on": []
+}
