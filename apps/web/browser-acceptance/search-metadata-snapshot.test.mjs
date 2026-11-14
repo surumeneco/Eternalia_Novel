@@ -70,10 +70,10 @@ test('SEARCH-METADATA-01/02/03: tags and word definitions only expose explicitly
     let seriesId = null;
     try {
       const title = fixture.prefix + '-metadata-search-world';
-      const oldTag = 'published-metadata-tag';
-      const draftTag = 'unpublished-metadata-tag';
-      const oldMeaning = 'published-lexicon-meaning';
-      const draftMeaning = 'unpublished-lexicon-meaning';
+      const oldTag = 'released-metadata-tag-v1';
+      const draftTag = 'draft-metadata-tag-v2';
+      const oldMeaning = 'released-lexicon-sense-v1';
+      const draftMeaning = 'draft-lexicon-sense-v2';
       const meaningId = randomUUID();
       const meaningData = definition => JSON.stringify([{
         id: meaningId, partOfSpeech: '', definition, etymologies: [],
