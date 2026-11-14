@@ -286,6 +286,7 @@ test('MANUSCRIPT-UX-01/02/03: chapter writing surface has readable width and mob
           lineHeight: Number.parseFloat(style.lineHeight),
           fontSize: Number.parseFloat(style.fontSize),
           fontFamily: style.fontFamily,
+          fontWeight: Number.parseFloat(style.fontWeight),
         };
       });
       assert.ok(metrics.width <= Math.min(800, metrics.parentWidth),
@@ -294,6 +295,8 @@ test('MANUSCRIPT-UX-01/02/03: chapter writing surface has readable width and mob
       assert.ok(metrics.lineHeight >= metrics.fontSize * 1.9,
         'manuscript line spacing should be visibly greater than standard inputs');
       assert.match(metrics.fontFamily, /serif/i, 'prefer a Japanese literary manuscript font');
+      assert.ok(metrics.fontWeight <= 500,
+        'form label emphasis must not turn the chapter prose itself bold');
       for (const width of [320, 390]) {
         await page.setViewportSize({ width, height: 780 });
         const visible = await chapter.evaluate(el => ({
