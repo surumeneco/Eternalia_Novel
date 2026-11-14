@@ -1,5 +1,9 @@
 <script setup lang="ts">
 const menuOpen = ref(false);
+// SSR markup is visible before Vue attaches the locale-switch click handler.
+// Keep the control inert until this layout has actually mounted in the browser.
+const clientReady = ref(false);
+onMounted(() => { clientReady.value = true; });
 const { t, language } = useUiLocale();
 function toggleLanguage() {
   language.value = language.value === 'en' ? 'ja' : 'en';
@@ -28,7 +32,7 @@ const navigation = computed(() => [
             {{ link.label }}
           </NuxtLink>
         </nav>
-        <button type="button" class="locale-switch" :aria-label="language === 'en' ? t('shellSwitchToJapanese') : t('shellSwitchToEnglish')"
+        <button type="button" class="locale-switch" :disabled="!clientReady" :aria-label="language === 'en' ? t('shellSwitchToJapanese') : t('shellSwitchToEnglish')"
           @click="toggleLanguage">{{ language === 'en' ? '日本語' : 'English' }}</button>
       </div>
     </header>
@@ -58,6 +62,7 @@ const navigation = computed(() => [
 .locale-switch { margin-left: auto; flex-shrink: 0; white-space: nowrap; border: 1px solid #003f58;
   border-radius: var(--radius-input, 4px); background: #f8fcff; color: #08232c; padding: .35rem .5rem;
   font: inherit; cursor: pointer; }
+.locale-switch:disabled { cursor: default; opacity: .65; }
 .locale-switch:focus-visible { outline: 3px solid #003f58; outline-offset: 2px; }
 @media (max-width: 720px) {
   .locale-switch { margin-left: 0; font-size: .875rem; }
