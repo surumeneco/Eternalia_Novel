@@ -37,4 +37,4 @@ language: ja
 
 ## 対象・制約
 
-対象は`apps/web/app/pages/search.vue`の匿名公開検索に限定。現在のサーバー側`/api/public/series`/`/tree`の公開判定、既存の公開版・下書き分離、SSRとJavaScript無効の読者閲覧、多言語UI、検索フォーム入力値は変更しない。タブが連続して前面にある間のリアルタイム公開取り消し配信・実CDNや全読者ルートのBFCache設定は**未検証**。試行ロジックはブラウザで再検証可能な範囲に限定し、正式CAT Gate・実機・新規仕様承認とは独立させる。
+対象は`apps/web/app/pages/search.vue`の匿名公開検索に限定。現在のサーバー側`/api/public/series`/`/tree`の公開判定、既存の公開版・下書き分離、SSRとJavaScript無効の読者閲覧、多言語UI、検索フォーム入力値は変更しない。タブが連続して前面にある間のリアルタイム公開取り消し配信・実CDNや全読者ルートのBFCache設定は**未検証**。ヘッドレスChromiumは別タブ移動時の`visibilityState`を必ずしも`hidden`にしないため、試験では`visibilitychange`の実イベントリスナーに合成した可視状態を送る。これはブラウザ内の再検証処理の証拠であり、実OS/実タブ切替挙動の証明ではない。試行ロジックはブラウザで再検証可能な範囲に限定し、正式CAT Gate・実機・新規仕様承認とは独立させる。
