@@ -2,9 +2,13 @@
 import type { ReaderNode } from '~/types/reader';
 import { formatJstDisplay } from '~/utils/jst-publication-time';
 const { t, language } = useUiLocale();
-const { data: series, pending, error, refresh } = await useFetch<ReaderNode[]>('/api/public/series');
-const { data: recent, pending: recentPending, error: recentError, refresh: refreshRecent } =
+const { data: series, pending, error, refresh, clear: clearSeries } = await useFetch<ReaderNode[]>('/api/public/series');
+const { data: recent, pending: recentPending, error: recentError, refresh: refreshRecent, clear: clearRecent } =
   await useFetch<ReaderNode[]>('/api/public/recent');
+const { revalidating } = usePublicReaderRevalidation([
+  { clear: clearSeries, refresh },
+  { clear: clearRecent, refresh: refreshRecent },
+]);
 function contentLink(node: ReaderNode) {
   return node.kind === 'chapter' ? '/read/' + node.id : '/items/' + node.id;
 }
@@ -35,7 +39,7 @@ const sections = computed(() => [
     <ReaderPanel class="reader-panel-spaced">
       <h2 class="section-heading">{{ t('publishedSeries') }}</h2>
       <AuthorCreateLink kind="series" :label="t('studioNewSeries')" />
-      <ReadingSkeleton v-if="pending" :label="t('loading')" />
+      <ReadingSkeleton v-if="revalidating || pending" :label="t('loading')" />
       <div v-else-if="error" role="alert">
         <p class="error-text">{{ t('seriesLoadError') }}</p>
         <button class="inline-action" type="button" @click="refresh()">{{ t('retry') }}</button>
@@ -49,7 +53,7 @@ const sections = computed(() => [
     </ReaderPanel>
     <ReaderPanel class="reader-panel-spaced">
       <h2 class="section-heading">{{ t('recent') }}</h2>
-      <ReadingSkeleton v-if="recentPending" :label="t('readerLoadingRecent')" />
+      <ReadingSkeleton v-if="revalidating || recentPending" :label="t('readerLoadingRecent')" />
       <div v-else-if="recentError" role="alert">
         <p class="error-text">{{ t('recentLoadError') }}</p>
         <button class="inline-action" type="button" @click="refreshRecent()">{{ t('retry') }}</button>
