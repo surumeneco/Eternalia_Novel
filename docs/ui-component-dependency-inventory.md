@@ -22,11 +22,11 @@
 
 ## 観測機械と検証可能範囲
 
-`scripts/audit-ui-component-deps.mjs` は、同一ディレクトリ内で見つかるSFCの名前を列挙し、PascalCaseで書かれたタグと明示的な `.vue` 静的importからグラフを作る。節点と依存先は辞書順で固定し、循環経路があれば報告する。依存がないか確認するには `node scripts/audit-ui-component-deps.mjs --assert-acyclic` を使用する。
+`scripts/audit-ui-component-deps.mjs` は、同一ディレクトリ内で見つかるSFCの名前を列挙し、Vue SFCのtemplate領域で実際に開始タグとして現れるPascalCase/kebab-case表記と、script領域の行頭に現れる明示的な `.vue` 静的importからグラフを作る。コメント・script文字列・style・引用符内属性値はテンプレート依存として数えない。節点と依存先は辞書順で固定し、循環経路があれば報告する。依存がないか確認するには `node scripts/audit-ui-component-deps.mjs --assert-acyclic` を使用する。
 
-試験は一意列挙、二段依存、自分自身への依存と複数段の循環検出、現行コンポーネント群の静的循環有無を検証する。
+試験は一意列挙、二段依存、自分自身への依存と複数段の循環検出、現行コンポーネント群の静的循環有無、擬似タグ・コメント由来の偽依存除外、kebab-caseの参照認識を検証する。
 
-**検査できないこと**: ディレクトリをまたぐ依存、Nuxtの動的コンポーネント解決、kebab-case参照、型専用import、slotsを通した合成、ブラウザ実DOMの親子関係、分類上の責務、許可依存表への意味的適合。これらの不在をもって適合合格とはしない。
+**検査できないこと**: ディレクトリをまたぐ依存、Nuxtの動的コンポーネント解決、複雑なJavaScript文字列・式や全構文の完全解析、型専用import、slotsを通した合成、ブラウザ実DOMの親子関係、分類上の責務、許可依存表への意味的適合。これらの不在をもって適合合格とはしない。
 
 ## 次に必要な判断
 
