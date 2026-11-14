@@ -95,6 +95,7 @@ try {
     await command(['scripts/run-test-junit.mjs', 'browser-reader-detail-jst', 'apps/web/browser-acceptance/reader-detail-jst-display.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-chapter-pages-nojs', 'apps/web/browser-acceptance/chapter-pages-nojs.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-public-search-privacy', 'apps/web/browser-acceptance/publication-search-privacy.test.mjs']);
+    await command(['scripts/run-test-junit.mjs', 'browser-search-metadata-snapshot', 'apps/web/browser-acceptance/search-metadata-snapshot.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-author-error-locale', 'apps/web/browser-acceptance/author-api-error-locale.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-publication-jst', 'apps/web/browser-acceptance/author-jst-publication.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-timeline-period', 'apps/web/browser-acceptance/timeline-period-filter.test.mjs']);

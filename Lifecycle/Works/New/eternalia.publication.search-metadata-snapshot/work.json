@@ -1,0 +1,75 @@
+{
+  "schema": "cat-work/v1",
+  "id": "eternalia.publication.search-metadata-snapshot",
+  "entry": "issue",
+  "flow": "issue-work",
+  "mode": "shadow",
+  "work_kind": "verification",
+  "issue_ref": "https://github.com/surumeneco/Eternalia_Novel/issues/1",
+  "project_entry_ref": "https://drive.google.com/file/d/1clwfVJ3e_t1_QKFfOWxxRIzE9WMFvTiM/view",
+  "normative": [
+    {
+      "uri": "https://drive.google.com/file/d/1LqX-Noytb_oWymIrpO01eO5PvThGlVGx/view"
+    },
+    {
+      "uri": "https://drive.google.com/file/d/14no6MWmkFuyWYPVS6QdcRmbLbrUBbOpc/view"
+    }
+  ],
+  "evidence": [
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/commit/8b1dc7e23ff92627a023dd514b94ad979cadc1c2"
+    }
+  ],
+  "repositories": [
+    {
+      "name": "eternalia",
+      "path": "../../../..",
+      "branch_pattern": "feature/*",
+      "allowed_paths": [
+        "Lifecycle/Works/New/eternalia.publication.search-metadata-snapshot/work.json",
+        "docs/cat/drafts/public-search-metadata-snapshot.md",
+        "apps/web/browser-acceptance/search-metadata-snapshot.test.mjs",
+        "scripts/check-http-acceptance.mjs",
+        "apps/web/app/pages/search.vue"
+      ],
+      "production_paths": [
+        "apps/web/app/pages/search.vue"
+      ],
+      "test_paths": [
+        "apps/web/browser-acceptance/search-metadata-snapshot.test.mjs"
+      ]
+    }
+  ],
+  "scope": {
+    "process_ids": [
+      "eternalia.publication"
+    ],
+    "changed_ids": [
+      "SEARCH-METADATA-01",
+      "SEARCH-METADATA-02",
+      "SEARCH-METADATA-03"
+    ],
+    "preserved_ids": [
+      "publication.draft-snapshot-separated",
+      "publication.ancestor-gate",
+      "publication.author-only-publish",
+      "publication.public-clock-jst"
+    ]
+  },
+  "specification": {
+    "status": "draft",
+    "decision_ref": null,
+    "artifact_refs": [
+      "docs/cat/drafts/public-search-metadata-snapshot.md"
+    ]
+  },
+  "technologies": [
+    "Vue",
+    "Nuxt",
+    "NestJS",
+    "PostgreSQL",
+    "Playwright"
+  ],
+  "checks": [],
+  "depends_on": []
+}
