@@ -97,6 +97,7 @@ try {
     await command(['scripts/run-test-junit.mjs', 'browser-chapter-pages-nojs', 'apps/web/browser-acceptance/chapter-pages-nojs.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-public-search-privacy', 'apps/web/browser-acceptance/publication-search-privacy.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-public-search-resume', 'apps/web/browser-acceptance/public-search-resume-revalidation.test.mjs']);
+    await command(['scripts/run-test-junit.mjs', 'browser-public-reader-resume', 'apps/web/browser-acceptance/public-reader-resume.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-search-metadata-snapshot', 'apps/web/browser-acceptance/search-metadata-snapshot.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-author-error-locale', 'apps/web/browser-acceptance/author-api-error-locale.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-publication-jst', 'apps/web/browser-acceptance/author-jst-publication.test.mjs']);
