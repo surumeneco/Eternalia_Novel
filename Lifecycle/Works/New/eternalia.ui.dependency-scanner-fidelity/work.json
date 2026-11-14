@@ -45,7 +45,8 @@
     "changed_ids": [
       "UI-DEP-OBS-04",
       "UI-DEP-OBS-05",
-      "UI-DEP-OBS-06"
+      "UI-DEP-OBS-06",
+      "UI-DEP-OBS-07"
     ],
     "preserved_ids": [
       "ui6.candidate-not-confirmed",
