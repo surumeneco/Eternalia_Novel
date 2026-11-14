@@ -1,0 +1,73 @@
+{
+  "schema": "cat-work/v1",
+  "id": "eternalia.api.request-id-response",
+  "entry": "issue",
+  "flow": "issue-work",
+  "mode": "shadow",
+  "work_kind": "implementation",
+  "issue_ref": "https://github.com/surumeneco/Eternalia_Novel/issues/1",
+  "project_entry_ref": "https://drive.google.com/file/d/1clwfVJ3e_t1_QKFfOWxxRIzE9WMFvTiM/view",
+  "normative": [
+    {
+      "uri": "https://drive.google.com/file/d/14no6MWmkFuyWYPVS6QdcRmbLbrUBbOpc/view"
+    },
+    {
+      "uri": "https://drive.google.com/file/d/1Kq3Ubm5cKJopx09DpvrX79Z8mrcvimsJ/view"
+    }
+  ],
+  "evidence": [
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/commit/e6d8f9e2cba666d08d4ea71d3f10bd7eb2b12e15"
+    }
+  ],
+  "repositories": [
+    {
+      "name": "eternalia",
+      "path": "../../../..",
+      "branch_pattern": "feature/*",
+      "allowed_paths": [
+        "Lifecycle/Works/New/eternalia.api.request-id-response/work.json",
+        "docs/cat/drafts/api-request-id-response.md",
+        "apps/api/http-acceptance/request-id.test.mjs",
+        "apps/api/src/main.ts",
+        "scripts/check-http-acceptance.mjs"
+      ],
+      "production_paths": [
+        "apps/api/src/main.ts"
+      ],
+      "test_paths": [
+        "apps/api/http-acceptance/request-id.test.mjs"
+      ]
+    }
+  ],
+  "scope": {
+    "process_ids": [
+      "eternalia.api"
+    ],
+    "changed_ids": [
+      "API-REQUEST-ID-01",
+      "API-REQUEST-ID-02",
+      "API-REQUEST-ID-03"
+    ],
+    "preserved_ids": [
+      "api.response-shape",
+      "api.auth-boundary",
+      "api.no-store"
+    ]
+  },
+  "specification": {
+    "status": "draft",
+    "decision_ref": null,
+    "artifact_refs": [
+      "docs/cat/drafts/api-request-id-response.md"
+    ]
+  },
+  "technologies": [
+    "typescript",
+    "nest",
+    "node",
+    "postgresql"
+  ],
+  "checks": [],
+  "depends_on": []
+}
