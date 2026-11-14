@@ -77,3 +77,30 @@ test('UI6-TRIAL-04: even complete candidate coverage never promotes CAT Gate or 
   assert.equal(report.domContract, 'not-run');
   assert.equal(report.roleCounts.partition, 0, 'a role need not be represented in every inventory');
 });
+
+test('UI6-TRIAL-05: CLI coverage check reports observed current roles and fails only on candidate drift', async () => {
+  const { spawnSync } = await import('node:child_process');
+  const { mkdtemp, writeFile, rm } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const args = ['scripts/audit-ui6-trial.mjs', '--check-trial-coverage'];
+  const current = spawnSync(process.execPath, args, { encoding: 'utf8' });
+  assert.equal(current.status, 0, current.stderr);
+  const report = JSON.parse(current.stdout);
+  assert.equal(report.componentCount, 15);
+  assert.equal(report.candidateCoverage, 'complete-in-trial');
+  assert.equal(report.normativeClassification, 'not-run');
+
+  const root = await mkdtemp(join(tmpdir(), 'eternalia-ui6-unknown-'));
+  try {
+    await writeFile(join(root, 'FutureOverlay.vue'), '<template><div /></template>');
+    const drift = spawnSync(process.execPath,
+      ['scripts/audit-ui6-trial.mjs', '--root', root, '--check-trial-coverage'],
+      { encoding: 'utf8' });
+    assert.equal(drift.status, 1, drift.stderr);
+    const driftReport = JSON.parse(drift.stdout);
+    assert.deepEqual(driftReport.unclassified, ['FutureOverlay']);
+    assert.equal(driftReport.candidateCoverage, 'needs-review');
+    assert.equal(driftReport.normativeClassification, 'not-run');
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
