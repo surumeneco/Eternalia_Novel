@@ -1,7 +1,7 @@
 /**
  * Exploratory acceptance for already-implemented periodized timeline behavior.
  * Uses only a disposable CI PostgreSQL fixture and synthetic author session;
- * neither cross-period epoch conversion nor real Discord OAuth is asserted.
+ * provisional v0.3-derived cross-period conversion is tested, not real Discord OAuth.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -41,10 +41,13 @@ test('AC-68 partial: anonymous period filter, within-period chronology, and hidd
         const secondPeriodTitle = prefix + '-second-period';
         const earlierTitle = prefix + '-early-event';
         const laterTitle = prefix + '-late-event';
-        const secondPeriod = await create('periodization', fixture.seriesA, secondPeriodTitle);
+        const secondPeriod = await create('periodization', fixture.seriesA, secondPeriodTitle, { relativeYears: '100' });
         const later = await create('event', secondPeriod, laterTitle, { year: '18' });
         const earlier = await create('event', secondPeriod, earlierTitle, { year: '-4' });
-        for (const id of [secondPeriod, later, earlier]) await publish(id);
+        const referencePeriod = await create('periodization', fixture.seriesA, prefix + '-reference-period', { relativeYears: '0' });
+        const first = await create('event', referencePeriod, prefix + '-first-event', { year: '20' });
+        const sameTime = await create('event', referencePeriod, prefix + '-same-time', { year: '96' });
+        for (const id of [secondPeriod, later, earlier, referencePeriod, first, sameTime]) await publish(id);
 
         const page = await reader.newPage();
         const response = await page.goto(base + '/timeline/' + fixture.seriesA);
@@ -65,9 +68,24 @@ test('AC-68 partial: anonymous period filter, within-period chronology, and hidd
           'filter must hide unrelated period events');
 
         await filter.selectOption('');
-        assert.ok(await page.locator('.period-group').count() >= 2,
-          'selecting all must restore each public period, without any epoch conversion');
-        assert.equal(await page.getByText(fixture.prefix + '-visible-event', { exact: true }).count(), 1);
+        const chronologicalTitles = await page.locator('.unified-event-list li > a').allTextContents();
+        const expectedTitles = [prefix + '-first-event', earlierTitle, prefix + '-same-time', laterTitle];
+        assert.deepEqual(chronologicalTitles.filter(title => expectedTitles.includes(title)), expectedTitles,
+          'C=R+E must sort different periodizations together, then tie-break deterministically');
+        assert.match((await page.locator('.unified-event-list li', { hasText: earlierTitle }).innerText()), /共通年 96/);
+        assert.equal(await page.getByText(fixture.prefix + '-visible-event', { exact: true }).count(), 1,
+          'existing uncalibrated published events must remain visible in grouped fallback');
+        // An unpublished period draft edit must not affect the anonymous chronology.
+        const revise = await author.request.patch(base + '/api/admin/nodes/' + referencePeriod, {
+          headers: { Origin: base }, data: {
+            expectedRevision: 1,
+            content: { title: prefix + '-reference-period', body: '', details: { relativeYears: '-1000' } },
+          },
+        });
+        assert.equal(revise.status(), 200, await revise.text());
+        await page.reload();
+        const stillPublished = await page.locator('.unified-event-list li', { hasText: prefix + '-first-event' }).innerText();
+        assert.match(stillPublished, /共通年 20/, 'only the published R=0 offset may drive public chronology');
 
         const hide = await author.request.post(base + '/api/admin/nodes/' + secondPeriod + '/visibility', {
           headers: { Origin: base },

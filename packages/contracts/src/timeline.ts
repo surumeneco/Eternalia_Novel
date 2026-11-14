@@ -21,3 +21,31 @@ export function compareEventsWithinPeriod(a: RelativeYearEvent, b: RelativeYearE
   if (yearA !== null && yearB === null) return -1;
   return a.order - b.order || a.content.title.localeCompare(b.content.title, 'ja') || a.id.localeCompare(b.id);
 }
+
+/** v0.3-derived provisional interpretation: a period's RelativeYears is the
+ * common-axis position of its local year zero. Never coerce an absent offset
+ * or an unsafe sum into a real date. See the Draft and Issue #5. */
+export function commonTimelineYear(relativeYears: string | undefined, eventYear: string | undefined): number | null {
+  const offset = parseRelativeYear(relativeYears);
+  const year = parseRelativeYear(eventYear);
+  if (offset === null || year === null) return null;
+  const common = offset + year;
+  return Number.isSafeInteger(common) ? common : null;
+}
+
+export interface UnifiedTimelineEntry {
+  period: { id: string; order: number; content: { title: string } };
+  event: RelativeYearEvent;
+  commonYear: number;
+}
+
+/** Stable tie order keeps explicit period/event display order within one year. */
+export function compareUnifiedTimelineEntries(a: UnifiedTimelineEntry, b: UnifiedTimelineEntry): number {
+  if (a.commonYear !== b.commonYear) return a.commonYear < b.commonYear ? -1 : 1;
+  return a.period.order - b.period.order ||
+    a.event.order - b.event.order ||
+    a.period.content.title.localeCompare(b.period.content.title, 'ja') ||
+    a.event.content.title.localeCompare(b.event.content.title, 'ja') ||
+    a.period.id.localeCompare(b.period.id) ||
+    a.event.id.localeCompare(b.event.id);
+}

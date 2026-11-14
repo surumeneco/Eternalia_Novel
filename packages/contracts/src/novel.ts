@@ -401,6 +401,11 @@ export function toReader(library: Library, id: string, now: number): ReaderNode 
       details.wordClasses = JSON.stringify(parseLanguageWordClasses(published.details.wordClasses));
     }
   }
+  // Only this period's PUBLIC snapshot offset enters the public chronology;
+  // the draft/other series' reference years must never be exposed.
+  if (node.kind === 'periodization' && published.details.relativeYears !== undefined) {
+    details.relativeYears = published.details.relativeYears;
+  }
   if (node.kind === 'event' && published.details.year !== undefined) details.year = published.details.year;
   return { id: node.id, kind: node.kind, parentId: node.published.parentId !== undefined ? node.published.parentId : node.parentId,
     order: node.order, content: { title: published.title, body: published.body, details,

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ReaderNode } from '~/types/reader';
 const { t } = useUiLocale();
-import { compareEventsWithinPeriod } from '@eternalia/contracts';
+import { compareEventsWithinPeriod, commonTimelineYear, compareUnifiedTimelineEntries } from '@eternalia/contracts';
 
 const route = useRoute();
 const seriesId = computed(() => String(route.params.id));
@@ -23,6 +23,23 @@ function eventsOf(period: ReaderNode) {
     .filter(node => node.kind === 'event' && node.parentId === period.id)
     .sort(compareEventsWithinPeriod);
 }
+
+/** Build the unified public timeline solely from the already-filtered public
+ * tree (never from drafts or private/scheduled ancestors). */
+const merged = computed(() => {
+  const dated: { period: ReaderNode; event: ReaderNode; commonYear: number }[] = [];
+  const unplaced: { period: ReaderNode; events: ReaderNode[] }[] = [];
+  for (const period of periods.value) {
+    const other: ReaderNode[] = [];
+    for (const event of eventsOf(period)) {
+      const year = commonTimelineYear(period.content.details.relativeYears, event.content.details.year);
+      if (year === null) other.push(event);
+      else dated.push({ period, event, commonYear: year });
+    }
+    if (other.length) unplaced.push({ period, events: other });
+  }
+  return { dated: dated.sort(compareUnifiedTimelineEntries), unplaced };
+});
 </script>
 
 <template>
@@ -50,7 +67,39 @@ function eventsOf(period: ReaderNode) {
           </select>
         </label>
         <p v-if="!periods.length">{{ t('readerNoPeriods') }}</p>
-        <section v-for="period in visiblePeriods" :key="period.id" class="period-group">
+        <template v-if="!periodId">
+          <section v-if="merged.dated.length" class="timeline-merged">
+            <h2 class="section-heading">{{ t('readerUnifiedTimeline') }}</h2>
+            <ol class="event-list unified-event-list">
+              <li v-for="entry in merged.dated" :key="entry.event.id">
+                <span class="note event-year">
+                  {{ t('readerCommonYear') }} {{ entry.commonYear }} · {{ entry.period.content.title }}
+                  ({{ t('readerRelativeYear') }} {{ entry.event.content.details.year }})
+                </span>
+                <NuxtLink :to="'/items/' + entry.event.id">{{ entry.event.content.title }}</NuxtLink>
+                <p v-if="entry.event.content.body" class="event-description">{{ entry.event.content.body }}</p>
+              </li>
+            </ol>
+          </section>
+          <section v-if="merged.unplaced.length" class="timeline-unplaced">
+            <h2 class="section-heading">{{ t('readerUnplacedTimeline') }}</h2>
+            <section v-for="group in merged.unplaced" :key="group.period.id" class="period-group">
+              <h3 class="section-heading">
+                <NuxtLink :to="'/items/' + group.period.id">{{ group.period.content.title }}</NuxtLink>
+              </h3>
+              <ol class="event-list">
+                <li v-for="event in group.events" :key="event.id">
+                  <span v-if="event.content.details.year" class="note event-year">
+                    {{ t('readerRelativeYear') }} {{ event.content.details.year }}
+                  </span>
+                  <NuxtLink :to="'/items/' + event.id">{{ event.content.title }}</NuxtLink>
+                  <p v-if="event.content.body" class="event-description">{{ event.content.body }}</p>
+                </li>
+              </ol>
+            </section>
+          </section>
+        </template>
+        <section v-for="period in (periodId ? visiblePeriods : [])" :key="period.id" class="period-group">
           <h2 class="section-heading">
             <NuxtLink :to="'/items/' + period.id">{{ period.content.title }}</NuxtLink>
           </h2>
