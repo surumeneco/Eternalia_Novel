@@ -798,7 +798,7 @@ async function logout() {
                   </nav>
                 </div>
                 <label v-if="selected.kind === 'chapter'">{{ t('studioBodyLabel') }}
-                  <textarea ref="bodyTextarea" v-model="selectedPageBody" rows="14" maxlength="100000"
+                  <textarea ref="bodyTextarea" class="manuscript-body" v-model="selectedPageBody" rows="14" maxlength="100000"
                     @compositionstart="composingBody = true" @compositionend="composingBody = false; scheduleChapterAutosave()"
                     :placeholder="t('studioMarkupPlaceholder')"></textarea>
                 </label>
@@ -889,6 +889,18 @@ async function logout() {
 label { display:block;margin:1rem 0;font-weight:650; }
 input,select,textarea { display:block;width:100%;margin-top:.45rem;padding:.6rem .7rem;background:var(--color-background-input);color:var(--color-text-base);border:1px solid var(--color-border-base);border-radius:var(--radius-input); }
 textarea { min-height:6rem;resize:vertical;line-height:1.7; }
+/* Author manuscript only: a readable horizontal writing measure with ample room
+ * for Japanese prose. Keep the inherited stone palette and leave the other
+ * structured editors' input geometry unchanged. These are trial UX values. */
+textarea.manuscript-body {
+  width: 100%;
+  max-width: 72ch;
+  min-height: clamp(24rem, 58vh, 46rem);
+  line-height: 1.95;
+  font-family: "Noto Serif JP", "Yu Mincho", serif;
+  padding: clamp(.8rem, 1.4vw, 1.1rem);
+  overflow-wrap: anywhere;
+}
 .create-visibility-option { display:flex;align-items:center;gap:.6rem; }
 .create-visibility-option input { display:inline-block;width:auto;margin:0; }
 .action-row { display:flex;flex-wrap:wrap;gap:.6rem;margin:1rem 0; }
