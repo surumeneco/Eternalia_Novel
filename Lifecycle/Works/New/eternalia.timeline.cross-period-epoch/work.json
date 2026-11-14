@@ -1,0 +1,88 @@
+{
+  "schema": "cat-work/v1",
+  "id": "eternalia.timeline.cross-period-epoch",
+  "entry": "issue",
+  "flow": "issue-work",
+  "mode": "shadow",
+  "work_kind": "implementation",
+  "issue_ref": "https://github.com/surumeneco/Eternalia_Novel/issues/5",
+  "project_entry_ref": "https://drive.google.com/file/d/1clwfVJ3e_t1_QKFfOWxxRIzE9WMFvTiM/view",
+  "normative": [
+    {
+      "uri": "https://drive.google.com/file/d/1LqX-Noytb_oWymIrpO01eO5PvThGlVGx/view"
+    },
+    {
+      "uri": "https://drive.google.com/file/d/14no6MWmkFuyWYPVS6QdcRmbLbrUBbOpc/view"
+    }
+  ],
+  "evidence": [
+    {
+      "uri": "https://drive.google.com/file/d/1pxoMMK9JMC-8qC4pQHJ4kdQAG8ypK1T1/view"
+    },
+    {
+      "uri": "https://drive.google.com/file/d/1Auye8OV-35xvJTI5zGsFEIXQSCQsx-6V/view"
+    },
+    {
+      "uri": "https://drive.google.com/file/d/1gKAPdnnHjDCy_dDxWx3BB6mL-eGPb92J/view"
+    }
+  ],
+  "repositories": [
+    {
+      "name": "eternalia",
+      "path": "../../../..",
+      "branch_pattern": "feature/*",
+      "allowed_paths": [
+        "Lifecycle/Works/New/eternalia.timeline.cross-period-epoch/work.json",
+        "docs/cat/drafts/timeline-cross-period-epoch.md",
+        "packages/contracts/src/timeline.ts",
+        "packages/contracts/exploratory/timeline.test.mjs",
+        "apps/web/app/pages/timeline/[id].vue",
+        "apps/web/app/composables/useUiLocale.ts",
+        "apps/web/app/composables/ui-messages-en.ts",
+        "apps/web/browser-acceptance/timeline-period-filter.test.mjs",
+        "docs/alpha-ac-traceability.md",
+        "CAT-HANDOFF.md"
+      ],
+      "production_paths": [
+        "packages/contracts/src/timeline.ts",
+        "apps/web/app/pages/timeline/[id].vue",
+        "apps/web/app/composables/useUiLocale.ts",
+        "apps/web/app/composables/ui-messages-en.ts"
+      ],
+      "test_paths": [
+        "packages/contracts/exploratory/timeline.test.mjs",
+        "apps/web/browser-acceptance/timeline-period-filter.test.mjs"
+      ]
+    }
+  ],
+  "scope": {
+    "process_ids": [
+      "eternalia.timeline"
+    ],
+    "changed_ids": [
+      "epoch.offset-add",
+      "epoch.safe",
+      "epoch.unified",
+      "epoch.filter",
+      "epoch.privacy"
+    ],
+    "preserved_ids": [
+      "publication.snapshot-separation",
+      "timeline.integer-year-input"
+    ]
+  },
+  "specification": {
+    "status": "draft",
+    "decision_ref": null,
+    "artifact_refs": [
+      "docs/cat/drafts/timeline-cross-period-epoch.md"
+    ]
+  },
+  "technologies": [
+    "typescript",
+    "vue",
+    "playwright"
+  ],
+  "checks": [],
+  "depends_on": []
+}
