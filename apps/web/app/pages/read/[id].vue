@@ -5,20 +5,25 @@ import { publishedChapterSequence } from '~/utils/chapter-navigation';
 const { t, language } = useUiLocale();
 const route = useRoute();
 const id = computed(() => String(route.params.id));
-const { data: chapter, pending, error, refresh } = await useFetch<ReaderNode>(
+const { data: chapter, pending, error, refresh, clear: clearChapter } = await useFetch<ReaderNode>(
   () => '/api/public/items/' + encodeURIComponent(id.value),
 );
-const { data: ancestry, error: ancestryError, refresh: refreshAncestry } = await useFetch<ReaderNode[]>(
+const { data: ancestry, error: ancestryError, refresh: refreshAncestry, clear: clearAncestry } = await useFetch<ReaderNode[]>(
   () => '/api/public/items/' + encodeURIComponent(id.value) + '/path',
 );
 const seriesId = computed(() => ancestry.value?.find(node => node.kind === 'series')?.id ?? '');
-const { data: tree, error: treeError, refresh: refreshTree } = await useAsyncData(
+const { data: tree, error: treeError, refresh: refreshTree, clear: clearTree } = await useAsyncData(
   () => 'read-series-' + seriesId.value,
   () => seriesId.value
     ? $fetch<ReaderNode[]>('/api/public/series/' + encodeURIComponent(seriesId.value) + '/tree')
     : Promise.resolve([] as ReaderNode[]),
   { watch: [seriesId] },
 );
+const { revalidating } = usePublicReaderRevalidation([
+  { clear: clearChapter, refresh },
+  { clear: clearAncestry, refresh: refreshAncestry },
+  { clear: clearTree, refresh: refreshTree },
+]);
 const series = computed(() => tree.value?.find(n => n.id === seriesId.value && n.kind === 'series'));
 const chapterSequence = computed(() => {
   if (chapter.value?.kind !== 'chapter' || !seriesId.value) return [];
@@ -36,14 +41,14 @@ function chapterLink(chapterId: string) {
 </script>
 <template>
   <div>
-    <TopicPath :items="[
+    <TopicPath v-if="!revalidating" :items="[
       { label: t('home'), to: '/' },
       { label: t('stories'), to: '/stories' },
       ...(series ? [{ label: series.content.title, to: '/stories/' + series.id }] : []),
       { label: chapter?.content.title ?? t('chapter') },
     ]" />
     <ReaderPanel>
-      <ReadingSkeleton v-if="pending" :label="t('readerLoadingChapter')" />
+      <ReadingSkeleton v-if="revalidating || pending" :label="t('readerLoadingChapter')" />
       <div v-else-if="error || chapter?.kind !== 'chapter'" role="alert">
         <h1>{{ t('readerErrorChapter') }}</h1>
         <p class="error-text">{{ t('readerChapterUnavailable') }}</p>
