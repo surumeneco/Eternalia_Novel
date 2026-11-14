@@ -20,6 +20,14 @@ PR #72で追加した`scripts/audit-ui-component-deps.mjs`はVue SFC全文を`/<
 
 このWorkは**観測機械の検査範囲と正確性**を改善する。Driveの010_UI構造契約では6分類の試験導入方針のみ採用され、分類規則・依存許可表・DOM契約は草案である。これらを自動的に正式合格として扱わず、`classificationStatus: undecided`を維持する。
 
+## 対象
+
+| Ref | Aspect |
+| --- | --- |
+| eternalia.ui.observed.template | template本体の実コンポーネント開始タグと非参照の区別 |
+| eternalia.ui.observed.script | script内の静的Vue SFC importとコメント等の区別 |
+| eternalia.ui.observed.graph | 既存の決定論的循環検出とUI6権威境界の維持 |
+
 ## 規則
 
 | ID | 条件 | 要求 | 検証 |
