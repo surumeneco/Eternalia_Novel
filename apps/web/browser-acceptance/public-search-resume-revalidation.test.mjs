@@ -80,7 +80,8 @@ test('PUB-RESUME-01/02: a hidden anonymous search tab revalidates ancestor visib
         const secondTab = await context.newPage();
         await secondTab.goto(base + '/');
         await secondTab.bringToFront();
-        await page.waitForFunction(() => document.visibilityState === 'hidden');
+        assert.equal(await page.evaluate(() => document.visibilityState), 'hidden',
+          'original reader page must be backgrounded before changing visibility');
         await visibility(categoryId, future);
         const fresh = await context.request.get(base + '/api/public/series/' + seriesId + '/tree');
         assert.equal(fresh.status(), 200);
@@ -106,7 +107,8 @@ test('PUB-RESUME-01/02: a hidden anonymous search tab revalidates ancestor visib
         // Re-publication in another tab is reflected without navigating
         // away from the reader's filtered search form.
         await secondTab.bringToFront();
-        await page.waitForFunction(() => document.visibilityState === 'hidden');
+        assert.equal(await page.evaluate(() => document.visibilityState), 'hidden',
+          'original reader page must be backgrounded before changing visibility');
         await visibility(categoryId, null);
         const restoredTree = page.waitForResponse(response =>
           response.url().includes('/api/public/series/' + seriesId + '/tree') && response.status() === 200);
