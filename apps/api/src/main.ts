@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import { randomUUID } from 'node:crypto';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
@@ -10,6 +11,9 @@ async function bootstrap(): Promise<void> {
   app.useBodyParser('json', { limit: '512kb' });
   app.disable('x-powered-by');
   app.use((_request: unknown, response: { setHeader(name: string, value: string): void }, next: () => void) => {
+    // Never trust/reflect client-provided correlation IDs. Each request gets
+    // a fresh server-owned value, including denied and unknown API routes.
+    response.setHeader('X-Request-Id', randomUUID());
     response.setHeader('Cache-Control', 'no-store');
     response.setHeader('X-Content-Type-Options', 'nosniff');
     next();
