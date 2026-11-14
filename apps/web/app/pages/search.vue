@@ -29,9 +29,11 @@ const kindLabels = computed<Record<ReaderKind, string>>(() => ({
   language: t('studioKindLanguage'), word: t('word'), grammar: t('grammar'),
   periodization: t('studioKindPeriodization'), event: t('event'),
 }));
-const { data: series, pending: seriesPending, error: seriesError, refresh: refreshSeries } =
+const { data: series, pending: seriesPending, error: seriesError, refresh: refreshSeries,
+  clear: clearSeries } =
   await useFetch<ReaderNode[]>('/api/public/series');
-const { data: tree, pending: treePending, error: treeError, refresh: refreshTree } =
+const { data: tree, pending: treePending, error: treeError, refresh: refreshTree,
+  clear: clearTree } =
   await useAsyncData<ReaderNode[]>(
     'search-public-series-tree',
     async () => selectedSeriesId.value
@@ -39,6 +41,56 @@ const { data: tree, pending: treePending, error: treeError, refresh: refreshTree
       : [],
     { watch: [selectedSeriesId], default: () => [] },
   );
+// A live reader tab can retain a previously published snapshot when an
+// author revokes an ancestor in another tab. A new HTTP request already
+// respects the server-side effective-publication check, but old Nuxt data
+// must never be treated as current when this tab is resumed from hidden/BFCache.
+// This is a focus/re-entry boundary, not real-time push-based revocation.
+const revalidationPending = ref(false);
+let visibilityEpoch = 0;
+let refreshRunning = false;
+function invalidatePublicSearch() {
+  visibilityEpoch++;
+  revalidationPending.value = true;
+  clearTree();
+  clearSeries();
+}
+async function refreshResumedSearch() {
+  if (!revalidationPending.value || document.visibilityState !== 'visible' || refreshRunning) return;
+  const epoch = visibilityEpoch;
+  refreshRunning = true;
+  try {
+    // Fresh public endpoints, rather than an old browser-side result set.
+    // Failed reads must leave cleared data and expose the existing retry UI.
+    await Promise.all([refreshSeries(), refreshTree()]);
+  } finally {
+    refreshRunning = false;
+    if (document.visibilityState !== 'visible') return;
+    if (epoch === visibilityEpoch) revalidationPending.value = false;
+    else void refreshResumedSearch();
+  }
+}
+function handleVisibilityChange() {
+  if (document.visibilityState === 'hidden') invalidatePublicSearch();
+  else void refreshResumedSearch();
+}
+function handlePageHide() { invalidatePublicSearch(); }
+function handlePageShow(event: PageTransitionEvent) {
+  if (!event.persisted) return;
+  invalidatePublicSearch();
+  void refreshResumedSearch();
+}
+onMounted(() => {
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  window.addEventListener('pagehide', handlePageHide);
+  window.addEventListener('pageshow', handlePageShow);
+});
+onBeforeUnmount(() => {
+  document.removeEventListener('visibilitychange', handleVisibilityChange);
+  window.removeEventListener('pagehide', handlePageHide);
+  window.removeEventListener('pageshow', handlePageShow);
+});
+
 const selectedSeries = computed(() => (series.value ?? [])
   .find(item => item.id === selectedSeriesId.value));
 const byId = computed(() => new Map((tree.value ?? []).map(node => [node.id, node])));
@@ -117,7 +169,7 @@ function parentName(node: ReaderNode): string {
     <ReaderPanel>
       <h1>{{ t('searchTitle') }}</h1>
       <p class="note">{{ t('searchIntro') }}</p>
-      <ReadingSkeleton v-if="seriesPending" :label="t('loading')" />
+      <ReadingSkeleton v-if="revalidationPending || seriesPending" :label="t('loading')" />
       <div v-else-if="seriesError" role="alert">
         <p class="error-text">{{ t('seriesLoadError') }}</p>
         <button type="button" class="inline-action" @click="refreshSeries()">{{ t('retry') }}</button>
