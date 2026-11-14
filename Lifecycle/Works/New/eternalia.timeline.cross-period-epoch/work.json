@@ -36,6 +36,7 @@
         "docs/cat/drafts/timeline-cross-period-epoch.md",
         "packages/contracts/src/timeline.ts",
         "packages/contracts/exploratory/timeline.test.mjs",
+        "packages/contracts/src/novel.ts",
         "apps/web/app/pages/timeline/[id].vue",
         "apps/web/app/composables/useUiLocale.ts",
         "apps/web/app/composables/ui-messages-en.ts",
@@ -45,6 +46,7 @@
       ],
       "production_paths": [
         "packages/contracts/src/timeline.ts",
+        "packages/contracts/src/novel.ts",
         "apps/web/app/pages/timeline/[id].vue",
         "apps/web/app/composables/useUiLocale.ts",
         "apps/web/app/composables/ui-messages-en.ts"
@@ -64,7 +66,8 @@
       "epoch.safe",
       "epoch.unified",
       "epoch.filter",
-      "epoch.privacy"
+      "epoch.privacy",
+      "epoch.public-offset-projection"
     ],
     "preserved_ids": [
       "publication.snapshot-separation",
