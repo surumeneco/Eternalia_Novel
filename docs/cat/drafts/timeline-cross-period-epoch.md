@@ -45,6 +45,7 @@ v0.3の年表は複数年代区分の基準計算と、全年代区分の統合�
 | epoch.unified | 複数公開区分で全区分を選択 | 共通年で統合昇順、同年は決定的タイブレーク | EPOCH-03 |
 | epoch.filter | 一つの公開区分を選択 | 従来の区分内順序、原表記を保持 | EPOCH-04 |
 | epoch.privacy | 予約・非公開・別シリーズ・未公開下書きが存在 | 匿名投影から秘匿し、公開稿の基準のみを使用 | EPOCH-05 |
+| epoch.public-offset-projection | 公開版の年代区分のみ読者データへ投影 | Periodizationの公開スナップショットのRelativeYearsを読み、下書きや非公開祖先を出力しない | EPOCH-06 |
 
 ## CAT状態
 
