@@ -63,7 +63,19 @@ async function openSearch(browser, seriesId, tipTitle) {
   return { context, page, series };
 }
 
-test('PUB-RESUME-01/02: a hidden anonymous search tab revalidates ancestor visibility and restores published results',
+// Chromium headless does not reliably mark background tabs hidden. Drive the
+// actual native visibilitychange listener with an explicit synthetic state;
+// this is lifecycle-behavior evidence, NOT physical/tab-switch integration.
+async function simulateVisibility(page, state) {
+  await page.evaluate(value => {
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true, value,
+    });
+    document.dispatchEvent(new Event('visibilitychange'));
+  }, state);
+}
+
+test('PUB-RESUME-01/02: synthetic hidden/visible lifecycle in one anonymous search tab revalidates ancestor visibility and restores published results',
   { timeout: 120_000 }, async () => {
     assert.ok(base?.startsWith('http://127.0.0.1:'), 'disposable loopback only');
     const browser = await chromium.launch({ headless: true });
@@ -80,8 +92,7 @@ test('PUB-RESUME-01/02: a hidden anonymous search tab revalidates ancestor visib
         const secondTab = await context.newPage();
         await secondTab.goto(base + '/');
         await secondTab.bringToFront();
-        assert.equal(await page.evaluate(() => document.visibilityState), 'hidden',
-          'original reader page must be backgrounded before changing visibility');
+        await simulateVisibility(page, 'hidden');
         await visibility(categoryId, future);
         const fresh = await context.request.get(base + '/api/public/series/' + seriesId + '/tree');
         assert.equal(fresh.status(), 200);
@@ -91,6 +102,7 @@ test('PUB-RESUME-01/02: a hidden anonymous search tab revalidates ancestor visib
         const nextTree = page.waitForResponse(response =>
           response.url().includes('/api/public/series/' + seriesId + '/tree') && response.status() === 200);
         await page.bringToFront();
+        await simulateVisibility(page, 'visible');
         await nextTree;
         await page.waitForFunction(() =>
           document.visibilityState === 'visible' &&
@@ -107,12 +119,12 @@ test('PUB-RESUME-01/02: a hidden anonymous search tab revalidates ancestor visib
         // Re-publication in another tab is reflected without navigating
         // away from the reader's filtered search form.
         await secondTab.bringToFront();
-        assert.equal(await page.evaluate(() => document.visibilityState), 'hidden',
-          'original reader page must be backgrounded before changing visibility');
+        await simulateVisibility(page, 'hidden');
         await visibility(categoryId, null);
         const restoredTree = page.waitForResponse(response =>
           response.url().includes('/api/public/series/' + seriesId + '/tree') && response.status() === 200);
         await page.bringToFront();
+        await simulateVisibility(page, 'visible');
         await restoredTree;
         await page.locator('main .search-result a').filter({ hasText: tipTitle }).waitFor();
         assert.equal(await page.locator('main .search-result a').count(), 1);
