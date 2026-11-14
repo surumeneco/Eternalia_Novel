@@ -77,8 +77,8 @@ test('UI6-DOM-OBS-02: all four published collections are readable in server HTML
         const response = await page.goto(base + '/' + area);
         assert.equal(response?.status(), 200, area);
         assert.equal(await page.locator('.site-main section.stone-panel h1').innerText(), label);
-        assert.match(await page.locator('.site-main ul.reader-list').innerText(),
-          new RegExp(fixture.prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '-world-A'),
+        assert.ok((await page.locator('.site-main ul.reader-list').innerText())
+          .includes(fixture.prefix + '-world-A'),
           area + ' must render published series in initial HTML');
         assert.equal(await page.locator('.site-main a[href*="/studio"]').count(), 0);
       }
