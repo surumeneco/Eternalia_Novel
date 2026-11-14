@@ -13,7 +13,7 @@
     "verify:exploratory": "npm run build:contracts && npm run verify:exploratory -w @eternalia/contracts",
     "build": "npm run build:contracts && npm run build -w @eternalia/api && npm run build -w @eternalia/web",
     "alpha": "npm run build:contracts && node apps/preview/src/server.mjs",
-    "test:alpha": "npm run build:contracts && node --test packages/contracts/exploratory/*.test.mjs apps/preview/tests/*.test.mjs && node --experimental-strip-types --test apps/web/tests/*.test.mjs",
+    "test:alpha": "npm run build:contracts && node --test packages/contracts/exploratory/*.test.mjs apps/preview/tests/*.test.mjs && node --experimental-strip-types --test apps/web/tests/*.test.mjs && node --test scripts/audit-ui-component-deps.test.mjs",
     "check:alpha": "npm run test:alpha",
     "check:ac-traceability": "node --test scripts/check-ac-traceability.test.mjs && node scripts/check-ac-traceability.mjs docs/alpha-ac-traceability.md",
     "check:junit-tooling": "node --test scripts/run-test-junit.test.mjs",
