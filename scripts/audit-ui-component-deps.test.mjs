@@ -1,15 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, writeFile, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { inspectComponentDirectory } from './audit-ui-component-deps.mjs';
 
 async function withVueFiles(files, run) {
   const root = await mkdtemp(join(tmpdir(), 'eternalia-ui-deps-'));
   try {
-    for (const [name, content] of Object.entries(files))
-      await writeFile(join(root, name + '.vue'), content);
+    for (const [name, content] of Object.entries(files)) {
+      const path = join(root, name + '.vue');
+      await mkdir(dirname(path), { recursive: true });
+      await writeFile(path, content);
+    }
     await run(root);
   } finally { await rm(root, { recursive: true, force: true }); }
 }
@@ -100,5 +103,23 @@ test('UI-DEP-OBS-06: static SFC imports count, but commented imports do not', as
   }, async root => {
     const result = await inspectComponentDirectory(root);
     assert.deepEqual(result.components.find(node => node.name === 'Host')?.dependsOn, ['RealPanel']);
+  });
+});
+
+test('UI-DEP-OBS-07: importing a nested same-basename Vue file is not a local SFC dependency', async () => {
+  await withVueFiles({
+    Host: `<script setup lang="ts">
+      import NestedPanel from './nested/ReaderPanel.vue';
+      import LocalPanel from './TopicPath.vue';
+    </script><template><main /></template>`,
+    ReaderPanel: '<template><article /></template>',
+    TopicPath: '<template><nav /></template>',
+    'nested/ReaderPanel': '<template><aside /></template>',
+  }, async root => {
+    const result = await inspectComponentDirectory(root);
+    assert.equal(result.componentCount, 3, 'nested components are outside this directory inventory');
+    assert.deepEqual(result.components.find(node => node.name === 'Host')?.dependsOn,
+      ['TopicPath'], 'an imported basename from another directory is not the local ReaderPanel');
+    assert.deepEqual(result.cycles, []);
   });
 });
