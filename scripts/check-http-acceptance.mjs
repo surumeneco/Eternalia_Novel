@@ -91,6 +91,7 @@ try {
     await command(['scripts/run-test-junit.mjs', 'browser-reader-locale', 'apps/web/browser-acceptance/reader-locale.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-search-locale', 'apps/web/browser-acceptance/search-locale-live.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-author-create-navigation', 'apps/web/browser-acceptance/author-create-navigation.test.mjs']);
+    await command(['scripts/run-test-junit.mjs', 'browser-ui6-public-collection-dom', 'apps/web/browser-acceptance/ui6-public-collection-dom.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-reactive-common-locale', 'apps/web/browser-acceptance/reactive-common-locale.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-reader-detail-jst', 'apps/web/browser-acceptance/reader-detail-jst-display.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-chapter-pages-nojs', 'apps/web/browser-acceptance/chapter-pages-nojs.test.mjs']);
