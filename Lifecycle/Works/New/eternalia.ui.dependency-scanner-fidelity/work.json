@@ -1,0 +1,72 @@
+{
+  "schema": "cat-work/v1",
+  "id": "eternalia.ui.dependency-scanner-fidelity",
+  "entry": "bug",
+  "flow": "issue-work",
+  "mode": "shadow",
+  "work_kind": "verification",
+  "issue_ref": "https://github.com/surumeneco/Eternalia_Novel/issues/1",
+  "project_entry_ref": "https://drive.google.com/file/d/1clwfVJ3e_t1_QKFfOWxxRIzE9WMFvTiM/view",
+  "normative": [
+    {
+      "uri": "https://drive.google.com/file/d/1XqbwPJhSK946BSFlAoG7hM2jcQYi8gn1/view"
+    },
+    {
+      "uri": "https://drive.google.com/file/d/14no6MWmkFuyWYPVS6QdcRmbLbrUBbOpc/view"
+    }
+  ],
+  "evidence": [
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/commit/d7c4d2e7b6781760958f9ce4176bc874dc037e85"
+    }
+  ],
+  "repositories": [
+    {
+      "name": "eternalia",
+      "path": "../../../..",
+      "branch_pattern": "feature/*",
+      "allowed_paths": [
+        "Lifecycle/Works/New/eternalia.ui.dependency-scanner-fidelity/work.json",
+        "docs/cat/drafts/ui-dependency-scanner-fidelity.md",
+        "scripts/audit-ui-component-deps.mjs",
+        "scripts/audit-ui-component-deps.test.mjs",
+        "docs/ui-component-dependency-inventory.md"
+      ],
+      "production_paths": [],
+      "test_paths": [
+        "scripts/audit-ui-component-deps.test.mjs"
+      ]
+    }
+  ],
+  "scope": {
+    "process_ids": [
+      "eternalia.ui"
+    ],
+    "changed_ids": [
+      "UI-DEP-OBS-04",
+      "UI-DEP-OBS-05",
+      "UI-DEP-OBS-06"
+    ],
+    "preserved_ids": [
+      "ui6.candidate-not-confirmed",
+      "ui6.composition-distinct-import",
+      "ui6.no-upstream-rewrite",
+      "UI-DEP-OBS-01",
+      "UI-DEP-OBS-02",
+      "UI-DEP-OBS-03"
+    ]
+  },
+  "specification": {
+    "status": "draft",
+    "decision_ref": null,
+    "artifact_refs": [
+      "docs/cat/drafts/ui-dependency-scanner-fidelity.md"
+    ]
+  },
+  "technologies": [
+    "Vue",
+    "Node.js"
+  ],
+  "checks": [],
+  "depends_on": []
+}
