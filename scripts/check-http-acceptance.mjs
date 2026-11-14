@@ -87,6 +87,7 @@ try {
     await command(['scripts/run-test-junit.mjs', 'browser-soft-delete', 'apps/web/browser-acceptance/author-soft-delete.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-timeline-integer', 'apps/web/browser-acceptance/author-timeline-integer-year.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-locale-switch', 'apps/web/browser-acceptance/locale-switch.test.mjs']);
+    await command(['scripts/run-test-junit.mjs', 'browser-shell-keyboard-bypass', 'apps/web/browser-acceptance/shell-keyboard-bypass.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-reader-locale', 'apps/web/browser-acceptance/reader-locale.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-search-locale', 'apps/web/browser-acceptance/search-locale-live.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-author-create-navigation', 'apps/web/browser-acceptance/author-create-navigation.test.mjs']);
