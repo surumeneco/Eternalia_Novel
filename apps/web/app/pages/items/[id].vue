@@ -3,7 +3,7 @@ import type { ReaderNode } from '~/types/reader';
 import { formatJstDisplay } from '~/utils/jst-publication-time';
 const { t, language } = useUiLocale();
 const route = useRoute();
-const { data: item, pending, error, refresh } = await useFetch<ReaderNode>(
+const { data: item, pending, error, refresh, clear: clearItem } = await useFetch<ReaderNode>(
   () => '/api/public/items/' + encodeURIComponent(String(route.params.id)),
 );
 const displayDetails = computed(() => Object.fromEntries(
@@ -12,9 +12,13 @@ const displayDetails = computed(() => Object.fromEntries(
       (item.value?.kind === 'word' && key === 'meanings') ||
       (item.value?.kind === 'language' && (key === 'characters' || key === 'wordClasses')))),
 ));
-const { data: ancestry } = await useFetch<ReaderNode[]>(
+const { data: ancestry, refresh: refreshAncestry, clear: clearAncestry } = await useFetch<ReaderNode[]>(
   () => '/api/public/items/' + encodeURIComponent(String(route.params.id)) + '/path',
 );
+const { revalidating } = usePublicReaderRevalidation([
+  { clear: clearItem, refresh },
+  { clear: clearAncestry, refresh: refreshAncestry },
+]);
 const crumbs = computed(() => {
   const kind = item.value?.kind;
   const section = kind && ['volume','part','chapter'].includes(kind) ? {label:t('stories'),to:'/stories'} :
@@ -44,9 +48,9 @@ const kindNames = computed<Record<string,string>>(() => ({
 </script>
 <template>
   <div>
-    <TopicPath :items="crumbs" />
+    <TopicPath v-if="!revalidating" :items="crumbs" />
     <ReaderPanel>
-      <ReadingSkeleton v-if="pending" :label="t('readerLoadingItem')" />
+      <ReadingSkeleton v-if="revalidating || pending" :label="t('readerLoadingItem')" />
       <div v-else-if="error" role="alert">
         <h1>{{ t('readerErrorItem') }}</h1>
         <p class="error-text">{{ t('readerErrorNotPublic') }}</p>
