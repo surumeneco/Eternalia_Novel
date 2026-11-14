@@ -22,10 +22,11 @@ const navigation = computed(() => [
 
 <template>
   <div id="top" class="site-shell">
+    <a class="skip-to-content" href="#main-content">{{ t('skipToContent') }}</a>
     <header class="site-header">
       <div class="header-inner">
         <NuxtLink class="brand" to="/">Eternalia</NuxtLink>
-        <button type="button" class="nav-toggle" :aria-expanded="menuOpen" aria-controls="global-navigation"
+        <button type="button" class="nav-toggle" :disabled="!clientReady" :aria-expanded="menuOpen" aria-controls="global-navigation"
           @click="menuOpen = !menuOpen">{{ menuOpen ? t('close') : t('menu') }}</button>
         <nav id="global-navigation" :aria-label="t('shellGlobalNav')" class="header-nav" :class="{ 'is-open': menuOpen }">
           <NuxtLink v-for="link in navigation" :key="link.to" :to="link.to" @click="menuOpen = false">
@@ -47,7 +48,7 @@ const navigation = computed(() => [
           </nav>
         </section>
       </aside>
-      <main id="main-content" class="site-main">
+      <main id="main-content" class="site-main" tabindex="-1">
         <slot />
         <p><a href="#top">{{ t('backToTop') }}</a></p>
       </main>
