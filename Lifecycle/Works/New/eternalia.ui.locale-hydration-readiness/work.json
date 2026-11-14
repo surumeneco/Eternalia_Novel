@@ -1,0 +1,72 @@
+{
+  "schema": "cat-work/v1",
+  "id": "eternalia.ui.locale-hydration-readiness",
+  "entry": "issue",
+  "flow": "issue-work",
+  "mode": "shadow",
+  "work_kind": "implementation",
+  "issue_ref": "https://github.com/surumeneco/Eternalia_Novel/issues/1",
+  "project_entry_ref": "https://drive.google.com/file/d/1clwfVJ3e_t1_QKFfOWxxRIzE9WMFvTiM/view",
+  "normative": [
+    {
+      "uri": "https://drive.google.com/file/d/1LqX-Noytb_oWymIrpO01eO5PvThGlVGx/view"
+    },
+    {
+      "uri": "https://drive.google.com/file/d/14no6MWmkFuyWYPVS6QdcRmbLbrUBbOpc/view"
+    }
+  ],
+  "evidence": [
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/actions/runs/43555036033"
+    }
+  ],
+  "repositories": [
+    {
+      "name": "eternalia",
+      "path": "../../../..",
+      "branch_pattern": "feature/*",
+      "allowed_paths": [
+        "Lifecycle/Works/New/eternalia.ui.locale-hydration-readiness/work.json",
+        "docs/cat/drafts/locale-hydration-readiness.md",
+        "apps/web/app/layouts/default.vue",
+        "apps/web/browser-acceptance/locale-switch.test.mjs"
+      ],
+      "production_paths": [
+        "apps/web/app/layouts/default.vue"
+      ],
+      "test_paths": [
+        "apps/web/browser-acceptance/locale-switch.test.mjs"
+      ]
+    }
+  ],
+  "scope": {
+    "process_ids": [
+      "eternalia.ui"
+    ],
+    "changed_ids": [
+      "LOCALE-HYDRATION-01",
+      "LOCALE-HYDRATION-02",
+      "LOCALE-HYDRATION-03"
+    ],
+    "preserved_ids": [
+      "locale.fixed-ui-ja-en",
+      "locale.authored-content-unchanged",
+      "locale.persist-cookie"
+    ]
+  },
+  "specification": {
+    "status": "draft",
+    "decision_ref": null,
+    "artifact_refs": [
+      "docs/cat/drafts/locale-hydration-readiness.md"
+    ]
+  },
+  "technologies": [
+    "vue",
+    "nuxt",
+    "playwright",
+    "typescript"
+  ],
+  "checks": [],
+  "depends_on": []
+}
