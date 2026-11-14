@@ -98,6 +98,7 @@ try {
     await command(['scripts/run-test-junit.mjs', 'browser-public-search-privacy', 'apps/web/browser-acceptance/publication-search-privacy.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-public-search-resume', 'apps/web/browser-acceptance/public-search-resume-revalidation.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-reader-detail-resume', 'apps/web/browser-acceptance/public-reader-detail-resume.test.mjs']);
+    await command(['scripts/run-test-junit.mjs', 'browser-home-collection-resume', 'apps/web/browser-acceptance/public-home-collection-resume.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-public-series-resume', 'apps/web/browser-acceptance/public-series-resume.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-search-metadata-snapshot', 'apps/web/browser-acceptance/search-metadata-snapshot.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-author-error-locale', 'apps/web/browser-acceptance/author-api-error-locale.test.mjs']);
