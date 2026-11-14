@@ -898,6 +898,7 @@ textarea.manuscript-body {
   min-height: clamp(24rem, 58vh, 46rem);
   line-height: 1.95;
   font-family: "Noto Serif JP", "Yu Mincho", serif;
+  font-weight: 400; /* override bold label weight for the editable prose itself */
   padding: clamp(.8rem, 1.4vw, 1.1rem);
   overflow-wrap: anywhere;
 }
