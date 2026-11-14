@@ -6,7 +6,8 @@ const props = defineProps<{
   description: string;
   section: 'stories' | 'tips' | 'dictionaries' | 'timeline';
 }>();
-const { data: series, pending, error, refresh } = await useFetch<ReaderNode[]>('/api/public/series');
+const { data: series, pending, error, refresh, clear } = await useFetch<ReaderNode[]>('/api/public/series');
+const { revalidating } = usePublicReaderRevalidation([{ clear, refresh }]);
 const childKind = computed<ReaderKind>(() =>
   props.section === 'stories' ? 'volume' : props.section === 'tips' ? 'category' :
   props.section === 'dictionaries' ? 'language' : 'periodization');
@@ -28,7 +29,7 @@ function collectionLink(id: string) {
       <h1>{{ props.title }}</h1>
       <p class="note">{{ props.description }}</p>
       <AuthorCreateLink kind="series" :label="t('studioNewSeries')" />
-      <ReadingSkeleton v-if="pending" :label="t('collectionLoading')" />
+      <ReadingSkeleton v-if="revalidating || pending" :label="t('collectionLoading')" />
       <div v-else-if="error" role="alert">
         <p class="error-text">{{ t('seriesLoadError') }}</p>
         <button class="inline-action" type="button" @click="refresh()">{{ t('retry') }}</button>
