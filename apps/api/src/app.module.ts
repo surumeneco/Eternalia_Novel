@@ -12,12 +12,13 @@ import { LibraryStorageService } from './library-storage.service';
 import { PostgresLibraryService } from './postgres-library.service';
 import { PublicSeriesController } from './public-series.controller';
 import { PublicPathController } from './public-path.controller';
+import { PublicClock } from './public-clock.service';
 
 @Module({
   controllers: [HealthController, PublicSeriesController, PublicPathController, AuthController, AdminNodesController, AuthorMemosController, AuthorOrderController],
   providers: [
     LocalAlphaLibraryService, PostgresLibraryService, LibraryStorageService,
-    DiscordAuthService, AuthorGuard, AuthorMemosService,
+    DiscordAuthService, AuthorGuard, AuthorMemosService, PublicClock,
   ],
 })
 export class AppModule {}
