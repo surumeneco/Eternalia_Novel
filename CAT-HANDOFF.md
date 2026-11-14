@@ -1,10 +1,10 @@
 # Eternalia_Novel α版 — 現行入口と開発履歴
 
-## 現行の引継ぎ境界（2026-11-13照合）
+## 現行の引継ぎ境界（2026-11-14照合）
 
-- **受入確認対象は `develop`**。照合したHEAD: `603ec319b592c8bbb4e52ae8186933aec7d20989`（PR #53まで統合）。現在オープンPRなし。`main`は`7d23cbf43b37bcafef29abacdb6802657ae16cdc`で未リリース。作業開始時に再取得し、ここに書いた固定SHAを将来の最新状態と扱わない。
-- 実装済みの主な後続機能: 章ページ配列（PR #38）、同一言語重複語の拒否と既存編集への未保存引継ぎ（#40）、章自動保存/復旧（#43/#44）、Tipのカテゴリ間下書き移動/公開所属の分離（#46）、非公開済み対象の論理削除（#47）、年0/負年を含む整数入力・年代区分相対年の保存（#48）、固定UIのja/en切替・公開画面（#50/#51）、作者画面のAPIエラー表示言語化（#53）。
-- 最新のPR #53は[Actions #43375845656](https://github.com/surumeneco/Eternalia_Novel/actions/runs/43375845656)で4/4ジョブ成功。**マージ後の**develop HEADについては[Actions #43389064668](https://github.com/surumeneco/Eternalia_Novel/actions/runs/43389064668)を結果確定まで確認し、PR HEADのCI成功と区別する。
+- **受入確認対象は `develop`**。照合したHEAD: `fb68788fa4cf87f0dcfff6ef074e4370ab82d05d`（PR #67まで統合）。当該HEAD時点で未統合の既存PRなし。`main`は`7d23cbf43b37bcafef29abacdb6802657ae16cdc`で未リリース。次回作業開始時には必ず最新のHEAD/PR/CIを再取得し、この固定SHAを恒久的な最新状態とみなさない。
+- 実装済みの後続単位: 章ページ配列（PR #38）、同綴単語の編集引継ぎ（#40）、章自動保存/復旧（#43/#44）、Tipカテゴリ間の下書き移動と公開稿所属維持（#46）、非公開済対象の論理削除（#47）、整数年・年代区分相対年保存（#48）、固定UI ja/enと作者エラー（#50/#51/#53）、公開時刻のJST入力/UTC比較と4領域の予約遮断（#55/#56）、公開検索の非漏洩（#61）、読者画面のJST日時表示（#62）、SSR HTMLのHTTP no-store（#63）、関連TipのHTTP秘匿（#64）、APIのサーバー発行RequestIdヘッダー（#65）、水和前言語切替ボタンの無効化（#66）、公開APIのミリ秒等号境界テスト（#67）。
+- 最新機能PR #67の[Push CI #43556288845](https://github.com/surumeneco/Eternalia_Novel/actions/runs/43556288845)と[PR CI #43556348249](https://github.com/surumeneco/Eternalia_Novel/actions/runs/43556348249)はともに4/4ジョブ成功。**マージ後**`develop@fb68788` の[CI #43556701748](https://github.com/surumeneco/Eternalia_Novel/actions/runs/43556701748)は別の実測として結果を取得すること。実HTTP JUnitは4領域＋祖先のT-1ms/等号/T+1msを1件/失敗0で通過。
 - [AC-01〜78台帳](docs/alpha-ac-traceability.md)は**not-run 73件、pending-decision 3件、scope-excluded 2件**。not-runは「未実装73件」ではなく、部分的な自動試験の証拠があっても**人間受入または正式Gateを完了していない**という意味。[MAN-01〜15](docs/alpha-manual-acceptance.md)はすべてnot-run。
 - CATの正規CLI/固定ソースの取得は可能であり、各WorkのDraft・Work契約/構文検査と規範Process Closure / Model Conformance / Implementation Conformanceの**合格は別**。Confirmedに昇格するには根拠となる意思決定が必要。ローカルテスト、GitHub CI、合成作者セッション、実Discord OAuth、実機IMEを混同しない。
 - 機能決定の正本はDrive `forGPT/Creating/Projects/Websites/Eternalia_Novel/10_要件定義/100_機能仕様.md`、検証条件は同`40_開発・検証/400_受入検証計画.md`、実装状態は現在のコード/CI。v0.3原則継承、独立Disabledなし、ゴミ箱復元UIなし、作者作成本文は翻訳しない。**年代区分間の厳密な換算式と作者画面の最終視覚判断は未決**。
@@ -15,9 +15,9 @@
 
 | 順位/Work | 現状・対象 | 次の実作業と完了条件 | 対応する証拠・依存 |
 | --- | --- | --- | --- |
-| **R0 現状と受入台帳の同期** | PR #38〜53の一部統合証拠が台帳の古い記述のまま。#39/#41は**実装統合後も**正式Gate/人間受入の残件としてopen | AC-59/75への#53部分証拠反映は本整理PRで実施。次は#39/#41の正式Gate・実機受入残件を独立管理し、develop HEADの4ジョブを再確認する。AC判定を勝手にpassにしない | [AC台帳](docs/alpha-ac-traceability.md)、[Actions](https://github.com/surumeneco/Eternalia_Novel/actions) |
-| **R1 公開境界と横断経路の自動試験不足を埋める** | **一部完了**: PR #55（JST入力・UTC保存の端末TZ非依存化、4領域ドメイン時刻境界-1ms/等号/+1ms、CI #43391887747 4/4）とPR #56（実PG/Nuxt/Nest両HTTPの章・設定・単語・出来事の未来予約→匿名直URL/パンくず/ツリー/新着遮断→同一公開稿復帰・親シリーズ遮断・非作者拒否、CI #43392774119 4/4）は`develop`に統合 | **残**: HTTPで注入時計による等号の瞬間確認、全検索・キャッシュ・関連リンク、異なる公開範囲の公開稿/本文保持の同一HEAD証拠を追加。AC-45/54/55/69/70は人間受入・CAT正式Gate未完了 | PR #55/#56、[AC台帳](docs/alpha-ac-traceability.md) |
-| **R2 v0.3共通機能・構造継承の残差監査** | AC-66/67/71/73/74の受入台帳には十分な証拠がなく、**未実装の断定ではなく照合不足**。マスタ/検索/導線・旧APIのエラーエンベロープとRequestId・UI6分類などを確認する | 旧版と現行ルート/API/画面/テストの対応表を作り、必要なマスタ管理・作者/読者導線・エラー/アクセシビリティ/構造の不足があれば独立Workとして実装。既存機能は再実装しない。AC-58/66/67/71/73/74を試験証拠で記録 | [旧継承対応](docs/legacy-ui-asset-map.md)、Drive 900/910/920、Issue #1 |
+| **R0 現状と受入台帳の同期** | PR #61〜67のAPI/HTTP/Chromium部分証拠とAC-06/31/45/54/55/59/66/69/70/71/75の記録を照合し、現行表に統合。#39/#41は実装有無ではなく正式CAT Gate・人間受入の残件として管理 | 全78件の状態は未承認のまま維持。新CIの同一HEADとJUnitを今後の受入時に再照合し、正式Gate・実機未実行をpassにしない | [AC台帳](docs/alpha-ac-traceability.md)、[Actions](https://github.com/surumeneco/Eternalia_Novel/actions) |
+| **R1 公開境界と横断経路の自動試験不足を埋める** | PR #55/#56のJST/UTCと4領域の公開遮断、#61の検索、#63のSSR HTTPキャッシュ抑止、#64の関連Tip公開投影、#67の実Nest HTTP注入時計T-1ms/等号/T+1msを検証済み。いずれも探索的証拠であり正式Gateではない | **残**: 実CDN/BFCache・タブ内既表示内容の扱い、複雑な検索負例/大規模データ、参照型全種・公開版世代の受入、実Discord・実機・正式CAT Gate。AC-45/54/55/69/70を自動証拠だけでpassにしない | PR #55/#56/#61/#63/#64/#67、[AC台帳](docs/alpha-ac-traceability.md) |
+| **R2 v0.3共通機能・構造継承の残差監査** | AC-66/67/71/73/74の残差は未実装の断定でなく照合不足。PR #65で非破壊のX-Request-Id（サーバー発行UUIDv4・Nest/Nuxt経路）を追加、#62/#66で日時と水和前UIを是正。旧レスポンスエンベロープの全面採用は未決 | 旧FE/BEのマスタ/検索/導線・DTO・一般例外秘匿/言語独立性・UI6分類を正本に照合し、未対応が確認された独立Workだけ実装。AC-58/66/67/71/73/74の正式受入・Gateは未完了 | [旧継承対応](docs/legacy-ui-asset-map.md)、Drive 900/910/920、Issue #1 |
 | **R3 年代区分間の厳密換算・統合時系列** | TL-03/TL-06、AC-10/42/68。年0/負年/安全整数・区分別表示は実装済み。**`RelativeYears`の符号・基準位置・換算式、未設定時・公開投影が未決** | まず旧v0.3の定義・例を再点検し、採用案/反例/受入ベクトルを用意して権限ある決定を取得。決定後、シリーズ内だけを換算・統合ソートし、区分非公開/予約公開の情報が漏れないAPI/画面・自動試験を実装 | [Issue #5](https://github.com/surumeneco/Eternalia_Novel/issues/5)、AC-10/42/68 |
 | **R4 CAT-TDD正式検証** | 多数のDomainSpec/WorkはDraft、既存のCIは探索的検証。正式なClosure/Model/Queue/Conformanceの全件成功証拠は未確認 | 各機能の規範Artifactと決定根拠を照合、承認が必要なDraftは保持し、正規CATスクリプトで可能なGateを実行し入力ハッシュ/結果をWorkに保持。未承認は`blocked`/未実行を明記して誤昇格しない。今後の新規実装はWorkごとに並行して実施 | `Lifecycle/Works/`、`docs/cat/`、CAT各正規CLI |
 | **R5 実Discord認証・実端末での操作受入** | Discord API模擬・合成セッション・Chromiumと、実Discord/Windows/Android IME操作は独立。MAN-01〜09/11〜15は未実施 | 実作者/非作者アカウントでOAuth・ログアウト/403を検証。長文・ルビ/ページ編集・日本語IME変換中・2タブ競合・通信断復旧・カテゴリ移動・論理削除・ja/en切替を実機で記録。秘密値をIssue/ログへ残さない | [MAN台帳](docs/alpha-manual-acceptance.md)、AC-18/19/65/72/75 |
