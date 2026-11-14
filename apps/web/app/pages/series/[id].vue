@@ -15,9 +15,10 @@ const section = computed<SectionKey | null>(() => {
   const value = route.query.section;
   return typeof value === 'string' && Object.hasOwn(sections.value, value) ? value as SectionKey : null;
 });
-const { data: tree, pending, error, refresh } = await useFetch<ReaderNode[]>(
+const { data: tree, pending, error, refresh, clear } = await useFetch<ReaderNode[]>(
   () => '/api/public/series/' + encodeURIComponent(id.value) + '/tree',
 );
+const { resuming } = usePublicReaderResume(clear, refresh);
 const series = computed(() => tree.value?.find(node => node.kind === 'series'));
 const allowed = computed(() => section.value ? new Set<ReaderKind>(sections.value[section.value].kinds) : null);
 const byId = computed(() => new Map((tree.value ?? []).map(node => [node.id, node])));
@@ -88,7 +89,7 @@ const labels = computed<Record<ReaderKind,string>>(() => ({
       { label: series?.content.title || t('readerKindSeries') }
     ]" />
     <ReaderPanel>
-      <ReadingSkeleton v-if="pending" :label="t('readerLoadingSeries')" />
+      <ReadingSkeleton v-if="pending || resuming" :label="t('readerLoadingSeries')" />
       <div v-else-if="error" role="alert">
         <h1>{{ t('readerErrorSeries') }}</h1>
         <p class="error-text">{{ t('readerErrorNotPublic') }}</p>
