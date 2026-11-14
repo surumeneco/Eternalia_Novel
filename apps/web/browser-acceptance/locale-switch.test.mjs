@@ -12,6 +12,16 @@ test('CM-08: header switches ja/en and preserves published author text on reload
     assert.ok(base?.startsWith('http://127.0.0.1:'));
     const browser=await chromium.launch({headless:true});
     try{
+      // Without JS/hydration the visible SSR switch must not imply it works.
+      const serverOnly=await browser.newContext({javaScriptEnabled:false,viewport:{width:390,height:844}});
+      try {
+        const staticPage=await serverOnly.newPage();
+        await staticPage.goto(base+'/series/'+fixture.seriesA);
+        const staticSwitch=staticPage.locator('button.locale-switch');
+        await staticSwitch.waitFor();
+        assert.equal(await staticSwitch.isDisabled(),true,
+          'SSR locale switch must be inert until Vue installs its click handler');
+      } finally { await serverOnly.close(); }
       const context=await browser.newContext({viewport:{width:390,height:844}});
       const reader=await context.request.get(base+'/api/public/items/'+fixture.seriesA);
       assert.equal(reader.status(),200);
@@ -20,6 +30,7 @@ test('CM-08: header switches ja/en and preserves published author text on reload
       await page.goto(base+'/series/'+fixture.seriesA);
       // SSR markup can precede Nuxt/Vue hydration; wait until click handlers are mounted.
       await page.waitForFunction(() => Boolean(document.querySelector('#__nuxt')?.__vue_app__));
+      await page.locator('button.locale-switch:not(:disabled)').waitFor();
       await page.getByRole('button',{name:'英語に切り替え'}).waitFor();
       await page.locator('html[lang="ja"]').waitFor();
       assert.equal(await page.locator('html').getAttribute('lang'),'ja');
@@ -35,6 +46,7 @@ test('CM-08: header switches ja/en and preserves published author text on reload
         'English interface must not translate author-created content');
       await page.reload();
       await page.waitForFunction(() => Boolean(document.querySelector('#__nuxt')?.__vue_app__));
+      await page.locator('button.locale-switch:not(:disabled)').waitFor();
       await page.getByRole('button',{name:'Switch to Japanese'}).waitFor();
       await page.locator('html[lang="en"]').waitFor();
       assert.equal(await page.locator('html').getAttribute('lang'),'en');
