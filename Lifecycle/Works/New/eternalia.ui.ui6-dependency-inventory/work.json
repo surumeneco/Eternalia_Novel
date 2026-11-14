@@ -1,0 +1,71 @@
+{
+  "schema": "cat-work/v1",
+  "id": "eternalia.ui.ui6-dependency-inventory",
+  "entry": "issue",
+  "flow": "issue-work",
+  "mode": "shadow",
+  "work_kind": "verification",
+  "issue_ref": "https://github.com/surumeneco/Eternalia_Novel/issues/1",
+  "project_entry_ref": "https://drive.google.com/file/d/1clwfVJ3e_t1_QKFfOWxxRIzE9WMFvTiM/view",
+  "normative": [
+    {
+      "uri": "https://drive.google.com/file/d/1XqbwPJhSK946BSFlAoG7hM2jcQYi8gn1/view"
+    },
+    {
+      "uri": "https://drive.google.com/file/d/14no6MWmkFuyWYPVS6QdcRmbLbrUBbOpc/view"
+    }
+  ],
+  "evidence": [
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/commit/e11a57f4d625dbe68e1de74f5821b6a8bf2c04a8"
+    }
+  ],
+  "repositories": [
+    {
+      "name": "eternalia",
+      "path": "../../../..",
+      "branch_pattern": "feature/*",
+      "allowed_paths": [
+        "Lifecycle/Works/New/eternalia.ui.ui6-dependency-inventory/work.json",
+        "docs/cat/drafts/ui6-dependency-observation.md",
+        "docs/ui-component-dependency-inventory.md",
+        "scripts/audit-ui-component-deps.mjs",
+        "scripts/audit-ui-component-deps.test.mjs",
+        "package.json"
+      ],
+      "production_paths": [],
+      "test_paths": [
+        "scripts/audit-ui-component-deps.test.mjs"
+      ]
+    }
+  ],
+  "scope": {
+    "process_ids": [
+      "eternalia.ui"
+    ],
+    "changed_ids": [
+      "UI-DEP-OBS-01",
+      "UI-DEP-OBS-02",
+      "UI-DEP-OBS-03"
+    ],
+    "preserved_ids": [
+      "ui6.candidate-not-confirmed",
+      "ui6.composition-distinct-import",
+      "ui6.no-upstream-rewrite"
+    ]
+  },
+  "specification": {
+    "status": "draft",
+    "decision_ref": null,
+    "artifact_refs": [
+      "docs/cat/drafts/ui6-dependency-observation.md"
+    ]
+  },
+  "technologies": [
+    "vue",
+    "node",
+    "typescript"
+  ],
+  "checks": [],
+  "depends_on": []
+}
