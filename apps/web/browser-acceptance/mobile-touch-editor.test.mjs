@@ -260,3 +260,64 @@ test('Chromium touch editor respects Unicode fallback boundaries across scripts'
       } finally { await author.close(); }
     } finally { await browser.close(); }
   });
+
+test('MANUSCRIPT-UX-01/02/03: chapter writing surface has readable width and mobile fit without leaking style to other editors',
+  { timeout: 120_000 }, async () => {
+    const browser = await chromium.launch({ headless: true });
+    try {
+      const desktop = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+      await desktop.addCookies([{
+        name: 'eternalia_author', value: fixture.authorToken, url: base,
+        httpOnly: true, sameSite: 'Lax',
+      }]);
+      const page = await desktop.newPage();
+      await page.goto(base + '/studio?item=' + fixture.chapter);
+      const chapter = page.getByRole('textbox', { name: '本文・説明', exact: true });
+      await chapter.waitFor();
+      assert.equal(await page.locator('textarea.manuscript-body').count(), 1,
+        'the long-form chapter editor needs a dedicated writing-surface contract');
+      const metrics = await chapter.evaluate(el => {
+        const style = getComputedStyle(el);
+        const parent = el.closest('.studio-editor');
+        return {
+          width: el.getBoundingClientRect().width,
+          height: el.getBoundingClientRect().height,
+          parentWidth: parent?.getBoundingClientRect().width ?? 0,
+          lineHeight: Number.parseFloat(style.lineHeight),
+          fontSize: Number.parseFloat(style.fontSize),
+          fontFamily: style.fontFamily,
+          fontWeight: Number.parseFloat(style.fontWeight),
+        };
+      });
+      assert.ok(metrics.width <= Math.min(800, metrics.parentWidth),
+        'manuscript line length must be capped within the editor panel: ' + JSON.stringify(metrics));
+      assert.ok(metrics.height >= 420, 'long manuscript should have a substantial editing height');
+      assert.ok(metrics.lineHeight >= metrics.fontSize * 1.9,
+        'manuscript line spacing should be visibly greater than standard inputs');
+      assert.match(metrics.fontFamily, /serif/i, 'prefer a Japanese literary manuscript font');
+      assert.ok(metrics.fontWeight <= 500,
+        'form label emphasis must not turn the chapter prose itself bold');
+      for (const width of [320, 390]) {
+        await page.setViewportSize({ width, height: 780 });
+        const visible = await chapter.evaluate(el => ({
+          documentWidth: document.documentElement.scrollWidth,
+          clientWidth: document.documentElement.clientWidth,
+          inputWidth: el.getBoundingClientRect().width,
+          inputVisible: getComputedStyle(el).visibility !== 'hidden',
+        }));
+        assert.ok(visible.documentWidth <= visible.clientWidth + 2,
+          width + 'px document overflow: ' + JSON.stringify(visible));
+        assert.ok(visible.inputWidth <= visible.clientWidth && visible.inputVisible,
+          'chapter textarea must fit the device viewport');
+        assert.equal(await page.getByRole('button', { name: '下書きを保存' }).isVisible(), true);
+      }
+      await page.setViewportSize({ width: 1280, height: 900 });
+      await page.goto(base + '/studio?item=' + fixture.section);
+      const other = page.getByRole('textbox', { name: '本文・説明', exact: true });
+      await other.waitFor();
+      assert.equal(await page.locator('textarea.manuscript-body').count(), 0,
+        'other editing domains must retain their existing controls');
+      assert.ok(await other.isVisible());
+      await desktop.close();
+    } finally { await browser.close(); }
+  });
