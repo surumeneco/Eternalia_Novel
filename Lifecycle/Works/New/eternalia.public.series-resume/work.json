@@ -1,0 +1,77 @@
+{
+  "schema": "cat-work/v1",
+  "id": "eternalia.public.series-resume",
+  "entry": "issue",
+  "flow": "issue-work",
+  "mode": "shadow",
+  "work_kind": "implementation",
+  "issue_ref": "https://github.com/surumeneco/Eternalia_Novel/issues/1",
+  "project_entry_ref": "https://drive.google.com/file/d/1clwfVJ3e_t1_QKFfOWxxRIzE9WMFvTiM/view",
+  "normative": [
+    {
+      "uri": "https://drive.google.com/file/d/1LqX-Noytb_oWymIrpO01eO5PvThGlVGx/view"
+    },
+    {
+      "uri": "https://drive.google.com/file/d/1Kq3Ubm5cKJopx09DpvrX79Z8mrcvimsJ/view"
+    }
+  ],
+  "evidence": [
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/commit/293f9adfc6002527a7f3db672adbb96e78c6d85f"
+    }
+  ],
+  "repositories": [
+    {
+      "name": "eternalia",
+      "path": "../../../..",
+      "branch_pattern": "feature/*",
+      "allowed_paths": [
+        "Lifecycle/Works/New/eternalia.public.series-resume/work.json",
+        "docs/cat/drafts/public-series-resume.md",
+        "apps/web/app/pages/series/[id].vue",
+        "apps/web/browser-acceptance/public-series-resume.test.mjs",
+        "scripts/check-http-acceptance.mjs",
+        "docs/alpha-ac-traceability.md",
+        "CAT-HANDOFF.md"
+      ],
+      "production_paths": [
+        "apps/web/app/pages/series/[id].vue"
+      ],
+      "test_paths": [
+        "apps/web/browser-acceptance/public-series-resume.test.mjs"
+      ]
+    }
+  ],
+  "scope": {
+    "process_ids": [
+      "eternalia.public"
+    ],
+    "changed_ids": [
+      "SERIES-RESUME-01",
+      "SERIES-RESUME-02",
+      "SERIES-RESUME-03",
+      "SERIES-RESUME-04"
+    ],
+    "preserved_ids": [
+      "PB-03",
+      "PB-05",
+      "PB-10",
+      "PB-11"
+    ]
+  },
+  "specification": {
+    "status": "draft",
+    "decision_ref": null,
+    "artifact_refs": [
+      "docs/cat/drafts/public-series-resume.md"
+    ]
+  },
+  "technologies": [
+    "nuxt",
+    "vue",
+    "playwright",
+    "node"
+  ],
+  "checks": [],
+  "depends_on": []
+}
