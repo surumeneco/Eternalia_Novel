@@ -5,9 +5,10 @@ import { compareEventsWithinPeriod, commonTimelineYear, compareUnifiedTimelineEn
 
 const route = useRoute();
 const seriesId = computed(() => String(route.params.id));
-const { data: tree, pending, error, refresh } = await useFetch<ReaderNode[]>(
+const { data: tree, pending, error, refresh, clear } = await useFetch<ReaderNode[]>(
   () => '/api/public/series/' + encodeURIComponent(seriesId.value) + '/tree',
 );
+const { revalidating } = usePublicReaderRevalidation([{ clear, refresh }]);
 const series = computed(() => tree.value?.find(node =>
   node.kind === 'series' && node.id === seriesId.value,
 ));
@@ -44,13 +45,13 @@ const merged = computed(() => {
 
 <template>
   <div>
-    <TopicPath :items="[
+    <TopicPath v-if="!revalidating" :items="[
       { label: t('home'), to: '/' },
       { label: t('timeline'), to: '/timeline' },
       { label: series?.content.title ?? t('readerKindSeries') },
     ]" />
     <ReaderPanel>
-      <ReadingSkeleton v-if="pending" :label="t('readerLoadingTimeline')" />
+      <ReadingSkeleton v-if="revalidating || pending" :label="t('readerLoadingTimeline')" />
       <div v-else-if="error || !series" role="alert">
         <h1>{{ t('readerErrorTimeline') }}</h1>
         <p class="error-text">{{ t('readerSeriesUnavailable') }}</p>
