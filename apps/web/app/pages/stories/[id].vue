@@ -3,9 +3,10 @@ import type { ReaderNode } from '~/types/reader';
 const { t } = useUiLocale();
 const route = useRoute();
 const id = computed(() => String(route.params.id));
-const { data: tree, pending, error, refresh } = await useFetch<ReaderNode[]>(
+const { data: tree, pending, error, refresh, clear } = await useFetch<ReaderNode[]>(
   () => '/api/public/series/' + encodeURIComponent(id.value) + '/tree',
 );
+const { revalidating } = usePublicReaderRevalidation([{ clear, refresh }]);
 const series = computed(() => tree.value?.find(node => node.kind === 'series' && node.id === id.value));
 const sorted = (parentId: string, kind: ReaderNode['kind']): ReaderNode[] =>
   (tree.value ?? []).filter(n => n.kind === kind && n.parentId === parentId)
@@ -16,9 +17,9 @@ const chaptersOf = (partId: string) => sorted(partId, 'chapter');
 </script>
 <template>
   <div>
-    <TopicPath :items="[{ label: t('home'), to: '/' }, { label: t('stories'), to: '/stories' }, { label: series?.content.title ?? t('readerKindSeries') }]" />
+    <TopicPath v-if="!revalidating" :items="[{ label: t('home'), to: '/' }, { label: t('stories'), to: '/stories' }, { label: series?.content.title ?? t('readerKindSeries') }]" />
     <ReaderPanel>
-      <ReadingSkeleton v-if="pending" :label="t('readerLoadingToc')" />
+      <ReadingSkeleton v-if="revalidating || pending" :label="t('readerLoadingToc')" />
       <div v-else-if="error || !series" role="alert">
         <h1>{{ t('readerErrorStories') }}</h1>
         <p class="error-text">{{ t('readerSeriesUnavailable') }}</p>

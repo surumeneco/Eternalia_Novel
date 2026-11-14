@@ -5,9 +5,10 @@ import type { WordMeaning } from '@eternalia/contracts';
 
 const route = useRoute();
 const seriesId = computed(() => String(route.params.id));
-const { data: tree, pending, error, refresh } = await useFetch<ReaderNode[]>(
+const { data: tree, pending, error, refresh, clear } = await useFetch<ReaderNode[]>(
   () => '/api/public/series/' + encodeURIComponent(seriesId.value) + '/tree',
 );
+const { revalidating } = usePublicReaderRevalidation([{ clear, refresh }]);
 const series = computed(() => tree.value?.find(
   node => node.kind === 'series' && node.id === seriesId.value,
 ));
@@ -58,13 +59,13 @@ watch(languageId, () => { partOfSpeech.value = ''; });
 
 <template>
   <div>
-    <TopicPath :items="[
+    <TopicPath v-if="!revalidating" :items="[
       { label: t('home'), to: '/' },
       { label: t('dictionaries'), to: '/dictionaries' },
       { label: series?.content.title ?? t('readerKindSeries') },
     ]" />
     <ReaderPanel>
-      <ReadingSkeleton v-if="pending" :label="t('readerLoadingDictionary')" />
+      <ReadingSkeleton v-if="revalidating || pending" :label="t('readerLoadingDictionary')" />
       <div v-else-if="error || !series" role="alert">
         <h1>{{ t('readerErrorDictionary') }}</h1>
         <p class="error-text">{{ t('readerSeriesUnavailable') }}</p>
