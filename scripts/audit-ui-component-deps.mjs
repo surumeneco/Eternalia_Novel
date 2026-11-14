@@ -56,7 +56,8 @@ function staticImportDependencies(source, knownNames) {
       .replace(/^[ \t]*\/\/.*$/gm, '');
     for (const match of withoutComments.matchAll(staticVueImport)) {
       const target = basename(match[1], '.vue');
-      if (knownNames.has(target)) result.add(target);
+      // This inventory only observes SFCs directly in the scanned directory.
+      if (match[1] === './' + target + '.vue' && knownNames.has(target)) result.add(target);
     }
   }
   return result;
