@@ -52,3 +52,53 @@ test('UI-DEP-OBS-03: current app component graph is observed but not promoted to
   assert.deepEqual(result.cycles, [], 'unexpected observed static Vue component cycle');
   assert.equal(result.classificationStatus, 'undecided');
 });
+
+test('UI-DEP-OBS-04: ignore fake component tags in script strings, CSS, HTML comments and attributes', async () => {
+  await withVueFiles({
+    Host: `<script setup>const example = '<FakePanel />';</script>
+<template>
+  <!-- <FakePanel /> -->
+  <div :title="'<FakePanel />'"><RealPanel /></div>
+</template>
+<style>.caption::after { content: "<FakePanel />" }</style>`,
+    FakePanel: '<template><div /></template>',
+    RealPanel: '<template><div /></template>',
+  }, async root => {
+    const result = await inspectComponentDirectory(root);
+    assert.deepEqual(result.components.find(node => node.name === 'Host')?.dependsOn, ['RealPanel'],
+      'non-template fake tags cannot create dependencies');
+    assert.deepEqual(result.cycles, []);
+  });
+});
+
+test('UI-DEP-OBS-05: recognize kebab-case SFC tags after nested Vue template blocks', async () => {
+  await withVueFiles({
+    Host: `<template>
+      <template v-if="true"><reader-panel /></template>
+      <topic-path />
+    </template>`,
+    ReaderPanel: '<template><section /></template>',
+    TopicPath: '<template><nav /></template>',
+  }, async root => {
+    const result = await inspectComponentDirectory(root);
+    assert.deepEqual(result.components.find(node => node.name === 'Host')?.dependsOn,
+      ['ReaderPanel', 'TopicPath']);
+  });
+});
+
+test('UI-DEP-OBS-06: static SFC imports count, but commented imports do not', async () => {
+  await withVueFiles({
+    Host: `<script setup lang="ts">
+      // import FakePanel from './FakePanel.vue';
+      /* import FakePanel from './FakePanel.vue'; */
+      import Alias from './RealPanel.vue';
+      const example = "import FakePanel from './FakePanel.vue'";
+    </script>
+    <template><div /></template>`,
+    FakePanel: '<template><div /></template>',
+    RealPanel: '<template><div /></template>',
+  }, async root => {
+    const result = await inspectComponentDirectory(root);
+    assert.deepEqual(result.components.find(node => node.name === 'Host')?.dependsOn, ['RealPanel']);
+  });
+});
