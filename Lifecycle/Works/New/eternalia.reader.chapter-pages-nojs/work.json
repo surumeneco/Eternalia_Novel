@@ -1,0 +1,74 @@
+{
+  "schema": "cat-work/v1",
+  "id": "eternalia.reader.chapter-pages-nojs",
+  "entry": "issue",
+  "flow": "issue-work",
+  "mode": "shadow",
+  "work_kind": "implementation",
+  "issue_ref": "https://github.com/surumeneco/Eternalia_Novel/issues/1",
+  "project_entry_ref": "https://drive.google.com/file/d/1clwfVJ3e_t1_QKFfOWxxRIzE9WMFvTiM/view",
+  "normative": [
+    {
+      "uri": "https://drive.google.com/file/d/1LqX-Noytb_oWymIrpO01eO5PvThGlVGx/view"
+    },
+    {
+      "uri": "https://drive.google.com/file/d/14no6MWmkFuyWYPVS6QdcRmbLbrUBbOpc/view"
+    }
+  ],
+  "evidence": [
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/commit/ba72948c6d5b2ac1b7b5f6e95811f0cf443d8528"
+    }
+  ],
+  "repositories": [
+    {
+      "name": "eternalia",
+      "path": "../../../..",
+      "branch_pattern": "feature/*",
+      "allowed_paths": [
+        "Lifecycle/Works/New/eternalia.reader.chapter-pages-nojs/work.json",
+        "docs/cat/drafts/chapter-pages-nojs.md",
+        "apps/web/app/components/RichContent.vue",
+        "apps/web/browser-acceptance/chapter-pages-nojs.test.mjs",
+        "scripts/check-http-acceptance.mjs"
+      ],
+      "production_paths": [
+        "apps/web/app/components/RichContent.vue"
+      ],
+      "test_paths": [
+        "apps/web/browser-acceptance/chapter-pages-nojs.test.mjs"
+      ]
+    }
+  ],
+  "scope": {
+    "process_ids": [
+      "eternalia.reader"
+    ],
+    "changed_ids": [
+      "CHAPTER-NOJS-01",
+      "CHAPTER-NOJS-02",
+      "CHAPTER-NOJS-03"
+    ],
+    "preserved_ids": [
+      "publication.chapter-is-unit",
+      "manuscript.page-array-order",
+      "reader.page-controls",
+      "reader.authored-content-unchanged"
+    ]
+  },
+  "specification": {
+    "status": "draft",
+    "decision_ref": null,
+    "artifact_refs": [
+      "docs/cat/drafts/chapter-pages-nojs.md"
+    ]
+  },
+  "technologies": [
+    "vue",
+    "nuxt",
+    "playwright",
+    "typescript"
+  ],
+  "checks": [],
+  "depends_on": []
+}
