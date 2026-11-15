@@ -1,5 +1,5 @@
 {
   "schema": "cat-test-driver/v2",
   "process": "eternalia.dictionary.spelling-collision",
-  "driver": "./spelling-collision-driver"
+  "driver": "../Binding/spelling-collision-driver"
 }
