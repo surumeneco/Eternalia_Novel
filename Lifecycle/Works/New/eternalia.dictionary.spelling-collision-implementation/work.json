@@ -91,7 +91,7 @@
       ],
       "input_paths": [
         "Lifecycle/Works/New/eternalia.dictionary.spelling-collision-implementation/CAT/Generated/current.test.ts",
-        "Lifecycle/Works/New/eternalia.dictionary.spelling-collision-implementation/CAT/Binding/spelling-collision-driver.ts",
+        "Lifecycle/Works/New/eternalia.dictionary.spelling-collision-implementation/CAT/Generated/spelling-collision-driver.ts",
         "packages/contracts/src/novel.ts",
         "packages/contracts/src/spelling-collision.ts",
         "Lifecycle/Works/New/eternalia.dictionary.spelling-collision-implementation/CAT/Binding/driver.json"
@@ -117,7 +117,7 @@
       ],
       "input_paths": [
         "Lifecycle/Works/New/eternalia.dictionary.spelling-collision-implementation/CAT/Generated/current.test.ts",
-        "Lifecycle/Works/New/eternalia.dictionary.spelling-collision-implementation/CAT/Binding/spelling-collision-driver.ts",
+        "Lifecycle/Works/New/eternalia.dictionary.spelling-collision-implementation/CAT/Generated/spelling-collision-driver.ts",
         "packages/contracts/src/novel.ts",
         "packages/contracts/src/spelling-collision.ts",
         "Lifecycle/Works/New/eternalia.dictionary.spelling-collision-implementation/CAT/Binding/driver.json"
@@ -143,7 +143,7 @@
       ],
       "input_paths": [
         "Lifecycle/Works/New/eternalia.dictionary.spelling-collision-implementation/CAT/Generated/current.test.ts",
-        "Lifecycle/Works/New/eternalia.dictionary.spelling-collision-implementation/CAT/Binding/spelling-collision-driver.ts",
+        "Lifecycle/Works/New/eternalia.dictionary.spelling-collision-implementation/CAT/Generated/spelling-collision-driver.ts",
         "packages/contracts/src/novel.ts",
         "packages/contracts/src/spelling-collision.ts",
         "Lifecycle/Works/New/eternalia.dictionary.spelling-collision-implementation/CAT/Binding/driver.json"
@@ -169,7 +169,7 @@
       ],
       "input_paths": [
         "Lifecycle/Works/New/eternalia.dictionary.spelling-collision-implementation/CAT/Generated/current.test.ts",
-        "Lifecycle/Works/New/eternalia.dictionary.spelling-collision-implementation/CAT/Binding/spelling-collision-driver.ts",
+        "Lifecycle/Works/New/eternalia.dictionary.spelling-collision-implementation/CAT/Generated/spelling-collision-driver.ts",
         "packages/contracts/src/novel.ts",
         "packages/contracts/src/spelling-collision.ts",
         "Lifecycle/Works/New/eternalia.dictionary.spelling-collision-implementation/CAT/Binding/driver.json"
@@ -195,7 +195,7 @@
       ],
       "input_paths": [
         "Lifecycle/Works/New/eternalia.dictionary.spelling-collision-implementation/CAT/Generated/current.test.ts",
-        "Lifecycle/Works/New/eternalia.dictionary.spelling-collision-implementation/CAT/Binding/spelling-collision-driver.ts",
+        "Lifecycle/Works/New/eternalia.dictionary.spelling-collision-implementation/CAT/Generated/spelling-collision-driver.ts",
         "packages/contracts/src/novel.ts",
         "packages/contracts/src/spelling-collision.ts",
         "Lifecycle/Works/New/eternalia.dictionary.spelling-collision-implementation/CAT/Binding/driver.json"
@@ -221,7 +221,7 @@
       ],
       "input_paths": [
         "Lifecycle/Works/New/eternalia.dictionary.spelling-collision-implementation/CAT/Generated/current.test.ts",
-        "Lifecycle/Works/New/eternalia.dictionary.spelling-collision-implementation/CAT/Binding/spelling-collision-driver.ts",
+        "Lifecycle/Works/New/eternalia.dictionary.spelling-collision-implementation/CAT/Generated/spelling-collision-driver.ts",
         "packages/contracts/src/novel.ts",
         "packages/contracts/src/spelling-collision.ts",
         "Lifecycle/Works/New/eternalia.dictionary.spelling-collision-implementation/CAT/Binding/driver.json"
@@ -247,7 +247,7 @@
       ],
       "input_paths": [
         "Lifecycle/Works/New/eternalia.dictionary.spelling-collision-implementation/CAT/Generated/current.test.ts",
-        "Lifecycle/Works/New/eternalia.dictionary.spelling-collision-implementation/CAT/Binding/spelling-collision-driver.ts",
+        "Lifecycle/Works/New/eternalia.dictionary.spelling-collision-implementation/CAT/Generated/spelling-collision-driver.ts",
         "packages/contracts/src/novel.ts",
         "packages/contracts/src/spelling-collision.ts",
         "Lifecycle/Works/New/eternalia.dictionary.spelling-collision-implementation/CAT/Binding/driver.json"
@@ -273,7 +273,7 @@
       ],
       "input_paths": [
         "Lifecycle/Works/New/eternalia.dictionary.spelling-collision-implementation/CAT/Generated/current.test.ts",
-        "Lifecycle/Works/New/eternalia.dictionary.spelling-collision-implementation/CAT/Binding/spelling-collision-driver.ts",
+        "Lifecycle/Works/New/eternalia.dictionary.spelling-collision-implementation/CAT/Generated/spelling-collision-driver.ts",
         "packages/contracts/src/novel.ts",
         "packages/contracts/src/spelling-collision.ts",
         "Lifecycle/Works/New/eternalia.dictionary.spelling-collision-implementation/CAT/Binding/driver.json"
