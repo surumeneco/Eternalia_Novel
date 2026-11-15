@@ -84,7 +84,7 @@ test('SEARCH-ISOLATION-01/02/03: identical public tags and dictionary meanings n
     const createdSeries = [];
     try {
       const stamp = fixture.prefix + '-cross-series-search-' + randomUUID().slice(0, 8);
-      const tag = stamp + '-same-tag';
+      const tag = 'crossseries-' + randomUUID().slice(0, 16); // <= 50-character Tag contract
       const meaning = stamp + '-same-meaning';
       const seriesAName = stamp + '-series-A';
       const seriesBName = stamp + '-series-B';
