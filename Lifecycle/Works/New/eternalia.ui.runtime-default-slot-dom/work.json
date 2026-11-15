@@ -1,0 +1,70 @@
+{
+  "schema": "cat-work/v1",
+  "id": "eternalia.ui.runtime-default-slot-dom",
+  "entry": "issue",
+  "flow": "issue-work",
+  "mode": "shadow",
+  "work_kind": "verification",
+  "issue_ref": "https://github.com/surumeneco/Eternalia_Novel/issues/1",
+  "project_entry_ref": "https://drive.google.com/file/d/1clwfVJ3e_t1_QKFfOWxxRIzE9WMFvTiM/view",
+  "normative": [
+    {
+      "uri": "https://drive.google.com/file/d/1XqbwPJhSK946BSFlAoG7hM2jcQYi8gn1/view"
+    }
+  ],
+  "evidence": [
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/actions/runs/43691299107"
+    }
+  ],
+  "repositories": [
+    {
+      "name": "eternalia",
+      "path": "../../../..",
+      "branch_pattern": "test/*",
+      "allowed_paths": [
+        "Lifecycle/Works/New/eternalia.ui.runtime-default-slot-dom/work.json",
+        "docs/cat/drafts/ui6-runtime-default-slot-dom.md",
+        "apps/web/browser-acceptance/ui6-public-collection-dom.test.mjs",
+        "docs/ui-component-dependency-inventory.md",
+        "docs/alpha-ac-traceability.md",
+        "CAT-HANDOFF.md"
+      ],
+      "production_paths": [],
+      "test_paths": [
+        "apps/web/browser-acceptance/ui6-public-collection-dom.test.mjs"
+      ]
+    }
+  ],
+  "scope": {
+    "process_ids": [
+      "eternalia.ui"
+    ],
+    "changed_ids": [
+      "UI6-SLOT-DOM-01",
+      "UI6-SLOT-DOM-02",
+      "UI6-SLOT-DOM-03"
+    ],
+    "preserved_ids": [
+      "ui.composition",
+      "ui.structure",
+      "ui.boundary",
+      "ui.dependency"
+    ]
+  },
+  "specification": {
+    "status": "draft",
+    "decision_ref": null,
+    "artifact_refs": [
+      "docs/cat/drafts/ui6-runtime-default-slot-dom.md"
+    ]
+  },
+  "technologies": [
+    "Vue",
+    "Nuxt",
+    "Playwright",
+    "PostgreSQL"
+  ],
+  "checks": [],
+  "depends_on": []
+}

@@ -175,3 +175,122 @@ test('UI6-DETAIL-DOM-03: no-JavaScript SSR retains public series, Tip, and both 
       await context.close();
     } finally { await browser.close(); }
   });
+
+test('UI6-SLOT-DOM-01: anonymous SSR projects home and collection default-slot content directly into stone panels',
+  { timeout: 120_000 }, async () => {
+    assert.ok(base?.startsWith('http://127.0.0.1:'));
+    const browser = await chromium.launch({ headless: true });
+    try {
+      const context = await browser.newContext({ javaScriptEnabled: false });
+      const page = await context.newPage();
+
+      const home = await page.goto(base + '/');
+      assert.equal(home?.status(), 200);
+      const homeDom = await page.evaluate(() => {
+        const main = document.querySelector('main.site-main');
+        const container = main?.firstElementChild;
+        const panels = [...(container?.children ?? [])].filter(el =>
+          el.matches('section.stone-panel'));
+        return {
+          mainHasRoute: main?.contains(container),
+          panelCount: panels.length,
+          directHeadingTags: panels.map(panel =>
+            [...panel.children].filter(el => el.matches('h1,h2')).map(el => el.tagName)),
+          headings: panels.map(panel =>
+            [...panel.children].filter(el => el.matches('h1,h2')).map(el => el.textContent?.trim())),
+          hasPublishedSeriesLink: Boolean(panels[1]?.querySelector(
+            'ul.reader-list a[href*="/series/"]')),
+          authorLinks: main?.querySelectorAll('a[href*="/studio"]').length,
+        };
+      });
+      assert.equal(homeDom.mainHasRoute, true, 'layout default slot projects route inside main');
+      assert.equal(homeDom.panelCount, 3, 'home renders three reader panels via default slots');
+      assert.deepEqual(homeDom.directHeadingTags, [['H1', 'H2'], ['H2'], ['H2']]);
+      assert.equal(homeDom.headings[0][0], 'Eternalia');
+      assert.equal(homeDom.hasPublishedSeriesLink, true,
+        'published series list is inside the second reader panel');
+      assert.equal(homeDom.authorLinks, 0, 'SSR never exposes author actions');
+
+      const collection = await page.goto(base + '/stories');
+      assert.equal(collection?.status(), 200);
+      const collectionDom = await page.evaluate(() => {
+        const main = document.querySelector('main.site-main');
+        const nav = main?.querySelector('nav.topic-path');
+        const panel = main?.querySelector('section.stone-panel');
+        return {
+          mainHasRoute: Boolean(main?.contains(nav) && main?.contains(panel)),
+          breadcrumbBeforePanel: nav?.nextElementSibling === panel,
+          headingDirect: panel?.querySelector(':scope > h1')?.textContent?.trim(),
+          listDirect: Boolean(panel?.querySelector(':scope > ul.reader-list')),
+          authorLinks: panel?.querySelectorAll('a[href*="/studio"]').length,
+        };
+      });
+      assert.equal(collectionDom.mainHasRoute, true);
+      assert.equal(collectionDom.breadcrumbBeforePanel, true);
+      assert.equal(collectionDom.headingDirect, 'ストーリー');
+      assert.equal(collectionDom.listDirect, true, 'collection list is a direct slot child');
+      assert.equal(collectionDom.authorLinks, 0);
+      assert.ok((await page.locator('main.site-main section.stone-panel ul.reader-list').innerText())
+        .includes(fixture.prefix + '-world-A'));
+      await context.close();
+    } finally { await browser.close(); }
+  });
+
+test('UI6-SLOT-DOM-02: authenticated memo and Tip editor preserve direct slot projections through hydration',
+  { timeout: 120_000 }, async () => {
+    assert.ok(base?.startsWith('http://127.0.0.1:'));
+    const browser = await chromium.launch({ headless: true });
+    try {
+      const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+      await context.addCookies([{
+        name: 'eternalia_author', value: fixture.authorToken,
+        url: base, httpOnly: true, sameSite: 'Lax',
+      }]);
+      const page = await context.newPage();
+      const memoResponse = await page.goto(base + '/studio/memos');
+      assert.equal(memoResponse?.status(), 200);
+      await page.locator('main.site-main .memo-grid').waitFor();
+      const memoStructure = await page.evaluate(() => {
+        const main = document.querySelector('main.site-main');
+        const nav = main?.querySelector('nav.topic-path');
+        const panel = main?.querySelector('section.stone-panel');
+        const grid = panel?.querySelector(':scope > .memo-grid');
+        return {
+          breadcrumbBeforePanel: nav?.nextElementSibling === panel,
+          directHeading: panel?.querySelector(':scope > h1')?.textContent?.trim(),
+          gridDirect: Boolean(grid),
+          sidebarDirect: Boolean(grid?.querySelector(':scope > aside.memo-sidebar')),
+          editorDirect: Boolean(grid?.querySelector(':scope > section.memo-editor')),
+        };
+      });
+      assert.deepEqual(memoStructure, {
+        breadcrumbBeforePanel: true, directHeading: 'メモ',
+        gridDirect: true, sidebarDirect: true, editorDirect: true,
+      });
+      await page.getByRole('button', { name: '英語に切り替え' }).click();
+      await page.locator('main.site-main section.stone-panel > h1').filter({ hasText: 'Notes' }).waitFor();
+      assert.equal(await page.locator('main.site-main section.stone-panel > .memo-grid').count(), 1);
+
+      const tipResponse = await page.goto(base + '/studio?item=' + fixture.tip);
+      assert.equal(tipResponse?.status(), 200);
+      await page.locator('.studio-editor .author-reference').waitFor();
+      const editorStructure = await page.evaluate(() => {
+        const main = document.querySelector('main.site-main');
+        const nav = main?.querySelector('nav.topic-path');
+        const panel = main?.querySelector('section.stone-panel');
+        const title = panel?.querySelector(':scope > .studio-title');
+        const grid = panel?.querySelector(':scope > .studio-grid');
+        return {
+          breadcrumbBeforePanel: nav?.nextElementSibling === panel,
+          titleDirect: Boolean(title?.querySelector('h1')),
+          gridDirect: Boolean(grid),
+          referenceWithinGrid: Boolean(grid?.querySelector('section.author-reference')),
+        };
+      });
+      assert.deepEqual(editorStructure, {
+        breadcrumbBeforePanel: true, titleDirect: true,
+        gridDirect: true, referenceWithinGrid: true,
+      });
+      await context.close();
+    } finally { await browser.close(); }
+  });
