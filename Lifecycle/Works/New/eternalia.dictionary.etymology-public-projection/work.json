@@ -1,0 +1,68 @@
+{
+  "schema": "cat-work/v1",
+  "id": "eternalia.dictionary.etymology-public-projection",
+  "entry": "issue",
+  "flow": "issue-work",
+  "mode": "shadow",
+  "work_kind": "verification",
+  "issue_ref": "https://github.com/surumeneco/Eternalia_Novel/issues/1",
+  "project_entry_ref": "https://drive.google.com/file/d/1clwfVJ3e_t1_QKFfOWxxRIzE9WMFvTiM/view",
+  "normative": [
+    {
+      "uri": "https://drive.google.com/file/d/1LqX-Noytb_oWymIrpO01eO5PvThGlVGx/view"
+    }
+  ],
+  "evidence": [
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/actions/runs/43695472511"
+    }
+  ],
+  "repositories": [
+    {
+      "name": "eternalia",
+      "path": "../../../..",
+      "branch_pattern": "test/*",
+      "allowed_paths": [
+        "Lifecycle/Works/New/eternalia.dictionary.etymology-public-projection/work.json",
+        "docs/cat/drafts/word-etymology-public-projection.md",
+        "packages/contracts/exploratory/word-etymology-public-projection.test.mjs",
+        "docs/alpha-ac-traceability.md",
+        "CAT-HANDOFF.md"
+      ],
+      "production_paths": [],
+      "test_paths": [
+        "packages/contracts/exploratory/word-etymology-public-projection.test.mjs"
+      ]
+    }
+  ],
+  "scope": {
+    "process_ids": [
+      "eternalia.dictionary"
+    ],
+    "changed_ids": [
+      "ETYM-PUBLIC-01",
+      "ETYM-PUBLIC-02",
+      "ETYM-PUBLIC-03",
+      "ETYM-PUBLIC-04"
+    ],
+    "preserved_ids": [
+      "dictionary.meaning-identity",
+      "dictionary.etymology-per-meaning",
+      "reader.public-snapshot",
+      "reader.effective-publication"
+    ]
+  },
+  "specification": {
+    "status": "draft",
+    "decision_ref": null,
+    "artifact_refs": [
+      "docs/cat/drafts/word-etymology-public-projection.md"
+    ]
+  },
+  "technologies": [
+    "TypeScript",
+    "Node.js"
+  ],
+  "checks": [],
+  "depends_on": []
+}
