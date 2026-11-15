@@ -1,6 +1,6 @@
 # α版 実機受入チェックリスト（未実施）
 
-対象: `surumeneco/Eternalia_Novel` のα版 / `develop`（[PR #3](https://github.com/surumeneco/Eternalia_Novel/pull/3)を2026-11-10に統合済み）。作者認証・公開境界（旧検証PR #7）、Unicode/IME編集（旧検証PR #6）およびモバイルタッチ操作を、統合した**実際の配備HEAD**で確認する。別ブランチの過去のCIを同一環境での統合試験とみなさない。正本は `forGPT/Creating/Projects/Websites/Eternalia_Novel/40_開発・検証/400_受入検証計画.md`。本書は手順と記録欄であり、実機受入の完了証拠ではない。
+対象: `surumeneco/Eternalia_Novel` の**その時点の `develop`** を検証専用環境へ配備し、実際のテスト対象SHAを記録する。作者認証・公開境界、Unicode/IME編集、モバイルタッチ操作と旧デザイン比較を統合された実装で確認する。初期検証PR #6（原稿編集）/#7（公開・競合）は履歴上の出典であり、これらの旧ブランチだけをテストしても現行受入ではない。**受入条件の正本**はDriveの [400_受入検証計画.md](https://drive.google.com/file/d/14no6MWmkFuyWYPVS6QdcRmbLbrUBbOpc/view)。本書は実行手順と実機証跡の記録欄であり、未実施の合格を主張しない。
 
 **現在の判定: 全件 not-run（人間による実機検証）。** GitHub Actionsの合成セッション/一時PostgreSQL/Chromium成功はDiscord本人認証、実IME、端末、旧v0.3デザイン承認を代替しない。
 
