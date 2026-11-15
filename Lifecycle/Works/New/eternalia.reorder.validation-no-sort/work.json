@@ -1,0 +1,116 @@
+{
+  "schema": "cat-work/v1",
+  "id": "eternalia.reorder.validation-no-sort",
+  "entry": "refactor",
+  "flow": "refactor",
+  "work_kind": "refactor",
+  "mode": "implementation",
+  "issue_ref": "https://github.com/surumeneco/Eternalia_Novel/issues/1",
+  "project_entry_ref": "https://drive.google.com/file/d/1clwfVJ3e_t1_QKFfOWxxRIzE9WMFvTiM/view",
+  "normative": [
+    {
+      "uri": "https://drive.google.com/file/d/1LqX-Noytb_oWymIrpO01eO5PvThGlVGx/view"
+    }
+  ],
+  "evidence": [
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/9b01cf9630bfeb369d3646720d52a369f7651b61/packages/contracts/src/reorder.ts"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/9b01cf9630bfeb369d3646720d52a369f7651b61/packages/contracts/exploratory/reorder.test.mjs"
+    }
+  ],
+  "repositories": [
+    {
+      "name": "eternalia",
+      "path": "../../../..",
+      "branch_pattern": "feature/*",
+      "allowed_paths": [
+        "Lifecycle/Works/New/eternalia.reorder.validation-no-sort/work.json",
+        "Lifecycle/REF/Scopes/reorder-sibling-validation-no-sort.md",
+        "packages/contracts/src/reorder.ts",
+        "packages/contracts/dist/reorder.js"
+      ],
+      "production_paths": [
+        "packages/contracts/src/reorder.ts",
+        "packages/contracts/dist/reorder.js"
+      ],
+      "test_paths": [
+        "packages/contracts/exploratory/reorder.test.mjs"
+      ]
+    }
+  ],
+  "scope": {
+    "process_ids": [
+      "eternalia.author.reorder"
+    ],
+    "changed_ids": [
+      "reorder.validation.internal-iteration-order"
+    ],
+    "preserved_ids": [
+      "reorder.same-parent-same-kind-membership",
+      "reorder.revision-check",
+      "reorder.output-order",
+      "publication.reader-projection"
+    ]
+  },
+  "specification": {
+    "status": "unknown",
+    "decision_ref": null,
+    "artifact_refs": []
+  },
+  "technologies": [
+    "TypeScript"
+  ],
+  "checks": [
+    {
+      "id": "reorder-siblings-pre",
+      "stage": "refactor-baseline",
+      "runner": "junit",
+      "cwd": "@repo:eternalia",
+      "argv": [
+        "node",
+        "--test",
+        "--test-reporter=junit",
+        "--test-reporter-destination={report}",
+        "packages/contracts/exploratory/reorder.test.mjs"
+      ],
+      "input_paths": [
+        "packages/contracts/src/reorder.ts",
+        "packages/contracts/exploratory/reorder.test.mjs",
+        "packages/contracts/dist/reorder.js"
+      ],
+      "timeout_seconds": 60,
+      "test_ids": [
+        "ordering changes only the requested sibling kind in one parent",
+        "reorder rejects partial, duplicate, cross-parent and stale revision sets",
+        "ordering of unpublished work does not reveal its title via public readers"
+      ]
+    },
+    {
+      "id": "reorder-siblings-post",
+      "stage": "regression",
+      "runner": "junit",
+      "cwd": "@repo:eternalia",
+      "argv": [
+        "node",
+        "--test",
+        "--test-reporter=junit",
+        "--test-reporter-destination={report}",
+        "packages/contracts/exploratory/reorder.test.mjs"
+      ],
+      "input_paths": [
+        "packages/contracts/src/reorder.ts",
+        "packages/contracts/exploratory/reorder.test.mjs",
+        "packages/contracts/dist/reorder.js"
+      ],
+      "timeout_seconds": 60,
+      "test_ids": [
+        "ordering changes only the requested sibling kind in one parent",
+        "reorder rejects partial, duplicate, cross-parent and stale revision sets",
+        "ordering of unpublished work does not reveal its title via public readers"
+      ]
+    }
+  ],
+  "depends_on": []
+}
