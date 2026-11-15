@@ -13,11 +13,11 @@ const loading = ref(false);
 const busy = ref(false);
 const errorText = ref('');
 const statusText = ref('');
-const kinds: Record<ReaderKind, string> = {
+const kinds = computed<Record<ReaderKind, string>>(() => ({
   series:t('studioKindSeries'),volume:t('studioKindVolume'),part:t('studioKindPart'),chapter:t('chapter'),category:t('studioKindCategory'),
   tip:t('tip'),tipSection:t('tipSection'),language:t('studioKindLanguage'),word:t('word'),
   grammar:t('grammar'),periodization:t('studioKindPeriodization'),event:t('event'),
-};
+}));
 const kindsByParent: Record<ReaderKind | 'root', ReaderKind[]> = {
   root:['series'],series:['volume','category','language','periodization'],
   volume:['part'],part:['chapter'],chapter:[],category:['tip'],tip:['tipSection'],
