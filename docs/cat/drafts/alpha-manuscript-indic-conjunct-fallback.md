@@ -19,6 +19,21 @@ Status: **Draft**, not Confirmed. Leaf TASK-20261101-009.
 
 Textarea selection offsets are UTF-16 code units. In older WebViews lacking `Intl.Segmenter`, the original alpha fallback preserved combining marks, ZWJ, emoji and Hangul, but allowed a cursor boundary after an Indic virama and before a following consonant. Unicode grapheme rule GB9c joins Indic consonant-linker-consonant sequences; a markup insertion inside that cluster can corrupt a user's manuscript.
 
+## 対象
+
+| Ref | Aspect |
+| --- | --- |
+| eternalia.manuscript | `Intl.Segmenter` 不在時の原稿page/ruby編集での文字素分割可否 |
+| eternalia.editor.grapheme-fallback | UTF-16選択範囲とIndic結合文字素の保持 |
+
+## 規則
+
+| ID | 条件 | 要求 | 検証 |
+| --- | --- | --- | --- |
+| manuscript.indic.conjunct-internal | Devanagari/Bengaliのviramaを含む結合文字素内へ挿入を試みる | 文字素内部のpage/ruby境界は拒否する候補 | AC-IME-INDIC-01 |
+| manuscript.indic.whole-base | 結合文字素全体を選択してルビを挿入 | 基底文字列と読み選択のUTF-16オフセットを保持する候補 | AC-IME-INDIC-02 |
+| manuscript.indic.cluster-boundary | 隣接する完成結合文字素の間へページ区切りを挿入 | 文字素間の挿入を許容する候補 | AC-IME-INDIC-03/04 |
+
 ## Candidate acceptance vectors
 
 | ID | Input | Expected |
