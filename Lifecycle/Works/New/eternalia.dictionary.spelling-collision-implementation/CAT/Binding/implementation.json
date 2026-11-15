@@ -1,0 +1,14 @@
+{
+  "schema": "cat-typescript-conformance-binding/v1",
+  "repository": "eternalia",
+  "source_globs": [
+    "packages/contracts/src/spelling-collision.ts"
+  ],
+  "public_entrypoints": [
+    "packages/contracts/src/spelling-collision.ts"
+  ],
+  "interface_symbols": {
+    "hasSameLanguageSpellingCollision": "check"
+  },
+  "capabilities": {}
+}
