@@ -9,7 +9,7 @@ const staticVueImport = /^[ \t]*import\s+(?:[A-Za-z_$][\w$]*|\{[^}]*\}|\*\s+as\s
 /** Template-only observation: nested <template> blocks remain in the slice.
  * This is a bounded lexical scan, not a Vue compiler or a DOM verifier.
  */
-function observedTemplate(source) {
+export function observedTemplate(source) {
   const outsideScripts = source.replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, '');
   const withoutComments = outsideScripts.replace(/<!--[\s\S]*?-->/g, '');
   const opening = /<template\b[^>]*>/i.exec(withoutComments);
@@ -22,7 +22,7 @@ function observedTemplate(source) {
  * Slot outlets/assignments do NOT prove a rendered parent-child DOM edge.
  * :is expressions are never resolved to guessed component dependencies.
  */
-function templateEvidence(source, knownTags) {
+export function templateEvidence(source, knownTags) {
   const markup = observedTemplate(source);
   const templateTags = new Set();
   const slotOutlets = [];
@@ -71,19 +71,39 @@ function templateEvidence(source, knownTags) {
   };
 }
 
-function staticImportDependencies(source, knownNames) {
-  const result = new Set();
+/** Reusable lexical import specifiers; no module-resolution verdict here. */
+export function staticVueImportSpecifiers(source) {
+  const imports = new Set();
   for (const script of source.matchAll(scriptBlocks)) {
     const withoutComments = script[1]
       .replace(/\/\*[\s\S]*?\*\//g, '\n')
       .replace(/^[ \t]*\/\/.*$/gm, '');
-    for (const match of withoutComments.matchAll(staticVueImport)) {
-      const target = basename(match[1], '.vue');
-      // This inventory only observes SFCs directly in the scanned directory.
-      if (match[1] === './' + target + '.vue' && knownNames.has(target)) result.add(target);
-    }
+    for (const match of withoutComments.matchAll(staticVueImport)) imports.add(match[1]);
+  }
+  return [...imports].sort();
+}
+
+function staticImportDependencies(source, knownNames) {
+  const result = new Set();
+  for (const specifier of staticVueImportSpecifiers(source)) {
+    const target = basename(specifier, '.vue');
+    // This inventory only observes SFCs directly in the scanned directory.
+    if (specifier === './' + target + '.vue' && knownNames.has(target)) result.add(target);
   }
   return result;
+}
+
+/** Same tag-name mapping used for component and route observations. */
+export function buildKnownComponentTagMap(names) {
+  const knownTags = new Map();
+  for (const name of names) {
+    knownTags.set(name, name);
+    const kebab = name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
+    if (knownTags.has(kebab) && knownTags.get(kebab) !== name)
+      throw new Error('ambiguous kebab-case component: ' + kebab);
+    knownTags.set(kebab, name);
+  }
+  return knownTags;
 }
 
 /** Only concrete *.vue SFCs in this directory are inventory nodes. */
@@ -91,14 +111,7 @@ export async function inspectComponentDirectory(directory) {
   const names = (await readdir(directory)).filter(name => name.endsWith('.vue')).sort();
   const known = new Set(names.map(name => basename(name, '.vue')));
   if (known.size !== names.length) throw new Error('duplicate component name');
-  const knownTags = new Map();
-  for (const name of known) {
-    knownTags.set(name, name);
-    const kebab = name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
-    if (knownTags.has(kebab) && knownTags.get(kebab) !== name)
-      throw new Error('ambiguous kebab-case component: ' + kebab);
-    knownTags.set(kebab, name);
-  }
+  const knownTags = buildKnownComponentTagMap(known);
   const components = [];
   const compositionEvidence = [];
   for (const fileName of names) {
