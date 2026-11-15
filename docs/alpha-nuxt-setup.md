@@ -1,6 +1,6 @@
 # α採用構成のローカル起動（Nuxt 4 / NestJS / PostgreSQL）
 
-**対象ブランチ**: `develop`（[α版PR #3](https://github.com/surumeneco/Eternalia_Novel/pull/3) は2026-11-10に統合済み）。Node.js 22以上、Docker/Compose、npmを利用します。既存のクローンで `git switch develop` → `git pull --ff-only origin develop` を実行し、リポジトリのルートで操作してください。
+**対象ブランチ**: 現在の `develop`。Node.js 22以上、Docker/Compose、npmを利用します。既存のクローンで `git switch develop` → `git pull --ff-only origin develop` を実行し、実際の受入/調査時は取得したcommit SHAを記録したうえでリポジトリのルートから操作してください。旧基礎α PR #3は履歴上の統合元であり、古いHEADのテスト結果は現行SHAの合否を示しません。
 
 ## 1. 依存と環境変数
 
