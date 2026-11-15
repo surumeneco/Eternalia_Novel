@@ -19,6 +19,21 @@ Status: **Draft**, not Confirmed. Leaf TASK-20261101-008.
 
 OAuth callback receives a `Cookie` header and a query `state`. A request can contain two `eternalia_oauth_state` cookie pairs, including a valid value followed by a conflicting or identical value. Choosing the first matching cookie silently depends on header ordering and cookie-path collision behavior. This Draft proposes that ambiguity be rejected **before** consuming a one-time state, contacting Discord, or creating a session.
 
+## 対象
+
+| Ref | Aspect |
+| --- | --- |
+| eternalia.oauth.callback | Cookieに同名state値が複数あるOAuth callbackの認証境界 |
+| eternalia.auth.session | state消費・Discord通信・作者セッション発行への副作用 |
+
+## 規則
+
+| ID | 条件 | 要求 | 検証 |
+| --- | --- | --- | --- |
+| oauth.state.duplicate-different | `eternalia_oauth_state` の2値が異なる | 曖昧なcallbackを拒否し、stateを消費せずセッションを作らない候補 | AC-OAUTH-COOKIE-01 |
+| oauth.state.duplicate-same | `eternalia_oauth_state` に同一値が2回ある | 同値であっても拒否し、token交換・セッション発行を行わない候補 | AC-OAUTH-COOKIE-02 |
+| oauth.state.singleton | state Cookieが1個でクエリと一致する | 従来の一回限り検証・後続のエラー処理を保存する候補 | AC-OAUTH-COOKIE-03 |
+
 ## Candidate acceptance vectors
 
 | ID | Input | Expected observation |
