@@ -9,6 +9,7 @@ import { parseWordMeanings, type WordMeaning } from './word-meanings.js';
 import { parseTipTags, parseTipRelationIds } from './tip-links.js';
 import { parseLanguageCharacters, parseLanguageWordClasses } from './language-structure.js';
 import { parseRelativeYear } from './timeline.js';
+import { hasSameLanguageSpellingCollision } from './spelling-collision.js';
 
 export const kinds = [
   'series', 'volume', 'part', 'chapter', 'category', 'tip', 'tipSection',
@@ -126,8 +127,11 @@ function find(library: Library, id: string, indexed?: ReadonlyMap<string, NovelN
 }
 /** A language owns a spelling; different languages may independently use the same spelling. */
 function rejectSameLanguageSpelling(library: Library, languageId: string, title: string, editingWordId?: string): void {
+  const spelling = title.trim();
   const existing = library.nodes.find(node => node.kind === 'word' && node.parentId === languageId &&
-    node.id !== editingWordId && node.deletedAt == null && node.draft.title.trim() === title.trim());
+    node.id !== editingWordId && node.deletedAt == null &&
+    hasSameLanguageSpellingCollision(node.draft.title.trim() === spelling,
+      node.published?.value.title.trim() === spelling));
   if (existing) domainError('duplicate-spelling',
     '同じ言語内に同じスペルの単語が登録されています。新規登録はできません。', existing.id);
 }
