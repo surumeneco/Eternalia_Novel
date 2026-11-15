@@ -10,9 +10,9 @@ scope: alpha-local-preview
 
 ## 対象と位置付け
 
-- 対象: ZIP提供の `Eternalia_Novel_alpha`。GitHub `surumeneco/Eternalia_Novel` 本体への反映は未実施。
+- 対象: **2026-10-28に配布された独立NodeプレビューZIP** `Eternalia_Novel_alpha` の当時の試験。以下の「本体への未反映」は**2026-10-28当時の状態**であり、後に統合された現在のNuxt/Nest/PostgreSQLα版の状態ではない。現行実装・検証は [README](../README.md)、[AC台帳](alpha-ac-traceability.md)、[CI](alpha-check-evidence.md) を参照する。
 - 採用済みスタック: Nuxt 4、NestJS、PostgreSQL、TypeScript。ZIPに各アプリの初期骨格は含むが、**今回動作したのはローカル限定の標準Node.jsプレビューサーバー**。
-- 規範仕様: `forGPT/Eternalia_Novel/10_要件定義/100_機能仕様.md`、`20_基本設計/215_採用技術・原稿公開方式_20261028.md`。CATの `domain-spec` Draft はDriveの `40_開発・検証/415_CAT-Draft_公開境界.md`。
+- 規範仕様: `forGPT/Creating/Projects/Websites/Eternalia_Novel/10_要件定義/100_機能仕様.md`、`20_基本設計/215_採用技術・原稿公開方式_20261028.md`。CATの `domain-spec` Draft はDriveの `999_archive/2026_初期実装・引継ぎ履歴/415_CAT-Draft_公開境界.md`（履歴）。
 - ローカル実行モード: `node apps/preview/src/server.mjs`、127.0.0.1限定。開発用一時キーで管理APIを保護。**Discord OAuth2ではない**。
 
 ## 実際に実施した確認
