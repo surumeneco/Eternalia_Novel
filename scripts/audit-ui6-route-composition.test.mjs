@@ -70,8 +70,8 @@ test('UI6-ROUTE-02: relative Vue imports resolve by actual path, never same base
     const entry = report.owners.find(item => item.source === 'pages/sub/entry.vue');
     assert.deepEqual(entry.localComponents, ['Panel']);
     assert.deepEqual(entry.staticVueImports, [
-      { specifier: '../../components/Panel.vue', target: 'components/Panel.vue', resolution: 'resolved' },
       { specifier: '../../../outside.vue', target: null, resolution: 'outside-app' },
+      { specifier: '../../components/Panel.vue', target: 'components/Panel.vue', resolution: 'resolved' },
       { specifier: '../missing.vue', target: 'pages/missing.vue', resolution: 'missing' },
       { specifier: '~/components/Other.vue', target: null, resolution: 'unresolved-alias' },
     ]);
