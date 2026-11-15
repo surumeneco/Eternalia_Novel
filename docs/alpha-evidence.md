@@ -42,12 +42,8 @@ scope: alpha-local-preview
 | GitHub PR / merge / CI | not-run | GitHub Git接続不可、CAT正規handoff未実施 |
 | デプロイ・実利用 | not-run | 127.0.0.1専用で実環境公開不可 |
 
-## 今後の本番系実装Work
+## 当時の実装候補の扱い
 
-- **W0.1/W0.2**: 正規CATランタイム/doctor、Issue→Task→Work、仕様closure。
-- **W0.3/W0.4**: Nuxt/Nest/Postgresの統合、migration、CI、UI確認。
-- **W1**: Discord OAuth2と作者認可、CSRF/Session。プレビューのローカルキーを本番採用しない。
-- **W2**: 下書き・公開スナップショットの永続化をPostgreSQLで実装し、APIからの匿名情報非漏洩を証跡付きで検証。
-- **W3+**: 意味別語源・年表換算・編集ワークフロー、作品階層の操作/検索拡充。
+2026-10-28時点で列挙されていたCAT runtime接続、Nuxt/Nest/PostgreSQL統合、Discord認可、下書き・公開稿分離、編集・辞書・年表拡充は、**現在の実行指示ではない**。各候補の実装・試験・受入状況はその後変化しているため、現在の残Workは[現行作業入口](../CAT-HANDOFF.md)、受入証拠は[AC台帳](alpha-ac-traceability.md)、実装・CIは対象HEADのGitHubで確認する。
 
-本書は**ローカルで観測できた結果**の台帳であり、CATの機械生成Gate証拠ではない。
+本書に残すのは当時の独立Nodeプレビューを実際に検査した結果と、その検査が**検証していない**範囲だけである。後続の成功・失敗をこの旧実測表へ逐次追記しない。
