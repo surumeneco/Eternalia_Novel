@@ -1,6 +1,6 @@
-# Eternalia_Novel α版：動作確認手順
+# 旧・独立Nodeプレビュー 操作手順（比較用）
 
-状態: **ローカルで動く検証版**。正式なNuxt 4/NestJS/PostgreSQL/Discord OAuth2運用版ではない。
+**対象は `apps/preview/` と初期α ZIPに同梱された独立Nodeプレビューのみ**。以下に示す未実装項目、JSONストア、専用キー、旧URLはすべてこの歴史的プレビューの記述であり、現在のNuxt 4/NestJS/PostgreSQL/Discord OAuth2採用版の機能状況を表しません。現行版の起動・受入は [Nuxt/Nest/PG構成](alpha-nuxt-setup.md) と [実機受入台帳](alpha-manual-acceptance.md) を参照してください。
 
 ## 用意するもの
 
@@ -41,7 +41,7 @@ macOS/Linux: `./start-alpha.sh`。または `node apps/preview/src/server.mjs`�
 - 初期化: **必ず別の場所にバックアップしてから** `.local/preview-data.json` を削除。次回の起動で空になる。
 - 作業データはZIPを再解凍して上書きすると失われる場合があるため、`.local/` を別途保存する。
 
-## 注意・既知の制約
+## 旧Nodeプレビューだけの注意・既知の制約
 
 - `127.0.0.1` のみで動作し、**Discord OAuth2ではなく起動時に発行するローカル専用の確認キー**で作者操作を保護する。キーを他人に渡さない。公共ネットワークやリバースプロキシ経由で公開しない。
 - PostgreSQLは未接続。暫定的にJSONファイルへ保存し、将来の移行・バックアップ互換は保証しない。α版に本物の未公開原稿や秘密情報を投入しないこと。
