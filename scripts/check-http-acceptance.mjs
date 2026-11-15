@@ -102,6 +102,7 @@ try {
     await command(['scripts/run-test-junit.mjs', 'browser-public-series-resume', 'apps/web/browser-acceptance/public-series-resume.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-public-four-domain-resume', 'apps/web/browser-acceptance/public-four-domain-resume.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-search-metadata-snapshot', 'apps/web/browser-acceptance/search-metadata-snapshot.test.mjs']);
+    await command(['scripts/run-test-junit.mjs', 'browser-search-cross-series', 'apps/web/browser-acceptance/public-search-cross-series-isolation.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-author-error-locale', 'apps/web/browser-acceptance/author-api-error-locale.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-publication-jst', 'apps/web/browser-acceptance/author-jst-publication.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-timeline-period', 'apps/web/browser-acceptance/timeline-period-filter.test.mjs']);
