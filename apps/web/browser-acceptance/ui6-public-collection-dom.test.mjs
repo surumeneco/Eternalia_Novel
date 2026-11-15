@@ -103,6 +103,7 @@ test('UI6-DETAIL-DOM-01/02: anonymous series, Tip, and chapter readers keep shel
         const response = await page.goto(base + entry.path());
         assert.equal(response?.status(), 200, entry.path());
         await page.locator('.site-main section.stone-panel h1').filter({ hasText: entry.title() }).waitFor();
+        if (entry.kind === 'chapter') await page.locator('article nav.chapter-navigation').waitFor();
         const dom = await page.evaluate(() => {
           const main = document.querySelector('main.site-main');
           const nav = main?.querySelector('nav.topic-path');
