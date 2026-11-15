@@ -46,50 +46,10 @@ const { data: tree, pending: treePending, error: treeError, refresh: refreshTree
 // respects the server-side effective-publication check, but old Nuxt data
 // must never be treated as current when this tab is resumed from hidden/BFCache.
 // This is a focus/re-entry boundary, not real-time push-based revocation.
-const revalidationPending = ref(false);
-let visibilityEpoch = 0;
-let refreshRunning = false;
-function invalidatePublicSearch() {
-  visibilityEpoch++;
-  revalidationPending.value = true;
-  clearTree();
-  clearSeries();
-}
-async function refreshResumedSearch() {
-  if (!revalidationPending.value || document.visibilityState !== 'visible' || refreshRunning) return;
-  const epoch = visibilityEpoch;
-  refreshRunning = true;
-  try {
-    // Fresh public endpoints, rather than an old browser-side result set.
-    // Failed reads must leave cleared data and expose the existing retry UI.
-    await Promise.all([refreshSeries(), refreshTree()]);
-  } finally {
-    refreshRunning = false;
-    if (document.visibilityState !== 'visible') return;
-    if (epoch === visibilityEpoch) revalidationPending.value = false;
-    else void refreshResumedSearch();
-  }
-}
-function handleVisibilityChange() {
-  if (document.visibilityState === 'hidden') invalidatePublicSearch();
-  else void refreshResumedSearch();
-}
-function handlePageHide() { invalidatePublicSearch(); }
-function handlePageShow(event: PageTransitionEvent) {
-  if (!event.persisted) return;
-  invalidatePublicSearch();
-  void refreshResumedSearch();
-}
-onMounted(() => {
-  document.addEventListener('visibilitychange', handleVisibilityChange);
-  window.addEventListener('pagehide', handlePageHide);
-  window.addEventListener('pageshow', handlePageShow);
-});
-onBeforeUnmount(() => {
-  document.removeEventListener('visibilitychange', handleVisibilityChange);
-  window.removeEventListener('pagehide', handlePageHide);
-  window.removeEventListener('pageshow', handlePageShow);
-});
+const { revalidating: revalidationPending } = usePublicReaderRevalidation([
+  { clear: clearTree, refresh: refreshTree },
+  { clear: clearSeries, refresh: refreshSeries },
+]);
 
 const selectedSeries = computed(() => (series.value ?? [])
   .find(item => item.id === selectedSeriesId.value));
