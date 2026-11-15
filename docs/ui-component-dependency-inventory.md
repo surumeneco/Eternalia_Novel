@@ -32,7 +32,7 @@
 
 `node scripts/audit-ui6-route-composition.mjs` は、既存15コンポーネントの静的グラフとは**独立して** `app.vue`、`layouts/**/*.vue`、`pages/**/*.vue` を読み取り、各ソースで直接表記された既知の共通SFC開始タグ（`localComponents`）、NuxtPage/NuxtLayout/RouterViewの表示境界（`frameworkOutlets`）、slot受口/供給構文、動的`:is`構文を報告する。相対`.vue`の行頭静的importは**basenameではなく起点ファイルからの実パス**で確認し、`resolved`/`missing`/`outside-app`/`unresolved-alias`に分ける。アプリ境界外ファイルは探索しない。個々のソースを毎回再列挙し、現行の構成を固定数として仮定しない。
 
-これらは**静的字句サイトと限定的な相対ファイル存在判定**であり、Nuxtのルート解決結果、条件分岐後の実DOM、`slotProviders`の受け先、コンポーネント自動登録の完全性を証明しない。出力の`compositionObservationStatus: lexical-partial`に対し、`runtimeResolution`、`normativeClassification`、`normativeDependencyRules`、`domContract`は全て`not-run`。観測器は`scripts/audit-ui6-route-composition.test.mjs`で合成ソースの誤認防止・実パス解決・現行ルートの検証を行う。既存`components[].dependsOn`の互換グラフは変更しない。
+これらは**静的字句サイトと限定的な相対ファイル存在判定**であり、Nuxtのルート解決結果、条件分岐後の実DOM、`slotProviders`の受け先、コンポーネント自動登録の完全性を証明しない。出力の`compositionObservationStatus: lexical-partial`に対し、`runtimeResolution`、`normativeClassification`、`normativeDependencyRules`、`domContract`は全て`not-run`。観測器は`scripts/audit-ui6-route-composition.test.mjs`で合成ソースの誤認防止・実パス解決・現行17ページ＋1レイアウト＋app起点の検証を行う。**PR #107で既存16件＋新規3件のNode19/19成功**（[Push #43693273219](https://github.com/surumeneco/Eternalia_Novel/actions/runs/43693273219)・[PR #43693377359](https://github.com/surumeneco/Eternalia_Novel/actions/runs/43693377359)各4ジョブ成功）。既存`components[].dependsOn`の互換グラフは変更しない。
 
 ### 試用分類の決定的レポート（規範判定ではない）
 
@@ -46,9 +46,11 @@ PR #100で作者`/studio/publication`と`/studio/order`の`Shell → TopicPath �
 
 PR #102で`/studio/memos`、章/Tipの`/studio?item=…`をさらに実DOM観測した。共通Shell→`TopicPath`→`ReaderPanel`と、章/Tip編集内部の`AuthorReferencePanel`を匿名/作者の両経路で確認し、管理API401と幅320/390/768/1280px横溢れなしを確認。メモ保存409の英語UIローカライズ欠陥も[Red #43687834836](https://github.com/surumeneco/Eternalia_Novel/actions/runs/43687834836) 2/3→[Push #43688099772](https://github.com/surumeneco/Eternalia_Novel/actions/runs/43688099772)・[PR #43688141203](https://github.com/surumeneco/Eternalia_Novel/actions/runs/43688141203) 3/3（各CI4ジョブ成功）で確認・是正した。これらはブラウザ合成DOMと表示の**部分証拠**であり、SFC責務候補の機械的正当性や規範CAT Gate、実機受入を立証しない。
 
+PR #106では匿名JavaScript無効のホーム・ストーリー一覧と、合成作者のメモ・Tip編集について、`ReaderPanel`の既定slot由来の見出し・フォーム・一覧が**石板領域の直接子**として実DOMに存在することを追加検証し、既存4＋新2件のChromium JUnit6/6を[PR CI #43692531155](https://github.com/surumeneco/Eternalia_Novel/actions/runs/43692531155)（全4ジョブ成功）で実証した。静的slot構文と実DOMの二種類の証拠を結びつけた**限定例**であり、すべての名前付きslot・画面の投影適合や正式CAT Gate合格を意味しない。
+
 ## 次に必要な判断
 
 1. 現行15件は個々のSFCを読んで候補へ対応付け済み。公開シリーズ・Tip詳細・章の本文とナビゲーション配置はブラウザDOMで部分観測済み。次は`RichContent`の複合責務の妥当性、作者参考パネルの動的内容・他の作者操作画面や未観測のページレイアウト境界を追加観測し、根拠があれば試用候補を修正する。
-2. 出所別に取得した同一ディレクトリSFC依存とページ/レイアウトの`localComponents`・相対`.vue`import解決を照合し、slotの供給/受け口の接続、Nuxt動的ルートの実表示先、名前付きslotの実DOM投影を別途確認した上で、試用許可依存表と例外を検討する。単純な全順序を規範化しない。
+2. 出所別に取得した同一ディレクトリSFC依存とページ/レイアウトの`localComponents`・相対`.vue`import解決を照合し、観測済みの既定slot直接子以外の受け口/供給接続、Nuxt動的ルートの実表示先、名前付きslotの実DOM投影を別途確認した上で、試用許可依存表と例外を検討する。単純な全順序を規範化しない。
 3. DOM契約を必要な画面で定義し、分類/依存のVerifierをCAT正本と照合して試験導入の適否を判断する。
 4. 正規CAT Gate・実画面/実機受入の証拠を別管理し、AC-73の状態を自動的にpassへ変えない。
