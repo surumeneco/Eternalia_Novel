@@ -119,8 +119,8 @@ function validateLanguageStructure(content: Content): void {
   if (content.details.characters !== undefined) parseLanguageCharacters(content.details.characters);
   if (content.details.wordClasses !== undefined) parseLanguageWordClasses(content.details.wordClasses);
 }
-function find(library: Library, id: string): NovelNode {
-  const item = library.nodes.find(n => n.id === id);
+function find(library: Library, id: string, indexed?: ReadonlyMap<string, NovelNode>): NovelNode {
+  const item = indexed ? indexed.get(id) : library.nodes.find(n => n.id === id);
   if (!item || item.deletedAt != null) domainError('not-found', '項目が見つかりません。');
   return item;
 }
@@ -314,26 +314,28 @@ export function setVisibility(library: Library, id: string, expectedRevision: nu
   item.updatedAt = now;
   return next;
 }
-function ancestry(library: Library, id: string, usePublishedParent: boolean): NovelNode[] {
+function ancestry(library: Library, id: string, usePublishedParent: boolean,
+  indexed?: ReadonlyMap<string, NovelNode>): NovelNode[] {
   const chain: NovelNode[] = [];
   const visited = new Set<string>();
-  let current: NovelNode | null = find(library, id);
+  let current: NovelNode | null = find(library, id, indexed);
   while (current) {
     if (visited.has(current.id) || chain.length > 32) domainError('bad-request', '階層に循環があります。');
     visited.add(current.id);
     chain.unshift(current);
     const parent: string | null = usePublishedParent && current.published?.parentId !== undefined
       ? current.published.parentId : current.parentId;
-    current = parent ? find(library, parent) : null;
+    current = parent ? find(library, parent, indexed) : null;
   }
   return chain;
 }
 export function ancestorsOf(library: Library, id: string): NovelNode[] { return ancestry(library, id, false); }
 export function publicAncestorsOf(library: Library, id: string): NovelNode[] { return ancestry(library, id, true); }
 /** Resolve an etymology reference without recursively projecting other word etymologies. */
-function readableReference(library: Library, id: string, kind: Kind, now: number): NovelNode | null {
+function readableReference(library: Library, id: string, kind: Kind, now: number,
+  indexed?: ReadonlyMap<string, NovelNode>): NovelNode | null {
   let chain: NovelNode[];
-  try { chain = publicAncestorsOf(library, id); } catch { return null; }
+  try { chain = ancestry(library, id, true, indexed); } catch { return null; }
   const node = chain[chain.length - 1];
   if (!node || node.kind !== kind || !node.published) return null;
   return canReadPublished(
@@ -341,14 +343,15 @@ function readableReference(library: Library, id: string, kind: Kind, now: number
     chain.every(part => part.published !== null), now,
   ) ? node : null;
 }
-function publicMeaning(library: Library, meaning: WordMeaning, now: number): WordMeaning {
+function publicMeaning(library: Library, meaning: WordMeaning, now: number,
+  indexed?: ReadonlyMap<string, NovelNode>): WordMeaning {
   return {
     id: meaning.id, partOfSpeech: meaning.partOfSpeech, definition: meaning.definition,
     etymologies: meaning.etymologies.map(origin => {
       const language = origin.languageId
-        ? readableReference(library, origin.languageId, 'language', now) : null;
+        ? readableReference(library, origin.languageId, 'language', now, indexed) : null;
       const word = origin.wordId && language
-        ? readableReference(library, origin.wordId, 'word', now) : null;
+        ? readableReference(library, origin.wordId, 'word', now, indexed) : null;
       return {
         id: origin.id, note: origin.note,
         ...(language ? {
@@ -364,8 +367,13 @@ function publicMeaning(library: Library, meaning: WordMeaning, now: number): Wor
   };
 }
 export function toReader(library: Library, id: string, now: number): ReaderNode | null {
+  return projectReader(library, id, now);
+}
+/** Reuse a first-seen ID index only inside multi-node public tree projection. */
+function projectReader(library: Library, id: string, now: number,
+  indexed?: ReadonlyMap<string, NovelNode>): ReaderNode | null {
   let path: NovelNode[];
-  try { path = publicAncestorsOf(library, id); } catch { return null; }
+  try { path = ancestry(library, id, true, indexed); } catch { return null; }
   if (!canReadPublished(path.map(n => ({ isPublic: n.isPublic, publicSinceEpochMs: n.publicSince })),
       path.every(n => n.published !== null), now)) return null;
   const node = path[path.length - 1];
@@ -380,7 +388,7 @@ export function toReader(library: Library, id: string, now: number): ReaderNode 
     }
     if (published.details.relatedTipIds !== undefined) {
       const related = parseTipRelationIds(published.details.relatedTipIds).flatMap(targetId => {
-        const target = readableReference(library, targetId, 'tip', now);
+        const target = readableReference(library, targetId, 'tip', now, indexed);
         return target ? [{ id: target.id, title: target.published!.value.title }] : [];
       });
       details.relatedTips = JSON.stringify(related);
@@ -390,7 +398,7 @@ export function toReader(library: Library, id: string, now: number): ReaderNode 
     if (published.details.partOfSpeech !== undefined) details.partOfSpeech = published.details.partOfSpeech;
     if (published.details.meanings !== undefined) {
       details.meanings = JSON.stringify(parseWordMeanings(published.details.meanings)
-        .map(meaning => publicMeaning(library, meaning, now)));
+        .map(meaning => publicMeaning(library, meaning, now, indexed)));
     }
   }
   if (node.kind === 'language') {
@@ -418,7 +426,10 @@ export function publicTree(library: Library, seriesId: string, now: number): Rea
   // Walk only descendants of the selected series; unrelated worlds never
   // need public projection or ancestry lookup during this request.
   const children = new Map<string, NovelNode[]>();
+  const indexed = new Map<string, NovelNode>();
   for (const node of library.nodes) {
+    // `find()` returns the first ID match; do not change that behavior.
+    if (!indexed.has(node.id)) indexed.set(node.id, node);
     const parentId = node.published?.parentId !== undefined ? node.published.parentId : node.parentId;
     if (!parentId) continue;
     const siblings = children.get(parentId) ?? [];
@@ -432,7 +443,7 @@ export function publicTree(library: Library, seriesId: string, now: number): Rea
     for (const child of children.get(queue[index]!) ?? []) {
       if (visited.has(child.id)) continue;
       visited.add(child.id);
-      const readable = toReader(library, child.id, now);
+      const readable = projectReader(library, child.id, now, indexed);
       if (!readable) continue;
       result.push(readable);
       queue.push(child.id);

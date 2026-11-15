@@ -1,0 +1,139 @@
+{
+  "schema": "cat-work/v1",
+  "id": "eternalia.public.reader-index-lookup",
+  "entry": "refactor",
+  "flow": "refactor",
+  "work_kind": "refactor",
+  "mode": "implementation",
+  "issue_ref": "https://github.com/surumeneco/Eternalia_Novel/issues/1",
+  "project_entry_ref": "https://drive.google.com/file/d/1clwfVJ3e_t1_QKFfOWxxRIzE9WMFvTiM/view",
+  "normative": [
+    {
+      "uri": "https://drive.google.com/file/d/1LqX-Noytb_oWymIrpO01eO5PvThGlVGx/view"
+    }
+  ],
+  "evidence": [
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/e9f639f99622275ce552437949b1592a17075f95/packages/contracts/src/novel.ts"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/e9f639f99622275ce552437949b1592a17075f95/packages/contracts/exploratory/public-tree-volume-privacy.test.mjs"
+    }
+  ],
+  "repositories": [
+    {
+      "name": "eternalia",
+      "path": "../../../..",
+      "branch_pattern": "feature/*",
+      "allowed_paths": [
+        "Lifecycle/Works/New/eternalia.public.reader-index-lookup/work.json",
+        "Lifecycle/REF/Scopes/public-reader-index-lookup.md",
+        "packages/contracts/src/novel.ts",
+        "packages/contracts/dist/novel.js"
+      ],
+      "production_paths": [
+        "packages/contracts/src/novel.ts",
+        "packages/contracts/dist/novel.js"
+      ],
+      "test_paths": [
+        "packages/contracts/exploratory/public-tree-volume-privacy.test.mjs",
+        "packages/contracts/exploratory/public-projection-matrix.test.mjs",
+        "packages/contracts/exploratory/related-tip-ancestor-privacy.test.mjs",
+        "packages/contracts/exploratory/word-etymology-public-projection.test.mjs"
+      ]
+    }
+  ],
+  "scope": {
+    "process_ids": [
+      "eternalia.public.reader"
+    ],
+    "changed_ids": [
+      "publicTree.internal-index-lookup"
+    ],
+    "preserved_ids": [
+      "publicTree.published-snapshot-and-ancestor-filter",
+      "publicTree.cross-series-separation",
+      "publicTree.same-order-and-payload",
+      "publicTree.related-tip-and-etymology-privacy"
+    ]
+  },
+  "specification": {
+    "status": "unknown",
+    "decision_ref": null,
+    "artifact_refs": []
+  },
+  "technologies": [
+    "TypeScript"
+  ],
+  "checks": [
+    {
+      "id": "reader-index-before",
+      "stage": "refactor-baseline",
+      "runner": "junit",
+      "cwd": "@repo:eternalia",
+      "argv": [
+        "node",
+        "--test",
+        "--test-reporter=junit",
+        "--test-reporter-destination={report}",
+        "packages/contracts/exploratory/public-tree-volume-privacy.test.mjs",
+        "packages/contracts/exploratory/public-projection-matrix.test.mjs",
+        "packages/contracts/exploratory/related-tip-ancestor-privacy.test.mjs",
+        "packages/contracts/exploratory/word-etymology-public-projection.test.mjs"
+      ],
+      "input_paths": [
+        "packages/contracts/src/novel.ts",
+        "packages/contracts/dist/novel.js",
+        "packages/contracts/exploratory/public-tree-volume-privacy.test.mjs",
+        "packages/contracts/exploratory/public-projection-matrix.test.mjs",
+        "packages/contracts/exploratory/related-tip-ancestor-privacy.test.mjs",
+        "packages/contracts/exploratory/word-etymology-public-projection.test.mjs"
+      ],
+      "timeout_seconds": 120,
+      "test_ids": [
+        "READER-VOLUME-01/02/03: 180+ mixed nodes preserve complete public trees and bounded private-free recent results",
+        "public tree stays within one series even if other worlds contain public items",
+        "AC-06/31/70: cross-category related Tip respects target ancestor visibility",
+        "AC-06: unpublished target category snapshot cannot leak via a published relation",
+        "AC-06: cross-series Tip relationship is rejected without mutating the source",
+        "AC-06/69: a related Tip title changes publicly only after explicit publication",
+        "ETYM-PUBLIC-01/02/03: meaning-bound references hide private ancestry and use published labels only"
+      ]
+    },
+    {
+      "id": "reader-index-after",
+      "stage": "regression",
+      "runner": "junit",
+      "cwd": "@repo:eternalia",
+      "argv": [
+        "node",
+        "--test",
+        "--test-reporter=junit",
+        "--test-reporter-destination={report}",
+        "packages/contracts/exploratory/public-tree-volume-privacy.test.mjs",
+        "packages/contracts/exploratory/public-projection-matrix.test.mjs",
+        "packages/contracts/exploratory/related-tip-ancestor-privacy.test.mjs",
+        "packages/contracts/exploratory/word-etymology-public-projection.test.mjs"
+      ],
+      "input_paths": [
+        "packages/contracts/src/novel.ts",
+        "packages/contracts/dist/novel.js",
+        "packages/contracts/exploratory/public-tree-volume-privacy.test.mjs",
+        "packages/contracts/exploratory/public-projection-matrix.test.mjs",
+        "packages/contracts/exploratory/related-tip-ancestor-privacy.test.mjs",
+        "packages/contracts/exploratory/word-etymology-public-projection.test.mjs"
+      ],
+      "timeout_seconds": 120,
+      "test_ids": [
+        "READER-VOLUME-01/02/03: 180+ mixed nodes preserve complete public trees and bounded private-free recent results",
+        "public tree stays within one series even if other worlds contain public items",
+        "AC-06/31/70: cross-category related Tip respects target ancestor visibility",
+        "AC-06: unpublished target category snapshot cannot leak via a published relation",
+        "AC-06: cross-series Tip relationship is rejected without mutating the source",
+        "AC-06/69: a related Tip title changes publicly only after explicit publication",
+        "ETYM-PUBLIC-01/02/03: meaning-bound references hide private ancestry and use published labels only"
+      ]
+    }
+  ],
+  "depends_on": []
+}
