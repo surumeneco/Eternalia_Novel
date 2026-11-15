@@ -61,7 +61,7 @@
     ]
   },
   "technologies": [
-    "typescript"
+    "TypeScript"
   ],
   "checks": [],
   "depends_on": []

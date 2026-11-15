@@ -67,8 +67,8 @@
     ]
   },
   "technologies": [
-    "typescript",
-    "playwright"
+    "TypeScript",
+    "Playwright"
   ],
   "checks": [],
   "depends_on": []

@@ -60,10 +60,10 @@
     ]
   },
   "technologies": [
-    "typescript",
-    "vue",
-    "playwright",
-    "postgresql"
+    "TypeScript",
+    "Vue",
+    "Playwright",
+    "PostgreSQL"
   ],
   "checks": [],
   "depends_on": []

@@ -66,9 +66,9 @@
     ]
   },
   "technologies": [
-    "vue",
+    "Vue",
     "nuxt",
-    "playwright",
+    "Playwright",
     "css"
   ],
   "checks": [],

@@ -62,10 +62,10 @@
     ]
   },
   "technologies": [
-    "vue",
+    "Vue",
     "nuxt",
-    "playwright",
-    "typescript"
+    "Playwright",
+    "TypeScript"
   ],
   "checks": [],
   "depends_on": []

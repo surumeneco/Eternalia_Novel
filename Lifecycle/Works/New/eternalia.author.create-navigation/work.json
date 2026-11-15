@@ -76,9 +76,9 @@
     ]
   },
   "technologies": [
-    "typescript",
-    "vue",
-    "playwright"
+    "TypeScript",
+    "Vue",
+    "Playwright"
   ],
   "checks": [],
   "depends_on": []

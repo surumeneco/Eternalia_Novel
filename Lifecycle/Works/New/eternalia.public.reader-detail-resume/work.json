@@ -70,9 +70,9 @@
     ]
   },
   "technologies": [
-    "vue",
+    "Vue",
     "nuxt",
-    "playwright",
+    "Playwright",
     "node"
   ],
   "checks": [],
