@@ -1,7 +1,7 @@
 # 旧UI資産の継承元
 
 - 原典: `surumeneco/Eternalia_frontend/develop@170fb60bfd2a46d673807e2de744e6a33fb4990e`
-- 規範: Google Drive `forGPT/Eternalia_Novel/20_基本設計/220_ビジュアルデザイン・画面コンポーネント継承設計.md`
+- 設計正本: Google Drive `forGPT/Creating/Projects/Websites/Eternalia_Novel/20_基本設計/220_ビジュアルデザイン・画面コンポーネント継承設計.md`
 - 本コミット: 原典SCSSのテキストを無改変で保存（将来の視覚比較用）。稼働CSSへの変換とは別工程。
 
 | 原典 | 現行の参照位置 |
