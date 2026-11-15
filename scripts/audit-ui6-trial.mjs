@@ -64,7 +64,9 @@ export function describeUi6Trial(graph, trialAssignments = UI6_TRIAL_ASSIGNMENTS
     normativeClassification: 'not-run',
     normativeDependencyRules: 'not-run',
     domContract: 'not-run',
-    sourceScope: 'same-directory Vue SFC static observation only',
+    compositionObservationStatus: Array.isArray(graph.compositionEvidence) ? 'lexical-partial' : 'not-run',
+    compositionEvidence: graph.compositionEvidence ?? [],
+    sourceScope: 'same-directory Vue SFC static observation and lexical composition evidence only',
     candidateCoverage: unclassified.length || staleAssignments.length || invalidAssignments.length
       ? 'needs-review' : 'complete-in-trial',
     componentCount: assignments.length,

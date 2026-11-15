@@ -18,22 +18,29 @@ function observedTemplate(source) {
   return end > opening.index ? withoutComments.slice(opening.index + opening[0].length, end) : '';
 }
 
-function templateDependencies(source, knownTags) {
+/** Bounded lexical evidence: tags and imports are separate from slot/dynamic sites.
+ * Slot outlets/assignments do NOT prove a rendered parent-child DOM edge.
+ * :is expressions are never resolved to guessed component dependencies.
+ */
+function templateEvidence(source, knownTags) {
   const markup = observedTemplate(source);
-  const result = new Set();
+  const templateTags = new Set();
+  const slotOutlets = [];
+  const slotProviders = [];
+  const dynamicComponentSites = [];
   for (let i = 0; i < markup.length; i++) {
-    // A Vue interpolation is a JS expression, not HTML markup.
     if (markup.startsWith('{{', i)) {
       const end = markup.indexOf('}}', i + 2);
       if (end >= 0) { i = end + 1; continue; }
     }
     if (markup[i] !== '<') continue;
     const tag = /^<([A-Za-z][A-Za-z0-9-]*)\b/.exec(markup.slice(i));
-    if (!tag) continue; // closing tags, declarations and text
-    const ref = knownTags.get(tag[1]);
-    if (ref) result.add(ref);
+    if (!tag) continue;
+    const tagName = tag[1];
+    const ref = knownTags.get(tagName);
+    if (ref) templateTags.add(ref);
 
-    // Skip the complete start tag; an attribute quoted string can contain "<Foo>".
+    // Attribute values can contain fake markup, slot keywords or :is strings.
     let quote = '';
     let end = i + tag[0].length;
     for (; end < markup.length; end++) {
@@ -43,9 +50,25 @@ function templateDependencies(source, knownTags) {
       } else if (ch === '"' || ch === "'") quote = ch;
       else if (ch === '>') break;
     }
+    const openingTag = markup.slice(i, Math.min(end + 1, markup.length));
+    // Preserve attribute *names* and = signs; omit quoted attribute *values*.
+    const attributes = openingTag.replace(/(["'])(?:\\.|(?!\1)[\s\S])*?\1/g, '""');
+    if (tagName === 'slot') {
+      if (/\s(?::name|v-bind:name)\s*=/.test(attributes)) slotOutlets.push('[dynamic]');
+      else slotOutlets.push(/\sname\s*=\s*(["'])([^"']+)\1/.exec(openingTag)?.[2] ?? 'default');
+    }
+    for (const match of attributes.matchAll(/(?:^|\s)(?:#([\w-]+)|v-slot(?::([\w-]+))?)(?=\s|=|\/?\>)/g)) {
+      slotProviders.push(match[1] ?? match[2] ?? 'default');
+    }
+    if (['component', 'Component', 'NuxtDynamicComponent'].includes(tagName) &&
+        /\s(?::is|v-bind:is)\s*=/.test(attributes)) dynamicComponentSites.push(tagName);
     i = end;
   }
-  return result;
+  return {
+    templateTags: [...templateTags].sort(),
+    slotOutlets: slotOutlets.sort(), slotProviders: slotProviders.sort(),
+    dynamicComponentSites: dynamicComponentSites.sort(),
+  };
 }
 
 function staticImportDependencies(source, knownNames) {
@@ -77,17 +100,19 @@ export async function inspectComponentDirectory(directory) {
     knownTags.set(kebab, name);
   }
   const components = [];
+  const compositionEvidence = [];
   for (const fileName of names) {
     const name = basename(fileName, '.vue');
     const content = await readFile(join(directory, fileName), 'utf8');
-    // Nuxt may register PascalCase or kebab-case component tags. Do not
-    // misread scripts, styles, comments, interpolations, or quoted attributes
-    // as template structure. Static script imports remain separate evidence.
-    const references = new Set([
-      ...templateDependencies(content, knownTags),
-      ...staticImportDependencies(content, known),
-    ]);
+    const template = templateEvidence(content, knownTags);
+    const staticImports = [...staticImportDependencies(content, known)].sort();
+    const references = new Set([...template.templateTags, ...staticImports]);
+    // Keep the legacy dependency graph and cycle detector unchanged. The
+    // separate evidence must not be mistaken for UI6 normative conformance.
     components.push({ name, dependsOn: [...references].sort() });
+    compositionEvidence.push({ name, templateTags: template.templateTags, staticImports,
+      slotOutlets: template.slotOutlets, slotProviders: template.slotProviders,
+      dynamicComponentSites: template.dynamicComponentSites });
   }
   const graph = new Map(components.map(c => [c.name, c.dependsOn]));
   const state = new Map();
@@ -110,8 +135,8 @@ export async function inspectComponentDirectory(directory) {
     state.set(name, 2);
   }
   for (const c of components) if (!state.has(c.name)) visit(c.name);
-  return { componentCount: components.length, components, cycles, classificationStatus: 'undecided',
-    limitations: ['PascalCase/kebab-case template tags and line-start static .vue imports only', 'no complete Vue/JS parsing, DOM or dynamic resolution verification'] };
+  return { componentCount: components.length, components, compositionEvidence, cycles, classificationStatus: 'undecided',
+    limitations: ['same-directory PascalCase/kebab-case template tags and line-start static .vue imports only', 'lexical slot/v-slot and :is sites do not prove slot rendering or resolve targets', 'no complete Vue/JS parsing, DOM or cross-directory dependency verification'] };
 }
 
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
