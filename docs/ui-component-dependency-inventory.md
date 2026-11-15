@@ -36,11 +36,13 @@
 
 一方、**静的観測器とは独立したブラウザ観測**は `apps/web/browser-acceptance/ui6-public-collection-dom.test.mjs` にまとめている。PR #82の公開4領域コレクションに加え、PR #98で公開シリーズ詳細・Tip詳細・章本文の `Shell → TopicPath → ReaderPanel` のDOM順序、匿名時の作者編集リンク非表示、章本文/ナビゲーションの配置、幅320/390/768/1280pxの横溢れ、およびJavaScript無効の公開タイトル・章全ページSSRを観測した。匿名Chromiumと使い捨てPostgreSQLによる既存2件＋追加2件のJUnit4/4（[Push #43682024526](https://github.com/surumeneco/Eternalia_Novel/actions/runs/43682024526)、[PR #43682027116](https://github.com/surumeneco/Eternalia_Novel/actions/runs/43682027116)、いずれも全4ジョブ成功）。この実DOMの部分証拠は静的観測器の検査範囲を拡張したことや、UI6規範分類・許可依存表・正式CAT Gateの合格を意味しない。
 
-PR #100で作者`/studio/publication`と`/studio/order`の`Shell → TopicPath → ReaderPanel`、匿名時の管理UI非描画と管理APIの401、幅320/390/768/1280pxの横溢れを実DOMで確認した。管理2画面の`types/kinds`をリアクティブな翻訳辞書へ変更し、公開管理行の可変幅を是正した。新Chromium JUnitは[Red #43685857862](https://github.com/surumeneco/Eternalia_Novel/actions/runs/43685857862) 1/3（旧言語ラベル残存・768pxで1141px溢れ）→[Push #43686117276](https://github.com/surumeneco/Eternalia_Novel/actions/runs/43686117276) / [PR #43686153150](https://github.com/surumeneco/Eternalia_Novel/actions/runs/43686153150) 3/3（各全4ジョブ成功）。これは画面DOMと表示挙動の観測であり、UI6規範依存表の承認・作者編集やメモ画面の受入・実Discord認証の代わりにはならない。
+PR #100で作者`/studio/publication`と`/studio/order`の`Shell → TopicPath → ReaderPanel`、匿名時の管理UI非描画と管理APIの401、幅320/390/768/1280pxの横溢れを実DOMで確認した。管理2画面の`types/kinds`をリアクティブな翻訳辞書へ変更し、公開管理行の可変幅を是正した。新Chromium JUnitは[Red #43685857862](https://github.com/surumeneco/Eternalia_Novel/actions/runs/43685857862) 1/3（旧言語ラベル残存・768pxで1141px溢れ）→[Push #43686117276](https://github.com/surumeneco/Eternalia_Novel/actions/runs/43686117276) / [PR #43686153150](https://github.com/surumeneco/Eternalia_Novel/actions/runs/43686153150) 3/3（各全4ジョブ成功）。これは画面DOMと表示挙動の観測であり、UI6規範依存表の承認・他の作者管理画面の受入・実Discord認証の代わりにはならない。
+
+PR #102で`/studio/memos`、章/Tipの`/studio?item=…`をさらに実DOM観測した。共通Shell→`TopicPath`→`ReaderPanel`と、章/Tip編集内部の`AuthorReferencePanel`を匿名/作者の両経路で確認し、管理API401と幅320/390/768/1280px横溢れなしを確認。メモ保存409の英語UIローカライズ欠陥も[Red #43687834836](https://github.com/surumeneco/Eternalia_Novel/actions/runs/43687834836) 2/3→[Push #43688099772](https://github.com/surumeneco/Eternalia_Novel/actions/runs/43688099772)・[PR #43688141203](https://github.com/surumeneco/Eternalia_Novel/actions/runs/43688141203) 3/3（各CI4ジョブ成功）で確認・是正した。これらはブラウザ合成DOMと表示の**部分証拠**であり、SFC責務候補の機械的正当性や規範CAT Gate、実機受入を立証しない。
 
 ## 次に必要な判断
 
-1. 現行15件は個々のSFCを読んで候補へ対応付け済み。公開シリーズ・Tip詳細・章の本文とナビゲーション配置はブラウザDOMで部分観測済み。次は`RichContent`の複合責務の妥当性、作者参考パネル・作者編集/メモ等の未検証ページレイアウト境界を追加観測し、根拠があれば試用候補を修正する。
+1. 現行15件は個々のSFCを読んで候補へ対応付け済み。公開シリーズ・Tip詳細・章の本文とナビゲーション配置はブラウザDOMで部分観測済み。次は`RichContent`の複合責務の妥当性、作者参考パネルの動的内容・他の作者操作画面や未観測のページレイアウト境界を追加観測し、根拠があれば試用候補を修正する。
 2. 依存観測結果に役割候補を重ねて検討する。静的import・template合成・slot委譲の区別を補ってから、許可依存表と例外を試行し、単純な全順序を規範化しない。
 3. DOM契約を必要な画面で定義し、分類/依存のVerifierをCAT正本と照合して試験導入の適否を判断する。
 4. 正規CAT Gate・実画面/実機受入の証拠を別管理し、AC-73の状態を自動的にpassへ変えない。
