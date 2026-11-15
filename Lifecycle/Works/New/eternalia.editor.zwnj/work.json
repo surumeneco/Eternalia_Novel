@@ -63,7 +63,7 @@
     ]
   },
   "technologies": [
-    "typescript"
+    "TypeScript"
   ],
   "flow": "issue-work",
   "work_kind": "verification",

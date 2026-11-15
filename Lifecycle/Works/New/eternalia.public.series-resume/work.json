@@ -68,8 +68,8 @@
   },
   "technologies": [
     "nuxt",
-    "vue",
-    "playwright",
+    "Vue",
+    "Playwright",
     "node"
   ],
   "checks": [],

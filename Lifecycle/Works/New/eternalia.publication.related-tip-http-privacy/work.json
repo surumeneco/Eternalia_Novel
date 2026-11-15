@@ -63,9 +63,9 @@
     ]
   },
   "technologies": [
-    "typescript",
+    "TypeScript",
     "nest",
-    "postgresql",
+    "PostgreSQL",
     "node"
   ],
   "checks": [],

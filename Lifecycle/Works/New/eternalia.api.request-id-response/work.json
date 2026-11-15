@@ -63,10 +63,10 @@
     ]
   },
   "technologies": [
-    "typescript",
+    "TypeScript",
     "nest",
     "node",
-    "postgresql"
+    "PostgreSQL"
   ],
   "checks": [],
   "depends_on": []

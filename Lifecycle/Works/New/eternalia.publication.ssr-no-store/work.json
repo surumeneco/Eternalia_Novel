@@ -62,7 +62,7 @@
     ]
   },
   "technologies": [
-    "typescript",
+    "TypeScript",
     "nuxt",
     "nest",
     "node"

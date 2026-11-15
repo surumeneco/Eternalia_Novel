@@ -51,8 +51,8 @@
     "artifact_refs": []
   },
   "technologies": [
-    "typescript",
-    "playwright"
+    "TypeScript",
+    "Playwright"
   ],
   "checks": [],
   "depends_on": []

@@ -65,8 +65,8 @@
     ]
   },
   "technologies": [
-    "vue",
-    "playwright",
+    "Vue",
+    "Playwright",
     "node"
   ],
   "checks": [],

@@ -62,9 +62,9 @@
     ]
   },
   "technologies": [
-    "vue",
+    "Vue",
     "node",
-    "typescript"
+    "TypeScript"
   ],
   "checks": [],
   "depends_on": []
