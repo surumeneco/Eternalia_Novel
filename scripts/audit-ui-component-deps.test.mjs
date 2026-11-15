@@ -123,3 +123,63 @@ test('UI-DEP-OBS-07: importing a nested same-basename Vue file is not a local SF
     assert.deepEqual(result.cycles, []);
   });
 });
+
+test('UI-DEP-OBS-08: separate template tag and direct import provenance without changing graph edges', async () => {
+  await withVueFiles({
+    Host: `<script setup>
+      import ReaderPanel from './ReaderPanel.vue';
+      import OnlyImport from './OnlyImport.vue';
+    </script>
+    <template><ReaderPanel /></template>`,
+    ReaderPanel: '<template><section><slot /></section></template>',
+    OnlyImport: '<template><article /></template>',
+  }, async root => {
+    const graph = await inspectComponentDirectory(root);
+    assert.deepEqual(graph.components.find(x => x.name === 'Host')?.dependsOn,
+      ['OnlyImport', 'ReaderPanel']);
+    assert.deepEqual(graph.compositionEvidence.find(x => x.name === 'Host'), {
+      name: 'Host', templateTags: ['ReaderPanel'], staticImports: ['OnlyImport', 'ReaderPanel'],
+      slotOutlets: [], slotProviders: [], dynamicComponentSites: [],
+    });
+    assert.deepEqual(graph.compositionEvidence.find(x => x.name === 'ReaderPanel')?.slotOutlets,
+      ['default']);
+  });
+});
+
+test('UI-DEP-OBS-09: slots and dynamic component sites are unresolved lexical evidence, not graph edges', async () => {
+  await withVueFiles({
+    Host: `<script setup>const fake = '<slot /><component :is="Sneaky" />';</script>
+    <template>
+      <!-- <slot /><template #ignored><component :is="Fake" /></template> -->
+      <ReaderPanel #actions>
+        <template v-slot:header><div title='<slot /><component :is="Fake" />' /></template>
+        <component :is="selection" />
+        <slot name="footer" />
+      </ReaderPanel>
+    </template>`,
+    ReaderPanel: '<template><section><slot /><slot name="details" /></section></template>',
+    Fake: '<template><span /></template>',
+  }, async root => {
+    const graph = await inspectComponentDirectory(root);
+    const host = graph.compositionEvidence.find(x => x.name === 'Host');
+    assert.deepEqual(graph.components.find(x => x.name === 'Host')?.dependsOn, ['ReaderPanel']);
+    assert.deepEqual(host, {
+      name: 'Host', templateTags: ['ReaderPanel'], staticImports: [],
+      slotOutlets: ['footer'], slotProviders: ['actions', 'header'],
+      dynamicComponentSites: ['component'],
+    });
+    assert.deepEqual(graph.compositionEvidence.find(x => x.name === 'ReaderPanel')?.slotOutlets,
+      ['default', 'details']);
+    assert.deepEqual(graph.cycles, []);
+  });
+});
+
+test('UI-DEP-OBS-10: real ReaderPanel slot is observed without inventing UI6 conformance', async () => {
+  const graph = await inspectComponentDirectory('apps/web/app/components');
+  assert.equal(graph.componentCount, 15);
+  assert.deepEqual(graph.compositionEvidence.find(x => x.name === 'ReaderPanel')?.slotOutlets,
+    ['default']);
+  assert.equal(graph.compositionEvidence.length, graph.componentCount);
+  assert.equal(graph.classificationStatus, 'undecided');
+  assert.deepEqual(graph.cycles, []);
+});
