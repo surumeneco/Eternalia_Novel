@@ -78,6 +78,14 @@ test('ETYM-PUBLIC-01/02/03: meaning-bound references hide private ancestry and u
   assert.equal(projected[0].definition, 'first independent meaning',
     'reference publication cannot update unpublished source meaning');
 
+  // Hiding the referenced word alone keeps the public language but not the private word.
+  db = setVisibility(db, refB, 2, false, null, now + 7);
+  assert.deepEqual(meaningList(db, source, now + 7)[0].etymologies[0], {
+    id: eB, note: 'shared root', languageId: langB, languageTitle: 'Foreign Language',
+  });
+  db = setVisibility(db, refB, 3, true, null, now + 7);
+  assert.equal(meaningList(db, source, now + 7)[0].etymologies[0].wordId, refB);
+
   // Hiding its ancestor must strip IDs and titles, not the source's own public note.
   db = setVisibility(db, langB, 1, false, null, now + 8);
   assert.equal(toReader(db, refB, now + 9), null);
