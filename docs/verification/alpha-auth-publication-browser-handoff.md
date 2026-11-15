@@ -1,6 +1,6 @@
 # Eternalia α版：作者認証・公開境界のブラウザ受入
 
-**状態：未実行。** TASK-20261101-008 / PR #7の独立検証手順。正本は `100_機能仕様.md` と `400_受入検証計画.md`、補助Draftは `docs/cat/drafts/anonymous-author-route-protection.md`、`studio-scheduled-publication.md`、`publication-shared-visibility-gate.md`。合成sessionのAPIテストを、実Discord OAuth2/PKCE・ブラウザ認証の成功証拠にしない。
+**状態：実Discordアカウントによる受入は未実行。** 旧TaskQueue `TASK-20261101-008` と PR #7 は手順の歴史的出典であり、現行の作業指示・テストブランチではない。**対象は最新の `develop` を隔離環境に配備した実際のSHA**。受入条件の正本はDriveの [100_機能仕様.md](https://drive.google.com/file/d/1LqX-Noytb_oWymIrpO01eO5PvThGlVGx/view) と [400_受入検証計画.md](https://drive.google.com/file/d/14no6MWmkFuyWYPVS6QdcRmbLbrUBbOpc/view)、具体的な人間の操作・記録先は [MAN台帳](../alpha-manual-acceptance.md)。`docs/cat/drafts/anonymous-author-route-protection.md`、`studio-scheduled-publication.md`、`publication-shared-visibility-gate.md` はDraftであり、合成sessionのAPIテストも実Discord OAuth2/PKCE・ブラウザ認証の合格証拠ではない。
 
 ## 実行環境と主体
 

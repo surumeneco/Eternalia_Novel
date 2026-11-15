@@ -1,10 +1,10 @@
 # α editor / reader manual acceptance handoff
 
-Status: **pending device verification**. Leaf `TASK-20261101-009`. This is a reproducible handoff, **not** a claim that Android, IME, Undo, or the old v0.3 visual design has passed.
+Status: **pending device verification**. This is a supplementary, reproducible procedure for [MAN-09 and relevant MAN-10 conditions](../alpha-manual-acceptance.md), not an independent acceptance authority. The retired TaskQueue leaf `TASK-20261101-009` is **historical provenance only**; it is not an active assignment. Android, IME, Undo and old v0.3 comparison remain unverified.
 
 ## Preconditions
 
-Use the Draft PR #6 branch on an isolated test deployment, with a test author account and a disposable chapter. Record the exact commit SHA, deployed URL, browser version, Android version, keyboard/IME, screen size, test item ID, and whether the API uses test data. Do not publish a real manuscript. Preserve a screenshot or short recording of each observed failure; redact credentials and unpublished text.
+Use the current integrated **`develop`** commit on an isolated test deployment, with a test author account and a disposable chapter. Draft PR #6 is historical exploratory evidence only, not the target of current manual acceptance. Record the exact commit SHA, deployed URL, browser version, Android version, keyboard/IME, screen size, test item ID, and whether the API uses test data. Do not publish a real manuscript. Preserve a screenshot or short recording of each observed failure; redact credentials and unpublished text.
 
 ## Editing / Japanese IME
 

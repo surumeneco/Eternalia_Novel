@@ -9,4 +9,4 @@
 - `GET /api/auth/me` は `{configured,authenticated}` のみ返す。 `POST /api/auth/logout` はセッション破棄。
 - `APP_ORIGIN` のHttp originは **localhost開発専用**。外部公開時はHTTPS、Cookie/Proxy/CSRFテスト、Discord Developer Portalの許可URLを再点検すること。
 
-**未検証**: Discord実アカウント認証フロー、Cookieの各ブラウザ挙動、異常応答、実DBでのセッション破棄。CI成功はOAuth2実機確認を意味しない。
+**受入境界**: state/PKCE、Cookie処理、模擬Discord token交換、作者/非作者セッション・失効は合成HTTP/一時PostgreSQLの探索的試験を実施済み（対象HEADごとの結果は [AC台帳](alpha-ac-traceability.md) と [Actions](https://github.com/surumeneco/Eternalia_Novel/actions) で照合）。**実Discordアカウント**による認証、各端末/ブラウザのCookie挙動、実サービス障害時の操作は未受入。合成成功をCAT正式Gateや実OAuth2受入に昇格させない。

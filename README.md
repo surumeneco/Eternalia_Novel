@@ -1,33 +1,34 @@
-# Eternalia_Novel — α版再実装（ドラフト）
+# Eternalia_Novel — 小説執筆・公開・閲覧Webアプリ（α版）
 
-旧v0.3のデザイントークン／情報階層を引き継いだ **Nuxt 4 + NestJS + PostgreSQL** のα版です。最初のNode標準ライブラリによるローカルプレビューも比較・単体確認用に残してあります。
+作者向けの小説・設定集・創作言語/辞書・年表の編集管理と、匿名読者向けの公開/閲覧を行うWebアプリ。採用構成は **Nuxt 4 / Vue / TypeScript + NestJS / TypeScript + PostgreSQL + Discord OAuth2**。下書き保存と明示的な公開版更新を分離し、公開可否はサーバー側で祖先の状態・公開開始日時を含めて判定します。
 
-**受入確認用ブランチは `develop` です。** α版の実装は2026-11-10に [PR #3](https://github.com/surumeneco/Eternalia_Novel/pull/3) で統合しました。実Chromiumブラウザの自動受入テストはCIで実施していますが、実機での操作確認・実Discordアカウント認証・CAT-TDD正式Gateは未完了です。**`main`にはマージしていません。**
+**受入確認対象は `develop`**。変更は作業ブランチで検証して随時 `develop` に統合します。`main` への統合・リリースはユーザーの明示的な承認を要します。GitHub Actionsの自動テスト成功は実Discord認証・実機操作・CAT-TDD正式Gate・旧v0.3視覚受入の完了を意味しません。
 
-手元で確認する際は `git switch develop` → `git pull --ff-only origin develop` を実行してください。Nuxt/Nest/PostgreSQLの採用構成は [`docs/alpha-nuxt-setup.md`](docs/alpha-nuxt-setup.md) を参照してください。
+## 起動・確認
 
-## ブランチ運用
+- **採用構成を確認する**: [Nuxt/Nest/PostgreSQLのローカル起動](docs/alpha-nuxt-setup.md)。既存クローンでは `git switch develop` → `git pull --ff-only origin develop` の後、専用検証DBを使って起動します。読者 `http://localhost:3000/`、作者 `http://localhost:3000/studio`。
+- **旧独立プレビューの比較を行う**: [ローカルNodeプレビュー](docs/alpha-setup.md)。`apps/preview` のJSONストア・ローカル専用キーは採用構成のDB・Discord OAuthと独立しており、現在の機能・認証の受入に使いません。両者のデータは自動同期されません。
 
-`main`は安定版、`develop`は開発統合、`feature/*`は機能開発用です。`feature/*`は`develop`を起点に切り、CIとレビュー後にPRで`develop`へ統合します。`main`への統合は安定化・リリース時に別途実施します。
+## 実装コードと構成
 
-## 選べる起動方法
+| 所在 | 主な責務 |
+| --- | --- |
+| `apps/web/` | Nuxtの公開4領域、シリーズ/詳細/章の読者UI、作者Studio/管理UI、i18n固定文言 |
+| `apps/api/` | Nestの公開/作者API、Discord認証、公開状態と権限判定 |
+| `packages/contracts/` | 領域モデル、下書き/公開投影、階層/検索/保存の共有処理 |
+| `db/migrations/` | PostgreSQLスキーマとマイグレーション |
+| `apps/preview/` | 旧Node単体プレビュー。探索・比較用であり本番アプリではない |
 
-1. **ローカル単体α（Discord/Postgres不要）**: Windows `start-alpha.cmd`、macOS/Linux `./start-alpha.sh`。旧プレビューと同じ読者・作者用URL（作者は起動時表示されるローカル専用キー）を使用します。UI配色はv0.3を継承。手順: [`docs/alpha-setup.md`](docs/alpha-setup.md)。
-2. **採用構成の統合α（Nuxt/Nest/PostgreSQL/Discord）**: [`docs/alpha-nuxt-setup.md`](docs/alpha-nuxt-setup.md) に従って `.env`、Docker Compose、migration、Nuxt、Nestを起動。読者: `http://localhost:3000/`、作者: `http://localhost:3000/studio`。
+## 文書の正本と実測
 
-どちらも本番インターネットへ公開しないでください。既存単体αのJSONとPostgreSQLの内容は自動同期されません。
+| 用途 | 参照先 |
+| --- | --- |
+| **要件・設計・旧版の採否** | [Driveプロジェクトインデックス](https://drive.google.com/file/d/1iyt-eHelLjROHcgO699p86poC0Y_-7pd/view)（要件100、採用決定215、受入条件400など） |
+| **現在の残Work** | [CAT-HANDOFF.md](CAT-HANDOFF.md) |
+| **AC-01〜78のコード/自動試験証拠と未完了境界** | [ACトレーサビリティ](docs/alpha-ac-traceability.md) |
+| **実機・実Discord・旧UI対比の手順と実測** | [MAN-01〜15](docs/alpha-manual-acceptance.md)、[IME/Android補助手順](docs/verification/editor-ime-android-handoff.md) |
+| **CIの構成と証拠の解釈** | [workflow](.github/workflows/alpha-checks.yml)、[検証境界](docs/alpha-check-evidence.md)、[Actions](https://github.com/surumeneco/Eternalia_Novel/actions) |
+| **CAT-TDDのWork/Candidates** | `docs/cat/`、`Lifecycle/`。Draftは正式Confirmedではない |
+| **旧v0.3の視覚資産** | [旧UI資産対応](docs/legacy-ui-asset-map.md) |
 
-## ディレクトリ
-
-- `apps/web` — Nuxt 4：ホーム、ストーリー/設定集/辞書/年表、シリーズ、項目閲覧、ルビ・ページ区切り、作者の書斎
-- `apps/api` — NestJS：公開専用API、作者限定CRUD/公開反映、Discord OAuth2+PKCE、PostgreSQL保存と競合制御
-- `packages/contracts` — 純粋ドメイン：階層、下書き、公開スナップショット、祖先可視性、公開開始日、項目プリセット
-- `db/migrations` — `content_nodes` / `published_snapshots` / OAuth state / author sessions
-- `apps/preview` — オフライン用旧プレビュー（localhost限定キーとJSONストア、Discord認証とは別）
-- `docs` — 設計継承、検証境界、機能別引継ぎ
-
-## 検証と残課題
-
-GitHub Actions `Alpha checks`: npm固定インストール、既存探索的α試験、Nuxt/Nest/契約ビルド、Nuxt型検査、PostgreSQL 17のmigrationと公開スナップショット／競合処理の探索的結合試験、作者ガード単体試験。実測結果は**コミットごとのCIログ**で確認してください。
-
-未完了: CAT-TDD正式Gate、Discord実アカウントOAuth2、実機の手動UI/IME操作とv0.3との実視覚比較、年表換算・管理マスタ等の詳細仕様。CIではChromiumによる自動ブラウザ受入テストを実行済みですが、CI成功だけで正式α受入完了とは判断しません。詳しくは [`docs/alpha-check-evidence.md`](docs/alpha-check-evidence.md) と [`CAT-HANDOFF.md`](CAT-HANDOFF.md)。
+READMEと引継ぎには可変の最新SHA・ジョブ数の実測値を重複保存しません。最新状態は当該ブランチのコード・CI・受入台帳を再取得してください。編集や公開の機能が実装されていても、正式CAT Gateや実端末の受入は独立して判定します。

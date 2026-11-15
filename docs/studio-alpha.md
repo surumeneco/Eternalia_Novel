@@ -1,14 +1,15 @@
-# Nuxt 4 作者の書斎（実装ドラフト）
+# 作者Studioの実装と検証境界
 
-`/studio` はOAuth2セッションの有無に応じて未設定・ログイン・編集を切り替えます。
+`/studio` と `/studio/order`、`/studio/publication`、`/studio/memos` が作者管理UIの入口。**機能の実在は現在の `apps/web/app/pages/` と `apps/web/app/components/`、アクセス制御はNest/Nuxt API実装で確認する。**本書は実装説明であって仕様の採否・実機受入判定を行わない。
 
-- 作者一覧は `GET /api/admin/nodes` から取得（認証必須）。
-- 12種類のノード階層を選択し、シリーズ／子項目をサーバーUUIDで作成。
-- タイトル、本文、設定プリセット、辞書品詞、年表相対年を編集。
-- 下書き保存と公開反映を別操作に分離し、改訂番号を送信して競合時はエラー表示。
-- 個別の公開/非公開・公開開始日時を設定し、親の可視性は公開APIのサーバー側判定。
-- `RichContent`: ページ区切りとルビをHTMLの文字列挿入なしで表示。
-- 書き込み時は同一オリジンAPIへのJSON fetchとHttpOnly cookieを利用。認証をクライアント側だけで判断しない。
-- 項目削除・並べ替え、年表換算マスタ、語源リンク、検索など全領域の詳細機能は別Workとして残す。
+## 現行コードに対応する操作
 
-**実機未検証**: Discordの本物の認可フロー、Cookieの転送、PG実書込・公開切替・Nuxt操作。GitHub Actionsはビルド・探索的試験でありCAT-TDDの規範Gateではない。
+- シリーズ→編→部→章、設定カテゴリ/Tip/TipSection、言語/単語/文法、年代区分/出来事を作者側で選択し、新規作成・編集・保存する。
+- 下書き保存と明示公開版反映を別操作として扱い、改訂番号による競合を検出する。公開状態・公開開始日時の入力と、祖先による実効可視性の判定は分離する。
+- カテゴリの項目プリセットは `CategoryPresetEditor.vue`、設定タグ・関連設定は `TipLinksEditor.vue`、単語の意味/品詞・意味別語源は `WordMeaningsEditor.vue`、言語構造は `LanguageStructureEditor.vue` が担当する。これらの**UIの存在は全入力経路の実機受入済みを意味しない**。
+- 公開・並べ替え・メモはそれぞれ管理ページを持つ。章ページ配列、読者向け公開API、公開版スナップショットとの整合性は対応するテストとAC台帳で確認する。
+- 作者APIはOAuth2で確認された主体に対するサーバー側の作者権限判定を要求する。合成セッション/Chromiumの認可試験は実Discordアカウント試験とは独立。
+
+## 受入の所在
+
+具体的な採用要件は [Driveの100_機能仕様.md](https://drive.google.com/file/d/1LqX-Noytb_oWymIrpO01eO5PvThGlVGx/view)、公開・データの設計はDriveの300/310が正本。自動テスト・未検証条件は [AC台帳](alpha-ac-traceability.md)、実Discord・日本語IME・実端末・旧画面比較は [MAN台帳](alpha-manual-acceptance.md) を参照する。既存部品があることを理由に未確認の仕様をpassとせず、旧版の実装候補を自動的に未実装Workとして復活させない。

@@ -1,29 +1,26 @@
-# α版 GitHub Actions検証境界
+# α版 GitHub Actionsの検証範囲
 
-CI: `.github/workflows/alpha-checks.yml`。固定npm lockから `npm ci`、既存探索的αテスト、contracts/Nest/Nuxtビルド、Nuxt型検査、PostgreSQL 17サービス起動、明示的migration適用、独立スナップショット・改訂競合・管理Guardの探索的結合/単体テストを実行する。
+CIの現行構成は [`.github/workflows/alpha-checks.yml`](../.github/workflows/alpha-checks.yml) が正本。ジョブ構成・環境・コマンドは変更され得るので、**この説明より現行workflowと対象commitの[Actions](https://github.com/surumeneco/Eternalia_Novel/actions)を優先**する。
 
-**実行結果は当該HEADのGitHub Actionsログで確認する。CI設定をコミットしただけで成功とはみなさない。**
+## 現行の4ジョブ
 
-CIが成功しても、以下は別途not-runまたは未確認: 正規CAT-TDD doctor/guard/Red/Green/conformance、Discord実アカウントによるOAuth2、**人間による作者編集操作**、旧v0.3画面との実スクリーンショット比較、年表換算・辞書の全仕様、公開後の利用者アクセス検証。合成作者セッションでのChromiumブラウザE2Eは後述のとおりCIで実施済みであり、実Discord認証と混同しない。CIの一時DBは破棄されるので本番データ保存を意味しない。
+| ジョブ | 実行内容・役割 |
+| --- | --- |
+| `build-and-test` | Node 22 / `npm ci`、既存探索的domain/HTTPテスト、AC台帳構造検査、JUnit実行器自己試験、contracts/Nest/Nuxtビルド・型検査、PostgreSQL 17 migrationとDBテスト |
+| `compile-and-typecheck` | domain試験が失敗しても独立にビルド/型エラーを検出する |
+| `postgres-integration` | 別のPostgreSQL 17サービスへmigrationを適用し、トランザクション・作者ガードをJUnitで確認 |
+| `http-ssr-acceptance` | Ubuntu 24.04・固定Playwright/Chromium・一時PostgreSQLで実ビルド済みNest/Nuxtの匿名HTTP、SSR、公開判定、作者UIを検証し、JUnitとスクリーンショットを収集 |
 
-## 2026-10-31: CI失敗時にも独立して実行する検証
+実行前の `npm ci`、migration、検証専用DBとCI実行時の証拠を区別する。失敗した先行stepのため後段が未実行の場合、「全テスト失敗」や「Red確認済み」とは扱わない。**workflow全体のsuccessを確認するには同じcommitの4ジョブの結果を照合する。**
 
-`Alpha checks` は各Push/PRで以下の3ジョブを独立実行する。
+## 合否を代替できないもの
 
-- `build-and-test`: 既存の探索的domain/preview試験、その後ビルド・型検査・DB試験を順次実行。前段が失敗すれば後段は未実施となる。
-- `compile-and-typecheck`: domain試験の失敗とは独立してcontracts/Nest/Nuxtビルドを実行し、Nuxt型検査はビルド不合格時にも実行する。**元のジョブを無効化したものではない**。
-- `postgres-integration`: 独立PostgreSQL 17環境にmigrationを適用し、contracts/Nestのビルド後に作者ガード・メモ・公開スナップショット・競合処理等のDB統合試験を実行する。
+実DiscordアカウントOAuth2、Windows/AndroidのIME・Undo・実タブ/OS BFCache、実データの本番運用、旧v0.3画面との人間による視覚比較、CAT-TDD正規のClosure/Model/Queue/Conformance/Red-GreenはCI成功からは推定できない。合成作者セッションや合成可視状態イベントのChromium成功は、実サービス/実OSの合格証拠ではない。性能SLAを未合意の合成データ件数から推定しない。
 
-検証例: [Actions run 41089773500](https://github.com/surumeneco/Eternalia_Novel/actions/runs/41089773500) では `postgres-integration` の9テストが全件成功。一方、`build-and-test` と `compile-and-typecheck` の失敗は独立して残り、**workflow全体はfailure**。各ジョブ・各テストの実際の結論は常に現在HEADのActionsで再照合する。
+個々の受入条件とコード/CI/不足条件の結び付けは [AC台帳](alpha-ac-traceability.md)、手動受入の実測は [MAN台帳](alpha-manual-acceptance.md) が保持する。ビルド/CIの履歴を時系列で本書へ増補しない。
 
-この証跡は正規CAT-TDD Gate、ブラウザE2E、Discord実アカウント認証の検証を代替しない。
+## 過去の検証が示したこと（履歴）
 
-## 2026-10-31: 実ChromiumブラウザE2Eの拡張（同一HEAD証拠）
-
-[Actions #41213396614](https://github.com/surumeneco/Eternalia_Novel/actions/runs/41213396614)（commit `e6299061f3445207a599d9d1fbde7e1b397f5829`）で4ジョブすべてsuccess。実Nuxt/Nest/PG17/Chromiumのブラウザ試験15件・HTTP/SSR試験6件が全件成功した。
-
-今回検証した代表的な操作: 5種類（章/TipSection/単語/文法/出来事）の下書き保存→再読込→明示公開→非公開→再公開、単語の意味・語源の保存、長文Unicodeの往復、2タブの409競合と入力保持、未保存離脱のキャンセル、作者320/390pxと読者390/768/1280px、合成作者のログアウトと他セッション保全、匿名検索・関連リンクの非公開制御。
-
-CIの合成セッションをログアウトすると後続テストの共有トークンも失効する問題を [`b339483`](https://github.com/surumeneco/Eternalia_Novel/commit/b339483c82d151ce48fd6a33f85e77cb53ffdbd7) と [`047e94b`](https://github.com/surumeneco/Eternalia_Novel/commit/047e94bbe385e5ecb872b7ce5be461f925642486) で独立セッション化して解消。修正後の [Actions #41213292305](https://github.com/surumeneco/Eternalia_Novel/actions/runs/41213292305) は4ジョブsuccess。
-
-これらは**探索的な実HTTP/ブラウザ検証**であり、正規CAT-TDDのRed/Greenや規範Gate、実Discord OAuth、実IME、旧v0.3の視覚比較、全AC合格を意味しない。AC-01〜78の網羅状態は `docs/alpha-ac-traceability.md`、実機手順は `docs/alpha-manual-acceptance.md` を参照。後続のUIスクリーンショットartifact収集は別のCI結果で検証する。
+- [2026-10-31 Actions #41089773500](https://github.com/surumeneco/Eternalia_Novel/actions/runs/41089773500) は当時の3ジョブ構成でPostgreSQLの9テストが成功したが、他2ジョブが失敗しworkflow全体はfailureだった。**過去の構成であり、現在のジョブ数ではない。**
+- [Actions #41213396614](https://github.com/surumeneco/Eternalia_Novel/actions/runs/41213396614) は当時の4ジョブ成功、初期実Chromium 15件・HTTP/SSR 6件の探索的証拠。後続HEADの検証や実機確認の代わりにはならない。
+- 合成セッションをログアウトすると共有トークンが失効する問題を [b339483](https://github.com/surumeneco/Eternalia_Novel/commit/b339483c82d151ce48fd6a33f85e77cb53ffdbd7)・[047e94b](https://github.com/surumeneco/Eternalia_Novel/commit/047e94bbe385e5ecb872b7ce5be461f925642486) の独立セッション化で修正。以降の証拠は個別AC行とCI履歴で追跡する。
