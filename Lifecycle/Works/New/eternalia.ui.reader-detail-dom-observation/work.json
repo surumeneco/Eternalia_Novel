@@ -1,0 +1,69 @@
+{
+  "schema": "cat-work/v1",
+  "id": "eternalia.ui.reader-detail-dom-observation",
+  "entry": "issue",
+  "flow": "issue-work",
+  "mode": "shadow",
+  "work_kind": "verification",
+  "issue_ref": "https://github.com/surumeneco/Eternalia_Novel/issues/1",
+  "project_entry_ref": "https://drive.google.com/file/d/1clwfVJ3e_t1_QKFfOWxxRIzE9WMFvTiM/view",
+  "normative": [
+    {
+      "uri": "https://drive.google.com/file/d/1LqX-Noytb_oWymIrpO01eO5PvThGlVGx/view"
+    },
+    {
+      "uri": "https://drive.google.com/file/d/14no6MWmkFuyWYPVS6QdcRmbLbrUBbOpc/view"
+    }
+  ],
+  "evidence": [
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/actions/runs/43680535303"
+    }
+  ],
+  "repositories": [
+    {
+      "name": "eternalia",
+      "path": "../../../..",
+      "branch_pattern": "feature/*",
+      "allowed_paths": [
+        "Lifecycle/Works/New/eternalia.ui.reader-detail-dom-observation/work.json",
+        "docs/cat/drafts/ui6-reader-detail-dom.md",
+        "apps/web/browser-acceptance/ui6-public-collection-dom.test.mjs"
+      ],
+      "production_paths": [],
+      "test_paths": [
+        "apps/web/browser-acceptance/ui6-public-collection-dom.test.mjs"
+      ]
+    }
+  ],
+  "scope": {
+    "process_ids": [
+      "eternalia.ui"
+    ],
+    "changed_ids": [
+      "UI6-DETAIL-DOM-01",
+      "UI6-DETAIL-DOM-02",
+      "UI6-DETAIL-DOM-03"
+    ],
+    "preserved_ids": [
+      "reader.shell",
+      "reader.ssr",
+      "reader.public-privacy"
+    ]
+  },
+  "specification": {
+    "status": "draft",
+    "decision_ref": null,
+    "artifact_refs": [
+      "docs/cat/drafts/ui6-reader-detail-dom.md"
+    ]
+  },
+  "technologies": [
+    "Vue",
+    "Nuxt",
+    "Playwright",
+    "PostgreSQL"
+  ],
+  "checks": [],
+  "depends_on": []
+}

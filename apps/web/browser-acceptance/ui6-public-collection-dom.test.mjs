@@ -85,3 +85,93 @@ test('UI6-DOM-OBS-02: all four published collections are readable in server HTML
       await context.close();
     } finally { await browser.close(); }
   });
+
+const readerDetails = [
+  { path: () => '/series/' + fixture.seriesA, title: () => fixture.prefix + '-world-A', kind: 'series' },
+  { path: () => '/items/' + fixture.tip, title: () => fixture.prefix + '-visible-setting', kind: 'tip' },
+  { path: () => '/read/' + fixture.chapter, title: () => fixture.prefix + '-chapter-A', kind: 'chapter' },
+];
+
+test('UI6-DETAIL-DOM-01/02: anonymous series, Tip, and chapter readers keep shell-to-content DOM composition across widths',
+  { timeout: 120_000 }, async () => {
+    assert.ok(base?.startsWith('http://127.0.0.1:'));
+    const browser = await chromium.launch({ headless: true });
+    try {
+      const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+      const page = await context.newPage();
+      for (const entry of readerDetails) {
+        const response = await page.goto(base + entry.path());
+        assert.equal(response?.status(), 200, entry.path());
+        await page.locator('.site-main section.stone-panel h1').filter({ hasText: entry.title() }).waitFor();
+        if (entry.kind === 'chapter') await page.locator('article nav.chapter-navigation').waitFor();
+        const dom = await page.evaluate(() => {
+          const main = document.querySelector('main.site-main');
+          const nav = main?.querySelector('nav.topic-path');
+          const panel = main?.querySelector('section.stone-panel');
+          return {
+            header: !!document.querySelector('header.site-header'),
+            aside: !!document.querySelector('aside.site-aside'),
+            main: main?.tagName === 'MAIN',
+            footer: !!document.querySelector('footer.site-footer'),
+            labelledNav: !!nav?.getAttribute('aria-label'),
+            currentCrumb: !!nav?.querySelector('[aria-current="page"]'),
+            navBeforePanel: nav?.parentElement === panel?.parentElement &&
+              nav?.nextElementSibling === panel,
+            panelCount: main?.querySelectorAll('section.stone-panel').length,
+            headings: [...(panel?.querySelectorAll('h1') ?? [])].map(h => h.textContent?.trim()),
+            authorEditLinks: main?.querySelectorAll('a[href*="/studio"]').length,
+            chapterArticle: !!panel?.querySelector('article > .rich-content'),
+            chapterNav: !!panel?.querySelector('article nav.chapter-navigation'),
+          };
+        });
+        assert.ok(dom.header && dom.aside && dom.main && dom.footer,
+          entry.kind + ' shell landmarks: ' + JSON.stringify(dom));
+        assert.ok(dom.labelledNav && dom.currentCrumb && dom.navBeforePanel,
+          entry.kind + ' breadcrumb and stone panel composition: ' + JSON.stringify(dom));
+        assert.equal(dom.panelCount, 1, entry.kind + ' uses one reader panel');
+        assert.deepEqual(dom.headings, [entry.title()], entry.kind + ' published H1');
+        assert.equal(dom.authorEditLinks, 0, 'anonymous readers cannot see author edit links');
+        if (entry.kind === 'chapter') {
+          assert.equal(dom.chapterArticle, true, 'chapter RichContent stays inside its article');
+          assert.equal(dom.chapterNav, true, 'chapter navigation stays inside its article');
+        }
+        for (const width of [320, 390, 768, 1280]) {
+          await page.setViewportSize({ width, height: 844 });
+          const dimensions = await page.evaluate(() => ({
+            client: document.documentElement.clientWidth,
+            scroll: document.documentElement.scrollWidth,
+          }));
+          assert.ok(dimensions.scroll <= dimensions.client + 2,
+            entry.kind + ' at ' + width + 'px overflow: ' + JSON.stringify(dimensions));
+          assert.equal(await page.locator('.site-main section.stone-panel h1').innerText(), entry.title());
+        }
+      }
+      await context.close();
+    } finally { await browser.close(); }
+  });
+
+test('UI6-DETAIL-DOM-03: no-JavaScript SSR retains public series, Tip, and both chapter pages without draft content',
+  { timeout: 120_000 }, async () => {
+    assert.ok(base?.startsWith('http://127.0.0.1:'));
+    const browser = await chromium.launch({ headless: true });
+    try {
+      const context = await browser.newContext({ javaScriptEnabled: false });
+      const page = await context.newPage();
+      for (const entry of readerDetails) {
+        const response = await page.goto(base + entry.path());
+        assert.equal(response?.status(), 200, entry.path());
+        assert.equal(await page.locator('.site-main section.stone-panel h1').innerText(), entry.title());
+        assert.equal(await page.locator('.site-main nav.topic-path[aria-label]').count(), 1);
+        assert.equal(await page.locator('.site-main a[href*="/studio"]').count(), 0);
+        const readerText = await page.locator('.site-main').innerText();
+        assert.ok(!readerText.includes(fixture.prefix + '-unpublished-draft-title'));
+        assert.ok(!readerText.includes(fixture.prefix + '-unpublished-draft-body'));
+        if (entry.kind === 'chapter') {
+          assert.equal(await page.locator('article .rich-content .rich-page').count(), 2,
+            'server HTML exposes both published chapter pages with scripts disabled');
+          assert.ok(readerText.includes(fixture.prefix + '-published-body'));
+        }
+      }
+      await context.close();
+    } finally { await browser.close(); }
+  });
