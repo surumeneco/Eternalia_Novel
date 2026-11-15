@@ -104,3 +104,21 @@ test('UI6-TRIAL-05: CLI coverage check reports observed current roles and fails 
     assert.equal(driftReport.normativeClassification, 'not-run');
   } finally { await rm(root, { recursive: true, force: true }); }
 });
+
+test('UI6-TRIAL-06: composition evidence is observable, not an approved dependency/DOM rule', async () => {
+  const graph = await inspectComponentDirectory('apps/web/app/components');
+  const report = describeUi6Trial(graph);
+  assert.equal(report.compositionObservationStatus, 'lexical-partial');
+  assert.equal(report.compositionEvidence.length, 15);
+  assert.deepEqual(report.compositionEvidence.find(x => x.name === 'ReaderPanel')?.slotOutlets,
+    ['default']);
+  assert.equal(report.candidateCoverage, 'complete-in-trial');
+  assert.equal(report.normativeClassification, 'not-run');
+  assert.equal(report.normativeDependencyRules, 'not-run');
+  assert.equal(report.domContract, 'not-run');
+  const withoutEvidence = describeUi6Trial({
+    components: [{ name: 'ReaderPanel', dependsOn: [] }], cycles: [],
+  }, { ReaderPanel: 'structure' });
+  assert.equal(withoutEvidence.compositionObservationStatus, 'not-run');
+  assert.deepEqual(withoutEvidence.compositionEvidence, []);
+});
