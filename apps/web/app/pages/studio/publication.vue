@@ -18,14 +18,14 @@ const statusFilter = ref('all');
 const search = ref('');
 const scheduled = reactive<Record<string, string>>({});
 
-const types: Record<ReaderKind, string> = {
+const types = computed<Record<ReaderKind, string>>(() => ({
   series: t('studioKindSeries'), volume: t('studioKindVolume'), part: t('studioKindPart'), chapter: t('chapter'),
   category: t('studioKindCategory'), tip: t('tip'), tipSection: t('tipSection'),
   language: t('studioKindLanguage'), word: t('word'), grammar: t('grammar'),
   periodization: t('studioKindPeriodization'), event: t('event'),
-};
+}));
 const sections: Record<string, ReaderKind[]> = {
-  all: Object.keys(types) as ReaderKind[],
+  all: Object.keys(types.value) as ReaderKind[],
   stories: ['series', 'volume', 'part', 'chapter'],
   tips: ['series', 'category', 'tip', 'tipSection'],
   dictionaries: ['series', 'language', 'word', 'grammar'],
@@ -251,6 +251,7 @@ async function action(node: AuthorNode, kind: 'publish' | 'visibility') {
 
 <style scoped>
 .publication-header,.publication-toolbar,.publication-row { display:flex;justify-content:space-between;gap:1rem;align-items:flex-start; }
+.publication-row { flex-wrap:wrap; }
 .publication-header { align-items:center; }
 .publication-filters { display:flex;flex-wrap:wrap;gap:.8rem;margin:1.25rem 0; }
 .publication-filters label { flex:1 1 11rem;min-width:0; }
@@ -261,12 +262,12 @@ async function action(node: AuthorNode, kind: 'publish' | 'visibility') {
 }
 .publication-list { list-style:none;margin:1rem 0;padding:0; }
 .publication-list li { border-top:1px solid var(--color-border-base);padding:1rem 0; }
-.publication-summary { min-width:0; }
+.publication-summary { min-width:0;flex:1 1 18rem; }
 .publication-summary h2 { font-size:1.15rem;margin:.3rem 0;overflow-wrap:anywhere; }
 .publication-path { overflow-wrap:anywhere; }
 .schedule-field { display:block;font-size:.8rem; }
 .schedule-field input { margin-top:.25rem;width:auto;max-width:100%; }
-.publication-actions { display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;justify-content:flex-end;flex:0 0 auto; }
+.publication-actions { display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;justify-content:flex-end;flex:1 1 28rem;min-width:0; }
 @media (max-width:740px) {
   .publication-row { flex-direction:column; }
   .publication-actions { justify-content:flex-start; }
