@@ -20,7 +20,9 @@ language: ja
 | eternalia.editor | Intl.Segmenter非対応環境のpage/ruby挿入境界 |
 | eternalia.reader | UTF-16 offsetと表示文字素の一貫性 |
 
-## 規則（未確認）
+## 規則
+
+以下は未確認のDraft候補であり、Confirmed仕様への昇格ではない。
 | ID | 条件 | 要求 | 検証 |
 | --- | --- | --- | --- |
 | editor.fallback.prepend.arabic | U+0600またはU+06DD Prependの直後に対応する文字が続く | Unicode GB9bに従いPrependと後続文字の間へのpage/ruby挿入を拒否する | EDIT-PREPEND-01/02 |
