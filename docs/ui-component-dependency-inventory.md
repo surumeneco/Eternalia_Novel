@@ -24,15 +24,15 @@
 
 ## 観測機械と検証可能範囲
 
-`scripts/audit-ui-component-deps.mjs` は、同一ディレクトリ内で見つかるSFCの名前を列挙し、Vue SFCのtemplate領域で実際に開始タグとして現れるPascalCase/kebab-case表記と、script領域の行頭に現れる、同一ディレクトリの `.vue` への直接的な `./Name.vue` 静的importからグラフを作る。別ディレクトリにある同名SFCへのimportは、この限定観測器では別ノードとして扱わず、同名のローカルSFC依存にも誤算入しない。コメント・script文字列・style・引用符内属性値はテンプレート依存として数えない。節点と依存先は辞書順で固定し、循環経路があれば報告する。依存がないか確認するには `node scripts/audit-ui-component-deps.mjs --assert-acyclic` を使用する。
+`scripts/audit-ui-component-deps.mjs` は、同一ディレクトリ内で見つかるSFCの名前を列挙し、Vue SFCのtemplate領域で実際に開始タグとして現れるPascalCase/kebab-case表記と、script領域の行頭に現れる、同一ディレクトリの `.vue` への直接的な `./Name.vue` 静的importからグラフを作る。別ディレクトリにある同名SFCへのimportは、この限定観測器では別ノードとして扱わず、同名のローカルSFC依存にも誤算入しない。コメント・script文字列・style・引用符内属性値はテンプレート依存として数えない。節点と依存先は辞書順で固定し、循環経路があれば報告する。依存がないか確認するには `node scripts/audit-ui-component-deps.mjs --assert-acyclic` を使用する。**既存の `components[].dependsOn` はタグ参照・直接importの和集合として保持**し、出所別情報を別の `compositionEvidence[]` に返す。
 
-試験は一意列挙、二段依存、自分自身への依存と複数段の循環検出、現行コンポーネント群の静的循環有無、擬似タグ・コメント由来の偽依存除外、kebab-caseの参照認識、別ディレクトリの同名SFCをローカル依存と取り違えないことを検証する。
+試験は一意列挙、二段依存、自分自身への依存と複数段の循環検出、現行コンポーネント群の静的循環有無、擬似タグ・コメント由来の偽依存除外、kebab-caseの参照認識、別ディレクトリの同名SFCをローカル依存と取り違えないことを検証する。追加した出所別監査は、`templateTags`（ローカルSFCに一致する開始タグ）、`staticImports`（同一ディレクトリへの行頭静的`.vue` import）、`slotOutlets`（`<slot>`の名前、動的名は`[dynamic]`）、`slotProviders`（`#name` / `v-slot`）、`dynamicComponentSites`（`<component :is>`等のタグ名）を**字句証拠**として分類する。slotの接続先や`:is`の対象を依存辺に推測追加しない。`scripts/audit-ui-component-deps.test.mjs`は既存7件＋新規3件で検証した。
 
 ### 試用分類の決定的レポート（規範判定ではない）
 
-`node scripts/audit-ui6-trial.mjs` は、上記のソース由来候補と**現在の静的依存グラフ**を突き合わせ、候補被覆・不正なrole・一覧外に残る登録、role付きfrom→to、確認を要する逆方向の疑いを報告する。`--check-trial-coverage` は**候補表の陳腐化のみ**を失敗として検知し、意味上の役割合格や許可依存の合格は判定しない。新しいSFCを名前だけで勝手に分類しない。出力には`normativeClassification: not-run`、`normativeDependencyRules: not-run`、`domContract: not-run`を明示する。検査実装の回帰試験は`node --test scripts/audit-ui6-trial.test.mjs`。
+`node scripts/audit-ui6-trial.mjs` は、上記のソース由来候補と**現在の静的依存グラフ**を突き合わせ、候補被覆・不正なrole・一覧外に残る登録、role付きfrom→to、確認を要する逆方向の疑いを報告する。`--check-trial-coverage` は**候補表の陳腐化のみ**を失敗として検知し、意味上の役割合格や許可依存の合格は判定しない。新しいSFCを名前だけで勝手に分類しない。出力には`normativeClassification: not-run`、`normativeDependencyRules: not-run`、`domContract: not-run`を明示する。試用レポートも出所別観測を`compositionEvidence`として含め、観測入力がある場合のみ`compositionObservationStatus: lexical-partial`、ない場合は`not-run`と表示する。検査実装の回帰試験は`node --test scripts/audit-ui6-trial.test.mjs`。
 
-**検査できないこと**: ディレクトリをまたぐ依存、Nuxtの動的コンポーネント解決、複雑なJavaScript文字列・式や全構文の完全解析、型専用import、slotsを通した合成、ブラウザ実DOMの親子関係、分類上の責務、許可依存表への意味的適合。これらの不在をもって適合合格とはしない。
+**検査できないこと**: ディレクトリをまたぐ依存、`:is`等の動的参照先の実解決、複雑なJavaScript/Vue構文の完全解析、型専用import、slotの受け口と供給先の実際の対応・内容のDOM投影、ブラウザ実DOMの親子関係、分類上の責務、許可依存表への意味的適合。**`slotOutlets`/`slotProviders`は同一SFC内の構文観測だけ**で、子孫合成やアクセシビリティの成立証明ではない。これらの不在をもって適合合格とはしない。
 
 一方、**静的観測器とは独立したブラウザ観測**は `apps/web/browser-acceptance/ui6-public-collection-dom.test.mjs` にまとめている。PR #82の公開4領域コレクションに加え、PR #98で公開シリーズ詳細・Tip詳細・章本文の `Shell → TopicPath → ReaderPanel` のDOM順序、匿名時の作者編集リンク非表示、章本文/ナビゲーションの配置、幅320/390/768/1280pxの横溢れ、およびJavaScript無効の公開タイトル・章全ページSSRを観測した。匿名Chromiumと使い捨てPostgreSQLによる既存2件＋追加2件のJUnit4/4（[Push #43682024526](https://github.com/surumeneco/Eternalia_Novel/actions/runs/43682024526)、[PR #43682027116](https://github.com/surumeneco/Eternalia_Novel/actions/runs/43682027116)、いずれも全4ジョブ成功）。この実DOMの部分証拠は静的観測器の検査範囲を拡張したことや、UI6規範分類・許可依存表・正式CAT Gateの合格を意味しない。
 
@@ -43,6 +43,6 @@ PR #102で`/studio/memos`、章/Tipの`/studio?item=…`をさらに実DOM観測
 ## 次に必要な判断
 
 1. 現行15件は個々のSFCを読んで候補へ対応付け済み。公開シリーズ・Tip詳細・章の本文とナビゲーション配置はブラウザDOMで部分観測済み。次は`RichContent`の複合責務の妥当性、作者参考パネルの動的内容・他の作者操作画面や未観測のページレイアウト境界を追加観測し、根拠があれば試用候補を修正する。
-2. 依存観測結果に役割候補を重ねて検討する。静的import・template合成・slot委譲の区別を補ってから、許可依存表と例外を試行し、単純な全順序を規範化しない。
+2. 出所別に取得した`templateTags`・`staticImports`とslot/動的箇所の**未解決証拠**を役割候補と突き合わせ、slotの供給/受け口の接続、実DOM投影、複数ディレクトリを含む依存を別途評価した上で許可依存表と例外を試行する。単純な全順序を規範化しない。
 3. DOM契約を必要な画面で定義し、分類/依存のVerifierをCAT正本と照合して試験導入の適否を判断する。
 4. 正規CAT Gate・実画面/実機受入の証拠を別管理し、AC-73の状態を自動的にpassへ変えない。
