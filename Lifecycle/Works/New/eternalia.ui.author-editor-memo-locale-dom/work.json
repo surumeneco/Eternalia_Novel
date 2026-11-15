@@ -1,0 +1,73 @@
+{
+  "schema": "cat-work/v1",
+  "id": "eternalia.ui.author-editor-memo-locale-dom",
+  "entry": "issue",
+  "flow": "issue-work",
+  "mode": "shadow",
+  "work_kind": "verification",
+  "issue_ref": "https://github.com/surumeneco/Eternalia_Novel/issues/1",
+  "project_entry_ref": "https://drive.google.com/file/d/1clwfVJ3e_t1_QKFfOWxxRIzE9WMFvTiM/view",
+  "normative": [
+    {
+      "uri": "https://drive.google.com/file/d/1LqX-Noytb_oWymIrpO01eO5PvThGlVGx/view"
+    }
+  ],
+  "evidence": [
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/actions/runs/43686965636"
+    }
+  ],
+  "repositories": [
+    {
+      "name": "eternalia",
+      "path": "../../../..",
+      "branch_pattern": "feature/*",
+      "allowed_paths": [
+        "Lifecycle/Works/New/eternalia.ui.author-editor-memo-locale-dom/work.json",
+        "docs/cat/drafts/author-editor-memo-locale-dom.md",
+        "apps/web/app/pages/studio/memos.vue",
+        "apps/web/browser-acceptance/author-editor-memo-locale-dom.test.mjs",
+        "scripts/check-http-acceptance.mjs"
+      ],
+      "production_paths": [
+        "apps/web/app/pages/studio/memos.vue"
+      ],
+      "test_paths": [
+        "apps/web/browser-acceptance/author-editor-memo-locale-dom.test.mjs"
+      ]
+    }
+  ],
+  "scope": {
+    "process_ids": [
+      "eternalia.ui"
+    ],
+    "changed_ids": [
+      "AUTHOR-MEMO-01",
+      "AUTHOR-MEMO-02",
+      "AUTHOR-MEMO-03",
+      "AUTHOR-MEMO-04"
+    ],
+    "preserved_ids": [
+      "ui.author-only",
+      "ui.fixed-localization",
+      "ui.memo-revision",
+      "ui.draft-separation"
+    ]
+  },
+  "specification": {
+    "status": "draft",
+    "decision_ref": null,
+    "artifact_refs": [
+      "docs/cat/drafts/author-editor-memo-locale-dom.md"
+    ]
+  },
+  "technologies": [
+    "Vue",
+    "Nuxt",
+    "TypeScript",
+    "Playwright",
+    "PostgreSQL"
+  ],
+  "checks": [],
+  "depends_on": []
+}
