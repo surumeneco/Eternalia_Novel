@@ -36,8 +36,9 @@ export function reorderSiblings(library: Library, request: ReorderRequest, now: 
     : !parent || parent.deletedAt != null || parent.kind !== parentKinds[request.kind]) {
     domainError('bad-request', '並べ替え対象の親子階層が不正です。');
   }
-  const siblings = library.nodes.filter(n => n.deletedAt == null && n.parentId === request.parentId && n.kind === request.kind)
-    .sort((a,b) => a.order - b.order || a.id.localeCompare(b.id));
+  // This list is only used for membership and revision checks; orderedIds
+  // alone determines the resulting sibling order.
+  const siblings = library.nodes.filter(n => n.deletedAt == null && n.parentId === request.parentId && n.kind === request.kind);
   const orderedIdSet = new Set(request.orderedIds);
   if (siblings.length !== request.orderedIds.length || orderedIdSet.size !== siblings.length ||
     !siblings.every(n => orderedIdSet.has(n.id))) {
