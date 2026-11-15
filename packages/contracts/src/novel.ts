@@ -464,13 +464,16 @@ export function publicRecent(library: Library, now: number, limit = 10): ReaderN
   const recentKinds: ReadonlySet<Kind> = new Set(['chapter', 'tip', 'tipSection', 'word', 'grammar', 'event']);
   const safeLimit = Number.isSafeInteger(limit) ? Math.max(0, Math.min(limit, 50)) : 10;
   if (safeLimit === 0) return [];
+  // Reuse the first ID match across recent candidates and their ancestors.
+  const indexed = new Map<string, NovelNode>();
+  for (const node of library.nodes) if (!indexed.has(node.id)) indexed.set(node.id, node);
   // Published timestamps determine recent order, so evaluate the newest
   // candidates first rather than projecting every old or unpublished item.
   const candidates = library.nodes.filter(node => recentKinds.has(node.kind) && node.published !== null)
     .sort((a,b) => b.published!.publishedAt - a.published!.publishedAt || a.id.localeCompare(b.id));
   const recent: ReaderNode[] = [];
   for (const candidate of candidates) {
-    const node = toReader(library, candidate.id, now);
+    const node = projectReader(library, candidate.id, now, indexed);
     if (node) recent.push(node);
     if (recent.length === safeLimit) break;
   }
