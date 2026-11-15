@@ -15,6 +15,9 @@
   "evidence": [
     {
       "uri": "https://github.com/surumeneco/Eternalia_Novel/commit/033bf7a54c55685d72c015f627a101e837027c44"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/issues/39#issuecomment-6897050644"
     }
   ],
   "repositories": [
@@ -37,7 +40,10 @@
         "packages/contracts/exploratory/spelling.test.mjs",
         "packages/contracts/src/novel.ts",
         "packages/contracts/src/spelling-diagnostics.ts",
-        "packages/contracts/src/word-meanings.ts"
+        "packages/contracts/src/word-meanings.ts",
+        "Lifecycle/Works/New/eternalia.dictionary.duplicate-redirect/CAT/Draft/Process.md",
+        "Lifecycle/Works/New/eternalia.dictionary.duplicate-redirect/CAT/Draft/PI.md",
+        "Lifecycle/Works/New/eternalia.dictionary.duplicate-redirect/CAT/Draft/TCE.md"
       ],
       "production_paths": [
         "packages/contracts/src/novel.ts",
@@ -59,7 +65,8 @@
     ],
     "changed_ids": [
       "dictionary.duplicate.create",
-      "dictionary.duplicate.redirect"
+      "dictionary.duplicate.redirect",
+      "dictionary.duplicate.active-public-snapshot"
     ],
     "preserved_ids": [
       "dictionary.language-isolation",
@@ -70,7 +77,10 @@
     "status": "draft",
     "decision_ref": null,
     "artifact_refs": [
-      "docs/cat/drafts/word-duplicate-redirect.md"
+      "docs/cat/drafts/word-duplicate-redirect.md",
+      "Lifecycle/Works/New/eternalia.dictionary.duplicate-redirect/CAT/Draft/Process.md",
+      "Lifecycle/Works/New/eternalia.dictionary.duplicate-redirect/CAT/Draft/PI.md",
+      "Lifecycle/Works/New/eternalia.dictionary.duplicate-redirect/CAT/Draft/TCE.md"
     ]
   },
   "technologies": [
