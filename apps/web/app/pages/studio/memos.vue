@@ -1,5 +1,6 @@
 <script setup lang="ts">
-const { t } = useUiLocale();
+import { localizeApiError } from '~/utils/api-error-localization';
+const { t, language } = useUiLocale();
 interface Memo {
   id: string;
   title: string;
@@ -97,8 +98,7 @@ async function save() {
     // Do not acknowledge a verified save until the latest memo is readable.
     if (await load()) statusText.value = t('memoSaved');
   } catch (error: unknown) {
-    const message = (error as {data?:{message?:string}}).data?.message;
-    errorText.value = message ?? t('memoSaveFailed');
+    errorText.value = localizeApiError(error, language.value, t, t('memoSaveFailed'));
   } finally { busy.value = false; }
 }
 async function reload() {
