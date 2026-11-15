@@ -28,7 +28,7 @@ CM-08（日本語・英語の基幹UIに対応し、ユーザーの作成した�
 | eternalia.ui.author-management.order-kind | 並べ替え画面の親種別・子種別選択肢は言語切替の直後に更新される |
 | eternalia.ui.author-management.security | 匿名・非作者には公開管理と並べ替え操作が表示されず、作者データを取得できない |
 
-## 規則・検証
+## 規則
 
 | ID | 条件 | 要求 | 検証 |
 | --- | --- | --- | --- |
