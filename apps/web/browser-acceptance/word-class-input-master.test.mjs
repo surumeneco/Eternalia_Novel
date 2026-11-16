@@ -60,7 +60,9 @@ test('LG-05: author creation and meaning editor never offer unregistered POS fre
       await page.goto(base + '/studio?item=' + emptyWord);
       await page.getByRole('heading', { name: '単語：' + prefix + '-word' }).waitFor();
       await page.getByRole('button', { name: '意味を追加' }).click();
-      const emptyEdit = page.getByLabel('品詞', { exact: true });
+      const meaningEditor = page.locator('fieldset.word-meanings section.word-meaning');
+      await meaningEditor.waitFor();
+      const emptyEdit = meaningEditor.locator('select').first();
       await emptyEdit.waitFor();
       assert.equal(await emptyEdit.evaluate(el => el.tagName.toLowerCase()), 'select');
       assert.equal(await emptyEdit.isDisabled(), true);
