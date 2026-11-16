@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { WordMeaning, WordEtymology } from '@eternalia/contracts';
+import { wordClassInputPolicy } from '~/utils/word-class-input-policy';
 const { t } = useUiLocale();
 
 type Choice = { id: string; title: string; parentId?: string | null };
@@ -27,6 +28,10 @@ watch(meanings, value => {
   const encoded = JSON.stringify(value);
   if (encoded !== props.modelValue) emit('update:modelValue', encoded);
 }, { deep: true });
+function classPolicy(meaning: WordMeaning) {
+  return wordClassInputPolicy(props.wordClasses.length > 0,
+    !!meaning.partOfSpeech && !props.wordClasses.some(item => item.title === meaning.partOfSpeech));
+}
 function addMeaning() {
   if (parseError.value || meanings.value.length >= 30) return;
   meanings.value.push({ id: crypto.randomUUID(), partOfSpeech: '', definition: '', etymologies: [] });
@@ -55,16 +60,16 @@ function wordsOf(origin: WordEtymology) {
           <button type="button" class="inline-action" @click="meanings.splice(index, 1)">{{ t('wordMeaningDelete') }}</button>
         </div>
         <label>{{ t('wordPartOfSpeech') }}
-          <select v-if="wordClasses.length" v-model="meaning.partOfSpeech">
+          <select v-model="meaning.partOfSpeech" :disabled="!classPolicy(meaning).choiceEnabled">
             <option value="">{{ t('wordUnspecified') }}</option>
             <option v-for="wordClass in wordClasses" :key="wordClass.id" :value="wordClass.title">
               {{ wordClass.title }}
             </option>
-            <option v-if="meaning.partOfSpeech && !wordClasses.some(entry => entry.title === meaning.partOfSpeech)"
+            <option v-if="classPolicy(meaning).showLegacy" disabled
               :value="meaning.partOfSpeech">{{ meaning.partOfSpeech }}（{{ t('wordLegacy') }}）</option>
           </select>
-          <input v-else v-model="meaning.partOfSpeech" type="text" maxlength="80" :placeholder="t('wordPartOfSpeechPlaceholder')" />
         </label>
+        <p v-if="!wordClasses.length" class="note">{{ t('wordClassMasterEmpty') }}</p>
         <label>{{ t('wordDefinition') }}
           <textarea v-model="meaning.definition" maxlength="2000" rows="3" />
         </label>
