@@ -91,6 +91,7 @@ try {
     await command(['scripts/run-test-junit.mjs', 'browser-reader-locale', 'apps/web/browser-acceptance/reader-locale.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-search-locale', 'apps/web/browser-acceptance/search-locale-live.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-author-create-navigation', 'apps/web/browser-acceptance/author-create-navigation.test.mjs']);
+    await command(['scripts/run-test-junit.mjs', 'browser-author-detail-edit', 'apps/web/browser-acceptance/author-detail-edit-navigation.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-author-management-locale-dom', 'apps/web/browser-acceptance/author-management-locale-dom.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-author-editor-memo-locale-dom', 'apps/web/browser-acceptance/author-editor-memo-locale-dom.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-ui6-public-collection-dom', 'apps/web/browser-acceptance/ui6-public-collection-dom.test.mjs']);
