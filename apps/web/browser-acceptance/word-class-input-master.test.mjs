@@ -191,7 +191,7 @@ test('LG-05: a draft-only POS ID remains private until its owning language maste
     await detail.reload();
     await detail.locator('.meaning-class').getByText(publicName, { exact: true }).waitFor();
     await listing.reload();
-    await publicFilter.getByRole('option', { name: publicName }).waitFor();
+    await publicFilter.getByRole('option', { name: publicName }).waitFor({ state: 'attached' });
     assert.equal(await listing.getByText(secretName).count(), 0,
       'the superseded draft-only name must not appear in the reader');
 
