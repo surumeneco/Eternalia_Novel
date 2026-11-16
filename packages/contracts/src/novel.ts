@@ -456,7 +456,11 @@ export function publicTree(library: Library, seriesId: string, now: number): Rea
   return result.sort((a,b) => a.order - b.order || a.content.title.localeCompare(b.content.title));
 }
 export function publicSeries(library: Library, now: number): ReaderNode[] {
-  return library.nodes.filter(n => n.kind === 'series').map(n => toReader(library, n.id, now))
+  // Share first-ID-match lookup across series candidates, as in publicTree.
+  const indexed = new Map<string, NovelNode>();
+  for (const node of library.nodes) if (!indexed.has(node.id)) indexed.set(node.id, node);
+  return library.nodes.filter(n => n.kind === 'series')
+    .map(n => projectReader(library, n.id, now, indexed))
     .filter((n): n is ReaderNode => n !== null)
     .sort((a, b) => a.order - b.order || a.content.title.localeCompare(b.content.title, 'ja'));
 }
