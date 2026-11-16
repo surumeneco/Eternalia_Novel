@@ -56,8 +56,9 @@ test('AC-67: language, part of speech and meaning filters combine without leakin
       id: randomUUID(), partOfSpeech, definition, etymologies: [],
     })));
     const series = await create('series', null, prefix + '-world');
-    const languageA = await create('language', series, prefix + '-A');
-    const languageB = await create('language', series, prefix + '-B');
+    const classes = {wordClasses: JSON.stringify(['名詞', '動詞'].map(name => ({id: randomUUID(), name, description: ''})))};
+    const languageA = await create('language', series, prefix + '-A', classes);
+    const languageB = await create('language', series, prefix + '-B', classes);
     const wordAName = prefix + '-one';
     const wordBName = prefix + '-two';
     const wordCName = prefix + '-three';
@@ -79,7 +80,7 @@ test('AC-67: language, part of speech and meaning filters combine without leakin
       meanings: senses([['名詞', '海の未公開']]),
     });
     const otherSeries = await create('series', null, prefix + '-other-world');
-    const foreignLanguage = await create('language', otherSeries, prefix + '-other-language');
+    const foreignLanguage = await create('language', otherSeries, prefix + '-other-language', classes);
     const foreignName = prefix + '-foreign';
     const foreign = await create('word', foreignLanguage, foreignName, {
       meanings: senses([['名詞', '海の意味']]),

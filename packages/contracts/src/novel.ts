@@ -8,6 +8,7 @@ import { joinChapterPages, pagesForChapter, validateChapterPages } from './manus
 import { parseWordMeanings, type WordMeaning } from './word-meanings.js';
 import { parseTipTags, parseTipRelationIds } from './tip-links.js';
 import { parseLanguageCharacters, parseLanguageWordClasses } from './language-structure.js';
+import { isRegisteredCreateWordPartOfSpeech } from './word-pos-create-policy.js';
 import { parseRelativeYear } from './timeline.js';
 import { hasSameLanguageSpellingCollision } from './spelling-collision.js';
 
@@ -102,6 +103,19 @@ function validateMeaningReferences(library: Library, languageId: string, content
     }
   }
 }
+/** Validate newly specified POS against the owning language's draft master.
+ * No legacy word edits or master rename/delete operations are changed here. */
+function validateNewWordClasses(library: Library, languageId: string, content: Content): void {
+  if (content.details.meanings === undefined) return;
+  const language = find(library, languageId);
+  const classes = parseLanguageWordClasses(language.draft.details.wordClasses ?? '[]');
+  const names = new Set(classes.map(entry => entry.name));
+  for (const meaning of parseWordMeanings(content.details.meanings)) {
+    if (!isRegisteredCreateWordPartOfSpeech(Boolean(meaning.partOfSpeech), names.has(meaning.partOfSpeech))) {
+      domainError('bad-request', '品詞は所属言語の品詞マスタから選択してください。');
+    }
+  }
+}
 /** Related settings must resolve to another Tip inside the same Series. */
 function validateTipReferences(library: Library, sourceId: string, categoryId: string, content: Content): void {
   if (content.details.tags !== undefined) parseTipTags(content.details.tags);
@@ -152,6 +166,7 @@ export function createNode(library: Library, input: { id: string; kind: Kind; pa
   if (parentKind === null ? parent !== null : parent?.kind !== parentKind) domainError('bad-request', '親子階層が不正です。');
   const content = normalizeContent(input.content, input.kind);
   if (input.kind === 'word' && parent) rejectSameLanguageSpelling(library, parent.id, content.title);
+  if (input.kind === 'word' && parent) validateNewWordClasses(library, parent.id, content);
   if (input.kind === 'word' && parent) validateMeaningReferences(library, parent.id, content);
   if (input.kind === 'tip' && parent) validateTipReferences(library, input.id, parent.id, content);
   if (input.kind === 'language') validateLanguageStructure(content);
