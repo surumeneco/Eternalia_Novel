@@ -110,6 +110,7 @@ try {
     await command(['scripts/run-test-junit.mjs', 'browser-author-error-locale', 'apps/web/browser-acceptance/author-api-error-locale.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-publication-jst', 'apps/web/browser-acceptance/author-jst-publication.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-timeline-period', 'apps/web/browser-acceptance/timeline-period-filter.test.mjs']);
+    await command(['scripts/run-test-junit.mjs', 'browser-word-published-draft-redirect', 'apps/web/browser-acceptance/word-published-draft-redirect.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser', 'apps/web/browser-acceptance/browser-acceptance.test.mjs']);
   }
   // Run separate boundary tests before the main suite revokes the synthetic author session.
