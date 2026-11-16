@@ -7,8 +7,6 @@ import { AppModule } from './app.module';
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.setGlobalPrefix('api');
-  // 100k Japanese characters may exceed Express' default JSON byte limit.
-  app.useBodyParser('json', { limit: '512kb' });
   app.disable('x-powered-by');
   app.use((_request: unknown, response: { setHeader(name: string, value: string): void }, next: () => void) => {
     // Never trust/reflect client-provided correlation IDs. Each request gets
@@ -18,6 +16,10 @@ async function bootstrap(): Promise<void> {
     response.setHeader('X-Content-Type-Options', 'nosniff');
     next();
   });
+  // Keep diagnostics/cache protection ahead of parsing, including malformed JSON
+  // and oversized payloads rejected before guards/controllers execute.
+  // 100k Japanese characters may exceed Express' default JSON byte limit.
+  app.useBodyParser('json', { limit: '512kb' });
   await app.listen(Number(process.env.API_PORT ?? 3001), '127.0.0.1');
 }
 bootstrap().catch((error: unknown) => {

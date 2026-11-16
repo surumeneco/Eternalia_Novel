@@ -50,3 +50,37 @@ test('API-REQUEST-ID-01/02/03: Nest and Nuxt API proxy return server-owned IDs o
     }
     assert.equal(allIds.size, 8);
   });
+
+
+test('API-REQUEST-ID-04: malformed JSON is rejected with server-owned correlation and no-store', 
+  { timeout: 60_000 }, async () => {
+    assert.ok(api?.startsWith('http://127.0.0.1:'));
+    assert.ok(web?.startsWith('http://127.0.0.1:'));
+    const forged = 'untrusted-client-request-id';
+    const canary = fixture.prefix + '-unpublished-request-body';
+    const observedIds = new Set();
+    for (const root of [api, web]) {
+      const response = await fetch(root + '/api/admin/nodes', {
+        method: 'POST',
+        redirect: 'manual',
+        headers: {
+          'Content-Type': 'application/json',
+          Origin: web,
+          'X-Request-Id': forged,
+        },
+        body: '{"title":"' + canary + '",',
+      });
+      assert.equal(response.status, 400, root + ' invalid JSON must be rejected at parse boundary');
+      const id = response.headers.get('x-request-id');
+      assert.match(id ?? '', uuidV4, root + ' parse failure must be traceable');
+      assert.notEqual(id, forged, 'never reflect an untrusted correlation ID');
+      assert.equal(observedIds.has(id), false, 'new request must receive a new ID');
+      observedIds.add(id);
+      assert.match(response.headers.get('cache-control') ?? '', /(?:^|,)\s*no-store\b/i,
+        root + ' malformed payload response must not be cached');
+      assert.equal(response.headers.get('x-content-type-options'), 'nosniff');
+      assert.ok(!(await response.text()).includes(canary),
+        'parser response must not reflect private request payload');
+    }
+    assert.equal(observedIds.size, 2);
+  });
