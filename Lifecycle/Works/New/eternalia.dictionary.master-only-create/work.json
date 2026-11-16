@@ -1,0 +1,102 @@
+{
+  "schema": "cat-work/v1",
+  "id": "eternalia.dictionary.master-only-create",
+  "entry": "confirmed-spec",
+  "flow": "spec-implementation",
+  "mode": "implementation",
+  "work_kind": "implementation",
+  "issue_ref": "https://github.com/surumeneco/Eternalia_Novel/issues/1",
+  "project_entry_ref": "https://drive.google.com/file/d/1clwfVJ3e_t1_QKFfOWxxRIzE9WMFvTiM/view",
+  "normative": [
+    {
+      "uri": "https://drive.google.com/file/d/1LqX-Noytb_oWymIrpO01eO5PvThGlVGx/view"
+    }
+  ],
+  "evidence": [
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/40323a235e03a68dbb919f53a22219a0aeb6760f/packages/contracts/src/novel.ts"
+    }
+  ],
+  "repositories": [
+    {
+      "name": "eternalia",
+      "path": "../../../..",
+      "branch_pattern": "feature/*",
+      "allowed_paths": [
+        "Lifecycle/Works/New/eternalia.dictionary.master-only-create/**",
+        "packages/contracts/src/novel.ts",
+        "packages/contracts/src/word-pos-create-policy.ts",
+        "packages/contracts/exploratory/word-pos-create-master.test.mjs",
+        "apps/api/http-acceptance/word-pos-create-master.test.mjs",
+        "scripts/check-http-acceptance.mjs",
+        "docs/alpha-ac-traceability.md",
+        "apps/web/browser-acceptance/dictionary-spelling-order.test.mjs",
+        "apps/web/browser-acceptance/dictionary-compound-filters.test.mjs",
+        "apps/api/tests/postgres-alpha.test.mjs"
+      ],
+      "production_paths": [
+        "packages/contracts/src/novel.ts",
+        "packages/contracts/src/word-pos-create-policy.ts"
+      ],
+      "test_paths": [
+        "packages/contracts/exploratory/word-pos-create-master.test.mjs",
+        "apps/api/http-acceptance/word-pos-create-master.test.mjs",
+        "Lifecycle/Works/New/eternalia.dictionary.master-only-create/CAT/Generated/current.test.ts",
+        "apps/web/browser-acceptance/dictionary-spelling-order.test.mjs",
+        "apps/web/browser-acceptance/dictionary-compound-filters.test.mjs",
+        "apps/api/tests/postgres-alpha.test.mjs"
+      ]
+    }
+  ],
+  "scope": {
+    "process_ids": [
+      "eternalia.dictionary.master-only-create"
+    ],
+    "changed_ids": [
+      "dictionary.classes.master-only.create-domain"
+    ],
+    "preserved_ids": [
+      "dictionary.classes.master-only.author-ui",
+      "dictionary.classes.manual-order",
+      "dictionary.reader.spelling-order",
+      "publication.snapshot-separation",
+      "dictionary.legacy-draft-retention"
+    ]
+  },
+  "specification": {
+    "status": "confirmed",
+    "decision_ref": "https://drive.google.com/file/d/1LqX-Noytb_oWymIrpO01eO5PvThGlVGx/view",
+    "artifact_refs": [
+      "Lifecycle/Works/New/eternalia.dictionary.master-only-create/CAT/Confirmed/Process.md",
+      "Lifecycle/Works/New/eternalia.dictionary.master-only-create/CAT/Confirmed/PI.md",
+      "Lifecycle/Works/New/eternalia.dictionary.master-only-create/CAT/Confirmed/TCE.md"
+    ]
+  },
+  "technologies": [
+    "TypeScript",
+    "Node",
+    "NestJS",
+    "PostgreSQL"
+  ],
+  "checks": [],
+  "depends_on": [],
+  "compilation": {
+    "schema": "cat-compile/v2",
+    "process": "CAT/Confirmed/Process.md",
+    "pi": "CAT/Confirmed/PI.md",
+    "pis": [
+      "CAT/Confirmed/PI.md"
+    ],
+    "tce": "CAT/Confirmed/TCE.md",
+    "tces": [
+      "CAT/Confirmed/TCE.md"
+    ],
+    "model": "CAT/Generated/TestModel.json",
+    "vectors": "CAT/Generated/Vectors.json",
+    "queue": "CAT/Generated/Queue.json",
+    "binding": "CAT/Binding/driver.json",
+    "tests_output": "CAT/Generated/current.test.ts",
+    "obligations": "CAT/Generated/obligations.json",
+    "allow_draft": false
+  }
+}

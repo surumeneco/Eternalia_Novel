@@ -81,7 +81,7 @@ test('PostgreSQL preserves separate word senses and hides unpublished etymology 
     for(const [id,kind,parentId,title,details] of [
       [seriesId,'series',null,'保存テスト',{}],
       [sourceLanguageId,'language',seriesId,'原語',{}],
-      [targetLanguageId,'language',seriesId,'対象語',{}],
+      [targetLanguageId,'language',seriesId,'対象語',{wordClasses:JSON.stringify([{id:randomUUID(),name:'名詞',description:''}])}],
       [sourceWordId,'word',sourceLanguageId,'原形',{}],
       [targetWordId,'word',targetLanguageId,'新語',{meanings:JSON.stringify(meanings)}],
     ]) {
