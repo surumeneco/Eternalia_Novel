@@ -31,7 +31,8 @@
         "scripts/check-http-acceptance.mjs",
         "docs/alpha-ac-traceability.md",
         "apps/web/browser-acceptance/dictionary-spelling-order.test.mjs",
-        "apps/web/browser-acceptance/dictionary-compound-filters.test.mjs"
+        "apps/web/browser-acceptance/dictionary-compound-filters.test.mjs",
+        "apps/api/tests/postgres-alpha.test.mjs"
       ],
       "production_paths": [
         "packages/contracts/src/novel.ts",
@@ -42,7 +43,8 @@
         "apps/api/http-acceptance/word-pos-create-master.test.mjs",
         "Lifecycle/Works/New/eternalia.dictionary.master-only-create/CAT/Generated/current.test.ts",
         "apps/web/browser-acceptance/dictionary-spelling-order.test.mjs",
-        "apps/web/browser-acceptance/dictionary-compound-filters.test.mjs"
+        "apps/web/browser-acceptance/dictionary-compound-filters.test.mjs",
+        "apps/api/tests/postgres-alpha.test.mjs"
       ]
     }
   ],
