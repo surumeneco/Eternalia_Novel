@@ -118,6 +118,7 @@ try {
   await command(['scripts/run-test-junit.mjs', 'http-related-tip-privacy', 'apps/api/http-acceptance/related-tip-http-privacy.test.mjs']);
   await command(['scripts/run-test-junit.mjs', 'http-request-id', 'apps/api/http-acceptance/request-id.test.mjs']);
   await command(['scripts/run-test-junit.mjs', 'http-public-clock-boundary', 'apps/api/http-acceptance/public-http-clock-boundary.test.mjs']);
+  await command(['scripts/run-test-junit.mjs', 'http-word-published-spelling', 'apps/api/http-acceptance/word-published-snapshot-collision.test.mjs']);
   await command(['scripts/run-test-junit.mjs', 'http', 'apps/api/http-acceptance/http-acceptance.test.mjs']);
 } finally {
   for (const child of processes) child.kill();
