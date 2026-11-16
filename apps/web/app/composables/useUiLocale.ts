@@ -212,6 +212,7 @@ export const uiMessages = {
     wordPartOfSpeech: "品詞",
     wordUnspecified: "未指定",
     wordLegacy: "旧値",
+    wordClassMasterEmpty: "品詞は所属言語の品詞マスタから設定してください。マスタ未登録の品詞は入力できません。",
     wordPartOfSpeechPlaceholder: "名詞・動詞など",
     wordDefinition: "意味・説明",
     wordEtymologies: "この意味の語源",
