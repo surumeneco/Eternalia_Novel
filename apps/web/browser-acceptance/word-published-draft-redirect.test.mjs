@@ -50,7 +50,9 @@ test('AC-09: published X/draft Y conflict redirects to Y editor without saving o
     }
 
     const series = await create('series', null, prefix + '-series');
-    const language = await create('language', series, prefix + '-language');
+    const language = await create('language', series, prefix + '-language', {
+      wordClasses: JSON.stringify([{ id: randomUUID(), name: '名詞', description: '' }]),
+    });
     const publishedX = prefix + '-X';
     const draftY = prefix + '-Y';
     const meanings = [{
@@ -82,7 +84,7 @@ test('AC-09: published X/draft Y conflict redirects to Y editor without saving o
     await page.getByRole('heading', { name: '言語：' + prefix + '-language' }).waitFor();
     await page.getByRole('button', { name: '子項目を追加' }).click();
     await page.getByRole('textbox', { name: 'タイトル' }).fill(publishedX);
-    await page.getByRole('textbox', { name: '新しい意味の品詞' }).fill('名詞');
+    await page.getByRole('combobox', { name: '新しい意味の品詞' }).selectOption('名詞');
     await page.getByRole('textbox', { name: '新しい意味・説明' }).fill('追加した未保存の意味');
     await page.getByRole('button', { name: '作成', exact: true }).click();
 
@@ -92,7 +94,7 @@ test('AC-09: published X/draft Y conflict redirects to Y editor without saving o
     assert.equal(await editorMeanings.count(), 2);
     assert.equal(await editorMeanings.nth(0).getByRole('textbox', { name: '意味・説明' }).inputValue(), '既存の意味');
     assert.equal(await editorMeanings.nth(1).getByRole('textbox', { name: '意味・説明' }).inputValue(), '追加した未保存の意味');
-    assert.equal(await editorMeanings.nth(1).getByRole('textbox', { name: '品詞' }).inputValue(), '名詞');
+    assert.equal(await editorMeanings.nth(1).locator('select').first().inputValue(), '名詞');
 
     const afterRejected = await node(existingId);
     assert.equal(afterRejected.draft.title, draftY);
