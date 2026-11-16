@@ -111,6 +111,7 @@ try {
     await command(['scripts/run-test-junit.mjs', 'browser-publication-jst', 'apps/web/browser-acceptance/author-jst-publication.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-timeline-period', 'apps/web/browser-acceptance/timeline-period-filter.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-dictionary-compound-filters', 'apps/web/browser-acceptance/dictionary-compound-filters.test.mjs']);
+    await command(['scripts/run-test-junit.mjs', 'browser-dictionary-spelling-order', 'apps/web/browser-acceptance/dictionary-spelling-order.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-word-published-draft-redirect', 'apps/web/browser-acceptance/word-published-draft-redirect.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser', 'apps/web/browser-acceptance/browser-acceptance.test.mjs']);
   }

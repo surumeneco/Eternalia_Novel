@@ -2,6 +2,7 @@
 import type { ReaderKind, ReaderNode } from '~/types/reader';
 const { t } = useUiLocale();
 import type { WordMeaning } from '@eternalia/contracts';
+import { compareDictionaryWordSpelling } from '~/utils/dictionary-order';
 
 const route = useRoute();
 const seriesId = computed(() => String(route.params.id));
@@ -17,8 +18,11 @@ const query = ref('');
 const partOfSpeech = ref('');
 watch(seriesId, () => { languageId.value = ''; partOfSpeech.value = ''; query.value = ''; });
 function children(parentId: string, kind: ReaderKind) {
-  return (tree.value ?? []).filter(node => node.kind === kind && node.parentId === parentId)
-    .sort((a, b) => a.order - b.order || a.content.title.localeCompare(b.content.title, 'ja'));
+  const result = (tree.value ?? []).filter(node => node.kind === kind && node.parentId === parentId);
+  // LG-07: word order is spelling-only; other reader collections keep their author order.
+  return kind === 'word'
+    ? result.sort(compareDictionaryWordSpelling)
+    : result.sort((a, b) => a.order - b.order || a.content.title.localeCompare(b.content.title, 'ja'));
 }
 const languages = computed(() => children(seriesId.value, 'language'));
 const activeLanguages = computed(() => languages.value.filter(
