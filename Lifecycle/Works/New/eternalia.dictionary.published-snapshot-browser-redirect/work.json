@@ -1,0 +1,73 @@
+{
+  "schema": "cat-work/v1",
+  "id": "eternalia.dictionary.published-snapshot-browser-redirect",
+  "entry": "issue",
+  "flow": "issue-work",
+  "mode": "shadow",
+  "work_kind": "verification",
+  "issue_ref": "https://github.com/surumeneco/Eternalia_Novel/issues/39",
+  "project_entry_ref": "https://drive.google.com/file/d/1clwfVJ3e_t1_QKFfOWxxRIzE9WMFvTiM/view",
+  "normative": [
+    {
+      "uri": "https://drive.google.com/file/d/1LqX-Noytb_oWymIrpO01eO5PvThGlVGx/view"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/issues/39#issuecomment-6898199909"
+    }
+  ],
+  "evidence": [
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/pull/129"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/pull/132"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/1c7824bdb4a5597d6164c1443908b69e02ddbaf6/apps/web/browser-acceptance/browser-acceptance.test.mjs"
+    }
+  ],
+  "repositories": [
+    {
+      "name": "eternalia",
+      "path": "../../../..",
+      "branch_pattern": "test/*",
+      "allowed_paths": [
+        "Lifecycle/Works/New/eternalia.dictionary.published-snapshot-browser-redirect/work.json",
+        "apps/web/browser-acceptance/word-published-draft-redirect.test.mjs",
+        "scripts/check-http-acceptance.mjs",
+        "docs/alpha-ac-traceability.md"
+      ],
+      "production_paths": [],
+      "test_paths": [
+        "apps/web/browser-acceptance/word-published-draft-redirect.test.mjs"
+      ]
+    }
+  ],
+  "scope": {
+    "process_ids": [
+      "eternalia.dictionary.spelling-collision"
+    ],
+    "changed_ids": [
+      "dictionary.AC09.published-draft-browser-redirect-evidence"
+    ],
+    "preserved_ids": [
+      "dictionary.duplicate.same-language-rejection",
+      "dictionary.duplicate.id-return",
+      "publication.snapshot-separation",
+      "dictionary.draft-recovery"
+    ]
+  },
+  "specification": {
+    "status": "unknown",
+    "decision_ref": "https://github.com/surumeneco/Eternalia_Novel/issues/39#issuecomment-6898199909",
+    "artifact_refs": []
+  },
+  "technologies": [
+    "TypeScript",
+    "Vue",
+    "Playwright",
+    "PostgreSQL"
+  ],
+  "checks": [],
+  "depends_on": []
+}
