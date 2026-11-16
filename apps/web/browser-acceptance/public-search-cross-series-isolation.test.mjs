@@ -102,7 +102,7 @@ test('SEARCH-ISOLATION-01/02/03: identical public tags and dictionary meanings n
         });
         const word = await create('word', language, stamp + '-word-' + letter, {
           meanings: JSON.stringify([{
-            id: randomUUID(), partOfSpeech: '', definition: meaning, etymologies: [],
+            id: randomUUID(), partOfSpeechId: '', definition: meaning, etymologies: [],
           }]),
         });
         for (const id of [seriesId, category, language, tip, word]) await publish(id);

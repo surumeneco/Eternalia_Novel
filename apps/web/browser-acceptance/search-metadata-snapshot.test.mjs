@@ -76,7 +76,7 @@ test('SEARCH-METADATA-01/02/03: tags and word definitions only expose explicitly
       const draftMeaning = 'draft-lexicon-sense-v2';
       const meaningId = randomUUID();
       const meaningData = definition => JSON.stringify([{
-        id: meaningId, partOfSpeech: '', definition, etymologies: [],
+        id: meaningId, partOfSpeechId: '', definition, etymologies: [],
       }]);
       seriesId = await create('series', null, title);
       const categoryId = await create('category', seriesId, fixture.prefix + '-metadata-category');

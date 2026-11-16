@@ -97,7 +97,7 @@ test('AC-76: a word etymology in draft or published data blocks deleting the ref
  const f=setup(),{language,word}=f.ids;
  f.hide(word);
  const used=f.add('word',language,'借用語');
- const meanings=[{id:uuid(90),partOfSpeech:'名詞',definition:'借用',etymologies:[
+ const meanings=[{id:uuid(90),partOfSpeechId:'',definition:'借用',etymologies:[
    {id:uuid(91),languageId:language,wordId:word,note:'語源'}]}];
  f.db=editNode(f.db,used,current(f.db,used).revision,
    {title:'借用語',body:'',details:{meanings:JSON.stringify(meanings)}},t0+1);

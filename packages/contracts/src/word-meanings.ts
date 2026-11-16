@@ -13,7 +13,10 @@ export interface WordEtymology {
 }
 export interface WordMeaning {
   id: string;
-  partOfSpeech: string;
+  /** Stable ID of a class in the owning language's master; empty means unspecified. */
+  partOfSpeechId: string;
+  /** Computed presentation label in public reader projections; never an editable reference. */
+  partOfSpeech?: string;
   definition: string;
   etymologies: WordEtymology[];
 }
@@ -42,9 +45,10 @@ export function parseWordMeanings(raw: string): WordMeaning[] {
     const id = reference(value.id, '意味ID');
     if (!id || ids.has(id)) invalid('意味IDが欠落または重複しています。');
     ids.add(id);
-    const partOfSpeech = boundedText(value.partOfSpeech ?? '', 80, '品詞');
+    if (value.partOfSpeech !== undefined) invalid('品詞名ではなく品詞マスタIDを指定してください。');
+    const partOfSpeechId = reference(value.partOfSpeechId, '品詞マスタID') ?? '';
     const definition = boundedText(value.definition ?? '', 2000, '意味');
-    if (!partOfSpeech && !definition) invalid('意味または品詞を入力してください。');
+    if (!partOfSpeechId && !definition) invalid('意味または品詞を入力してください。');
     if (!Array.isArray(value.etymologies) || value.etymologies.length > 12) {
       invalid('語源は意味ごとに最大12件です。');
     }
@@ -63,7 +67,7 @@ export function parseWordMeanings(raw: string): WordMeaning[] {
       return { id: etymologyId, ...(languageId ? { languageId } : {}),
         ...(wordId ? { wordId } : {}), note };
     });
-    return { id, partOfSpeech, definition, etymologies };
+    return { id, partOfSpeechId, definition, etymologies };
   });
 }
 
@@ -72,20 +76,20 @@ export function parseWordMeanings(raw: string): WordMeaning[] {
  * local editor buffer. Never writes the library or its published snapshot.
  */
 export function appendDuplicateWordMeaning(
-  raw: string, entry: { id: string; partOfSpeech: string; definition: string },
+  raw: string, entry: { id: string; partOfSpeechId: string; definition: string },
 ): string {
   const existing = parseWordMeanings(raw || '[]');
   if (existing.length >= 30) invalid('この単語に登録できる意味は最大30件です。');
   if (!identifier.test(entry.id) || existing.some(meaning => meaning.id === entry.id)) {
     invalid('追加入力の意味IDが不正です。');
   }
-  const partOfSpeech = boundedText(entry.partOfSpeech, 80, '品詞');
+  const partOfSpeechId = reference(entry.partOfSpeechId, '品詞マスタID') ?? '';
   const definition = boundedText(entry.definition, 2000, '意味');
-  const append = { id: entry.id, partOfSpeech, definition, etymologies: [] };
+  const append = { id: entry.id, partOfSpeechId, definition, etymologies: [] };
   // Same-POS meanings should stay together, without changing their original IDs/order.
   let lastMatch = -1;
   for (let index = 0; index < existing.length; index++) {
-    if (existing[index]?.partOfSpeech === partOfSpeech) lastMatch = index;
+    if (existing[index]?.partOfSpeechId === partOfSpeechId) lastMatch = index;
   }
   existing.splice(lastMatch >= 0 ? lastMatch + 1 : existing.length, 0, append);
   return JSON.stringify(existing);

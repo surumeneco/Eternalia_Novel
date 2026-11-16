@@ -68,20 +68,20 @@ test('PostgreSQL preserves separate word senses and hides unpublished etymology 
   const repository = new PostgresLibraryService();
   const seriesId=randomUUID(), sourceLanguageId=randomUUID(), targetLanguageId=randomUUID();
   const sourceWordId=randomUUID(), targetWordId=randomUUID();
-  const senseA=randomUUID(), senseB=randomUUID();
+  const senseA=randomUUID(), senseB=randomUUID(), nounId=randomUUID();
   const now=Date.UTC(2026,9,29);
   const data = title => ({title,body:'',details:{}});
   const meanings=[
-    {id:senseA,partOfSpeech:'名詞',definition:'第1義',etymologies:[
+    {id:senseA,partOfSpeechId:nounId,definition:'第1義',etymologies:[
       {id:randomUUID(),languageId:sourceLanguageId,wordId:sourceWordId,note:'元の語'},
     ]},
-    {id:senseB,partOfSpeech:'名詞',definition:'第2義',etymologies:[]},
+    {id:senseB,partOfSpeechId:nounId,definition:'第2義',etymologies:[]},
   ];
   try {
     for(const [id,kind,parentId,title,details] of [
       [seriesId,'series',null,'保存テスト',{}],
       [sourceLanguageId,'language',seriesId,'原語',{}],
-      [targetLanguageId,'language',seriesId,'対象語',{wordClasses:JSON.stringify([{id:randomUUID(),name:'名詞',description:''}])}],
+      [targetLanguageId,'language',seriesId,'対象語',{wordClasses:JSON.stringify([{id:nounId,name:'名詞',description:''}])}],
       [sourceWordId,'word',sourceLanguageId,'原形',{}],
       [targetWordId,'word',targetLanguageId,'新語',{meanings:JSON.stringify(meanings)}],
     ]) {

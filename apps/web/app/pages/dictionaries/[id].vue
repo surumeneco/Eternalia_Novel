@@ -40,8 +40,7 @@ function meaningsOf(word: ReaderNode): WordMeaning[] {
   } catch { return []; }
 }
 function wordParts(word: ReaderNode): string[] {
-  const senses = meaningsOf(word).map(meaning => meaning.partOfSpeech).filter(Boolean);
-  if (!senses.length && word.content.details.partOfSpeech) senses.push(word.content.details.partOfSpeech);
+  const senses = meaningsOf(word).map(meaning => meaning.partOfSpeech).filter((value): value is string => Boolean(value));
   return [...new Set(senses)];
 }
 const partsOfSpeech = computed(() => [...new Set(

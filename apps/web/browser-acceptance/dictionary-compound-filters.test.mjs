@@ -52,11 +52,12 @@ test('AC-67: language, part of speech and meaning filters combine without leakin
       });
       assert.equal(response.status(), 200, await response.text());
     }
+    const classMap = new Map(['名詞', '動詞'].map(name => [name, randomUUID()]));
     const senses = entries => JSON.stringify(entries.map(([partOfSpeech, definition]) => ({
-      id: randomUUID(), partOfSpeech, definition, etymologies: [],
+      id: randomUUID(), partOfSpeechId: classMap.get(partOfSpeech), definition, etymologies: [],
     })));
     const series = await create('series', null, prefix + '-world');
-    const classes = {wordClasses: JSON.stringify(['名詞', '動詞'].map(name => ({id: randomUUID(), name, description: ''})))};
+    const classes = {wordClasses: JSON.stringify(['名詞', '動詞'].map(name => ({id: classMap.get(name), name, description: ''})))};
     const languageA = await create('language', series, prefix + '-A', classes);
     const languageB = await create('language', series, prefix + '-B', classes);
     const wordAName = prefix + '-one';

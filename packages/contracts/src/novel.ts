@@ -9,6 +9,7 @@ import { parseWordMeanings, type WordMeaning } from './word-meanings.js';
 import { parseTipTags, parseTipRelationIds } from './tip-links.js';
 import { parseLanguageCharacters, parseLanguageWordClasses } from './language-structure.js';
 import { isRegisteredCreateWordPartOfSpeech } from './word-pos-create-policy.js';
+import { publishedWordClassName } from './word-pos-reference.js';
 import { parseRelativeYear } from './timeline.js';
 import { hasSameLanguageSpellingCollision } from './spelling-collision.js';
 
@@ -103,15 +104,14 @@ function validateMeaningReferences(library: Library, languageId: string, content
     }
   }
 }
-/** Validate newly specified POS against the owning language's draft master.
- * No legacy word edits or master rename/delete operations are changed here. */
-function validateNewWordClasses(library: Library, languageId: string, content: Content): void {
+/** Validate specified stable POS IDs against the owning language's draft master. */
+function validateWordClassIds(library: Library, languageId: string, content: Content): void {
   if (content.details.meanings === undefined) return;
   const language = find(library, languageId);
   const classes = parseLanguageWordClasses(language.draft.details.wordClasses ?? '[]');
-  const names = new Set(classes.map(entry => entry.name));
+  const ids = new Set(classes.map(entry => entry.id));
   for (const meaning of parseWordMeanings(content.details.meanings)) {
-    if (!isRegisteredCreateWordPartOfSpeech(Boolean(meaning.partOfSpeech), names.has(meaning.partOfSpeech))) {
+    if (!isRegisteredCreateWordPartOfSpeech(Boolean(meaning.partOfSpeechId), ids.has(meaning.partOfSpeechId))) {
       domainError('bad-request', '品詞は所属言語の品詞マスタから選択してください。');
     }
   }
@@ -166,7 +166,7 @@ export function createNode(library: Library, input: { id: string; kind: Kind; pa
   if (parentKind === null ? parent !== null : parent?.kind !== parentKind) domainError('bad-request', '親子階層が不正です。');
   const content = normalizeContent(input.content, input.kind);
   if (input.kind === 'word' && parent) rejectSameLanguageSpelling(library, parent.id, content.title);
-  if (input.kind === 'word' && parent) validateNewWordClasses(library, parent.id, content);
+  if (input.kind === 'word' && parent) validateWordClassIds(library, parent.id, content);
   if (input.kind === 'word' && parent) validateMeaningReferences(library, parent.id, content);
   if (input.kind === 'tip' && parent) validateTipReferences(library, input.id, parent.id, content);
   if (input.kind === 'language') validateLanguageStructure(content);
@@ -217,8 +217,23 @@ export function editNode(library: Library, id: string, expectedRevision: number,
   if (!Number.isSafeInteger(expectedRevision) || expectedRevision !== item.revision) domainError('conflict', '他の編集により更新されています。');
   item.draft = normalizeContent(content, item.kind);
   if (item.kind === 'word' && item.parentId) rejectSameLanguageSpelling(next, item.parentId, item.draft.title, id);
-  if (item.kind === 'language') validateLanguageStructure(item.draft);
+  if (item.kind === 'language') {
+    validateLanguageStructure(item.draft);
+    // A class may be renamed or reordered freely, but its stable ID cannot
+    // disappear while an existing draft or published word still refers to it.
+    const allowed = new Set(parseLanguageWordClasses(item.draft.details.wordClasses ?? '[]').map(entry => entry.id));
+    for (const word of next.nodes) {
+      if (word.kind !== 'word' || word.parentId !== item.id || word.deletedAt != null) continue;
+      for (const raw of [word.draft.details.meanings, word.published?.value.details.meanings]) {
+        if (!raw) continue;
+        if (parseWordMeanings(raw).some(meaning => meaning.partOfSpeechId && !allowed.has(meaning.partOfSpeechId))) {
+          domainError('bad-request', '単語から参照中の品詞マスタ項目は削除できません。');
+        }
+      }
+    }
+  }
   if (item.kind === 'word' && item.parentId) {
+    validateWordClassIds(next, item.parentId, item.draft);
     validateMeaningReferences(next, item.parentId, item.draft);
   }
   if (item.kind === 'category' && item.draft.details.presets !== undefined) parsePresets(item.draft.details.presets);
@@ -362,10 +377,15 @@ function readableReference(library: Library, id: string, kind: Kind, now: number
     chain.every(part => part.published !== null), now,
   ) ? node : null;
 }
-function publicMeaning(library: Library, meaning: WordMeaning, now: number,
+function publicMeaning(library: Library, meaning: WordMeaning, now: number, publishedClasses: readonly import('./language-structure.js').LanguageWordClass[],
   indexed?: ReadonlyMap<string, NovelNode>): WordMeaning {
+  const publicName = publishedWordClassName(meaning.partOfSpeechId, publishedClasses);
   return {
-    id: meaning.id, partOfSpeech: meaning.partOfSpeech, definition: meaning.definition,
+    id: meaning.id,
+    // A draft-only class ID is private too: neither its ID nor its name crosses the public boundary.
+    partOfSpeechId: publicName ? meaning.partOfSpeechId : '',
+    ...(publicName ? { partOfSpeech: publicName } : {}),
+    definition: meaning.definition,
     etymologies: meaning.etymologies.map(origin => {
       const language = origin.languageId
         ? readableReference(library, origin.languageId, 'language', now, indexed) : null;
@@ -414,10 +434,12 @@ function projectReader(library: Library, id: string, now: number,
     }
   }
   if (node.kind === 'word') {
-    if (published.details.partOfSpeech !== undefined) details.partOfSpeech = published.details.partOfSpeech;
     if (published.details.meanings !== undefined) {
+      const ownerLanguage = path[path.length - 2];
+      const publishedClasses = ownerLanguage?.kind === 'language' && ownerLanguage.published
+        ? parseLanguageWordClasses(ownerLanguage.published.value.details.wordClasses ?? '[]') : [];
       details.meanings = JSON.stringify(parseWordMeanings(published.details.meanings)
-        .map(meaning => publicMeaning(library, meaning, now, indexed)));
+        .map(meaning => publicMeaning(library, meaning, now, publishedClasses, indexed)));
     }
   }
   if (node.kind === 'language') {

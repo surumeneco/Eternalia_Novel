@@ -525,7 +525,7 @@ function openCreate(parentId: string | null) {
 async function createItem() {
   if (!createTitle.value.trim()) { errorText.value=t('studioCreateTitleRequired'); return; }
   const attempt = {
-    partOfSpeech: createWordPartOfSpeech.value.trim(),
+    partOfSpeechId: createWordPartOfSpeech.value.trim(),
     definition: createWordDefinition.value.trim(),
   };
   const duplicateOutcome: { wordId: string | null } = { wordId: null };
@@ -542,7 +542,7 @@ async function createItem() {
             title:createTitle.value.trim(), body:'',
             ...(createKind.value === 'chapter' ? { pages:[''] } : {}),
             details:createKind.value === 'category' ? { presets:'[]' } :
-              createKind.value === 'word' ? { meanings: attempt.partOfSpeech || attempt.definition
+              createKind.value === 'word' ? { meanings: attempt.partOfSpeechId || attempt.definition
                 ? JSON.stringify([{id:crypto.randomUUID(),...attempt,etymologies:[]}]) : '[]' } :
               createKind.value === 'language' ? {characters:'[]',wordClasses:'[]'} : {},
           },
@@ -751,7 +751,7 @@ async function logout() {
                 <label>{{ t('studioWordCreatePartOfSpeech') }}
                   <select v-model="createWordPartOfSpeech" :disabled="!wordClassInputPolicy(createWordClasses.length > 0, false).choiceEnabled">
                     <option value="">{{ t('wordUnspecified') }}</option>
-                    <option v-for="entry in createWordClasses" :key="entry.id" :value="entry.title">{{ entry.title }}</option>
+                    <option v-for="entry in createWordClasses" :key="entry.id" :value="entry.id">{{ entry.title }}</option>
                   </select>
                 </label>
                 <p v-if="!createWordClasses.length" class="note">{{ t('wordClassMasterEmpty') }}</p>
@@ -814,10 +814,6 @@ async function logout() {
                   :selected-id="selected.id" :nodes="nodes" />
                 <LanguageStructureEditor v-if="selected.kind === 'language'"
                   v-model:characters="languageCharacters" v-model:word-classes="languageWordClasses" />
-                <label v-if="selected.kind === 'word' && !form.details.meanings && form.details.partOfSpeech">
-                  {{ t('studioLegacyWordClass') }}
-                  <input :value="form.details.partOfSpeech" readonly maxlength="80" />
-                </label>
                 <WordMeaningsEditor v-if="selected.kind === 'word'" v-model="wordMeanings"
                   :languages="activeWordLanguages" :words="activeWordReferences" :word-classes="activeWordClasses" />
                 <label v-if="selected.kind === 'periodization'">{{ t('studioPeriodRelativeYears') }}

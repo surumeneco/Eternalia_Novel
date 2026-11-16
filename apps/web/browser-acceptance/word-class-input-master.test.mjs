@@ -51,10 +51,10 @@ test('LG-05: author creation and meaning editor never offer unregistered POS fre
       await registeredCreate.waitFor();
       assert.equal(await registeredCreate.isEnabled(), true);
       const choices = await registeredCreate.locator('option').evaluateAll(options => options.map(o => o.value));
-      assert.deepEqual(choices, ['', '名詞'], 'registered master choices only');
+      assert.deepEqual(choices, ['', noun.id], 'registered master IDs only');
       assert.equal(await page.locator('form.create-form input[maxlength="80"]').count(), 0);
-      await registeredCreate.selectOption('名詞');
-      assert.equal(await registeredCreate.inputValue(), '名詞');
+      await registeredCreate.selectOption(noun.id);
+      assert.equal(await registeredCreate.inputValue(), noun.id);
       await registeredCreate.selectOption(''); // avoid unsaved-input navigation prompt
 
       await page.goto(base + '/studio?item=' + emptyWord);

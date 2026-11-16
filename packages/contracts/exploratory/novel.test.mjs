@@ -47,10 +47,10 @@ test('same-part-of-speech meanings retain independent etymologies and snapshots'
   const source = create(db, 'word', lang2.id, '根'); db = source.db;
   const word = create(db, 'word', lang1.id, '詞'); db = word.db;
   const meanings = [
-    { id: randomUUID(), partOfSpeech:'名詞', definition:'第一の意味', etymologies:[
+    { id: randomUUID(), partOfSpeechId:'', definition:'第一の意味', etymologies:[
       { id:randomUUID(),languageId:lang2.id,wordId:source.id,note:'古語から' },
     ] },
-    { id: randomUUID(), partOfSpeech:'名詞', definition:'第二の意味', etymologies:[
+    { id: randomUUID(), partOfSpeechId:'', definition:'第二の意味', etymologies:[
       { id:randomUUID(),languageId:lang2.id,note:'別系統' },
     ] },
   ];
@@ -81,7 +81,7 @@ test('meanings validate referential consistency and distinct identities', () => 
   const foreign = create(db,'language',b.id); db = foreign.db;
   const word = create(db,'word',language.id); db = word.db;
   const id = randomUUID();
-  const base = {id,partOfSpeech:'名詞',definition:'意味',etymologies:[]};
+  const base = {id,partOfSpeechId:'',definition:'意味',etymologies:[]};
   const payload = meanings => ({ title:'項目',body:'',details:{meanings:JSON.stringify(meanings)} });
   assert.throws(() => editNode(db,word.id,1,payload([base,{...base,definition:'別の意味'}]),now),
     e => e.code === 'bad-request','duplicate meaning IDs are forbidden');
