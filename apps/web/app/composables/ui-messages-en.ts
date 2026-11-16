@@ -209,6 +209,7 @@ export const enUiMessages = {
   "wordPartOfSpeech": "Part of speech",
   "wordUnspecified": "Unspecified",
   "wordLegacy": "Legacy value",
+  "wordClassMasterEmpty": "Define a part of speech in this language's master list before selecting it. Unregistered classes cannot be entered.",
   "wordPartOfSpeechPlaceholder": "Noun, verb, etc.",
   "wordDefinition": "Definition",
   "wordEtymologies": "Etymology for this meaning",

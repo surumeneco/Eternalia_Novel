@@ -1384,7 +1384,9 @@ test('AC-09: duplicate registration rejects with existing word, then redirects u
       assert.equal(response.status(), 200, await response.text());
     }
     const series = await create('series', null, prefix + '-series');
-    const language = await create('language', series, prefix + '-language');
+    const language = await create('language', series, prefix + '-language', {
+      wordClasses: JSON.stringify([{ id: randomUUID(), name: '名詞', description: '' }]),
+    });
     const otherLanguage = await create('language', series, prefix + '-other-language');
     const title = prefix + '-same';
     const originalMeanings = [{id: randomUUID(),partOfSpeech:'名詞',definition:'元の意味',etymologies:[]}];
@@ -1407,7 +1409,7 @@ test('AC-09: duplicate registration rejects with existing word, then redirects u
     await page.getByRole('heading', { name: '言語：' + prefix + '-language' }).waitFor();
     await page.getByRole('button', {name:'子項目を追加'}).click();
     await page.getByRole('textbox', {name:'タイトル'}).fill(title);
-    await page.getByRole('textbox', {name:'新しい意味の品詞'}).fill('名詞');
+    await page.getByRole('combobox', {name:'新しい意味の品詞'}).selectOption('名詞');
     await page.getByRole('textbox', {name:'新しい意味・説明'}).fill('追加した未保存の名詞');
     await page.getByRole('button', {name:'作成',exact:true}).click();
     await page.getByRole('alert').getByText('同じ言語に同じスペルが登録済みのため、新規登録できません。既存単語の編集に移りました。追記内容は未保存です。').waitFor();
@@ -1416,7 +1418,7 @@ test('AC-09: duplicate registration rejects with existing word, then redirects u
     assert.equal(await meanings.count(), 2);
     assert.equal(await meanings.nth(0).getByRole('textbox', {name:'意味・説明'}).inputValue(), '元の意味');
     assert.equal(await meanings.nth(1).getByRole('textbox', {name:'意味・説明'}).inputValue(), '追加した未保存の名詞');
-    assert.equal(await meanings.nth(1).getByRole('textbox', {name:'品詞'}).inputValue(), '名詞');
+    assert.equal(await meanings.nth(1).locator('select').first().inputValue(), '名詞');
     const authorList = await (await author.request.get(base + '/api/admin/nodes')).json();
     const persisted = authorList.find(node => node.id === word);
     assert.deepEqual(JSON.parse(persisted.draft.details.meanings), originalMeanings,
@@ -1469,7 +1471,9 @@ test('two same-class word meanings retain independent etymologies through draft 
       return JSON.parse((await response.json()).content.details.meanings);
     }
     const series = await create('series', null, prefix + '-series');
-    const language = await create('language', series, prefix + '-language');
+    const language = await create('language', series, prefix + '-language', {
+      wordClasses: JSON.stringify([{ id: randomUUID(), name: '名詞', description: '' }]),
+    });
     const word = await create('word', language, prefix + '-word', { meanings: '[]' });
     for (const id of [series, language]) await publish(id);
     const page = await author.newPage();
@@ -1483,7 +1487,7 @@ test('two same-class word meanings retain independent etymologies through draft 
       [1, '第二の意味', '第二の語源'],
     ]) {
       const meaning = meanings.nth(index);
-      await meaning.getByRole('textbox', { name: '品詞' }).fill('名詞');
+      await meaning.locator('select').first().selectOption('名詞');
       await meaning.getByRole('textbox', { name: '意味・説明' }).fill(definition);
       await meaning.getByRole('button', { name: '語源を追加' }).click();
       await meaning.getByRole('textbox', { name: '語源の説明' }).fill(origin);
