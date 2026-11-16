@@ -1,0 +1,70 @@
+{
+  "schema": "cat-work/v1",
+  "id": "eternalia.dictionary.compound-public-filter-browser",
+  "entry": "issue",
+  "flow": "issue-work",
+  "mode": "shadow",
+  "work_kind": "verification",
+  "issue_ref": "https://github.com/surumeneco/Eternalia_Novel/issues/1",
+  "project_entry_ref": "https://drive.google.com/file/d/1clwfVJ3e_t1_QKFfOWxxRIzE9WMFvTiM/view",
+  "normative": [
+    {
+      "uri": "https://drive.google.com/file/d/1LqX-Noytb_oWymIrpO01eO5PvThGlVGx/view"
+    },
+    {
+      "uri": "https://drive.google.com/file/d/1v7p6qOMV6FLIt-Yp_HZ07k8KfOiRUesS/view"
+    }
+  ],
+  "evidence": [
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/2fb53c5079fe1e4e6fa0abcef37a1cac6da99fa9/apps/web/app/pages/dictionaries/%5Bid%5D.vue"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/2fb53c5079fe1e4e6fa0abcef37a1cac6da99fa9/apps/web/browser-acceptance/browser-acceptance.test.mjs"
+    }
+  ],
+  "repositories": [
+    {
+      "name": "eternalia",
+      "path": "../../../..",
+      "branch_pattern": "test/*",
+      "allowed_paths": [
+        "Lifecycle/Works/New/eternalia.dictionary.compound-public-filter-browser/work.json",
+        "apps/web/browser-acceptance/dictionary-compound-filters.test.mjs",
+        "scripts/check-http-acceptance.mjs",
+        "docs/alpha-ac-traceability.md"
+      ],
+      "production_paths": [],
+      "test_paths": [
+        "apps/web/browser-acceptance/dictionary-compound-filters.test.mjs"
+      ]
+    }
+  ],
+  "scope": {
+    "process_ids": [
+      "eternalia.dictionary"
+    ],
+    "changed_ids": [
+      "dictionary.AC67.compound-public-filters-browser-evidence"
+    ],
+    "preserved_ids": [
+      "dictionary.reader.language-filter",
+      "dictionary.reader.part-of-speech-filter",
+      "dictionary.reader.word-search",
+      "publication.public-projection"
+    ]
+  },
+  "specification": {
+    "status": "unknown",
+    "decision_ref": null,
+    "artifact_refs": []
+  },
+  "technologies": [
+    "TypeScript",
+    "Vue",
+    "Playwright",
+    "PostgreSQL"
+  ],
+  "checks": [],
+  "depends_on": []
+}
