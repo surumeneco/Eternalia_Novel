@@ -33,6 +33,7 @@
         "apps/web/app/composables/ui-messages-en.ts",
         "apps/web/app/utils/word-class-input-policy.ts",
         "apps/web/browser-acceptance/word-class-input-master.test.mjs",
+        "apps/web/tests/word-class-input-policy.test.mjs",
         "scripts/check-http-acceptance.mjs",
         "docs/alpha-ac-traceability.md"
       ],
@@ -44,6 +45,7 @@
         "apps/web/app/utils/word-class-input-policy.ts"
       ],
       "test_paths": [
+        "apps/web/tests/word-class-input-policy.test.mjs",
         "apps/web/browser-acceptance/word-class-input-master.test.mjs",
         "Lifecycle/Works/New/eternalia.dictionary.master-only-author-input/CAT/Generated/current.test.ts"
       ]
