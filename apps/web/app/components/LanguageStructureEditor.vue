@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { LanguageCharacter, LanguageWordClass } from '@eternalia/contracts';
+import { moveLanguageClass } from '~/utils/language-class-order';
 const { t } = useUiLocale();
 
 const props = defineProps<{ characters: string; wordClasses: string }>();
@@ -57,6 +58,10 @@ function addClass() {
   if (classes.value.length >= 50 || classesError.value) return;
   classes.value.push({ id: crypto.randomUUID(), name: '', description: '' });
 }
+function moveClass(index: number, direction: -1 | 1) {
+  if (classesError.value) return;
+  classes.value = moveLanguageClass(classes.value, index, direction);
+}
 </script>
 
 <template>
@@ -99,7 +104,15 @@ function addClass() {
         <section v-for="(entry, index) in classes" :key="entry.id" class="symbol-entry">
           <div class="entry-heading">
             <h3>{{ t('langWordClassTitle') }} {{ index + 1 }}</h3>
-            <button type="button" class="inline-action" @click="classes.splice(index, 1)">{{ t('langWordClassDelete') }}</button>
+            <div class="class-order-actions">
+              <button type="button" class="inline-action" :disabled="index === 0"
+                :aria-label="(entry.name || t('langWordClassTitle')) + t('orderMoveUpSuffix')"
+                @click="moveClass(index, -1)">{{ t('orderUp') }}</button>
+              <button type="button" class="inline-action" :disabled="index === classes.length - 1"
+                :aria-label="(entry.name || t('langWordClassTitle')) + t('orderMoveDownSuffix')"
+                @click="moveClass(index, 1)">{{ t('orderDown') }}</button>
+              <button type="button" class="inline-action" @click="classes.splice(index, 1)">{{ t('langWordClassDelete') }}</button>
+            </div>
           </div>
           <label>{{ t('langWordClassName') }}<input v-model="entry.name" maxlength="80" required /></label>
           <label>{{ t('langDescription') }}<textarea v-model="entry.description" maxlength="2000" rows="2" /></label>
@@ -114,7 +127,8 @@ function addClass() {
 .language-structure { min-width:0; }
 .language-structure > fieldset { min-width:0;border:1px solid var(--color-border-base);border-radius:var(--radius-panel);padding:1rem;margin:1rem 0; }
 .symbol-entry { padding:1rem 0;border-bottom:1px solid var(--color-border-base); }
-.entry-heading { display:flex;align-items:center;justify-content:space-between;gap:1rem; }
+.entry-heading { display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem; }
+.class-order-actions { display:flex;align-items:center;flex-wrap:wrap;gap:.4rem; }
 .entry-heading h3 { margin:0; }
 .flag-options,.following-grid { display:flex;flex-wrap:wrap;gap:.5rem 1rem; }
 .flag-options label,.following-grid label { display:flex;gap:.35rem;align-items:center;margin:.4rem 0;font-weight:normal; }
