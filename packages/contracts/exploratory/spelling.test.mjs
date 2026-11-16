@@ -31,18 +31,19 @@ test('same-language duplicates are rejected without mutation, but cross-language
 
 test('rejected duplicate meaning inserts at end of matching part of speech without saving or altering publication',()=>{
  const id1=randomUUID(),id2=randomUUID(),id3=randomUUID(),id4=randomUUID(),id5=randomUUID();
+ const nounId=randomUUID(), verbId=randomUUID(), adjectiveId=randomUUID();
  const before=[
-   {id:id1,partOfSpeech:'名詞',definition:'古い名詞1',etymologies:[]},
-   {id:id2,partOfSpeech:'動詞',definition:'古い動詞',etymologies:[]},
-   {id:id3,partOfSpeech:'名詞',definition:'古い名詞2',etymologies:[]},
-   {id:id4,partOfSpeech:'形容詞',definition:'古い形容詞',etymologies:[]},
+   {id:id1,partOfSpeechId:nounId,definition:'古い名詞1',etymologies:[]},
+   {id:id2,partOfSpeechId:verbId,definition:'古い動詞',etymologies:[]},
+   {id:id3,partOfSpeechId:nounId,definition:'古い名詞2',etymologies:[]},
+   {id:id4,partOfSpeechId:adjectiveId,definition:'古い形容詞',etymologies:[]},
  ];
  const original=JSON.stringify(before);
- const merged=appendDuplicateWordMeaning(original,{id:id5,partOfSpeech:'名詞',definition:'未保存の新しい名詞'});
+ const merged=appendDuplicateWordMeaning(original,{id:id5,partOfSpeechId:nounId,definition:'未保存の新しい名詞'});
  assert.deepEqual(parseWordMeanings(merged).map(v=>v.id),[id1,id2,id3,id5,id4]);
  assert.equal(parseWordMeanings(merged)[3]?.definition,'未保存の新しい名詞');
  assert.equal(JSON.stringify(before),original,'source author/published array must not be mutated');
- assert.throws(()=>parseWordMeanings(appendDuplicateWordMeaning('[]',{id:randomUUID(),partOfSpeech:'',definition:''})),
+ assert.throws(()=>parseWordMeanings(appendDuplicateWordMeaning('[]',{id:randomUUID(),partOfSpeechId:'',definition:''})),
    'incomplete entry requires author editing before it can be saved');
 });
 

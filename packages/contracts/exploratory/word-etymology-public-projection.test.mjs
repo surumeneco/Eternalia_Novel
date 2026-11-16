@@ -14,13 +14,14 @@ const meaningList = (db, wordId, at) =>
 
 test('ETYM-PUBLIC-01/02/03: meaning-bound references hide private ancestry and use published labels only', () => {
   let db = newLibrary();
-  const add = (kind, parentId, title) => {
+  const nounId = randomUUID();
+  const add = (kind, parentId, title, details={}) => {
     const id = randomUUID();
-    db = createNode(db, { id, kind, parentId, content: contents(title), now });
+    db = createNode(db, { id, kind, parentId, content: contents(title, details), now });
     return id;
   };
   const series = add('series', null, 'World');
-  const langA = add('language', series, 'Native Language');
+  const langA = add('language', series, 'Native Language', {wordClasses:JSON.stringify([{id:nounId,name:'名詞',description:''}])});
   const langB = add('language', series, 'Foreign Language');
   const source = add('word', langA, 'Source Word');
   const refA = add('word', langA, 'Native Reference');
@@ -32,9 +33,9 @@ test('ETYM-PUBLIC-01/02/03: meaning-bound references hide private ancestry and u
 
   const [m1, m2, eB, eA, eNote] = Array.from({ length: 5 }, () => randomUUID());
   const meanings = [
-    { id: m1, partOfSpeech: '名詞', definition: 'first independent meaning',
+    { id: m1, partOfSpeechId: nounId, definition: 'first independent meaning',
       etymologies: [{ id: eB, languageId: langB, wordId: refB, note: 'shared root' }] },
-    { id: m2, partOfSpeech: '名詞', definition: 'second independent meaning',
+    { id: m2, partOfSpeechId: nounId, definition: 'second independent meaning',
       etymologies: [
         { id: eA, languageId: langA, wordId: refA, note: 'native root' },
         { id: eNote, note: 'independent reconstructed origin' },

@@ -103,7 +103,7 @@ test('SEARCH-COMPOUND-01/02/03: series × domain × term × sort remain isolated
       });
       const wordA = await create('word', languageA, stamp + '-word', {
         meanings: JSON.stringify([{
-          id: randomUUID(), partOfSpeech: '', definition: 'definition-' + token, etymologies: [],
+          id: randomUUID(), partOfSpeechId: '', definition: 'definition-' + token, etymologies: [],
         }]),
       });
       const categoryB = await create('category', seriesB, stamp + '-category-B');

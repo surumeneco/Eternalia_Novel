@@ -5,9 +5,9 @@ import { randomUUID } from 'node:crypto';
 import { newLibrary, createNode, publishNode, toReader } from '../dist/index.js';
 
 const now = Date.UTC(2026,10,16);
-const noun = '名詞', verb = '動詞';
-const details = (meanings) => ({ meanings: JSON.stringify(meanings.map(([partOfSpeech, definition]) => ({
-  id: randomUUID(), partOfSpeech, definition, etymologies: [],
+const noun = randomUUID(), verb = randomUUID();
+const details = (meanings) => ({ meanings: JSON.stringify(meanings.map(([partOfSpeechId, definition]) => ({
+  id: randomUUID(), partOfSpeechId, definition, etymologies: [],
 }))) });
 const create = (db, kind, parentId, title, fields={}) => {
   const id=randomUUID();return {id,db:createNode(db,{id,kind,parentId,content:{title,body:'',details:fields},now})};
@@ -16,10 +16,10 @@ const setup = () => {
   let db=newLibrary();
   const series=create(db,'series',null,'系列');db=series.db;
   const language=create(db,'language',series.id,'登録済み言語',{
-    wordClasses:JSON.stringify([{id:randomUUID(),name:noun,description:''}]),
+    wordClasses:JSON.stringify([{id:noun,name:'名詞',description:''}]),
   });db=language.db;
   const other=create(db,'language',series.id,'別言語',{
-    wordClasses:JSON.stringify([{id:randomUUID(),name:verb,description:''}]),
+    wordClasses:JSON.stringify([{id:verb,name:'動詞',description:''}]),
   });db=other.db;
   const empty=create(db,'language',series.id,'品詞未設定言語');db=empty.db;
   return {db,series:series.id,language:language.id,other:other.id,empty:empty.id};
@@ -43,7 +43,7 @@ test('LG-05: nonregistered or cross-language-only POS cannot create words',()=>{
   failedCreate(db,language,verb);
   failedCreate(db,empty,noun);
   failedCreate(db,other,noun);
-  failedCreate(db,language,'未知');
+  failedCreate(db,language,randomUUID());
 });
 
 test('LG-05: any unknown class in a multi-meaning create rejects the whole request',()=>{

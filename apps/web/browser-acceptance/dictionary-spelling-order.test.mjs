@@ -42,13 +42,14 @@ test('LG-07: each public language displays spelling ascending, independent of cr
       });
       assert.equal(response.status(), 200, await response.text());
     }
+    const classMap = new Map(['名詞', '動詞'].map(name => [name, randomUUID()]));
     const senses = (partOfSpeech, definition) => ({
-      meanings: JSON.stringify([{ id: randomUUID(), partOfSpeech, definition, etymologies: [] }]),
+      meanings: JSON.stringify([{ id: randomUUID(), partOfSpeechId: classMap.get(partOfSpeech), definition, etymologies: [] }]),
     });
     const series = await create('series', null, prefix + '-series');
     const languageAName = prefix + '-language-A';
     const languageBName = prefix + '-language-B';
-    const classes = {wordClasses: JSON.stringify(['名詞', '動詞'].map(name => ({id: randomUUID(), name, description: ''})))};
+    const classes = {wordClasses: JSON.stringify(['名詞', '動詞'].map(name => ({id: classMap.get(name), name, description: ''})))};
     const languageA = await create('language', series, languageAName, classes);
     const languageB = await create('language', series, languageBName, classes);
     const zeta = prefix + '-zeta';

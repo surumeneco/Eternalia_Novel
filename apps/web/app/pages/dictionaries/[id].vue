@@ -41,7 +41,6 @@ function meaningsOf(word: ReaderNode): WordMeaning[] {
 }
 function wordParts(word: ReaderNode): string[] {
   const senses = meaningsOf(word).map(meaning => meaning.partOfSpeech).filter(Boolean);
-  if (!senses.length && word.content.details.partOfSpeech) senses.push(word.content.details.partOfSpeech);
   return [...new Set(senses)];
 }
 const partsOfSpeech = computed(() => [...new Set(

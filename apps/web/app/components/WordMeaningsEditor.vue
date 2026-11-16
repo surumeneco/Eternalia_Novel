@@ -30,11 +30,11 @@ watch(meanings, value => {
 }, { deep: true });
 function classPolicy(meaning: WordMeaning) {
   return wordClassInputPolicy(props.wordClasses.length > 0,
-    !!meaning.partOfSpeech && !props.wordClasses.some(item => item.title === meaning.partOfSpeech));
+    !!meaning.partOfSpeechId && !props.wordClasses.some(item => item.id === meaning.partOfSpeechId));
 }
 function addMeaning() {
   if (parseError.value || meanings.value.length >= 30) return;
-  meanings.value.push({ id: crypto.randomUUID(), partOfSpeech: '', definition: '', etymologies: [] });
+  meanings.value.push({ id: crypto.randomUUID(), partOfSpeechId: '', definition: '', etymologies: [] });
 }
 function addOrigin(meaning: WordMeaning) {
   if (meaning.etymologies.length >= 12) return;
@@ -60,13 +60,13 @@ function wordsOf(origin: WordEtymology) {
           <button type="button" class="inline-action" @click="meanings.splice(index, 1)">{{ t('wordMeaningDelete') }}</button>
         </div>
         <label>{{ t('wordPartOfSpeech') }}
-          <select v-model="meaning.partOfSpeech" :disabled="!classPolicy(meaning).choiceEnabled">
+          <select v-model="meaning.partOfSpeechId" :disabled="!classPolicy(meaning).choiceEnabled">
             <option value="">{{ t('wordUnspecified') }}</option>
-            <option v-for="wordClass in wordClasses" :key="wordClass.id" :value="wordClass.title">
+            <option v-for="wordClass in wordClasses" :key="wordClass.id" :value="wordClass.id">
               {{ wordClass.title }}
             </option>
             <option v-if="classPolicy(meaning).showLegacy" disabled
-              :value="meaning.partOfSpeech">{{ meaning.partOfSpeech }}（{{ t('wordLegacy') }}）</option>
+              :value="meaning.partOfSpeechId">{{ t('wordLegacy') }}（{{ meaning.partOfSpeechId }}）</option>
           </select>
         </label>
         <p v-if="!wordClasses.length" class="note">{{ t('wordClassMasterEmpty') }}</p>
