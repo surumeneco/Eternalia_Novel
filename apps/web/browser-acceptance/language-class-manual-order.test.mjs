@@ -70,7 +70,7 @@ test('LG-05: POS master starts in creation order, supports adjacent moves, and p
     await page.goto(base + '/studio?item=' + languageId);
     await page.getByRole('heading', { name: '言語：' + langName }).waitFor();
     const master = page.locator('.language-structure > fieldset').nth(1);
-    const names = () => master.locator('.symbol-entry input[maxlength="80"]').allInputValues();
+    const names = () => master.locator('.symbol-entry input[maxlength="80"]').evaluateAll(inputs => inputs.map(input => input.value));
     assert.deepEqual(await names(), ['名詞', '動詞', '形容詞']);
     assert.equal(await page.getByRole('button', { name: '名詞を上へ移動' }).isDisabled(), true);
     assert.equal(await page.getByRole('button', { name: '形容詞を下へ移動' }).isDisabled(), true);
