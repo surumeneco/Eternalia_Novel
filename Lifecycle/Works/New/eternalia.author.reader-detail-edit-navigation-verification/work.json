@@ -1,0 +1,67 @@
+{
+  "schema": "cat-work/v1",
+  "id": "eternalia.author.reader-detail-edit-navigation-verification",
+  "entry": "issue",
+  "flow": "issue-work",
+  "work_kind": "verification",
+  "mode": "shadow",
+  "issue_ref": "https://github.com/surumeneco/Eternalia_Novel/issues/1",
+  "project_entry_ref": "https://drive.google.com/file/d/1clwfVJ3e_t1_QKFfOWxxRIzE9WMFvTiM/view",
+  "normative": [
+    {
+      "uri": "https://drive.google.com/file/d/1LqX-Noytb_oWymIrpO01eO5PvThGlVGx/view"
+    },
+    {
+      "uri": "https://drive.google.com/file/d/14no6MWmkFuyWYPVS6QdcRmbLbrUBbOpc/view"
+    }
+  ],
+  "evidence": [
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/461512198c91eac0a1a2776841a749c8ec499b53/apps/web/app/components/AuthorEditLink.vue"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/461512198c91eac0a1a2776841a749c8ec499b53/apps/web/app/pages/studio.vue"
+    }
+  ],
+  "repositories": [
+    {
+      "name": "eternalia",
+      "path": "../../../..",
+      "branch_pattern": "test/*",
+      "allowed_paths": [
+        "apps/web/browser-acceptance/author-detail-edit-navigation.test.mjs",
+        "scripts/check-http-acceptance.mjs",
+        "Lifecycle/Works/New/eternalia.author.reader-detail-edit-navigation-verification/work.json",
+        "docs/alpha-ac-traceability.md"
+      ],
+      "production_paths": [],
+      "test_paths": [
+        "apps/web/browser-acceptance/author-detail-edit-navigation.test.mjs"
+      ]
+    }
+  ],
+  "scope": {
+    "process_ids": [
+      "eternalia.author.edit-navigation"
+    ],
+    "changed_ids": [
+      "AC56.reader-to-author-editor-browser-evidence"
+    ],
+    "preserved_ids": [
+      "CM09.reader-edit-link-requires-author",
+      "PB18.author-draft-published-snapshot-separation",
+      "AU03.server-side-auth-guard"
+    ]
+  },
+  "specification": {
+    "status": "unknown",
+    "decision_ref": null,
+    "artifact_refs": []
+  },
+  "technologies": [
+    "Vue",
+    "Playwright"
+  ],
+  "checks": [],
+  "depends_on": []
+}
