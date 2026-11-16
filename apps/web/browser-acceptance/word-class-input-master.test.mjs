@@ -90,8 +90,8 @@ test('LG-05: a draft-only POS ID remains private until its owning language maste
     const prefix = fixture.prefix + '-pos-snapshot-' + randomUUID().slice(0, 8);
     const existingClass = { id: randomUUID(), name: '名詞', description: '' };
     const pendingClassId = randomUUID();
-    const secretName = prefix + '-draft-only-class';
-    const publicName = prefix + '-released-class';
+    const secretName = '下書き限定品詞-' + randomUUID().slice(0, 8);
+    const publicName = '公開済み品詞-' + randomUUID().slice(0, 8);
 
     async function create(kind, parentId, title, details = {}) {
       const response = await author.request.post(base + '/api/admin/nodes', {
