@@ -60,8 +60,7 @@
   },
   "technologies": [
     "TypeScript",
-    "PostgreSQL",
-    "Playwright"
+    "PostgreSQL"
   ],
   "checks": [],
   "depends_on": []
