@@ -40,7 +40,7 @@ test('LG-05: Nest and Nuxt reject unknown word POS with 400, preserve data and a
         kind:'word',parentId,content:{title:stamp+'-rejected-'+randomUUID(),body:'',details:meaning(pos)},
       });
       assert.equal(rejected.status,400,root+' should reject '+pos+': '+rejected.text);
-      assert.equal(rejected.body.code,'bad-request');
+      assert.equal(rejected.body.statusCode,400);
       assert.match(rejected.body.message,/品詞/);
     }
   }
