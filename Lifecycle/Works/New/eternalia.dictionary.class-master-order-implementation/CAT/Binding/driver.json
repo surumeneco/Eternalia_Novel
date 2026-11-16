@@ -1,0 +1,5 @@
+{
+  "schema": "cat-test-driver/v2",
+  "process": "eternalia.dictionary.class-order",
+  "driver": "./class-order-driver"
+}
