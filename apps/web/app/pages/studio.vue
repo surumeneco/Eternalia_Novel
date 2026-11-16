@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { wordClassInputPolicy } from '~/utils/word-class-input-policy';
 import type { AuthorNode } from '~/types/author';
 import { localizeApiError } from '~/utils/api-error-localization';
 import { parseJstLocalDateTime, formatJstLocalDateTime } from '~/utils/jst-publication-time';
@@ -748,12 +749,12 @@ async function logout() {
               <p v-if="createKind === 'word'" class="note">{{ t('studioWordInitialVisibilityNote') }}</p>
               <template v-if="createKind === 'word'">
                 <label>{{ t('studioWordCreatePartOfSpeech') }}
-                  <select v-if="createWordClasses.length" v-model="createWordPartOfSpeech">
+                  <select v-model="createWordPartOfSpeech" :disabled="!wordClassInputPolicy(createWordClasses.length > 0, false).choiceEnabled">
                     <option value="">{{ t('wordUnspecified') }}</option>
                     <option v-for="entry in createWordClasses" :key="entry.id" :value="entry.title">{{ entry.title }}</option>
                   </select>
-                  <input v-else v-model="createWordPartOfSpeech" maxlength="80" />
                 </label>
+                <p v-if="!createWordClasses.length" class="note">{{ t('wordClassMasterEmpty') }}</p>
                 <label>{{ t('studioWordCreateDefinition') }}
                   <textarea v-model="createWordDefinition" maxlength="2000" rows="3" />
                 </label>
@@ -815,7 +816,7 @@ async function logout() {
                   v-model:characters="languageCharacters" v-model:word-classes="languageWordClasses" />
                 <label v-if="selected.kind === 'word' && !form.details.meanings && form.details.partOfSpeech">
                   {{ t('studioLegacyWordClass') }}
-                  <input v-model="form.details.partOfSpeech" maxlength="80" />
+                  <input :value="form.details.partOfSpeech" readonly maxlength="80" />
                 </label>
                 <WordMeaningsEditor v-if="selected.kind === 'word'" v-model="wordMeanings"
                   :languages="activeWordLanguages" :words="activeWordReferences" :word-classes="activeWordClasses" />
