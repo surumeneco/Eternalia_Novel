@@ -50,7 +50,12 @@ export function reorderSiblings(library: Library, request: ReorderRequest, now: 
     }
   }
   const next = structuredClone(library);
-  const byId = new Map<string, NovelNode>(next.nodes.map(node => [node.id,node]));
+  // Only requested siblings are looked up below. Preserve last-match semantics
+  // for repeated IDs without indexing unrelated nodes in a large library.
+  const byId = new Map<string, NovelNode>();
+  for (const node of next.nodes) {
+    if (orderedIdSet.has(node.id)) byId.set(node.id, node);
+  }
   for (let index = 0; index < request.orderedIds.length; index++) {
     const node = byId.get(request.orderedIds[index]!);
     if (!node) domainError('not-found', '項目が見つかりません。');
