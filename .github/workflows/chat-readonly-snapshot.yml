@@ -1,0 +1,31 @@
+name: Chat isolated readonly snapshot
+on:
+  push:
+    branches:
+      - infra/chat-readonly-snapshot-20261116
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 23c39e246323a07df86b54f465f7614f34b535f8
+          persist-credentials: false
+      - name: Create exact pinned source archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "23c39e246323a07df86b54f465f7614f34b535f8"
+          printf 'repository=surumeneco/Eternalia_Novel\ncommit=%s\ntree=%s\n' "$(git rev-parse HEAD)" "$(git rev-parse HEAD^{tree})" > identity.txt
+          git archive --format=tar --output=source.tar HEAD
+          sha256sum source.tar > source.tar.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: eternalia-source-23c39e24
+          path: |
+            identity.txt
+            source.tar
+            source.tar.sha256
+          retention-days: 1
