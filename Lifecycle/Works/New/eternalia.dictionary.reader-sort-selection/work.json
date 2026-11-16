@@ -23,7 +23,13 @@
   ],
   "evidence": [
     {
-      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/5997cb491894f463ec630f6d65b3a92078895910/apps/web/app/pages/dictionaries/%5Bid%5D.vue"
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/0645d3aa8b1ab9aa0c14ea326df599a8f92f834e/apps/web/app/pages/dictionaries/%5Bid%5D.vue"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/0645d3aa8b1ab9aa0c14ea326df599a8f92f834e/apps/web/app/components/LanguageStructureEditor.vue"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/0645d3aa8b1ab9aa0c14ea326df599a8f92f834e/apps/web/app/components/WordMeaningsEditor.vue"
     }
   ],
   "repositories": [
@@ -45,13 +51,17 @@
       "eternalia.dictionary"
     ],
     "changed_ids": [
-      "dictionary.reader.sort-selection"
+      "dictionary.reader.spelling-order",
+      "dictionary.reader.pos-filter",
+      "dictionary.classes.default-order",
+      "dictionary.classes.manual-order",
+      "dictionary.classes.master-only"
     ],
     "preserved_ids": [
       "dictionary.reader.language-filter",
-      "dictionary.reader.part-of-speech-filter",
       "dictionary.reader.word-search",
-      "publication.public-projection"
+      "publication.public-projection",
+      "publication.snapshot-separation"
     ]
   },
   "specification": {
