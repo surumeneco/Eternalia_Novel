@@ -45,7 +45,7 @@ async function publish(id) {
   });
 }
 
-test('AC-55: home recent links open published chapter reader and setting detail',
+test('AC-55: home recent links navigate for all six published item types',
   { timeout: 120_000 }, async () => {
     const prefix = fixture.prefix + '-recent-click-' + randomUUID().slice(0, 8);
     const browser = await chromium.launch({ headless: true });
@@ -59,7 +59,18 @@ test('AC-55: home recent links open published chapter reader and setting detail'
       const categoryId = await create('category', seriesId, prefix + '-category');
       const tipTitle = prefix + '-tip';
       const tipId = await create('tip', categoryId, tipTitle);
-      for (const id of [seriesId, volumeId, partId, chapterId, categoryId, tipId]) {
+      const tipSectionTitle = prefix + '-tip-section';
+      const tipSectionId = await create('tipSection', tipId, tipSectionTitle);
+      const languageId = await create('language', seriesId, prefix + '-language');
+      const wordTitle = prefix + '-word';
+      const wordId = await create('word', languageId, wordTitle);
+      const grammarTitle = prefix + '-grammar';
+      const grammarId = await create('grammar', languageId, grammarTitle);
+      const periodId = await create('periodization', seriesId, prefix + '-period');
+      const eventTitle = prefix + '-event';
+      const eventId = await create('event', periodId, eventTitle);
+      for (const id of [seriesId, volumeId, partId, chapterId, categoryId, tipId,
+        tipSectionId, languageId, wordId, grammarId, periodId, eventId]) {
         await publish(id);
       }
 
@@ -69,6 +80,10 @@ test('AC-55: home recent links open published chapter reader and setting detail'
         const destinations = [
           { id: chapterId, title: chapterTitle, path: '/read/' },
           { id: tipId, title: tipTitle, path: '/items/' },
+          { id: tipSectionId, title: tipSectionTitle, path: '/items/' },
+          { id: wordId, title: wordTitle, path: '/items/' },
+          { id: grammarId, title: grammarTitle, path: '/items/' },
+          { id: eventId, title: eventTitle, path: '/items/' },
         ];
         for (const { id, title, path } of destinations) {
           await page.goto(base + '/');
