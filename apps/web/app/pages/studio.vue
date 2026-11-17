@@ -704,8 +704,8 @@ async function logout() {
           <p>{{ t('studioDraftVsPublication') }}</p>
         </div>
         <div v-if="auth?.authenticated" class="action-row">
-          <NuxtLink to="/studio/publication">{{ t('studioPublicationManagement') }}</NuxtLink>
-          <NuxtLink to="/studio/order">{{ t('studioReorder') }}</NuxtLink>
+          <NuxtLink :to="{ path: '/studio/publication', query: selectedSeriesId ? { series: selectedSeriesId } : {} }">{{ t('studioPublicationManagement') }}</NuxtLink>
+          <NuxtLink :to="{ path: '/studio/order', query: selectedSeriesId ? { series: selectedSeriesId } : {} }">{{ t('studioReorder') }}</NuxtLink>
           <NuxtLink to="/studio/memos">{{ t('studioMemos') }}</NuxtLink>
           <button class="inline-action" type="button" @click="logout">{{ t('studioLogout') }}</button>
         </div>
