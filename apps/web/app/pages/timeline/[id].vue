@@ -47,8 +47,8 @@ const merged = computed(() => {
   <div>
     <TopicPath v-if="!revalidating" :items="[
       { label: t('home'), to: '/' },
-      { label: t('timeline'), to: '/timeline' },
-      { label: series?.content.title ?? t('readerKindSeries') },
+      { label: series?.content.title ?? t('readerKindSeries'), to: '/series/' + seriesId },
+      { label: t('timeline') },
     ]" />
     <ReaderPanel>
       <ReadingSkeleton v-if="revalidating || pending" :label="t('readerLoadingTimeline')" />
