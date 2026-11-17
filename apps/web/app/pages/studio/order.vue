@@ -108,7 +108,7 @@ async function save() {
 function confirmDiscard() {
   return !changed.value || window.confirm(t('orderDiscard'));
 }
-function changeSeries(event: Event) {
+async function changeSeries(event: Event) {
   const select = event.target as HTMLSelectElement;
   if (!confirmDiscard()) {
     select.value = selectedSeriesId.value;
@@ -116,6 +116,7 @@ function changeSeries(event: Event) {
   }
   selectedSeriesId.value = seriesList.value.some(node => node.id === select.value) ? select.value : '';
   selectedParent.value = selectedSeriesId.value || 'root';
+  await navigateTo({ path: '/studio/order', query: selectedSeriesId.value ? { series: selectedSeriesId.value } : {} }, { replace: true });
 }
 function changeParent(event: Event) {
   const select = event.target as HTMLSelectElement;
