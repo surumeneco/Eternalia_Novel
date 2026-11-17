@@ -38,7 +38,10 @@
         "apps/web/app/composables/useUiLocale.ts",
         "apps/web/browser-acceptance/browser-acceptance.test.mjs",
         "apps/web/browser-acceptance/author-tip-category-move.test.mjs",
-        "scripts/check-http-acceptance.mjs"
+        "scripts/check-http-acceptance.mjs",
+        "apps/web/app/pages/studio/publication.vue",
+        "apps/web/app/types/author.ts",
+        "apps/web/browser-acceptance/author-publication-published-parent.test.mjs"
       ],
       "production_paths": [
         "packages/contracts/src/novel.ts",
@@ -47,12 +50,15 @@
         "apps/api/src/admin-nodes.controller.ts",
         "apps/web/app/pages/studio.vue",
         "apps/web/app/composables/useUiLocale.ts",
-        "db/migrations/004_published_parent.sql"
+        "db/migrations/004_published_parent.sql",
+        "apps/web/app/pages/studio/publication.vue",
+        "apps/web/app/types/author.ts"
       ],
       "test_paths": [
         "packages/contracts/exploratory/tip-category-move.test.mjs",
         "apps/web/browser-acceptance/browser-acceptance.test.mjs",
-        "apps/web/browser-acceptance/author-tip-category-move.test.mjs"
+        "apps/web/browser-acceptance/author-tip-category-move.test.mjs",
+        "apps/web/browser-acceptance/author-publication-published-parent.test.mjs"
       ]
     }
   ],
@@ -65,7 +71,8 @@
       "category.move.target",
       "category.move.draft",
       "category.move.publish",
-      "category.move.auth"
+      "category.move.auth",
+      "category.move.author-publication"
     ],
     "preserved_ids": [
       "publication.draft-snapshot-separation",
