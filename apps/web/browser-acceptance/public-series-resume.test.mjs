@@ -38,7 +38,7 @@ async function visible(page,state) {
     document.dispatchEvent(new Event('visibilitychange'));
   },state);
 }
-test('SERIES-RESUME-01/02/03/04: a selected series' published settings list is revoked, restored and fail-closed on 503',
+test('SERIES-RESUME-01/02/03/04: a selected series settings list is revoked, restored and fail-closed on 503',
   {timeout:120_000},async()=>{
     assert.ok(base?.startsWith('http://127.0.0.1:'));
     const browser=await chromium.launch({headless:true});
