@@ -35,6 +35,9 @@ const filters = computed(() => ({
   timeline: { label: t('studioFilterTimeline'), kinds: ['periodization','event'] as ReaderKind[] },
 }));
 type Filter = keyof typeof filters.value;
+const firstKindByArea: Record<Filter, ReaderKind> = {
+  stories: 'volume', tips: 'category', dictionaries: 'language', timeline: 'periodization',
+};
 
 const nodes = ref<AuthorNode[]>([]);
 const selectedId = ref<string | null>(null);
@@ -553,7 +556,7 @@ async function runChange(work: () => Promise<void>, okText:string, reloadAfter =
     if (selected.value?.kind === 'chapter' && editorDirty.value) scheduleChapterAutosave();
   }
 }
-function openCreate(parentId: string | null) {
+function openCreate(parentId: string | null, preferredKind?: ReaderKind) {
   if (busy.value || autosavingChapter.value || !confirmDiscard()) return;
   if (selected.value?.kind === 'chapter') clearChapterRecovery(selected.value.id);
   cancelAutosaveTimer();
@@ -562,7 +565,9 @@ function openCreate(parentId: string | null) {
   if (parentId) selectedSeriesId.value = owningSeriesId(parentId);
   else selectedSeriesId.value = null;
   const parent = parentId ? byId.value.get(parentId) : null;
-  createKind.value = children[parent?.kind || 'root'][0] || 'series';
+  const allowedKinds = children[parent?.kind || 'root'];
+  createKind.value = preferredKind && allowedKinds.includes(preferredKind)
+    ? preferredKind : allowedKinds[0] || 'series';
   createTitle.value = '';
   createWordIsPublic.value = true;
   createWordPartOfSpeech.value = '';
@@ -758,6 +763,8 @@ async function logout() {
                 type="button" :disabled="busy || autosavingChapter" :aria-pressed="filter === key"
                 @click="chooseArea(key as Filter)">{{ f.label }}</button>
             </div>
+            <button type="button" class="inline-action" :disabled="busy || autosavingChapter"
+              @click="openCreate(selectedSeries.id, firstKindByArea[filter])">{{ t('studioAddItem') }}</button>
             <ul class="node-list">
               <li v-for="entry in ordered" :key="entry.node.id">
                 <button class="node-button" type="button" :disabled="busy || autosavingChapter" :aria-pressed="selectedId === entry.node.id"
