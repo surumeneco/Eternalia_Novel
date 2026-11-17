@@ -86,6 +86,8 @@ test('IA-05/06/07: author editing and publication each require their own series/
     await page.locator('.publication-row').filter({
       has: page.locator('a[href*="item=' + fixture.word + '"]'),
     }).waitFor();
+    assert.equal(await page.locator('#global-navigation a[href="/stories/' + fixture.seriesA + '"]').count(), 0,
+      'author publication scope must not become the global public-reader navigation scope');
     await context.close();
   } finally { await browser.close(); }
 });
