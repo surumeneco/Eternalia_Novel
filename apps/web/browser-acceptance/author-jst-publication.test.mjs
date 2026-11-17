@@ -16,6 +16,8 @@ test('PB-05: LA/UTC browsers input JST in the publication screen across author t
     await author.addCookies([{name:'eternalia_author',value:fixture.authorToken,url:base,httpOnly:true,sameSite:'Lax'}]);
     const management=await author.newPage();
     await management.goto(base+'/studio/publication?series='+fixture.seriesA);
+    await management.getByLabel('シリーズを選択').selectOption(fixture.seriesA);
+    await management.getByLabel('領域').selectOption('stories');
     const row=management.locator('.publication-row').filter({
       has:management.getByRole('heading',{name:title,exact:true}),
     });
@@ -32,6 +34,8 @@ test('PB-05: LA/UTC browsers input JST in the publication screen across author t
     assert.equal((await fetchNode()).publicSince,Date.parse('2031-02-03T00:15:00Z'));
     assert.equal((await author.request.get(base+'/api/public/items/'+fixture.scheduled)).status(),404);
     await management.reload();
+    await management.getByLabel('シリーズを選択').selectOption(fixture.seriesA);
+    await management.getByLabel('領域').selectOption('stories');
     await row.locator('input[type="datetime-local"]').waitFor();
     assert.equal(await row.locator('input[type="datetime-local"]').inputValue(),'2031-02-03T09:15');
 
@@ -51,6 +55,8 @@ test('PB-05: LA/UTC browsers input JST in the publication screen across author t
     await utcAuthor.addCookies([{name:'eternalia_author',value:fixture.authorToken,url:base,httpOnly:true,sameSite:'Lax'}]);
     const utcManagement=await utcAuthor.newPage();
     await utcManagement.goto(base+'/studio/publication?series='+fixture.seriesA);
+    await utcManagement.getByLabel('シリーズを選択').selectOption(fixture.seriesA);
+    await utcManagement.getByLabel('領域').selectOption('stories');
     const utcRow=utcManagement.locator('.publication-row').filter({
       has:utcManagement.getByRole('heading',{name:title,exact:true}),
     });
