@@ -85,8 +85,9 @@ const labels = computed<Record<ReaderKind,string>>(() => ({
   <div>
     <TopicPath v-if="!revalidating" :items="[
       { label: t('home'), to: '/' },
-      ...(section ? [{ label: sections[section].label, to: '/' + section }] : []),
-      { label: series?.content.title || t('readerKindSeries') }
+      { label: series?.content.title || t('readerKindSeries'),
+        ...(section ? { to: '/series/' + id } : {}) },
+      ...(section ? [{ label: sections[section].label }] : [])
     ]" />
     <ReaderPanel>
       <ReadingSkeleton v-if="revalidating || pending" :label="t('readerLoadingSeries')" />
