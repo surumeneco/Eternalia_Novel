@@ -1503,6 +1503,21 @@ test('LG-08: author editor warns about retained published spelling, then clears 
     await input.fill(prefix + '-editor');
     await page.locator('.spelling-warnings').waitFor({ state: 'detached' });
 
+    // CM-08: the very same diagnostic is displayed in the selected UI language.
+    await author.addCookies([{ name: 'eternalia-ui-language', value: 'en', url: base, sameSite: 'Lax' }]);
+    await page.reload();
+    const englishInput = page.getByRole('textbox', { name: 'Name or heading', exact: true });
+    await englishInput.waitFor();
+    await englishInput.fill(publishedSpelling);
+    await page.locator('.spelling-warnings').getByText(
+      'A word with the same spelling already exists in this language. You cannot save this spelling.',
+    ).waitFor();
+    await englishInput.fill(prefix + '-editor');
+    await page.locator('.spelling-warnings').waitFor({ state: 'detached' });
+    await author.addCookies([{ name: 'eternalia-ui-language', value: 'ja', url: base, sameSite: 'Lax' }]);
+    await page.reload();
+    await page.getByRole('heading', { name: '単語：' + prefix + '-editor' }).waitFor();
+
     await update(originalId, '/visibility', {
       expectedRevision: (await getNode(originalId)).revision, isPublic: false, publicSince: null,
     });

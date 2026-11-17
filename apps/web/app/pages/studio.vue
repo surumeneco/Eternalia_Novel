@@ -2,6 +2,7 @@
 import { wordClassInputPolicy } from '~/utils/word-class-input-policy';
 import type { AuthorNode } from '~/types/author';
 import { localizeApiError } from '~/utils/api-error-localization';
+import { localizeSpellingWarning } from '~/utils/spelling-warning-localization';
 import { parseJstLocalDateTime, formatJstLocalDateTime } from '~/utils/jst-publication-time';
 const { t, language } = useUiLocale();
 const studioRoute = useRoute();
@@ -384,7 +385,8 @@ const activeWordReferences = computed(() => {
 });
 const spellingWarnings = computed(() => {
   if (selected.value?.kind !== 'word') return [];
-  return diagnoseWordSpelling({ nodes: nodes.value }, selected.value.id, form.title);
+  return diagnoseWordSpelling({ nodes: nodes.value }, selected.value.id, form.title)
+    .map(warning => ({ ...warning, message: localizeSpellingWarning(warning.code, t) }));
 });
 const kindOrder: Record<ReaderKind, number> = {
   series: 0, volume: 0, part: 0, chapter: 0,
