@@ -1,0 +1,105 @@
+{
+  "schema": "cat-work/v1",
+  "id": "eternalia.publication.author-status-on-tip-move",
+  "entry": "confirmed-spec",
+  "flow": "spec-implementation",
+  "mode": "implementation",
+  "work_kind": "implementation",
+  "issue_ref": "https://github.com/surumeneco/Eternalia_Novel/issues/1",
+  "project_entry_ref": "https://drive.google.com/file/d/1clwfVJ3e_t1_QKFfOWxxRIzE9WMFvTiM/view",
+  "normative": [
+    {
+      "uri": "https://drive.google.com/file/d/1LqX-Noytb_oWymIrpO01eO5PvThGlVGx/view"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/pull/162"
+    }
+  ],
+  "evidence": [
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/pull/162"
+    }
+  ],
+  "repositories": [
+    {
+      "name": "eternalia",
+      "path": "../../../..",
+      "branch_pattern": "feature/*",
+      "allowed_paths": [
+        "Lifecycle/Works/New/eternalia.publication.author-status-on-tip-move/**",
+        "Lifecycle/Works/New/eternalia.settings.tip-category-move/work.json",
+        "Lifecycle/Works/New/eternalia.settings.tip-category-move/CAT/Draft/*.md",
+        "apps/web/app/pages/studio/publication.vue",
+        "apps/web/app/types/author.ts",
+        "apps/web/app/utils/author-publication-visibility.ts",
+        "apps/web/browser-acceptance/author-publication-published-parent.test.mjs",
+        "apps/web/app/utils/author-publication-visibility.test.ts",
+        "apps/web/tests/generated/cat_author_publication_current.test.ts",
+        "apps/web/tests/generated/cat_move07_driver.mjs",
+        "scripts/check-http-acceptance.mjs",
+        "apps/web/tests/author-publication-published-parent.test.mjs",
+        ".github/workflows/alpha-checks.yml"
+      ],
+      "production_paths": [
+        "apps/web/app/pages/studio/publication.vue",
+        "apps/web/app/types/author.ts",
+        "apps/web/app/utils/author-publication-visibility.ts"
+      ],
+      "test_paths": [
+        "apps/web/browser-acceptance/author-publication-published-parent.test.mjs",
+        "apps/web/app/utils/author-publication-visibility.test.ts",
+        "apps/web/tests/generated/cat_author_publication_current.test.ts",
+        "apps/web/tests/generated/cat_move07_driver.mjs",
+        "apps/web/tests/author-publication-published-parent.test.mjs"
+      ]
+    }
+  ],
+  "scope": {
+    "process_ids": [
+      "eternalia.publication.author-status-on-tip-move"
+    ],
+    "changed_ids": [
+      "category.move.author-publication"
+    ],
+    "preserved_ids": [
+      "publication.draft-snapshot-separation",
+      "category.move.publish",
+      "category.move.draft"
+    ]
+  },
+  "specification": {
+    "status": "confirmed",
+    "decision_ref": "CAT/Decisions/MOVE-07-user-approval-20261117.md",
+    "artifact_refs": [
+      "Lifecycle/Works/New/eternalia.publication.author-status-on-tip-move/CAT/Confirmed/Process.md",
+      "Lifecycle/Works/New/eternalia.publication.author-status-on-tip-move/CAT/Confirmed/PI.md",
+      "Lifecycle/Works/New/eternalia.publication.author-status-on-tip-move/CAT/Confirmed/TCE.md"
+    ]
+  },
+  "technologies": [
+    "TypeScript",
+    "Vue",
+    "Playwright"
+  ],
+  "checks": [],
+  "depends_on": [],
+  "compilation": {
+    "schema": "cat-compile/v2",
+    "process": "CAT/Confirmed/Process.md",
+    "pi": "CAT/Confirmed/PI.md",
+    "tce": "CAT/Confirmed/TCE.md",
+    "pis": [
+      "CAT/Confirmed/PI.md"
+    ],
+    "tces": [
+      "CAT/Confirmed/TCE.md"
+    ],
+    "model": ".cat-flow/generated/model.json",
+    "vectors": ".cat-flow/generated/vectors.json",
+    "queue": ".cat-flow/generated/queue.json",
+    "binding": "CAT/Binding/driver.json",
+    "tests_output": "@repo:eternalia/apps/web/tests/generated/cat_author_publication_current.test.ts",
+    "obligations": ".cat-flow/generated/obligations.json",
+    "allow_draft": false
+  }
+}

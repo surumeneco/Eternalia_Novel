@@ -1,0 +1,339 @@
+{
+  "coverage_checks": {
+    "公開状態照会": {
+      "excluded_by_pi_constraints": false,
+      "guard_refs": [
+        "入力.公開版あり",
+        "入力.公開祖先の公開条件成立",
+        "入力.自身の公開条件成立"
+      ],
+      "overlap_count": 0,
+      "overlaps": [],
+      "result": "proved",
+      "uncovered": [],
+      "uncovered_count": 0,
+      "unreachable_rules": []
+    }
+  },
+  "coverage_claim": "closed",
+  "coverage_requirement": "closed",
+  "definitions": [],
+  "fields": [
+    {
+      "direction": "receive",
+      "domain": {
+        "type": "boolean"
+      },
+      "id": "入力.公開版あり",
+      "presence": "required",
+      "role": "input",
+      "source_pi": "eternalia.publication.author-status-on-tip-move.pi"
+    },
+    {
+      "direction": "receive",
+      "domain": {
+        "type": "boolean"
+      },
+      "id": "入力.自身の公開条件成立",
+      "presence": "required",
+      "role": "input",
+      "source_pi": "eternalia.publication.author-status-on-tip-move.pi"
+    },
+    {
+      "direction": "receive",
+      "domain": {
+        "type": "boolean"
+      },
+      "id": "入力.公開祖先の公開条件成立",
+      "presence": "required",
+      "role": "input",
+      "source_pi": "eternalia.publication.author-status-on-tip-move.pi"
+    },
+    {
+      "direction": "receive",
+      "domain": {
+        "type": "boolean"
+      },
+      "id": "入力.下書き祖先の公開条件成立",
+      "presence": "required",
+      "role": "input",
+      "source_pi": "eternalia.publication.author-status-on-tip-move.pi"
+    },
+    {
+      "direction": "send",
+      "domain": {
+        "type": "boolean"
+      },
+      "id": "出力.実効公開可",
+      "presence": "required",
+      "role": "output",
+      "source_pi": "eternalia.publication.author-status-on-tip-move.pi"
+    }
+  ],
+  "language": "ja",
+  "limits": [
+    "finite-guard-closure-only",
+    "no-general-reachability-proof",
+    "no-process-composition"
+  ],
+  "local_coverage_requirements": {
+    "eternalia.publication.author-status-on-tip-move.tce": "closed"
+  },
+  "model_type": "symbolic-relation",
+  "normalized_ir": "cat-machine/v2",
+  "normative_rule_inputs": [],
+  "operation_presence": [],
+  "pi_artifacts": [
+    "eternalia.publication.author-status-on-tip-move.pi"
+  ],
+  "pi_boundaries": [
+    {
+      "artifact": "eternalia.publication.author-status-on-tip-move.pi",
+      "direction": "bidirectional",
+      "peer": "eternalia.author.publication-manager"
+    }
+  ],
+  "pi_boundary": {
+    "direction": "bidirectional",
+    "peer": "eternalia.author.publication-manager"
+  },
+  "pi_constraints": [],
+  "pi_operations": [
+    {
+      "direction": "accept",
+      "id": "check",
+      "source_pi": "eternalia.publication.author-status-on-tip-move.pi",
+      "trigger": "公開状態照会"
+    }
+  ],
+  "presence_unproven": [],
+  "process": "eternalia.publication.author-status-on-tip-move",
+  "process_interfaces": [
+    "eternalia.publication.author-status-on-tip-move.pi"
+  ],
+  "rule_obligations": [],
+  "rules": [
+    {
+      "allowed": [
+        {
+          "absent_outputs": [],
+          "unchanged": [],
+          "write": [
+            {
+              "expr": {
+                "literal": false
+              },
+              "target": "出力.実効公開可"
+            }
+          ]
+        }
+      ],
+      "id": "no-snapshot",
+      "source_artifact": "eternalia.publication.author-status-on-tip-move.tce",
+      "trigger": "公開状態照会",
+      "when": {
+        "args": [
+          {
+            "ref": "入力.公開版あり"
+          }
+        ],
+        "op": "not"
+      }
+    },
+    {
+      "allowed": [
+        {
+          "absent_outputs": [],
+          "unchanged": [],
+          "write": [
+            {
+              "expr": {
+                "literal": false
+              },
+              "target": "出力.実効公開可"
+            }
+          ]
+        }
+      ],
+      "id": "self-blocked",
+      "source_artifact": "eternalia.publication.author-status-on-tip-move.tce",
+      "trigger": "公開状態照会",
+      "when": {
+        "args": [
+          {
+            "ref": "入力.公開版あり"
+          },
+          {
+            "args": [
+              {
+                "ref": "入力.自身の公開条件成立"
+              }
+            ],
+            "op": "not"
+          }
+        ],
+        "op": "and"
+      }
+    },
+    {
+      "allowed": [
+        {
+          "absent_outputs": [],
+          "unchanged": [],
+          "write": [
+            {
+              "expr": {
+                "literal": false
+              },
+              "target": "出力.実効公開可"
+            }
+          ]
+        }
+      ],
+      "id": "ancestor-blocked",
+      "source_artifact": "eternalia.publication.author-status-on-tip-move.tce",
+      "trigger": "公開状態照会",
+      "when": {
+        "args": [
+          {
+            "ref": "入力.公開版あり"
+          },
+          {
+            "ref": "入力.自身の公開条件成立"
+          },
+          {
+            "args": [
+              {
+                "ref": "入力.公開祖先の公開条件成立"
+              }
+            ],
+            "op": "not"
+          }
+        ],
+        "op": "and"
+      }
+    },
+    {
+      "allowed": [
+        {
+          "absent_outputs": [],
+          "unchanged": [],
+          "write": [
+            {
+              "expr": {
+                "literal": true
+              },
+              "target": "出力.実効公開可"
+            }
+          ]
+        }
+      ],
+      "id": "visible",
+      "source_artifact": "eternalia.publication.author-status-on-tip-move.tce",
+      "trigger": "公開状態照会",
+      "when": {
+        "args": [
+          {
+            "ref": "入力.公開版あり"
+          },
+          {
+            "ref": "入力.自身の公開条件成立"
+          },
+          {
+            "ref": "入力.公開祖先の公開条件成立"
+          }
+        ],
+        "op": "and"
+      }
+    }
+  ],
+  "schema": "cat-test-model/v2",
+  "semantic_authority": "cat-markdown/v2",
+  "source_artifacts": [
+    "eternalia.publication.author-status-on-tip-move",
+    "eternalia.publication.author-status-on-tip-move.pi",
+    "eternalia.publication.author-status-on-tip-move.tce"
+  ],
+  "source_records": [
+    {
+      "id": "eternalia.publication.author-status-on-tip-move",
+      "kind": "process",
+      "sha256": "3fd53b423ccf44f07b6d2dceb92aca240f4929832147c19be03a3d10ec5cbc03"
+    },
+    {
+      "id": "eternalia.publication.author-status-on-tip-move.pi",
+      "kind": "pi",
+      "sha256": "2a64b34c4c07bd41ba067a74cbdd74bfb1fcdf72fd414e64e4a140551688a93c"
+    },
+    {
+      "id": "eternalia.publication.author-status-on-tip-move.tce",
+      "kind": "tce",
+      "sha256": "9d736b5d4872aa36a7e8cfc5dd72d212a8bea6ec2101753f8e86617c40409bb5"
+    }
+  ],
+  "source_semantic_map": {
+    "common_rules": [],
+    "domain_rule": {
+      "artifact": null,
+      "definitions": []
+    },
+    "domain_specs": [],
+    "pi": {
+      "artifact": "eternalia.publication.author-status-on-tip-move.pi",
+      "artifacts": [
+        "eternalia.publication.author-status-on-tip-move.pi"
+      ],
+      "constraint_count": 0,
+      "fields": [
+        "入力.公開版あり",
+        "入力.自身の公開条件成立",
+        "入力.公開祖先の公開条件成立",
+        "入力.下書き祖先の公開条件成立",
+        "出力.実効公開可"
+      ],
+      "operations": [
+        "check"
+      ]
+    },
+    "process": {
+      "actions": [],
+      "artifact": "eternalia.publication.author-status-on-tip-move",
+      "interfaces": [
+        "eternalia.publication.author-status-on-tip-move.pi"
+      ],
+      "observations": [],
+      "state": [],
+      "triggers": [
+        "公開状態照会"
+      ]
+    },
+    "tce": [
+      {
+        "artifact": "eternalia.publication.author-status-on-tip-move.tce",
+        "local_coverage": "closed",
+        "outcome_count": 4,
+        "rules": [
+          "no-snapshot",
+          "self-blocked",
+          "ancestor-blocked",
+          "visible"
+        ]
+      }
+    ]
+  },
+  "source_sha256": {
+    "pi": "2a64b34c4c07bd41ba067a74cbdd74bfb1fcdf72fd414e64e4a140551688a93c",
+    "process": "3fd53b423ccf44f07b6d2dceb92aca240f4929832147c19be03a3d10ec5cbc03",
+    "tce": "9d736b5d4872aa36a7e8cfc5dd72d212a8bea6ec2101753f8e86617c40409bb5"
+  },
+  "status": "confirmed",
+  "triggers": [
+    {
+      "id": "公開状態照会",
+      "origin": "eternalia.publication.author-status-on-tip-move.pi/check"
+    }
+  ],
+  "unresolved_domains": [],
+  "unresolved_interfaces": [],
+  "unverified_rule_ids": []
+}

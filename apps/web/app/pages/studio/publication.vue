@@ -38,19 +38,23 @@ const kindOrder: Record<ReaderKind, number> = {
   language: 2, word: 0, grammar: 1,
   periodization: 3, event: 0,
 };
-function ancestry(node: AuthorNode): AuthorNode[] {
+function ancestry(node: AuthorNode, usePublishedParent = false): AuthorNode[] {
   const path: AuthorNode[] = [];
   const visited = new Set<string>();
   let current: AuthorNode | undefined = node;
   while (current && !visited.has(current.id)) {
     visited.add(current.id);
     path.unshift(current);
-    current = current.parentId ? byId.value.get(current.parentId) : undefined;
+    // Published ancestry is immutable across draft moves. Missing legacy
+    // snapshot-parent data retains the existing draft-parent fallback.
+    const parentId = usePublishedParent && current.published?.parentId !== undefined
+      ? current.published.parentId : current.parentId;
+    current = parentId ? byId.value.get(parentId) : undefined;
   }
   return path;
 }
 function published(node: AuthorNode): boolean {
-  const path = ancestry(node);
+  const path = ancestry(node, true);
   // Keep author filters aligned with the domain gate used by public APIs.
   return canReadPublished(
     path.map(item => ({ isPublic: item.isPublic, publicSinceEpochMs: item.publicSince })),
@@ -62,7 +66,7 @@ function status(node: AuthorNode): string {
   if (!node.isPublic) return t('pubSelfPrivate');
   if (node.publicSince === null) return t('pubDateUnset');
   if (node.publicSince > Date.now()) return t('pubPending');
-  const blocked = ancestry(node).slice(0, -1).find(item =>
+  const blocked = ancestry(node, true).slice(0, -1).find(item =>
     !item.published || !item.isPublic || item.publicSince === null || item.publicSince > Date.now());
   return blocked ? t('pubAncestorPrivate') : t('pubVisible');
 }

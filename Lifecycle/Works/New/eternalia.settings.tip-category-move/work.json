@@ -66,15 +66,13 @@
   "scope": {
     "process_ids": [
       "eternalia.settings",
-      "eternalia.publication",
-      "eternalia.publication.author-status-on-tip-move"
+      "eternalia.publication"
     ],
     "changed_ids": [
       "category.move.target",
       "category.move.draft",
       "category.move.publish",
-      "category.move.auth",
-      "category.move.author-publication"
+      "category.move.auth"
     ],
     "preserved_ids": [
       "publication.draft-snapshot-separation",
@@ -86,10 +84,7 @@
     "status": "draft",
     "decision_ref": null,
     "artifact_refs": [
-      "docs/cat/drafts/tip-category-move.md",
-      "Lifecycle/Works/New/eternalia.settings.tip-category-move/CAT/Draft/Process.md",
-      "Lifecycle/Works/New/eternalia.settings.tip-category-move/CAT/Draft/PI.md",
-      "Lifecycle/Works/New/eternalia.settings.tip-category-move/CAT/Draft/TCE.md"
+      "docs/cat/drafts/tip-category-move.md"
     ]
   },
   "technologies": [

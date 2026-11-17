@@ -1,0 +1,51 @@
+{
+  "cases": [
+    {
+      "id": "case.no-snapshot",
+      "input": {
+        "入力.下書き祖先の公開条件成立": false,
+        "入力.公開版あり": false,
+        "入力.公開祖先の公開条件成立": false,
+        "入力.自身の公開条件成立": false
+      },
+      "state": {},
+      "trigger": "公開状態照会"
+    },
+    {
+      "id": "case.self-blocked",
+      "input": {
+        "入力.下書き祖先の公開条件成立": false,
+        "入力.公開版あり": true,
+        "入力.公開祖先の公開条件成立": false,
+        "入力.自身の公開条件成立": false
+      },
+      "state": {},
+      "trigger": "公開状態照会"
+    },
+    {
+      "id": "case.ancestor-blocked",
+      "input": {
+        "入力.下書き祖先の公開条件成立": false,
+        "入力.公開版あり": true,
+        "入力.公開祖先の公開条件成立": false,
+        "入力.自身の公開条件成立": true
+      },
+      "state": {},
+      "trigger": "公開状態照会"
+    },
+    {
+      "id": "case.visible",
+      "input": {
+        "入力.下書き祖先の公開条件成立": false,
+        "入力.公開版あり": true,
+        "入力.公開祖先の公開条件成立": true,
+        "入力.自身の公開条件成立": true
+      },
+      "state": {},
+      "trigger": "公開状態照会"
+    }
+  ],
+  "process": "eternalia.publication.author-status-on-tip-move",
+  "schema": "cat-test-vectors/v2",
+  "selection_rule": "rule-witness/v1"
+}

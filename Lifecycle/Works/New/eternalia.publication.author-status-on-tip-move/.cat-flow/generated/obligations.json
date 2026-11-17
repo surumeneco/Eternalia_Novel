@@ -1,0 +1,149 @@
+{
+  "items": [
+    {
+      "category": "interface",
+      "id": "interface.check",
+      "limitation": "verification has not yet established this obligation",
+      "method": "technology-inspector:public-interface",
+      "reason": "verification evidence not collected",
+      "source_ref": "eternalia.publication.author-status-on-tip-move.pi#check",
+      "status": "not-run"
+    },
+    {
+      "category": "capability",
+      "id": "capability.closed-set",
+      "limitation": "verification has not yet established this obligation",
+      "method": "technology-inspector:capability-closed-set",
+      "reason": "verification evidence not collected",
+      "source_ref": "eternalia.publication.author-status-on-tip-move",
+      "status": "not-run"
+    },
+    {
+      "category": "behavior",
+      "id": "behavior.no-snapshot",
+      "limitation": "verification has not yet established this obligation",
+      "method": "generated-test",
+      "reason": "verification evidence not collected",
+      "source_ref": "eternalia.publication.author-status-on-tip-move.tce#no-snapshot",
+      "status": "not-run"
+    },
+    {
+      "category": "invariant",
+      "id": "invariant.no-snapshot.1",
+      "limitation": "verification has not yet established this obligation",
+      "method": "generated-test-frame",
+      "reason": "verification evidence not collected",
+      "source_ref": "eternalia.publication.author-status-on-tip-move.tce#no-snapshot:outcome:1",
+      "status": "not-run"
+    },
+    {
+      "category": "behavior",
+      "id": "behavior.self-blocked",
+      "limitation": "verification has not yet established this obligation",
+      "method": "generated-test",
+      "reason": "verification evidence not collected",
+      "source_ref": "eternalia.publication.author-status-on-tip-move.tce#self-blocked",
+      "status": "not-run"
+    },
+    {
+      "category": "invariant",
+      "id": "invariant.self-blocked.1",
+      "limitation": "verification has not yet established this obligation",
+      "method": "generated-test-frame",
+      "reason": "verification evidence not collected",
+      "source_ref": "eternalia.publication.author-status-on-tip-move.tce#self-blocked:outcome:1",
+      "status": "not-run"
+    },
+    {
+      "category": "behavior",
+      "id": "behavior.ancestor-blocked",
+      "limitation": "verification has not yet established this obligation",
+      "method": "generated-test",
+      "reason": "verification evidence not collected",
+      "source_ref": "eternalia.publication.author-status-on-tip-move.tce#ancestor-blocked",
+      "status": "not-run"
+    },
+    {
+      "category": "invariant",
+      "id": "invariant.ancestor-blocked.1",
+      "limitation": "verification has not yet established this obligation",
+      "method": "generated-test-frame",
+      "reason": "verification evidence not collected",
+      "source_ref": "eternalia.publication.author-status-on-tip-move.tce#ancestor-blocked:outcome:1",
+      "status": "not-run"
+    },
+    {
+      "category": "behavior",
+      "id": "behavior.visible",
+      "limitation": "verification has not yet established this obligation",
+      "method": "generated-test",
+      "reason": "verification evidence not collected",
+      "source_ref": "eternalia.publication.author-status-on-tip-move.tce#visible",
+      "status": "not-run"
+    },
+    {
+      "category": "invariant",
+      "id": "invariant.visible.1",
+      "limitation": "verification has not yet established this obligation",
+      "method": "generated-test-frame",
+      "reason": "verification evidence not collected",
+      "source_ref": "eternalia.publication.author-status-on-tip-move.tce#visible:outcome:1",
+      "status": "not-run"
+    },
+    {
+      "category": "cross-process",
+      "id": "cross-process.boundary.eternalia.publication.author-status-on-tip-move.pi.eternalia.author.publication-manager",
+      "limitation": "verification has not yet established this obligation",
+      "method": "integration-contract",
+      "reason": "verification evidence not collected",
+      "source_ref": "eternalia.publication.author-status-on-tip-move.pi#eternalia.author.publication-manager",
+      "status": "not-run"
+    },
+    {
+      "category": "domain",
+      "id": "domain.semantic-map",
+      "limitation": "verification has not yet established this obligation",
+      "method": "model-conformance",
+      "reason": "verification evidence not collected",
+      "source_ref": "eternalia.publication.author-status-on-tip-move",
+      "status": "not-run"
+    },
+    {
+      "category": "implementation-constraint",
+      "id": "implementation-constraint.playwright",
+      "limitation": "verification has not yet established this obligation",
+      "method": "technology-skill:Playwright",
+      "reason": "verification evidence not collected",
+      "source_ref": "technology:Playwright",
+      "status": "not-run"
+    },
+    {
+      "category": "implementation-constraint",
+      "id": "implementation-constraint.typescript",
+      "limitation": "verification has not yet established this obligation",
+      "method": "technology-skill:TypeScript",
+      "reason": "verification evidence not collected",
+      "source_ref": "technology:TypeScript",
+      "status": "not-run"
+    },
+    {
+      "category": "implementation-constraint",
+      "id": "implementation-constraint.vue",
+      "limitation": "verification has not yet established this obligation",
+      "method": "technology-skill:Vue",
+      "reason": "verification evidence not collected",
+      "source_ref": "technology:Vue",
+      "status": "not-run"
+    }
+  ],
+  "model_semantic_authority": "cat-markdown/v2",
+  "model_status": "confirmed",
+  "process": "eternalia.publication.author-status-on-tip-move",
+  "schema": "cat-implementation-obligations/v1",
+  "source_sha256": {
+    "eternalia.publication.author-status-on-tip-move": "3fd53b423ccf44f07b6d2dceb92aca240f4929832147c19be03a3d10ec5cbc03",
+    "eternalia.publication.author-status-on-tip-move.pi": "2a64b34c4c07bd41ba067a74cbdd74bfb1fcdf72fd414e64e4a140551688a93c",
+    "eternalia.publication.author-status-on-tip-move.tce": "9d736b5d4872aa36a7e8cfc5dd72d212a8bea6ec2101753f8e86617c40409bb5"
+  },
+  "unresolved_rule_ids": []
+}

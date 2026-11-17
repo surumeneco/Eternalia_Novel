@@ -1,0 +1,40 @@
+{
+  "items": [
+    {
+      "evidence_ref": null,
+      "id": "case.no-snapshot",
+      "model_ref": "no-snapshot",
+      "order": 1,
+      "status": "current",
+      "vector_ref": "case.no-snapshot"
+    },
+    {
+      "evidence_ref": null,
+      "id": "case.self-blocked",
+      "model_ref": "self-blocked",
+      "order": 2,
+      "status": "pending",
+      "vector_ref": "case.self-blocked"
+    },
+    {
+      "evidence_ref": null,
+      "id": "case.ancestor-blocked",
+      "model_ref": "ancestor-blocked",
+      "order": 3,
+      "status": "pending",
+      "vector_ref": "case.ancestor-blocked"
+    },
+    {
+      "evidence_ref": null,
+      "id": "case.visible",
+      "model_ref": "visible",
+      "order": 4,
+      "status": "pending",
+      "vector_ref": "case.visible"
+    }
+  ],
+  "model_sha256": "2b7e6e3681d089fd7abf60e6fc2b06fdd1a4f102cbe9694e1db2b2f0de50ceb9",
+  "process": "eternalia.publication.author-status-on-tip-move",
+  "schema": "cat-tdd-queue/v1",
+  "vectors_sha256": "7894a96dd0d791e7f3ef985e4caaddd8480cc7680c0b35222b06d767d5ca8147"
+}

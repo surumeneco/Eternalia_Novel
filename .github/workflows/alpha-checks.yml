@@ -80,7 +80,7 @@ jobs:
       - name: Exercise generated CAT spelling-collision suite
         run: |
           npm install --no-save --package-lock=false --ignore-scripts vitest@3.2.4
-          node node_modules/vitest/vitest.mjs run packages/contracts/tests/generated --maxWorkers=1
+          node node_modules/vitest/vitest.mjs run packages/contracts/tests/generated apps/web/tests/generated --maxWorkers=1
 
   postgres-integration:
     # A failing domain test must not hide persistence or author-guard failures.
