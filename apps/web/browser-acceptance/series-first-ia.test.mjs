@@ -16,7 +16,7 @@ test('IA-01/02/03: readers select a series before its four content domains', { t
     const context = await browser.newContext();
     const page = await context.newPage();
     await page.goto(base + '/');
-    await page.getByRole('heading', { name: '公開シリーズ' }).waitFor();
+    await page.locator('main').getByRole('heading', { name: '公開シリーズ' }).waitFor();
     await page.getByRole('link', { name: fixture.prefix + '-world-A', exact: true }).first().waitFor();
     assert.equal(await page.locator('#global-navigation a[href="/stories"], #global-navigation a[href="/tips"], #global-navigation a[href="/dictionaries"], #global-navigation a[href="/timeline"]').count(), 0,
       'unselected domain areas must not be global content categories');
@@ -79,6 +79,8 @@ test('IA-05/06/07: author editing and publication each require their own series/
 
     await page.goto(base + '/studio/publication?series=' + fixture.seriesA + '&target=' + fixture.word);
     await page.getByRole('heading', { name: '公開管理' }).waitFor();
+    await page.waitForFunction(() => document.querySelectorAll('.publication-filters select')[1]?.value === 'dictionaries',
+      null, { timeout: 5000 });
     assert.equal(await page.getByLabel('領域').inputValue(), 'dictionaries',
       'publication deep link must select the edited item domain');
     await page.locator('.publication-row').filter({
