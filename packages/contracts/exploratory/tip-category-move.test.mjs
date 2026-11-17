@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { newLibrary, createNode, publishNode, moveTip, publicTree, publicPath, toReader } from '../dist/index.js';
+import { newLibrary, createNode, editNode, publishNode, moveTip, publicTree, publicPath, toReader } from '../dist/index.js';
 
 const now=1_800_000_000_000;
 const id={
@@ -74,4 +74,43 @@ test('AC-46: draft move does not reorder old published list; explicit publish ap
  db=publishNode(db,id.tip,db.nodes.find(n=>n.id===id.tip).revision,now+3);
  assert.equal(toReader(db,id.tip,now+4).order,1);
  assert.equal(toReader(db,targetTip,now+4).order,0);
+});
+
+test('AC-05: moving a tagged related Tip never propagates presets or leaks draft changes before publication',()=>{
+ const related='88888888-8888-4888-8888-888888888888';
+ let db=setup();
+ const item=id=>db.nodes.find(n=>n.id===id);
+ const sectionsBefore=db.nodes.filter(n=>n.kind==='tipSection' && n.parentId===id.tip)
+   .map(n=>structuredClone(n));
+ // Related settings may be in a different Category, but must remain in the same Series.
+ db=createNode(db,{id:related,kind:'tip',parentId:id.b,
+   content:{title:'関連設定',body:'関連説明',details:{tags:'["世界設定"]'}},now});
+ db=publishNode(db,related,item(related).revision,now);
+ // Explicitly publish the initial related link so readers can observe it.
+ db=editNode(db,id.tip,item(id.tip).revision,{title:item(id.tip).draft.title,
+   body:item(id.tip).draft.body,
+   details:{tags:'["人物"]',relatedTipIds:JSON.stringify([related])}},now+1);
+ db=publishNode(db,id.tip,item(id.tip).revision,now+2);
+ const originalSnapshot=structuredClone(item(id.tip).published);
+ db=moveTip(db,id.tip,item(id.tip).revision,id.b,now+3);
+ // The destination Category's preset is for newly created Tips only.
+ assert.deepEqual(db.nodes.filter(n=>n.kind==='tipSection' && n.parentId===id.tip),sectionsBefore);
+ assert.equal(item(id.tip).parentId,id.b);
+ assert.deepEqual(item(id.tip).published,originalSnapshot);
+ db=editNode(db,id.tip,item(id.tip).revision,{title:item(id.tip).draft.title,
+   body:item(id.tip).draft.body,
+   details:{tags:'["人物","地理"]',relatedTipIds:JSON.stringify([related])}},now+4);
+ assert.deepEqual(JSON.parse(toReader(db,id.tip,now+5).content.details.tags),['人物']);
+ assert.deepEqual(publicPath(db,id.tip,now+5).map(n=>n.id),[id.s,id.a,id.tip]);
+ assert.equal(item(id.tip).published.parentId,id.a);
+ assert.deepEqual(JSON.parse(toReader(db,id.tip,now+5).content.details.relatedTips)
+   .map(tip=>tip.id),[related]);
+ db=publishNode(db,id.tip,item(id.tip).revision,now+6);
+ assert.equal(item(id.tip).published.parentId,id.b);
+ assert.deepEqual(publicPath(db,id.tip,now+7).map(n=>n.id),[id.s,id.b,id.tip]);
+ assert.deepEqual(JSON.parse(toReader(db,id.tip,now+7).content.details.tags),['人物','地理']);
+ assert.deepEqual(JSON.parse(toReader(db,id.tip,now+7).content.details.relatedTips)
+   .map(tip=>tip.id),[related]);
+ assert.deepEqual(db.nodes.filter(n=>n.kind==='tipSection' && n.parentId===id.tip),sectionsBefore);
+ assert.equal(publicTree(db,id.s,now+7).filter(n=>n.id===id.tip).length,1);
 });
