@@ -10,7 +10,12 @@ const route = useRoute();
 const seriesId = computed(() => {
   const match = /^\/(?:series|stories|tips|dictionaries|timeline)\/([^/]+)$/.exec(route.path);
   if (match) return decodeURIComponent(match[1]!);
-  return typeof route.query.series === 'string' ? route.query.series : null;
+  // Author management routes may also carry ?series=, but that is an
+  // editing/publication scope, not a public-reader navigation context.
+  if (/^\/(?:read|items)\/[^/]+$/.test(route.path)) {
+    return typeof route.query.series === 'string' ? route.query.series : null;
+  }
+  return null;
 });
 function toggleLanguage() {
   language.value = language.value === 'en' ? 'ja' : 'en';
