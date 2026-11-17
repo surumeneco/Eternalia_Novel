@@ -64,8 +64,8 @@ watch(languageId, () => { partOfSpeech.value = ''; });
   <div>
     <TopicPath v-if="!revalidating" :items="[
       { label: t('home'), to: '/' },
-      { label: t('dictionaries'), to: '/dictionaries' },
-      { label: series?.content.title ?? t('readerKindSeries') },
+      { label: series?.content.title ?? t('readerKindSeries'), to: '/series/' + seriesId },
+      { label: t('dictionaries') },
     ]" />
     <ReaderPanel>
       <ReadingSkeleton v-if="revalidating || pending" :label="t('readerLoadingDictionary')" />
