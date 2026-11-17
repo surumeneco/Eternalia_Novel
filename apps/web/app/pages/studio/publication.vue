@@ -102,7 +102,7 @@ const filtered = computed(() => nodes.value.filter(node => {
   }
   return left.length - right.length || a.id.localeCompare(b.id);
 }));
-function changeSeries(event: Event) {
+async function changeSeries(event: Event) {
   const id = (event.target as HTMLSelectElement).value;
   selectedSeriesId.value = seriesList.value.some(item => item.id === id) ? id : '';
   section.value = 'series';
@@ -110,6 +110,7 @@ function changeSeries(event: Event) {
   search.value = '';
   errorText.value = '';
   successText.value = '';
+  await navigateTo({ path: '/studio/publication', query: selectedSeriesId.value ? { series: selectedSeriesId.value } : {} }, { replace: true });
 }
 function pathTitle(node: AuthorNode): string {
   return ancestry(node).map(item => item.draft.title).join(' / ');
