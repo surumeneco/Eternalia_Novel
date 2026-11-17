@@ -2,10 +2,12 @@
 import type { AuthorNode } from '~/types/author';
 import type { ReaderKind } from '~/types/reader';
 const { t } = useUiLocale();
+const route = useRoute();
 
 interface AuthState { configured: boolean; authenticated: boolean }
 const { data: auth, pending: authPending, refresh: refreshAuth } = await useFetch<AuthState>('/api/auth/me');
 const nodes = ref<AuthorNode[]>([]);
+const selectedSeriesId = ref('');
 const selectedParent = ref('root');
 const selectedKind = ref<ReaderKind>('series');
 const orderedIds = ref<string[]>([]);
@@ -25,12 +27,23 @@ const kindsByParent: Record<ReaderKind | 'root', ReaderKind[]> = {
   periodization:['event'],event:[],
 };
 const byId = computed(() => new Map(nodes.value.map(n => [n.id,n])));
-const parents = computed(() => [
-  { id:'root', title:t('orderAllSeries'), kind:'root' as const },
-  ...nodes.value.filter(node => kindsByParent[node.kind].length).map(node => ({
-    id:node.id,title:node.draft.title,kind:node.kind,
-  })),
-]);
+const seriesList = computed(() => nodes.value.filter(n => n.kind === 'series' && n.parentId === null)
+  .sort((a, b) => a.order - b.order || a.draft.title.localeCompare(b.draft.title, 'ja')));
+function belongsToSelectedSeries(node: AuthorNode): boolean {
+  if (!selectedSeriesId.value) return false;
+  const seen = new Set<string>();
+  let current: AuthorNode | undefined = node;
+  while (current && !seen.has(current.id)) {
+    seen.add(current.id);
+    if (current.kind === 'series') return current.id === selectedSeriesId.value;
+    current = current.parentId ? byId.value.get(current.parentId) : undefined;
+  }
+  return false;
+}
+const parents = computed(() => selectedSeriesId.value
+  ? nodes.value.filter(node => kindsByParent[node.kind].length && belongsToSelectedSeries(node))
+      .map(node => ({ id: node.id, title: node.draft.title, kind: node.kind }))
+  : [{ id: 'root', title: t('orderAllSeries'), kind: 'root' as const }]);
 const chosenParent = computed(() => parents.value.find(parent => parent.id === selectedParent.value));
 const choices = computed(() => kindsByParent[chosenParent.value?.kind ?? 'root']);
 const siblings = computed(() =>
@@ -58,7 +71,10 @@ async function load(): Promise<boolean> {
   errorText.value='';
   try {
     nodes.value=await $fetch<AuthorNode[]>('/api/admin/nodes');
-    if (selectedParent.value!=='root' && !byId.value.has(selectedParent.value)) selectedParent.value='root';
+    if (!seriesList.value.some(series => series.id === selectedSeriesId.value)) selectedSeriesId.value = '';
+    if (!parents.value.some(parent => parent.id === selectedParent.value)) {
+      selectedParent.value = selectedSeriesId.value || 'root';
+    }
     restore();
     return true;
   } catch {
@@ -92,6 +108,15 @@ async function save() {
 function confirmDiscard() {
   return !changed.value || window.confirm(t('orderDiscard'));
 }
+function changeSeries(event: Event) {
+  const select = event.target as HTMLSelectElement;
+  if (!confirmDiscard()) {
+    select.value = selectedSeriesId.value;
+    return;
+  }
+  selectedSeriesId.value = seriesList.value.some(node => node.id === select.value) ? select.value : '';
+  selectedParent.value = selectedSeriesId.value || 'root';
+}
 function changeParent(event: Event) {
   const select = event.target as HTMLSelectElement;
   if (!confirmDiscard()) {
@@ -120,7 +145,13 @@ function beforeUnload(event: BeforeUnloadEvent) {
 onMounted(async()=>{
   window.addEventListener('beforeunload', beforeUnload);
   await refreshAuth();
-  if (auth.value?.authenticated) await load();
+  if (auth.value?.authenticated && await load()) {
+    const requested = typeof route.query.series === 'string' ? route.query.series : '';
+    if (seriesList.value.some(node => node.id === requested)) {
+      selectedSeriesId.value = requested;
+      selectedParent.value = requested;
+    }
+  }
 });
 onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload));
 </script>
@@ -139,6 +170,12 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload));
       </div>
       <template v-else>
         <div class="order-filters">
+          <label>{{ t('searchSelectSeries') }}
+            <select :value="selectedSeriesId" :disabled="loading || busy" @change="changeSeries">
+              <option value="">{{ t('orderAllSeries') }}</option>
+              <option v-for="series in seriesList" :key="series.id" :value="series.id">{{ series.draft.title }}</option>
+            </select>
+          </label>
           <label>{{ t('orderParentLabel') }}
             <select :value="selectedParent" :disabled="loading||busy" @change="changeParent">
               <option v-for="parent in parents" :key="parent.id" :value="parent.id">{{ parent.title }}（{{ parent.kind==='root'?t('orderAll'):kinds[parent.kind] }}）</option>
