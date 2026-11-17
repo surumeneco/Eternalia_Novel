@@ -85,7 +85,11 @@ test('touch toolbar preserves selected Japanese text and separates draft from pu
         let publicResponse = await author.request.get(base + '/api/public/items/' + chapter);
         assert.equal(publicResponse.status(), 404, 'a saved mobile draft is not public');
         // Publishing is a separate author responsibility, not an editor button.
-        await page.getByRole('link', { name: '公開管理', exact: true }).last().tap();
+        const managementLink = page.locator('.studio-editor a[href*="/studio/publication"]');
+        const managementHref = await managementLink.getAttribute('href');
+        assert.ok(managementHref?.includes('target=' + chapter), 'editor must link to this chapter publication record');
+        await page.goto(new URL(managementHref, base).href);
+        await page.getByLabel('領域').selectOption('stories');
         const chapterRow = page.locator('.publication-row').filter({
           has: page.getByRole('heading', { name: fixture.prefix + '-mobile-touch-chapter', exact: true }),
         }).first();
