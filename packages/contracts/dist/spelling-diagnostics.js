@@ -1,11 +1,12 @@
 import { parseLanguageCharacters } from './language-structure.js';
+import { hasSameLanguageSpellingCollision } from './spelling-collision.js';
 /**
  * Only phonotactic failures remain warnings. Same-language duplicate spelling
  * is rejected by the domain write boundary; this editor diagnostic is advisory.
  * Never mutate a word or overwrite author content.
  */
 export function diagnoseWordSpelling(library, wordId, rawSpell) {
-    const target = library.nodes.find(node => node.id === wordId && node.kind === 'word');
+    const target = library.nodes.find(node => node.id === wordId && node.kind === 'word' && node.deletedAt == null);
     if (!target || !target.parentId || typeof rawSpell !== 'string')
         return [];
     const spell = rawSpell.trim();
@@ -13,7 +14,8 @@ export function diagnoseWordSpelling(library, wordId, rawSpell) {
         return [];
     const warnings = [];
     const duplicates = library.nodes.filter(node => node.id !== wordId && node.kind === 'word' && node.parentId === target.parentId &&
-        node.draft.title.trim() === spell);
+        node.deletedAt == null &&
+        hasSameLanguageSpellingCollision(node.draft.title.trim() === spell, node.published?.value.title.trim() === spell));
     if (duplicates.length)
         warnings.push({
             code: 'duplicate-spelling',

@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { newLibrary, createNode, editNode, publishNode, diagnoseWordSpelling, appendDuplicateWordMeaning, parseWordMeanings } from '../dist/index.js';
+import { newLibrary, createNode, editNode, publishNode, diagnoseWordSpelling, appendDuplicateWordMeaning, parseWordMeanings, setVisibility, softDeleteNode } from '../dist/index.js';
 
 const now=Date.UTC(2026,9,29);
 function create(db,kind,parentId,title,details={}) {
@@ -69,4 +69,41 @@ test('language without a character registry permits exploratory spellings',()=>{
  let db=newLibrary(); const s=create(db,'series',null,'世界');db=s.db;
  const l=create(db,'language',s.id,'語');db=l.db;const w=create(db,'word',l.id,'任意');db=w.db;
  assert.deepEqual(diagnoseWordSpelling(db,w.id,'任意'),[]);
+});
+
+
+test('LG-08: editor duplicate diagnostic reserves a retained published spelling after draft rename',()=>{
+ let db=newLibrary();
+ const series=create(db,'series',null,'世界');db=series.db;
+ const lang=create(db,'language',series.id,'語');db=lang.db;
+ const original=create(db,'word',lang.id,'X');db=original.db;
+ db=publishNode(db,original.id,db.nodes.find(x=>x.id===original.id).revision,now);
+ db=editNode(db,original.id,db.nodes.find(x=>x.id===original.id).revision,{title:'Y',body:'',details:{}},now+1);
+ const editing=create(db,'word',lang.id,'Z');db=editing.db;
+ const before=structuredClone(db);
+ assert.equal(diagnoseWordSpelling(db,editing.id,'X')[0]?.code,'duplicate-spelling',
+   'retained published X must reserve the spelling even though its draft is Y');
+ assert.equal(diagnoseWordSpelling(db,editing.id,'Y')[0]?.code,'duplicate-spelling');
+ assert.equal(diagnoseWordSpelling(db,editing.id,'Z').some(x=>x.code==='duplicate-spelling'),false);
+ assert.deepEqual(db,before,'diagnostic must not mutate source or publication');
+ db=publishNode(db,original.id,db.nodes.find(x=>x.id===original.id).revision,now+2);
+ assert.equal(diagnoseWordSpelling(db,editing.id,'X').some(x=>x.code==='duplicate-spelling'),false,
+   'publishing Y explicitly releases the previous published X');
+});
+
+test('LG-08: editor duplicate diagnostic ignores soft-deleted words but not simply private ones',()=>{
+ let db=newLibrary();
+ const series=create(db,'series',null,'世界');db=series.db;
+ const lang=create(db,'language',series.id,'語');db=lang.db;
+ const original=create(db,'word',lang.id,'X');db=original.db;
+ const editing=create(db,'word',lang.id,'Z');db=editing.db;
+ db=publishNode(db,original.id,db.nodes.find(x=>x.id===original.id).revision,now);
+ db=setVisibility(db,original.id,db.nodes.find(x=>x.id===original.id).revision,false,null,now+1);
+ assert.equal(diagnoseWordSpelling(db,editing.id,'X')[0]?.code,'duplicate-spelling',
+   'making the existing word private does not release X');
+ db=softDeleteNode(db,original.id,db.nodes.find(x=>x.id===original.id).revision,now+2);
+ const before=structuredClone(db);
+ assert.equal(diagnoseWordSpelling(db,editing.id,'X').some(x=>x.code==='duplicate-spelling'),false,
+   'a logically deleted word must not reserve its spelling');
+ assert.deepEqual(db,before);
 });

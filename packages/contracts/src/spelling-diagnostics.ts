@@ -1,5 +1,6 @@
 import { type Library } from './novel.js';
 import { parseLanguageCharacters, type LanguageCharacter } from './language-structure.js';
+import { hasSameLanguageSpellingCollision } from './spelling-collision.js';
 
 export interface SpellingWarning {
   code: 'duplicate-spelling' | 'phonotactics' | 'unknown-alphabet';
@@ -12,14 +13,16 @@ export interface SpellingWarning {
  * Never mutate a word or overwrite author content.
  */
 export function diagnoseWordSpelling(library: Library, wordId: string, rawSpell: string): SpellingWarning[] {
-  const target=library.nodes.find(node => node.id===wordId && node.kind==='word');
+  const target=library.nodes.find(node => node.id===wordId && node.kind==='word' && node.deletedAt == null);
   if (!target || !target.parentId || typeof rawSpell!=='string') return [];
   const spell=rawSpell.trim();
   if (!spell) return [];
   const warnings:SpellingWarning[]=[];
   const duplicates=library.nodes.filter(node =>
     node.id!==wordId && node.kind==='word' && node.parentId===target.parentId &&
-    node.draft.title.trim()===spell);
+    node.deletedAt == null &&
+    hasSameLanguageSpellingCollision(node.draft.title.trim()===spell,
+      node.published?.value.title.trim()===spell));
   if (duplicates.length) warnings.push({
     code:'duplicate-spelling',
     message:'同じ言語内に同じスペルの単語が登録されています。保存できません。',
