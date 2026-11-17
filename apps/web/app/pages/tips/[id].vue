@@ -62,8 +62,8 @@ const groups = computed(() => categories.value
   <div>
     <TopicPath v-if="!revalidating" :items="[
       { label: t('home'), to: '/' },
-      { label: t('tips'), to: '/tips' },
-      { label: series?.content.title ?? t('readerKindSeries') },
+      { label: series?.content.title ?? t('readerKindSeries'), to: '/series/' + seriesId },
+      { label: t('tips') },
     ]" />
     <ReaderPanel>
       <ReadingSkeleton v-if="revalidating || pending" :label="t('readerLoadingTips')" />
