@@ -66,7 +66,16 @@ test('IA-05/06/07: author editing and publication each require their own series/
     // Switching editing domains must not leave the previous domain's editor
     // visible under an unrelated filter.
     await page.goto(base + '/studio?item=' + fixture.chapter);
-    await page.getByRole('heading', { name: '章：' + fixture.prefix + '-chapter-A' }).waitFor();
+    await page.getByRole('heading', { name: '章：' + fixture.prefix + '-chapter-A' })
+      .waitFor({ timeout: 5000 }).catch(async error => {
+        const snapshot = {
+          url: page.url(),
+          main: (await page.locator('main').innerText()).slice(0, 1400),
+          headings: await page.locator('main h1, main h2').allInnerTexts(),
+        };
+        throw new Error('Chapter deep link did not restore editing scope: ' + JSON.stringify(snapshot),
+          { cause: error });
+      });
     await page.getByRole('group', { name: '資料種別' })
       .getByRole('button', { name: '設定', exact: true }).click();
     assert.equal(await page.getByRole('heading', {
