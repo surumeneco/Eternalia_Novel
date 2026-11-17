@@ -12,6 +12,46 @@ import { chromium } from 'playwright';
 
 const fixture = JSON.parse(await readFile(process.env.HTTP_FIXTURE_FILE, 'utf8'));
 const base = process.env.HTTP_BASE_URL;
+// Manage publication in a separate author page, leaving any unsaved editor
+// buffer intact in the originating tab. These helpers exercise actual UI.
+async function withPublicationFromEditor(editor, operate) {
+  const href = await editor.locator('.studio-editor a[href*="/studio/publication"]').getAttribute('href');
+  assert.ok(href, 'a selected editing item must expose its publication management link');
+  const targetId = new URL(href, base).searchParams.get('target');
+  assert.ok(targetId, 'publication deep link must carry the selected item identity');
+  const management = await editor.context().newPage();
+  try {
+    await management.goto(new URL(href, base).href);
+    const row = management.locator('.publication-row').filter({
+      has: management.locator('a[href*="item=' + encodeURIComponent(targetId) + '"]'),
+    }).first();
+    await row.waitFor();
+    return await operate(management, row);
+  } finally {
+    await management.close();
+  }
+}
+async function publishFromEditor(editor) {
+  await withPublicationFromEditor(editor, async (management, row) => {
+    management.once('dialog', dialog => dialog.accept());
+    await row.getByRole('button', { name: '公開版を更新' }).click();
+    await management.getByText('公開設定を更新しました。').waitFor();
+  });
+}
+async function setEditorVisibility(editor, visible) {
+  await withPublicationFromEditor(editor, async (management, row) => {
+    await row.getByRole('button', { name: visible ? '公開にする' : '非公開にする' }).click();
+    await management.getByText('公開設定を更新しました。').waitFor();
+  });
+}
+async function setEditorSchedule(editor, date) {
+  await withPublicationFromEditor(editor, async (management, row) => {
+    await row.locator('input[type="datetime-local"]').fill(date);
+    await row.getByRole('button', { name: '日時を保存' }).click();
+    await management.getByText('公開開始日時を更新しました。').waitFor();
+  });
+}
+
 
 test('anonymous mobile reading and browser-based author draft/publish workflow', { timeout: 120_000 }, async () => {
   assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
@@ -106,9 +146,7 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
     assert.equal((await reader.request.get(base + '/api/public/items/' + created.id)).status(), 404,
       'draft must not become public without explicit publication');
 
-    studio.once('dialog', dialog => dialog.accept());
-    await studio.getByRole('button', { name: '保存済み下書きを公開版へ反映' }).click();
-    await studio.getByText('公開スナップショットを更新しました。').waitFor();
+    await publishFromEditor(studio);
     await readerPage.goto(base + '/series/' + created.id);
     await readerPage.getByRole('heading', { name: title }).waitFor();
     assert.ok((await readerPage.locator('body').innerText()).includes('ブラウザから保存した公開用の説明'));
@@ -117,9 +155,7 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
     // buffer or accidentally publish it. Verify the direct anonymous endpoint.
     const unsavedBeforePublication = '公開操作をしても残す未保存の文章';
     await textarea.fill(unsavedBeforePublication);
-    studio.once('dialog', dialog => dialog.accept());
-    await studio.getByRole('button', { name: '保存済み下書きを公開版へ反映' }).click();
-    await studio.getByText('公開スナップショットを更新しました。').waitFor();
+    await publishFromEditor(studio);
     assert.equal(await textarea.inputValue(), unsavedBeforePublication,
       'publication must preserve the unsaved author buffer');
     const unchangedPublic = await reader.request.get(base + '/api/public/items/' + created.id);
@@ -127,8 +163,7 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
     assert.equal((await unchangedPublic.json()).content.body, 'ブラウザから保存した公開用の説明',
       'unsaved author text must not enter the public snapshot');
 
-    await studio.getByRole('button', { name: '非公開にする' }).click();
-    await studio.getByRole('button', { name: '公開に戻す' }).waitFor();
+    await setEditorVisibility(studio, false);
     assert.equal(await textarea.inputValue(), unsavedBeforePublication,
       'hiding an item must preserve the unsaved author buffer');
     assert.equal((await reader.request.get(base + '/api/public/items/' + created.id)).status(), 404,
@@ -137,8 +172,7 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
     assert.ok(!(await readerPage.locator('body').innerText()).includes(title),
       'hidden series title must not appear in anonymous direct browser navigation');
 
-    await studio.getByRole('button', { name: '公開に戻す' }).click();
-    await studio.getByRole('button', { name: '非公開にする' }).waitFor();
+    await setEditorVisibility(studio, true);
     assert.equal(await textarea.inputValue(), unsavedBeforePublication,
       'restoring visibility must preserve the unsaved author buffer');
     const restoredPublic = await reader.request.get(base + '/api/public/items/' + created.id);
@@ -148,25 +182,21 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
 
     // PB-05: a future start time hides the published snapshot even when the
     // public flag remains enabled; clearing the date restores it unchanged.
-    const publishDate = studio.getByLabel('公開開始日時');
-    await publishDate.fill('2100-01-01T00:00');
-    await studio.getByRole('button', { name: '日時を設定' }).click();
-    await studio.getByText('公開条件を変更しました。').waitFor();
+    await setEditorSchedule(studio, '2100-01-01T00:00');
     assert.equal((await reader.request.get(base + '/api/public/items/' + created.id)).status(), 404,
       'future publication date must hide the direct anonymous endpoint');
     // Clear the future schedule through the separate publication management
     // screen. An empty date must be accepted as immediate publication.
     const publicationManagement = await author.newPage();
-    await publicationManagement.goto(base + '/studio/publication');
+    await publicationManagement.goto(base + '/studio/publication?series=' + created.id);
     const visibilityFilter = publicationManagement.getByLabel('公開状態');
     await visibilityFilter.selectOption('visible');
-    await publicationManagement.getByRole('heading', { name: fixture.prefix + '-world-A', exact: true }).waitFor();
     assert.equal(await publicationManagement.getByRole('heading', { name: title, exact: true }).count(), 0,
       'future-scheduled series must not appear in the visible filter');
     await visibilityFilter.selectOption('hidden');
     await publicationManagement.getByRole('heading', { name: title, exact: true }).waitFor();
     assert.equal(await publicationManagement.getByRole('heading', { name: fixture.prefix + '-world-A', exact: true }).count(), 0,
-      'already public series must not appear in the hidden filter');
+      'another series must never appear in the selected series publication list');
     await visibilityFilter.selectOption('all');
     const managedRow = publicationManagement.locator('.publication-row').filter({
       has: publicationManagement.getByRole('heading', { name: title, exact: true }),
@@ -289,18 +319,13 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
       assert.equal(beforeResponse.status(), 200, kind + ' initially public');
       const before = await beforeResponse.json();
       await visibilityPage.goto(base + '/studio?item=' + id);
-      const hide = visibilityPage.getByRole('button', { name: '非公開にする' });
-      const restore = visibilityPage.getByRole('button', { name: '公開に戻す' });
-      await hide.waitFor();
-      await hide.click();
-      await restore.waitFor();
+      await setEditorVisibility(visibilityPage, false);
       assert.equal((await reader.request.get(base + '/api/public/items/' + id)).status(), 404,
         kind + ' must be inaccessible to anonymous readers while private');
       await readerPage.goto(base + directPath + id);
       assert.ok(!(await readerPage.locator('body').innerText()).includes(before.content.title),
         kind + ' private title must not leak in the direct reader view');
-      await restore.click();
-      await hide.waitFor();
+      await setEditorVisibility(visibilityPage, true);
       const reopenedResponse = await reader.request.get(base + '/api/public/items/' + id);
       assert.equal(reopenedResponse.status(), 200, kind + ' should reopen');
       const reopened = await reopenedResponse.json();
@@ -395,9 +420,7 @@ test('author browser drafts, publishes and hides chapter, setting, word, grammar
       }
       assert.equal((await publicItem(id)).status, 404, kind + ' reload must not publish the draft');
 
-      page.once('dialog', dialog => dialog.accept());
-      await page.getByRole('button', { name: '保存済み下書きを公開版へ反映' }).click();
-      await page.getByText('公開スナップショットを更新しました。').waitFor();
+      await publishFromEditor(page);
       const firstPublic = await publicItem(id);
       assert.equal(firstPublic.value?.content.body, first, kind + ' first publication');
       if (kind === 'word') {
@@ -421,19 +444,15 @@ test('author browser drafts, publishes and hides chapter, setting, word, grammar
       assert.equal((await publicItem(id)).value?.content.body, first,
         kind + ' reloading an unpublished revision must preserve the public snapshot');
 
-      page.once('dialog', dialog => dialog.accept());
-      await page.getByRole('button', { name: '保存済み下書きを公開版へ反映' }).click();
-      await page.getByText('公開スナップショットを更新しました。').waitFor();
+      await publishFromEditor(page);
       assert.equal((await publicItem(id)).value?.content.body, second, kind + ' explicit republish');
 
-      await page.getByRole('button', { name: '非公開にする' }).click();
-      await page.getByText('公開条件を変更しました。').waitFor();
+      await setEditorVisibility(page, false);
       assert.equal((await publicItem(id)).status, 404, kind + ' hidden item must not be anonymously accessible');
       await page.reload();
       await editor.waitFor();
       assert.equal((await publicItem(id)).status, 404, kind + ' hidden state must survive reload');
-      await page.getByRole('button', { name: '公開に戻す' }).click();
-      await page.getByText('公開条件を変更しました。').waitFor();
+      await setEditorVisibility(page, true);
       assert.equal((await publicItem(id)).value?.content.body, second,
         kind + ' restoring visibility must retain the last published snapshot');
     }
@@ -474,9 +493,7 @@ test('long multilingual manuscript survives browser reload and explicit publicat
     await page.reload();
     await editor.waitFor();
     assert.equal(await editor.inputValue(), manuscript, 'long multilingual draft must round-trip exactly');
-    page.once('dialog', dialog => dialog.accept());
-    await page.getByRole('button', { name: '保存済み下書きを公開版へ反映' }).click();
-    await page.getByText('公開スナップショットを更新しました。').waitFor();
+    await publishFromEditor(page);
     const published = await author.request.get(base + '/api/public/items/' + chapter);
     assert.equal(published.status(), 200);
     assert.equal((await published.json()).content.body, manuscript,
@@ -517,7 +534,7 @@ test('author memo browser persists tags and handles failed post-write readback',
 
     await editor.fill('未保存のメモ変更');
     page.once('dialog', dialog => dialog.dismiss());
-    await page.getByLabel('パンくずリスト').getByRole('link', { name: '作者の書斎' }).click();
+    await page.getByLabel('パンくずリスト').getByRole('link', { name: '執筆・編集' }).click();
     assert.equal(new URL(page.url()).pathname, '/studio/memos');
     assert.equal(await editor.inputValue(), '未保存のメモ変更');
 
@@ -929,9 +946,7 @@ test('related setting links exclude hidden targets from public projection', { ti
     await page.getByRole('button', { name: '下書きを保存' }).click();
     await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
     assert.equal((await anonymous.request.get(base + '/api/public/items/' + source)).status(), 404);
-    page.once('dialog', dialog => dialog.accept());
-    await page.getByRole('button', { name: '保存済み下書きを公開版へ反映' }).click();
-    await page.getByText('公開スナップショットを更新しました。').waitFor();
+    await publishFromEditor(page);
 
     const visibleResponse = await anonymous.request.get(base + '/api/public/items/' + source);
     assert.equal(visibleResponse.status(), 200);
@@ -1601,9 +1616,7 @@ test('two same-class word meanings retain independent etymologies through draft 
     await meanings.nth(1).waitFor();
     assert.equal(await meanings.nth(0).getByRole('textbox', { name: '意味・説明' }).inputValue(), '第一の意味');
     assert.equal(await meanings.nth(1).getByRole('textbox', { name: '語源の説明' }).inputValue(), '第二の語源');
-    page.once('dialog', dialog => dialog.accept());
-    await page.getByRole('button', { name: '保存済み下書きを公開版へ反映' }).click();
-    await page.getByText('公開スナップショットを更新しました。').waitFor();
+    await publishFromEditor(page);
     const first = await publicMeanings(word);
     assert.equal(first.length, 2);
     assert.deepEqual(first.map(item => item.partOfSpeech), ['名詞', '名詞']);
@@ -1616,9 +1629,7 @@ test('two same-class word meanings retain independent etymologies through draft 
     await page.getByRole('button', { name: '下書きを保存' }).click();
     await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
     assert.deepEqual(await publicMeanings(word), first, 'unpublished edit must not affect public meanings');
-    page.once('dialog', dialog => dialog.accept());
-    await page.getByRole('button', { name: '保存済み下書きを公開版へ反映' }).click();
-    await page.getByText('公開スナップショットを更新しました。').waitFor();
+    await publishFromEditor(page);
     const second = await publicMeanings(word);
     assert.equal(second[0].definition, '更新後の第一義');
     assert.deepEqual(second[1], first[1], 'second sense and its etymology must remain unchanged');
@@ -1815,15 +1826,12 @@ test('AC-37/38: new word defaults public but supports private creation without r
     assert.equal(privateWord.published, null);
     assert.equal((await reader.request.get(base + '/api/public/items/' + privateWord.id)).status(), 404);
 
-    page.once('dialog', dialog => dialog.accept());
-    await page.getByRole('button', { name: '保存済み下書きを公開版へ反映' }).click();
-    await page.getByText('公開スナップショットを更新しました。').waitFor();
+    await publishFromEditor(page);
     nodes = await (await author.request.get(base + '/api/admin/nodes')).json();
     assert.equal(nodes.find(node => node.id === privateWord.id).isPublic, false,
       'publishing the snapshot must not override an explicitly private word');
     assert.equal((await reader.request.get(base + '/api/public/items/' + privateWord.id)).status(), 404);
-    await page.getByRole('button', { name: '公開に戻す' }).click();
-    await page.getByText('公開条件を変更しました。').waitFor();
+    await setEditorVisibility(page, true);
     assert.equal((await reader.request.get(base + '/api/public/items/' + privateWord.id)).status(), 200);
 
     await page.goto(base + '/studio?item=' + language);
@@ -2329,8 +2337,8 @@ test('AC-56: shared author navigation works while anonymous editor and API write
       '/timeline/' + fixture.seriesA,
     ]) {
       await page.goto(base + route);
-      await page.getByRole('contentinfo').getByRole('link', { name: '作者の書斎' }).click();
-      await page.getByRole('heading', { name: '作者の書斎' }).waitFor();
+      await page.getByRole('contentinfo').getByRole('link', { name: '執筆・編集' }).click();
+      await page.getByRole('heading', { name: '執筆・編集' }).waitFor();
       await page.getByRole('button', { name: '新規シリーズ' }).waitFor();
     }
 
@@ -2479,9 +2487,7 @@ test('related Tip projection respects a hidden category ancestor and restores on
     await links.getByRole('button', { name: '関連に追加' }).click();
     await page.getByRole('button', { name: '下書きを保存' }).click();
     await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
-    page.once('dialog', dialog => dialog.accept());
-    await page.getByRole('button', { name: '保存済み下書きを公開版へ反映' }).click();
-    await page.getByText('公開スナップショットを更新しました。').waitFor();
+    await publishFromEditor(page);
 
     async function relatedIds() {
       const response = await anonymous.request.get(base + '/api/public/items/' + source);
@@ -2659,9 +2665,7 @@ test('AC-06: related Tip reorder and removal affect readers only after explicit 
       assert.equal((await saved).status(), 200);
     }
     async function publishDraft() {
-      page.once('dialog', dialog => dialog.accept());
-      await page.getByRole('button', { name: '保存済み下書きを公開版へ反映' }).click();
-      await page.getByText('公開スナップショットを更新しました。').waitFor();
+      await publishFromEditor(page);
     }
     async function publicRelated() {
       const response = await anonymous.request.get(base + '/api/public/items/' + source);
