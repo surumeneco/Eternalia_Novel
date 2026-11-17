@@ -22,7 +22,7 @@ test('READER-01/02/03: public series and reader areas localize immediately witho
    await page.getByRole('link',{name:'Story table of contents'}).waitFor();
    assert.equal(await page.locator('main .series-areas a[href="/stories/'+fixture.seriesA+'"]').innerText(),'Story table of contents');
    await page.goto(base+'/stories/'+fixture.seriesA);
-   await page.getByRole('heading',{name:'Table of contents'}).waitFor();
+   await page.getByRole('heading',{name:'Contents'}).waitFor();
    await page.locator('.story-volume h3 a').first().waitFor();
    assert.ok((await page.locator('main').innerText()).includes(title),'author title must remain identical');
 
