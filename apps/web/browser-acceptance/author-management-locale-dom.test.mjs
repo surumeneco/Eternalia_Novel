@@ -44,16 +44,18 @@ test('AUTHOR-L10N-01/02: author management type labels follow live locale withou
       const kind = page.getByRole('combobox', { name: '項目の種類' });
       await parent.locator('option[value="' + fixture.seriesA + '"]').waitFor({ state: 'attached' });
       await parent.selectOption(fixture.seriesA);
+      assert.equal(await parent.inputValue(), fixture.seriesA,
+        'selecting a series parent must retain the selection');
       await page.waitForFunction(() =>
         document.querySelectorAll('.order-filters select')[2]?.value === 'volume',
       );
-      assert.match(await parent.locator('option:checked').innerText(), /（シリーズ）$/,
+      assert.match(await parent.locator('option[value="' + fixture.seriesA + '"]').innerText(), /（シリーズ）$/,
         'Japanese parent kind before switching');
       assert.equal(await kind.locator('option[value="volume"]').innerText(), '編');
 
       await page.getByRole('button', { name: '英語に切り替え' }).click();
       await page.getByRole('heading', { name: 'Reorder' }).waitFor();
-      assert.match(await parent.locator('option:checked').innerText(), /（Series）$/,
+      assert.match(await parent.locator('option[value="' + fixture.seriesA + '"]').innerText(), /（Series）$/,
         'parent option kind must react to ja→en');
       assert.equal(await kind.locator('option[value="volume"]').innerText(), 'Arc',
         'child kind option must react to ja→en');
@@ -63,7 +65,7 @@ test('AUTHOR-L10N-01/02: author management type labels follow live locale withou
         'locale change must preserve child kind selection');
       await page.getByRole('button', { name: 'Switch to Japanese' }).click();
       await page.getByRole('heading', { name: '並べ替え' }).waitFor();
-      assert.match(await parent.locator('option:checked').innerText(), /（シリーズ）$/);
+      assert.match(await parent.locator('option[value="' + fixture.seriesA + '"]').innerText(), /（シリーズ）$/);
       assert.equal(await kind.locator('option[value="volume"]').innerText(), '編');
       await context.close();
     } finally { await browser.close(); }
