@@ -1441,6 +1441,91 @@ test('AC-09: duplicate registration rejects with existing word, then redirects u
   }
 });
 
+test('LG-08: author editor warns about retained published spelling, then clears after soft deletion', { timeout: 90_000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext();
+    await author.addCookies([{
+      name: 'eternalia_author', value: fixture.authorToken, url: base,
+      httpOnly: true, sameSite: 'Lax',
+    }]);
+    const prefix = fixture.prefix + '-editor-spelling-collision';
+    async function create(kind, parentId, title) {
+      const response = await author.request.post(base + '/api/admin/nodes', {
+        headers: { Origin: base }, data: { kind, parentId, content: { title, body: '', details: {} } },
+      });
+      assert.equal(response.status(), 201, await response.text());
+      return (await response.json()).id;
+    }
+    async function getNode(id) {
+      const response = await author.request.get(base + '/api/admin/nodes');
+      assert.equal(response.status(), 200);
+      const result = (await response.json()).find(node => node.id === id);
+      assert.ok(result, 'author library must contain ' + id);
+      return result;
+    }
+    async function update(id, path, data) {
+      const response = await author.request.post(base + '/api/admin/nodes/' + id + path, {
+        headers: { Origin: base }, data,
+      });
+      assert.equal(response.status(), 200, await response.text());
+    }
+    const series = await create('series', null, prefix + '-series');
+    const language = await create('language', series, prefix + '-language');
+    const publishedSpelling = prefix + '-X';
+    const originalId = await create('word', language, publishedSpelling);
+    for (const id of [series, language, originalId]) {
+      await update(id, '/publish', { expectedRevision: (await getNode(id)).revision });
+    }
+    const editSource = await getNode(originalId);
+    const rename = await author.request.patch(base + '/api/admin/nodes/' + originalId, {
+      headers: { Origin: base },
+      data: { expectedRevision: editSource.revision, content: { ...editSource.draft, title: prefix + '-Y' } },
+    });
+    assert.equal(rename.status(), 200, await rename.text());
+    const editorId = await create('word', language, prefix + '-editor');
+    const originalReader = await author.request.get(base + '/api/public/items/' + originalId);
+    assert.equal(originalReader.status(), 200);
+    assert.equal((await originalReader.json()).content.title, publishedSpelling);
+
+    const page = await author.newPage();
+    await page.goto(base + '/studio?item=' + editorId);
+    await page.getByRole('heading', { name: '単語：' + prefix + '-editor' }).waitFor();
+    const input = page.getByRole('textbox', { name: '名称・見出し', exact: true });
+    await input.fill(publishedSpelling);
+    const warning = page.locator('.spelling-warnings').getByText('同じ言語内に同じスペルの単語が登録されています。保存できません。');
+    await warning.waitFor();
+    await input.fill(prefix + '-free');
+    await page.locator('.spelling-warnings').waitFor({ state: 'detached' });
+    await input.fill(publishedSpelling);
+    await warning.waitFor();
+    await input.fill(prefix + '-editor');
+    await page.locator('.spelling-warnings').waitFor({ state: 'detached' });
+
+    await update(originalId, '/visibility', {
+      expectedRevision: (await getNode(originalId)).revision, isPublic: false, publicSince: null,
+    });
+    await page.reload();
+    await page.getByRole('heading', { name: '単語：' + prefix + '-editor' }).waitFor();
+    await page.getByRole('textbox', { name: '名称・見出し', exact: true }).fill(publishedSpelling);
+    await warning.waitFor();
+    await page.getByRole('textbox', { name: '名称・見出し', exact: true }).fill(prefix + '-editor');
+    await page.locator('.spelling-warnings').waitFor({ state: 'detached' });
+    await update(originalId, '/soft-delete', {
+      expectedRevision: (await getNode(originalId)).revision,
+    });
+    await page.reload();
+    await page.getByRole('heading', { name: '単語：' + prefix + '-editor' }).waitFor();
+    await page.getByRole('textbox', { name: '名称・見出し', exact: true }).fill(publishedSpelling);
+    await page.locator('.spelling-warnings').waitFor({ state: 'detached' });
+    await page.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
+
 test('two same-class word meanings retain independent etymologies through draft and publication', { timeout: 90_000 }, async () => {
   assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
   const browser = await chromium.launch({ headless: true });
