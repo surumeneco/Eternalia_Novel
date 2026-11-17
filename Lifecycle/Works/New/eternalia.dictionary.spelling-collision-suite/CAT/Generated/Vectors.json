@@ -1,0 +1,43 @@
+{
+  "cases": [
+    {
+      "id": "case.collision.none",
+      "input": {
+        "入力.下書き同綴": false,
+        "入力.公開版同綴": false
+      },
+      "state": {},
+      "trigger": "重複確認"
+    },
+    {
+      "id": "case.collision.draft-only",
+      "input": {
+        "入力.下書き同綴": true,
+        "入力.公開版同綴": false
+      },
+      "state": {},
+      "trigger": "重複確認"
+    },
+    {
+      "id": "case.collision.published-only",
+      "input": {
+        "入力.下書き同綴": false,
+        "入力.公開版同綴": true
+      },
+      "state": {},
+      "trigger": "重複確認"
+    },
+    {
+      "id": "case.collision.both",
+      "input": {
+        "入力.下書き同綴": true,
+        "入力.公開版同綴": true
+      },
+      "state": {},
+      "trigger": "重複確認"
+    }
+  ],
+  "process": "eternalia.dictionary.spelling-collision",
+  "schema": "cat-test-vectors/v2",
+  "selection_rule": "rule-witness/v1"
+}
