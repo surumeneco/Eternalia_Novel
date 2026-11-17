@@ -16,12 +16,9 @@ const kindNames = computed<Partial<Record<ReaderNode['kind'], string>>>(() => ({
   chapter: t('chapter'), tip: t('tip'), tipSection: t('tipSection'), word: t('word'),
   grammar: t('grammar'), event: t('event'),
 }));
-const sections = computed(() => [
-  { to: '/stories', label: t('stories'), description: t('storyDescription') },
-  { to: '/tips', label: t('tips'), description: t('tipsDescription') },
-  { to: '/dictionaries', label: t('dictionaries'), description: t('dictionaryDescription') },
-  { to: '/timeline', label: t('timeline'), description: t('timelineDescription') },
-] as const);
+// Reader sections are meaningful only after a series has been selected.
+// Do not repeat the four series-owned domains as global content categories.
+const seriesById = computed(() => new Map((series.value ?? []).map(item => [item.id, item])));
 </script>
 
 <template>
@@ -29,12 +26,6 @@ const sections = computed(() => [
     <ReaderPanel>
       <h1>Eternalia</h1>
       <p>{{ t('siteDescription') }}</p>
-      <h2 class="section-heading">{{ t('content') }}</h2>
-      <ul class="reader-list">
-        <li v-for="section in sections" :key="section.to">
-          <NuxtLink :to="section.to">{{ section.label }} <span class="note">— {{ section.description }}</span></NuxtLink>
-        </li>
-      </ul>
     </ReaderPanel>
     <ReaderPanel class="reader-panel-spaced">
       <h2 class="section-heading">{{ t('publishedSeries') }}</h2>
@@ -61,7 +52,10 @@ const sections = computed(() => [
       <ol v-else-if="recent?.length" class="reader-list">
         <li v-for="item in recent" :key="item.id">
           <NuxtLink :to="contentLink(item)">{{ item.content.title }}</NuxtLink>
-          <span class="note"> · {{ kindNames[item.kind] ?? item.kind }}
+          <span class="note">
+            · <NuxtLink v-if="item.seriesId && seriesById.has(item.seriesId)"
+              :to="'/series/' + item.seriesId">{{ seriesById.get(item.seriesId)?.content.title }}</NuxtLink>
+            · {{ kindNames[item.kind] ?? item.kind }}
             · <time :datetime="new Date(item.publishedAt).toISOString()">{{ formatJstDisplay(item.publishedAt, language) }}</time>
           </span>
         </li>
@@ -72,5 +66,10 @@ const sections = computed(() => [
 </template>
 
 <style scoped>
-.reader-panel-spaced { margin-top: 1.2rem; }
+ .reader-panel-spaced { margin-top: 1.2rem; }
+.reader-list .recent-series-link {
+  display: inline; padding: 0; border: 0; background: transparent;
+  text-decoration: underline; border-radius: 0;
+}
+.reader-list .recent-series-link:hover { background: transparent; }
 </style>

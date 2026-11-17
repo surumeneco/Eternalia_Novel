@@ -5,7 +5,7 @@ import { translateUiMessage, uiMessages } from '../app/composables/useUiLocale.t
 test('fixed UI falls back to Japanese until a translation is explicitly available', () => {
   assert.equal(translateUiMessage('home', 'ja'), 'ホーム');
   assert.equal(translateUiMessage('home', 'xx'), 'ホーム');
-  assert.equal(translateUiMessage('studio', '__proto__'), '作者の書斎');
+  assert.equal(translateUiMessage('studio', '__proto__'), '執筆・編集');
 });
 
 test('additional reviewed catalogs can be selected without changing authored content', () => {

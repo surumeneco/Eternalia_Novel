@@ -35,7 +35,7 @@ export interface NovelNode {
   deletedAt?: number | null;
 }
 export interface Library { nodes: NovelNode[]; }
-export interface ReaderNode { id: string; kind: Kind; parentId: string | null; order: number; content: Content; publishedAt: number; }
+export interface ReaderNode { id: string; kind: Kind; parentId: string | null; order: number; content: Content; publishedAt: number; seriesId?: string; }
 export interface DomainError { code: 'bad-request' | 'not-found' | 'conflict' | 'duplicate-spelling'; message: string; existingWordId?: string; }
 const parentKinds: Record<Kind, Kind | null> = {
   series: null, volume: 'series', part: 'volume', chapter: 'part',
@@ -519,7 +519,12 @@ export function publicRecent(library: Library, now: number, limit = 10): ReaderN
   const recent: ReaderNode[] = [];
   for (const candidate of candidates) {
     const node = projectReader(library, candidate.id, now, indexed);
-    if (node) recent.push(node);
+    if (node) {
+      // The public ancestry has already passed the effective-publication gate.
+      // Attach only the visible root ID, never unpublished parent metadata.
+      const root = ancestry(library, candidate.id, true, indexed)[0];
+      if (root?.kind === 'series') recent.push({ ...node, seriesId: root.id });
+    }
     if (recent.length === safeLimit) break;
   }
   return recent;

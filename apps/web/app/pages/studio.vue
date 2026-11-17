@@ -3,7 +3,6 @@ import { wordClassInputPolicy } from '~/utils/word-class-input-policy';
 import type { AuthorNode } from '~/types/author';
 import { localizeApiError } from '~/utils/api-error-localization';
 import { localizeSpellingWarning } from '~/utils/spelling-warning-localization';
-import { parseJstLocalDateTime, formatJstLocalDateTime } from '~/utils/jst-publication-time';
 const { t, language } = useUiLocale();
 const studioRoute = useRoute();
 import type { ReaderKind } from '~/types/reader';
@@ -29,18 +28,24 @@ const children: Record<ReaderKind | 'root', ReaderKind[]> = {
   language: ['word', 'grammar'], word: [], grammar: [],
   periodization: ['event'], event: [],
 };
-const filters = computed(() => ({ 
-  all: { label: t('studioFilterAll'), kinds: Object.keys(kinds.value) as ReaderKind[] },
-  stories: { label: t('studioFilterStories'), kinds: ['series','volume','part','chapter'] as ReaderKind[] },
-  tips: { label: t('studioFilterTips'), kinds: ['series','category','tip','tipSection'] as ReaderKind[] },
-  dictionaries: { label: t('studioFilterDictionaries'), kinds: ['series','language','word','grammar'] as ReaderKind[] },
-  timeline: { label: t('studioFilterTimeline'), kinds: ['series','periodization','event'] as ReaderKind[] },
+const filters = computed(() => ({
+  stories: { label: t('studioFilterStories'), kinds: ['volume','part','chapter'] as ReaderKind[] },
+  tips: { label: t('studioFilterTips'), kinds: ['category','tip','tipSection'] as ReaderKind[] },
+  dictionaries: { label: t('studioFilterDictionaries'), kinds: ['language','word','grammar'] as ReaderKind[] },
+  timeline: { label: t('studioFilterTimeline'), kinds: ['periodization','event'] as ReaderKind[] },
 }));
 type Filter = keyof typeof filters.value;
+const firstKindByArea: Record<Filter, ReaderKind> = {
+  stories: 'volume', tips: 'category', dictionaries: 'language', timeline: 'periodization',
+};
 
 const nodes = ref<AuthorNode[]>([]);
 const selectedId = ref<string | null>(null);
+const selectedSeriesId = ref<string | null>(null);
 const selected = computed(() => nodes.value.find(n => n.id === selectedId.value) ?? null);
+const seriesList = computed(() => nodes.value.filter(n => n.kind === 'series' && n.parentId === null)
+  .sort((a, b) => a.order - b.order || a.draft.title.localeCompare(b.draft.title, 'ja')));
+const selectedSeries = computed(() => seriesList.value.find(n => n.id === selectedSeriesId.value) ?? null);
 const moveCategoryTarget = ref('');
 const movableCategories = computed(() => {
   const tip = selected.value;
@@ -52,7 +57,7 @@ const movableCategories = computed(() => {
 watch(() => selected.value?.parentId, parent => { moveCategoryTarget.value = parent ?? ''; }, { immediate: true });
 const publicationStatus = computed(() => !selected.value?.published ? t('studioUnpublished')
   : selected.value.isPublic ? t('studioPublishedState') : t('studioPrivateState'));
-const filter = ref<Filter>('all');
+const filter = ref<Filter>('stories');
 const busy = ref(false);
 const errorText = ref('');
 const statusText = ref('');
@@ -313,6 +318,8 @@ function selectNode(nodeId: string) {
   cancelAutosaveTimer();
   createOpen.value = false;
   selectedId.value = nodeId;
+  selectedSeriesId.value = owningSeriesId(nodeId);
+  filter.value = areaForKind(byId.value.get(nodeId)?.kind ?? 'series');
   restoreEditor();
 }
 function cancelCreate() {
@@ -355,6 +362,46 @@ const creationChoices = computed(() =>
 );
 
 const byId = computed(() => new Map(nodes.value.map(node => [node.id,node])));
+function owningSeriesId(nodeId: string | null): string | null {
+  const visited = new Set<string>();
+  let node = nodeId ? byId.value.get(nodeId) : undefined;
+  while (node && !visited.has(node.id)) {
+    visited.add(node.id);
+    if (node.kind === 'series') return node.id;
+    node = node.parentId ? byId.value.get(node.parentId) : undefined;
+  }
+  return null;
+}
+function areaForKind(kind: ReaderKind): Filter {
+  if (kind === 'category' || kind === 'tip' || kind === 'tipSection') return 'tips';
+  if (kind === 'language' || kind === 'word' || kind === 'grammar') return 'dictionaries';
+  if (kind === 'periodization' || kind === 'event') return 'timeline';
+  return 'stories';
+}
+function chooseArea(next: Filter) {
+  if (filter.value === next || busy.value || autosavingChapter.value) return;
+  if (!confirmDiscard()) return;
+  cancelAutosaveTimer();
+  if (selected.value?.kind === 'chapter') clearChapterRecovery(selected.value.id);
+  createOpen.value = false;
+  selectedId.value = null;
+  filter.value = next;
+  restoreEditor();
+}
+function chooseSeries(event: Event) {
+  const target = event.target as HTMLSelectElement;
+  if (busy.value || autosavingChapter.value || !confirmDiscard()) {
+    target.value = selectedSeriesId.value ?? '';
+    return;
+  }
+  cancelAutosaveTimer();
+  if (selected.value?.kind === 'chapter') clearChapterRecovery(selected.value.id);
+  selectedSeriesId.value = target.value || null;
+  selectedId.value = null;
+  filter.value = 'stories';
+  createOpen.value = false;
+  restoreEditor();
+}
 const createWordClasses = computed(() => {
   const language = createParentId.value ? byId.value.get(createParentId.value) : null;
   if (language?.kind !== 'language') return [];
@@ -412,7 +459,8 @@ const ordered = computed(() => {
       visit(node.id, depth+1);
     }
   }
-  visit(null,0);
+  // A series must be chosen before its materials can enter this editor tree.
+  if (selectedSeriesId.value) visit(selectedSeriesId.value, 0);
   return out;
 });
 // Refreshing the current node after publication must preserve the editing buffer.
@@ -432,17 +480,11 @@ watch(() => JSON.stringify({ id: selectedId.value, title: form.title,
 }, { flush: 'post' });
 
 
-const scheduledLocal = ref('');
-watch(selected, node => {
-  scheduledLocal.value = node?.publicSince != null
-    ? (formatJstLocalDateTime(node.publicSince) ?? '')
-    : '';
-}, { immediate: true });
-
 async function load(): Promise<boolean> {
   try {
     nodes.value = await $fetch<AuthorNode[]>('/api/admin/nodes');
     if (!nodes.value.some(n => n.id === selectedId.value)) selectedId.value = null;
+    if (!seriesList.value.some(n => n.id === selectedSeriesId.value)) selectedSeriesId.value = null;
     errorText.value = '';
     return true;
   } catch (e: unknown) {
@@ -465,6 +507,8 @@ onMounted(async () => {
       const parentKind = parentId === null ? 'root' : parent?.kind;
       if (typeof requestedCreate === 'string' && parentId !== undefined && parentKind &&
           children[parentKind].includes(requestedCreate as ReaderKind)) {
+        selectedSeriesId.value = owningSeriesId(parentId);
+        filter.value = areaForKind(requestedCreate as ReaderKind);
         openCreate(parentId);
         createKind.value = requestedCreate as ReaderKind;
       } else {
@@ -474,6 +518,8 @@ onMounted(async () => {
       const requested = studioRoute.query.item;
       if (typeof requested === 'string' && nodes.value.some(node => node.id === requested)) {
         selectedId.value = requested;
+        selectedSeriesId.value = owningSeriesId(requested);
+        filter.value = areaForKind(byId.value.get(requested)!.kind);
       }
     }
   }
@@ -510,14 +556,18 @@ async function runChange(work: () => Promise<void>, okText:string, reloadAfter =
     if (selected.value?.kind === 'chapter' && editorDirty.value) scheduleChapterAutosave();
   }
 }
-function openCreate(parentId: string | null) {
+function openCreate(parentId: string | null, preferredKind?: ReaderKind) {
   if (busy.value || autosavingChapter.value || !confirmDiscard()) return;
   if (selected.value?.kind === 'chapter') clearChapterRecovery(selected.value.id);
   cancelAutosaveTimer();
   restoreEditor();
   createParentId.value = parentId;
+  if (parentId) selectedSeriesId.value = owningSeriesId(parentId);
+  else selectedSeriesId.value = null;
   const parent = parentId ? byId.value.get(parentId) : null;
-  createKind.value = children[parent?.kind || 'root'][0] || 'series';
+  const allowedKinds = children[parent?.kind || 'root'];
+  createKind.value = preferredKind && allowedKinds.includes(preferredKind)
+    ? preferredKind : allowedKinds[0] || 'series';
   createTitle.value = '';
   createWordIsPublic.value = true;
   createWordPartOfSpeech.value = '';
@@ -562,6 +612,11 @@ async function createItem() {
     }
     createOpen.value = false;
     selectedId.value = response.id;
+    // The new child is not in byId until the server readback. Resolve its
+    // series from its already-validated parent to keep the creation context.
+    selectedSeriesId.value = createKind.value === 'series'
+      ? response.id : owningSeriesId(createParentId.value);
+    filter.value = areaForKind(createKind.value);
     createdId = response.id;
   }, t('studioCreated'));
   if (createdId && studioRoute.query.create) {
@@ -632,24 +687,6 @@ async function moveTipCategory() {
     });
   }, t('studioMoveCategorySaved'));
 }
-async function publish() {
-  const node=selected.value;
-  if (!node || !confirm(t('studioPublishConfirm'))) return;
-  await runChange(async () => {
-    await $fetch('/api/admin/nodes/' + node.id + '/publish',{
-      method:'POST',body:{expectedRevision:node.revision},
-    });
-  }, t('studioPublished'));
-}
-async function changeVisibility(isPublic:boolean,publicSince:number | null) {
-  const node=selected.value;
-  if (!node) return;
-  await runChange(async () => {
-    await $fetch('/api/admin/nodes/' + node.id + '/visibility',{
-      method:'POST',body:{expectedRevision:node.revision,isPublic,publicSince},
-    });
-  }, t('studioVisibilityChanged'));
-}
 async function softDeleteSelected() {
   const node = selected.value;
   if (!node || !node.published || node.isPublic || !confirmDiscard() ||
@@ -660,13 +697,6 @@ async function softDeleteSelected() {
     });
     if (node.kind === 'chapter') clearChapterRecovery(node.id);
   }, t('studioSoftDeleted'));
-}
-async function schedule() {
-  const instant = scheduledLocal.value ? parseJstLocalDateTime(scheduledLocal.value) : null;
-  if (scheduledLocal.value && instant === null) {
-    errorText.value=t('studioInvalidDate'); return;
-  }
-  await changeVisibility(selected.value?.isPublic ?? false, instant);
 }
 async function logout() {
   if (!confirmDiscard()) return;
@@ -692,8 +722,8 @@ async function logout() {
           <p>{{ t('studioDraftVsPublication') }}</p>
         </div>
         <div v-if="auth?.authenticated" class="action-row">
-          <NuxtLink to="/studio/publication">{{ t('studioPublicationManagement') }}</NuxtLink>
-          <NuxtLink to="/studio/order">{{ t('studioReorder') }}</NuxtLink>
+          <NuxtLink :to="{ path: '/studio/publication', query: selectedSeriesId ? { series: selectedSeriesId } : {} }">{{ t('studioPublicationManagement') }}</NuxtLink>
+          <NuxtLink :to="{ path: '/studio/order', query: selectedSeriesId ? { series: selectedSeriesId } : {} }">{{ t('studioReorder') }}</NuxtLink>
           <NuxtLink to="/studio/memos">{{ t('studioMemos') }}</NuxtLink>
           <button class="inline-action" type="button" @click="logout">{{ t('studioLogout') }}</button>
         </div>
@@ -713,13 +743,28 @@ async function logout() {
         <div class="studio-grid">
           <aside class="studio-sidebar" :aria-label="t('studioAuthorLibrary')">
             <div class="section-header">
-              <h2>{{ t('studioLibrary') }}</h2>
+              <h2>{{ t('studioKindSeries') }}</h2>
               <button class="inline-action" type="button" :disabled="busy || autosavingChapter" @click="reloadNodes">{{ t('studioReload') }}</button>
             </div>
+            <label>{{ t('searchSelectSeries') }}
+              <select :value="selectedSeriesId ?? ''" :disabled="busy || autosavingChapter" @change="chooseSeries">
+                <option value="">{{ t('searchSelectSeries') }}</option>
+                <option v-for="series in seriesList" :key="series.id" :value="series.id">{{ series.draft.title }}</option>
+              </select>
+            </label>
+            <button type="button" class="inline-action" :disabled="busy || autosavingChapter"
+              @click="openCreate(null)">{{ t('studioNewSeries') }}</button>
+            <template v-if="selectedSeries">
+              <button type="button" class="inline-action" :disabled="busy || autosavingChapter"
+                @click="selectNode(selectedSeries.id)">{{ t('studioKindSeries') }}：{{ selectedSeries.draft.title }}</button>
+              <h3>{{ t('studioMaterialType') }}</h3>
             <div class="filter-row" role="group" :aria-label="t('studioMaterialType')">
               <button v-for="(f, key) in filters" :key="key" class="inline-action"
-                type="button" :aria-pressed="filter === key" @click="filter = key">{{ f.label }}</button>
+                type="button" :disabled="busy || autosavingChapter" :aria-pressed="filter === key"
+                @click="chooseArea(key as Filter)">{{ f.label }}</button>
             </div>
+            <button type="button" class="inline-action" :disabled="busy || autosavingChapter"
+              @click="openCreate(selectedSeries.id, firstKindByArea[filter])">{{ t('studioAddItem') }}</button>
             <ul class="node-list">
               <li v-for="entry in ordered" :key="entry.node.id">
                 <button class="node-button" type="button" :disabled="busy || autosavingChapter" :aria-pressed="selectedId === entry.node.id"
@@ -730,10 +775,11 @@ async function logout() {
                 </button>
               </li>
             </ul>
-            <p v-if="!nodes.length" class="note">{{ t('studioEmpty') }}</p>
-            <button class="primary" type="button" :disabled="busy || autosavingChapter" @click="openCreate(null)">{{ t('studioNewSeries') }}</button>
+            <p v-if="!ordered.length" class="note">{{ t('studioEmpty') }}</p>
             <button v-if="selected && children[selected.kind].length" class="inline-action" type="button"
               :disabled="busy || autosavingChapter" @click="openCreate(selected.id)">{{ t('studioAddChild') }}</button>
+            </template>
+            <p v-else class="note">{{ t('searchChooseSeries') }}</p>
           </aside>
           <section class="studio-editor" :aria-label="t('studioEditorForm')">
             <form v-if="createOpen" class="create-form" @submit.prevent="createItem">
@@ -838,19 +884,12 @@ async function logout() {
                 <p v-if="editorDirty" class="note">{{ t('studioMoveSaveFirst') }}</p>
               </div>
               <hr />
-              <h3>{{ t('studioPublicationSettings') }}</h3>
-              <p class="note">{{ t('studioPublicationNote') }}</p>
               <div class="action-row">
-                <button class="primary" type="button" :disabled="busy || autosavingChapter" @click="publish">{{ t('studioApplyPublishedDraft') }}</button>
-                <button class="inline-action" type="button" :disabled="busy || autosavingChapter || !selected.published"
-                  @click="changeVisibility(!selected.isPublic, selected.publicSince)">
-                  {{ selected.isPublic ? t('studioHide') : t('studioShow') }}
-                </button>
+                <NuxtLink :to="{ path: '/studio/publication', query: { series: selectedSeriesId, target: selected.id } }"
+                  target="_blank" rel="noopener noreferrer">
+                  {{ t('studioPublicationManagement') }}
+                </NuxtLink>
               </div>
-              <label>{{ t('studioPublicStartDate') }} — {{ t('pubJstZoneNote') }}
-                <input v-model="scheduledLocal" type="datetime-local" />
-              </label>
-              <button class="inline-action" type="button" :disabled="busy || autosavingChapter || !selected.published" @click="schedule">{{ t('studioSetDate') }}</button>
               <div v-if="selected.published && !selected.isPublic" class="action-row">
                 <button class="inline-action" type="button" :disabled="busy || autosavingChapter"
                   @click="softDeleteSelected">{{ t('studioSoftDelete') }}</button>
@@ -860,8 +899,8 @@ async function logout() {
               <RichContent :source="form.body" :pages="selected.kind === 'chapter' ? chapterPages : undefined" />
             </template>
             <div v-else>
-              <h2>{{ t('studioChooseItem') }}</h2>
-              <p class="note">{{ t('studioChooseItemHint') }}</p>
+              <h2>{{ selectedSeries ? t('studioChooseItem') : t('searchSelectSeries') }}</h2>
+              <p class="note">{{ selectedSeries ? t('studioChooseItem') : t('searchChooseSeries') }}</p>
             </div>
           </section>
         </div>

@@ -20,7 +20,8 @@ test('AUTHOR-L10N-01/02: author management type labels follow live locale withou
       }]);
       const page = await context.newPage();
 
-      await page.goto(base + '/studio/publication');
+      await page.goto(base + '/studio/publication?series=' + fixture.seriesA);
+      await page.getByLabel('領域').selectOption('tips');
       const row = page.locator('.publication-row').filter({
         has: page.getByRole('heading', { name: privateTip, exact: true }),
       });
@@ -38,22 +39,43 @@ test('AUTHOR-L10N-01/02: author management type labels follow live locale withou
       assert.match(await kindLabel.innerText(), /^設定 · /,
         'published content type must react to en→ja');
 
-      await page.goto(base + '/studio/order');
-      const parent = page.locator('.order-filters select').first();
-      const kind = page.locator('.order-filters select').nth(1);
+      await page.goto(base + '/studio/order?series=' + fixture.seriesA);
+      // Reuse stable structural positions across locale switches: getByRole
+      // with a Japanese accessible name no longer resolves in English.
+      const parent = page.locator('.order-filters select').nth(1);
+      const kind = page.locator('.order-filters select').nth(2);
       await parent.locator('option[value="' + fixture.seriesA + '"]').waitFor({ state: 'attached' });
       await parent.selectOption(fixture.seriesA);
+      assert.equal(await parent.inputValue(), fixture.seriesA,
+        'selecting a series parent must retain the selection');
       await page.waitForFunction(() =>
-        document.querySelectorAll('.order-filters select')[1]?.value === 'volume',
+        document.querySelectorAll('.order-filters select')[2]?.value === 'volume',
       );
-      assert.match(await parent.locator('option:checked').innerText(), /（シリーズ）$/,
+      assert.match(await parent.locator('option[value="' + fixture.seriesA + '"]').innerText(), /（シリーズ）$/,
         'Japanese parent kind before switching');
       assert.equal(await kind.locator('option[value="volume"]').innerText(), '編');
 
       await page.getByRole('button', { name: '英語に切り替え' }).click();
       await page.getByRole('heading', { name: 'Reorder' }).waitFor();
-      assert.match(await parent.locator('option:checked').innerText(), /（Series）$/,
-        'parent option kind must react to ja→en');
+      const orderEnglishState = await page.evaluate(() => {
+        const selects = [...document.querySelectorAll('.order-filters select')];
+        return {
+          url: location.href,
+          selectCount: selects.length,
+          seriesValue: selects[0]?.value,
+          parentValue: selects[1]?.value,
+          parentOptions: [...(selects[1]?.options ?? [])].map(option => ({
+            value: option.value, text: option.textContent,
+          })),
+          kindValue: selects[2]?.value,
+        };
+      });
+      assert.equal(orderEnglishState.seriesValue, fixture.seriesA,
+        'locale switch must preserve selected series: ' + JSON.stringify(orderEnglishState));
+      assert.equal(orderEnglishState.parentValue, fixture.seriesA,
+        'locale switch must preserve selected parent: ' + JSON.stringify(orderEnglishState));
+      assert.match(orderEnglishState.parentOptions.find(item => item.value === fixture.seriesA)?.text ?? '',
+        /（Series）$/, 'parent kind must localize: ' + JSON.stringify(orderEnglishState));
       assert.equal(await kind.locator('option[value="volume"]').innerText(), 'Arc',
         'child kind option must react to ja→en');
       assert.equal(await parent.inputValue(), fixture.seriesA,
@@ -62,7 +84,7 @@ test('AUTHOR-L10N-01/02: author management type labels follow live locale withou
         'locale change must preserve child kind selection');
       await page.getByRole('button', { name: 'Switch to Japanese' }).click();
       await page.getByRole('heading', { name: '並べ替え' }).waitFor();
-      assert.match(await parent.locator('option:checked').innerText(), /（シリーズ）$/);
+      assert.match(await parent.locator('option[value="' + fixture.seriesA + '"]').innerText(), /（シリーズ）$/);
       assert.equal(await kind.locator('option[value="volume"]').innerText(), '編');
       await context.close();
     } finally { await browser.close(); }
@@ -106,6 +128,9 @@ test('AUTHOR-DOM-02: publication and ordering screens compose shell/panel and fi
       for (const path of ['/studio/publication', '/studio/order']) {
         const response = await page.goto(base + path);
         assert.equal(response?.status(), 200);
+        if (path.endsWith('publication')) {
+          await page.getByLabel('シリーズを選択').selectOption(fixture.seriesA);
+        }
         const data = path.endsWith('publication') ? '.publication-row' : '.order-filters select';
         await page.locator(data).first().waitFor();
         const dom = await page.evaluate(() => {

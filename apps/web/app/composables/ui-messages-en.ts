@@ -6,7 +6,7 @@ export const enUiMessages = {
   "tips": "Worldbuilding",
   "dictionaries": "Dictionary",
   "timeline": "Timeline",
-  "studio": "Writer's studio",
+  "studio": "Writing and editing",
   "studioUnsavedDiscard": "You have unsaved changes. Discard them and leave?",
   "studioNewItemDiscard": "Discard this unsaved new item?",
   "studioRubyInvalid": "Ruby markup cannot be applied to a selection containing ruby markers or line breaks.",

@@ -7,7 +7,7 @@ import { chromium } from 'playwright';
 const fixture=JSON.parse(await readFile(process.env.HTTP_FIXTURE_FILE,'utf8'));
 const base=process.env.HTTP_BASE_URL;
 const title=fixture.prefix+'-scheduled-secret';
-test('PB-05: LA/UTC browsers input JST in both author screens and persist the same absolute instant',
+test('PB-05: LA/UTC browsers input JST in the publication screen across author time zones and persist the same absolute instant',
  {timeout:90_000}, async()=>{
   assert.ok(base?.startsWith('http://127.0.0.1:'));
   const browser=await chromium.launch({headless:true});
@@ -15,7 +15,9 @@ test('PB-05: LA/UTC browsers input JST in both author screens and persist the sa
     const author=await browser.newContext({timezoneId:'America/Los_Angeles'});
     await author.addCookies([{name:'eternalia_author',value:fixture.authorToken,url:base,httpOnly:true,sameSite:'Lax'}]);
     const management=await author.newPage();
-    await management.goto(base+'/studio/publication');
+    await management.goto(base+'/studio/publication?series='+fixture.seriesA);
+    await management.getByLabel('シリーズを選択').selectOption(fixture.seriesA);
+    await management.getByLabel('領域').selectOption('stories');
     const row=management.locator('.publication-row').filter({
       has:management.getByRole('heading',{name:title,exact:true}),
     });
@@ -32,15 +34,19 @@ test('PB-05: LA/UTC browsers input JST in both author screens and persist the sa
     assert.equal((await fetchNode()).publicSince,Date.parse('2031-02-03T00:15:00Z'));
     assert.equal((await author.request.get(base+'/api/public/items/'+fixture.scheduled)).status(),404);
     await management.reload();
+    await management.getByLabel('シリーズを選択').selectOption(fixture.seriesA);
+    await management.getByLabel('領域').selectOption('stories');
     await row.locator('input[type="datetime-local"]').waitFor();
     assert.equal(await row.locator('input[type="datetime-local"]').inputValue(),'2031-02-03T09:15');
 
     const studio=await author.newPage();
     await studio.goto(base+'/studio?item='+fixture.scheduled);
     await studio.getByRole('heading',{name:'章：'+title}).waitFor();
-    await studio.locator('input[type="datetime-local"]').fill('2032-03-04T21:30');
-    await studio.getByRole('button',{name:'日時を設定'}).click();
-    await studio.getByText('公開条件を変更しました。').waitFor();
+    assert.equal(await studio.locator('input[type="datetime-local"]').count(),0,
+      'date management belongs to the publication screen, not the manuscript editor');
+    await row.locator('input[type="datetime-local"]').fill('2032-03-04T21:30');
+    await row.getByRole('button',{name:'日時を保存'}).click();
+    await management.getByText('公開開始日時を更新しました。').waitFor();
     assert.equal((await fetchNode()).publicSince,Date.parse('2032-03-04T12:30:00Z'));
     assert.equal((await author.request.get(base+'/api/public/items/'+fixture.scheduled)).status(),404);
     await author.close();
@@ -48,7 +54,9 @@ test('PB-05: LA/UTC browsers input JST in both author screens and persist the sa
     const utcAuthor=await browser.newContext({timezoneId:'UTC'});
     await utcAuthor.addCookies([{name:'eternalia_author',value:fixture.authorToken,url:base,httpOnly:true,sameSite:'Lax'}]);
     const utcManagement=await utcAuthor.newPage();
-    await utcManagement.goto(base+'/studio/publication');
+    await utcManagement.goto(base+'/studio/publication?series='+fixture.seriesA);
+    await utcManagement.getByLabel('シリーズを選択').selectOption(fixture.seriesA);
+    await utcManagement.getByLabel('領域').selectOption('stories');
     const utcRow=utcManagement.locator('.publication-row').filter({
       has:utcManagement.getByRole('heading',{name:title,exact:true}),
     });

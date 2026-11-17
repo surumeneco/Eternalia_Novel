@@ -24,7 +24,10 @@ test('AC-55: recent ordering ignores unpublished draft edits and excludes hidden
   for (const id of [ids.series, ids.volume, ids.part]) db = publishNode(db, id, 1, 10);
   db = publishNode(db, ids.older, 1, 100);
   db = publishNode(db, ids.newer, 1, 200);
-  assert.deepEqual(publicRecent(db, 400).map(node => node.id), [ids.newer, ids.older]);
+  const publicFeed = publicRecent(db, 400);
+  assert.deepEqual(publicFeed.map(node => node.id), [ids.newer, ids.older]);
+  assert.deepEqual(publicFeed.map(node => node.seriesId), [ids.series, ids.series],
+    'every recent update must identify its publicly readable owning series');
 
   db = editNode(db, ids.older, 1, contentOf('Unpublished draft title', 'secret draft text'), 300);
   const recentAfterDraft = publicRecent(db, 400);

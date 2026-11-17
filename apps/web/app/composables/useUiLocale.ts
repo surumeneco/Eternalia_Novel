@@ -9,7 +9,7 @@ export const uiMessages = {
     tips: '設定集',
     dictionaries: '辞書',
     timeline: '年表',
-    studio: '作者の書斎',
+    studio: '執筆・編集',
     studioUnsavedDiscard: '未保存の変更があります。破棄して移動しますか？',
     studioNewItemDiscard: '未保存の新規項目を破棄しますか？',
     studioRubyInvalid: 'ルビ記号または改行を含む選択範囲にはルビを付けられません。',

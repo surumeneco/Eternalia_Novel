@@ -21,7 +21,7 @@ test('CM-09: author-only home and area creation paths use validated existing Stu
     const anonymous=await browser.newContext();
     const anon=await anonymous.newPage();
     await anon.goto(base+'/');
-    await anon.getByRole('heading',{name:'公開シリーズ'}).waitFor();
+    await anon.locator('main').getByRole('heading',{name:'公開シリーズ'}).waitFor();
     assert.equal(await anon.getByRole('link',{name:'新規シリーズ'}).count(),0);
     await anon.goto(base+'/stories');
     await anon.getByRole('heading',{name:'ストーリー'}).waitFor();

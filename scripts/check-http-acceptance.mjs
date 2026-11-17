@@ -91,6 +91,7 @@ try {
     await command(['scripts/run-test-junit.mjs', 'browser-shell-keyboard-bypass', 'apps/web/browser-acceptance/shell-keyboard-bypass.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-reader-locale', 'apps/web/browser-acceptance/reader-locale.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-search-locale', 'apps/web/browser-acceptance/search-locale-live.test.mjs']);
+    await command(['scripts/run-test-junit.mjs', 'browser-series-first-ia', 'apps/web/browser-acceptance/series-first-ia.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-author-create-navigation', 'apps/web/browser-acceptance/author-create-navigation.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-author-detail-edit', 'apps/web/browser-acceptance/author-detail-edit-navigation.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-author-management-locale-dom', 'apps/web/browser-acceptance/author-management-locale-dom.test.mjs']);

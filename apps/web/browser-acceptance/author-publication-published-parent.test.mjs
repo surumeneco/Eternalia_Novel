@@ -49,7 +49,8 @@ test('MOVE-07: published ancestor, not moved draft ancestor, governs author visi
     const visibility=page.getByRole('combobox',{name:'公開状態'});
     const row=page.locator('.publication-list li').filter({has:page.getByRole('heading',{name:prefix+'-tip'})});
     async function inspect(visible,statusText){
-      await page.goto(base+'/studio/publication');
+      await page.goto(base+'/studio/publication?series='+series);
+      await page.getByLabel('領域').selectOption('tips');
       await page.getByRole('heading',{name:prefix+'-tip'}).waitFor();
       assert.equal((await read()).status(),visible?200:404);
       await row.getByText(statusText,{exact:false}).first().waitFor();

@@ -21,7 +21,9 @@ test('READER-01/02/03: public series and reader areas localize immediately witho
    await page.getByRole('button',{name:'英語に切り替え'}).click();
    await page.getByRole('link',{name:'Story table of contents'}).waitFor();
    assert.equal(await page.locator('main .series-areas a[href="/stories/'+fixture.seriesA+'"]').innerText(),'Story table of contents');
-   assert.equal(await page.locator('.reader-list small').first().innerText(),'Arc');
+   await page.goto(base+'/stories/'+fixture.seriesA);
+   await page.getByRole('heading',{name:'Contents'}).waitFor();
+   await page.locator('.story-volume h3 a').first().waitFor();
    assert.ok((await page.locator('main').innerText()).includes(title),'author title must remain identical');
 
    await page.goto(base+'/dictionaries/'+fixture.seriesA);

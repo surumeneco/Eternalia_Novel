@@ -85,8 +85,9 @@ const labels = computed<Record<ReaderKind,string>>(() => ({
   <div>
     <TopicPath v-if="!revalidating" :items="[
       { label: t('home'), to: '/' },
-      ...(section ? [{ label: sections[section].label, to: '/' + section }] : []),
-      { label: series?.content.title || t('readerKindSeries') }
+      { label: series?.content.title || t('readerKindSeries'),
+        ...(section ? { to: '/series/' + id } : {}) },
+      ...(section ? [{ label: sections[section].label }] : [])
     ]" />
     <ReaderPanel>
       <ReadingSkeleton v-if="revalidating || pending" :label="t('readerLoadingSeries')" />
@@ -105,15 +106,18 @@ const labels = computed<Record<ReaderKind,string>>(() => ({
           <NuxtLink :to="'/dictionaries/' + id">{{ t('dictionaries') }}</NuxtLink>
           <NuxtLink :to="'/timeline/' + id">{{ t('timeline') }}</NuxtLink>
         </nav>
-        <h2 class="section-heading">{{ section ? sections[section].label : t('readerPublishedContent') }}</h2>
-        <ul v-if="visible.length" class="reader-list">
-          <li v-for="node in visible" :key="node.id">
-            <NuxtLink :to="itemLink(node)" :style="{ paddingInlineStart: (16 + depth(node) * 16) + 'px' }">
-              <small class="note">{{ labels[node.kind] }}</small> {{ node.content.title }}
-            </NuxtLink>
-          </li>
-        </ul>
-        <p v-else>{{ t('readerNoPublicInSection') }}</p>
+        <template v-if="section">
+          <h2 class="section-heading">{{ sections[section].label }}</h2>
+          <ul v-if="visible.length" class="reader-list">
+            <li v-for="node in visible" :key="node.id">
+              <NuxtLink :to="itemLink(node)" :style="{ paddingInlineStart: (16 + depth(node) * 16) + 'px' }">
+                <small class="note">{{ labels[node.kind] }}</small> {{ node.content.title }}
+              </NuxtLink>
+            </li>
+          </ul>
+          <p v-else>{{ t('readerNoPublicInSection') }}</p>
+        </template>
+        <p v-else class="note">{{ t('readerSeriesAreas') }}</p>
       </template>
     </ReaderPanel>
   </div>

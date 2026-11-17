@@ -38,7 +38,7 @@ async function visible(page,state) {
     document.dispatchEvent(new Event('visibilitychange'));
   },state);
 }
-test('SERIES-RESUME-01/02/03/04: a published TOC is revoked, restored and fail-closed on 503',
+test('SERIES-RESUME-01/02/03/04: a selected series settings list is revoked, restored and fail-closed on 503',
   {timeout:120_000},async()=>{
     assert.ok(base?.startsWith('http://127.0.0.1:'));
     const browser=await chromium.launch({headless:true});
@@ -53,8 +53,8 @@ test('SERIES-RESUME-01/02/03/04: a published TOC is revoked, restored and fail-c
       const context=await browser.newContext({viewport:{width:390,height:844}});
       try {
         const page=await context.newPage();
-        await page.goto(base+'/series/'+seriesId);
-        await page.getByRole('heading',{name:seriesTitle,exact:true}).waitFor();
+        await page.goto(base+'/tips/'+seriesId);
+        await page.getByRole('heading',{name:new RegExp(seriesTitle)}).waitFor();
         await page.getByRole('link',{name:new RegExp(childTitle)}).waitFor();
         await page.waitForFunction(()=>Boolean(document.querySelector('#__nuxt')?.__vue_app__));
         await visible(page,'hidden');
@@ -74,7 +74,7 @@ test('SERIES-RESUME-01/02/03/04: a published TOC is revoked, restored and fail-c
         const restored=page.waitForResponse(r=>r.url().endsWith('/api/public/series/'+seriesId+'/tree')&&r.status()===200);
         await visible(page,'visible');
         await restored;
-        await page.getByRole('heading',{name:seriesTitle,exact:true}).waitFor();
+        await page.getByRole('heading',{name:new RegExp(seriesTitle)}).waitFor();
         await page.getByRole('link',{name:new RegExp(childTitle)}).waitFor();
         await page.route('**/api/public/series/'+seriesId+'/tree',
           route=>route.fulfill({status:503,contentType:'application/json',body:'{"message":"temporarily unavailable"}'}));

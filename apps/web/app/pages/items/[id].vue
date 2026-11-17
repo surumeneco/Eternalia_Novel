@@ -20,20 +20,23 @@ const { revalidating } = usePublicReaderRevalidation([
   { clear: clearAncestry, refresh: refreshAncestry },
 ]);
 const crumbs = computed(() => {
-  const kind = item.value?.kind;
-  const section = kind && ['volume','part','chapter'].includes(kind) ? {label:t('stories'),to:'/stories'} :
-    kind && ['category','tip','tipSection'].includes(kind) ? {label:t('tips'),to:'/tips'} :
-    kind && ['language','word','grammar'].includes(kind) ? {label:t('dictionaries'),to:'/dictionaries'} :
-    kind && ['periodization','event'].includes(kind) ? {label:t('timeline'),to:'/timeline'} : null;
   const chain = ancestry.value ?? [];
   const parts = chain.length > 0 ? chain : item.value ? [item.value] : [];
+  const root = parts.find(node => node.kind === 'series');
+  const kind = item.value?.kind;
+  const area = kind && ['volume','part','chapter'].includes(kind) ? 'stories' :
+    kind && ['category','tip','tipSection'].includes(kind) ? 'tips' :
+    kind && ['language','word','grammar'].includes(kind) ? 'dictionaries' :
+    kind && ['periodization','event'].includes(kind) ? 'timeline' : null;
+  const label = area === 'stories' ? t('stories') : area === 'tips' ? t('tips') :
+    area === 'dictionaries' ? t('dictionaries') : area === 'timeline' ? t('timeline') : '';
   return [
-    {label:t('home'),to:'/'},
-    ...(section ? [section] : []),
-    ...parts.map((node,index) => ({
-      label:node.content.title,
-      to:index===parts.length-1 ? undefined :
-        node.kind==='series' ? '/series/'+node.id : '/items/'+node.id,
+    { label: t('home'), to: '/' },
+    ...(root ? [{ label: root.content.title, to: '/series/' + root.id }] : []),
+    ...(root && area ? [{ label, to: '/' + area + '/' + root.id }] : []),
+    ...parts.filter(node => node.kind !== 'series').map((node, index, rest) => ({
+      label: node.content.title,
+      to: index === rest.length - 1 ? undefined : '/items/' + node.id,
     })),
   ];
 });

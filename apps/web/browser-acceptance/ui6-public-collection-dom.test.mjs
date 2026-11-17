@@ -205,7 +205,9 @@ test('UI6-SLOT-DOM-01: anonymous SSR projects home and collection default-slot c
       });
       assert.equal(homeDom.mainHasRoute, true, 'layout default slot projects route inside main');
       assert.equal(homeDom.panelCount, 3, 'home renders three reader panels via default slots');
-      assert.deepEqual(homeDom.directHeadingTags, [['H1', 'H2'], ['H2'], ['H2']]);
+      // The home introduction no longer labels the four series-owned
+      // content domains as an independent global section.
+      assert.deepEqual(homeDom.directHeadingTags, [['H1'], ['H2'], ['H2']]);
       assert.equal(homeDom.headings[0][0], 'Eternalia');
       assert.equal(homeDom.hasPublishedSeriesLink, true,
         'published series list is inside the second reader panel');

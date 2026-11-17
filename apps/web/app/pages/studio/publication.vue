@@ -5,6 +5,7 @@ import type { AuthorNode } from '~/types/author';
 import type { ReaderKind } from '~/types/reader';
 import { canReadPublished } from '@eternalia/contracts';
 const { t, language } = useUiLocale();
+const route = useRoute();
 
 interface AuthState { configured: boolean; authenticated: boolean }
 const { data: auth, pending: authPending, refresh: refreshAuth } = await useFetch<AuthState>('/api/auth/me');
@@ -13,7 +14,8 @@ const loading = ref(false);
 const busyId = ref<string | null>(null);
 const errorText = ref('');
 const successText = ref('');
-const section = ref('all');
+const selectedSeriesId = ref<string>('');
+const section = ref('series');
 const statusFilter = ref('all');
 const search = ref('');
 const scheduled = reactive<Record<string, string>>({});
@@ -25,13 +27,22 @@ const types = computed<Record<ReaderKind, string>>(() => ({
   periodization: t('studioKindPeriodization'), event: t('event'),
 }));
 const sections: Record<string, ReaderKind[]> = {
-  all: Object.keys(types.value) as ReaderKind[],
-  stories: ['series', 'volume', 'part', 'chapter'],
-  tips: ['series', 'category', 'tip', 'tipSection'],
-  dictionaries: ['series', 'language', 'word', 'grammar'],
-  timeline: ['series', 'periodization', 'event'],
+  series: ['series'],
+  stories: ['volume', 'part', 'chapter'],
+  tips: ['category', 'tip', 'tipSection'],
+  dictionaries: ['language', 'word', 'grammar'],
+  timeline: ['periodization', 'event'],
 };
 const byId = computed(() => new Map(nodes.value.map(node => [node.id, node])));
+const seriesList = computed(() => nodes.value.filter(node => node.kind === 'series' && node.parentId === null)
+  .sort((a, b) => a.order - b.order || a.draft.title.localeCompare(b.draft.title, 'ja')));
+function sectionForKind(kind: ReaderKind): string {
+  if (kind === 'series') return 'series';
+  if (kind === 'category' || kind === 'tip' || kind === 'tipSection') return 'tips';
+  if (kind === 'language' || kind === 'word' || kind === 'grammar') return 'dictionaries';
+  if (kind === 'periodization' || kind === 'event') return 'timeline';
+  return 'stories';
+}
 const kindOrder: Record<ReaderKind, number> = {
   series: 0, volume: 0, part: 0, chapter: 0,
   category: 1, tip: 0, tipSection: 0,
@@ -72,6 +83,8 @@ function status(node: AuthorNode): string {
   return blocked ? t('pubAncestorPrivate') : t('pubVisible');
 }
 const filtered = computed(() => nodes.value.filter(node => {
+  // Public management is per-series. Never interleave unrelated worlds.
+  if (!selectedSeriesId.value || ancestry(node)[0]?.id !== selectedSeriesId.value) return false;
   if (!sections[section.value]?.includes(node.kind)) return false;
   if (search.value.trim()) {
     const needle = search.value.trim().toLocaleLowerCase();
@@ -89,6 +102,16 @@ const filtered = computed(() => nodes.value.filter(node => {
   }
   return left.length - right.length || a.id.localeCompare(b.id);
 }));
+async function changeSeries(event: Event) {
+  const id = (event.target as HTMLSelectElement).value;
+  selectedSeriesId.value = seriesList.value.some(item => item.id === id) ? id : '';
+  section.value = 'series';
+  statusFilter.value = 'all';
+  search.value = '';
+  errorText.value = '';
+  successText.value = '';
+  await navigateTo({ path: '/studio/publication', query: selectedSeriesId.value ? { series: selectedSeriesId.value } : {} }, { replace: true });
+}
 function pathTitle(node: AuthorNode): string {
   return ancestry(node).map(item => item.draft.title).join(' / ');
 }
@@ -101,6 +124,9 @@ async function load(): Promise<boolean> {
     for (const node of nodes.value) {
       scheduled[node.id] = node.publicSince === null ? '' : (formatJstLocalDateTime(node.publicSince) ?? '');
     }
+    if (!seriesList.value.some(node => node.id === selectedSeriesId.value)) {
+      selectedSeriesId.value = '';
+    }
     return true;
   } catch {
     errorText.value = t('pubLoadError');
@@ -111,7 +137,18 @@ async function load(): Promise<boolean> {
 }
 onMounted(async () => {
   await refreshAuth();
-  if (auth.value?.authenticated) await load();
+  if (!auth.value?.authenticated || !await load()) return;
+  const requestedSeries = typeof route.query.series === 'string' ? route.query.series : '';
+  const requestedTarget = typeof route.query.target === 'string' ? byId.value.get(route.query.target) : null;
+  const targetSeriesId = requestedTarget ? ancestry(requestedTarget)[0]?.id ?? '' : '';
+  if (requestedSeries && seriesList.value.some(node => node.id === requestedSeries)) {
+    selectedSeriesId.value = requestedSeries;
+  } else if (targetSeriesId && seriesList.value.some(node => node.id === targetSeriesId)) {
+    selectedSeriesId.value = targetSeriesId;
+  }
+  if (requestedTarget && targetSeriesId === selectedSeriesId.value) {
+    section.value = sectionForKind(requestedTarget.kind);
+  }
 });
 async function saveSchedule(node: AuthorNode) {
   if (busyId.value || !node.published) return;
@@ -190,9 +227,15 @@ async function action(node: AuthorNode, kind: 'publish' | 'visibility') {
       </div>
       <template v-else>
         <div class="publication-filters">
+          <label>{{ t('searchSelectSeries') }}
+            <select :value="selectedSeriesId" :disabled="loading || !!busyId" @change="changeSeries">
+              <option value="">{{ t('searchSelectSeries') }}</option>
+              <option v-for="series in seriesList" :key="series.id" :value="series.id">{{ series.draft.title }}</option>
+            </select>
+          </label>
           <label>{{ t('pubSectionLabel') }}
-            <select v-model="section">
-              <option value="all">{{ t('studioFilterAll') }}</option>
+            <select v-model="section" :disabled="!selectedSeriesId">
+              <option value="series">{{ t('studioKindSeries') }}</option>
               <option value="stories">{{ t('pubStories') }}</option>
               <option value="tips">{{ t('tips') }}</option>
               <option value="dictionaries">{{ t('dictionaries') }}</option>
@@ -218,6 +261,7 @@ async function action(node: AuthorNode, kind: 'publish' | 'visibility') {
         <p v-if="successText" role="status">{{ successText }}</p>
         <p v-if="errorText" class="error-text" role="alert">{{ errorText }}</p>
         <p v-if="loading" role="status">{{ t('pubLoading') }}</p>
+        <p v-else-if="!selectedSeriesId" class="note">{{ t('searchChooseSeries') }}</p>
         <p v-else-if="!filtered.length">{{ t('pubEmpty') }}</p>
         <ul v-else class="publication-list">
           <li v-for="node in filtered" :key="node.id">

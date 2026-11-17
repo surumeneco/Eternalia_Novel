@@ -43,8 +43,10 @@ function chapterLink(chapterId: string) {
   <div>
     <TopicPath v-if="!revalidating" :items="[
       { label: t('home'), to: '/' },
-      { label: t('stories'), to: '/stories' },
-      ...(series ? [{ label: series.content.title, to: '/stories/' + series.id }] : []),
+      ...(series ? [
+        { label: series.content.title, to: '/series/' + series.id },
+        { label: t('stories'), to: '/stories/' + series.id },
+      ] : []),
       { label: chapter?.content.title ?? t('chapter') },
     ]" />
     <ReaderPanel>
