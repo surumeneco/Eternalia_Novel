@@ -7,7 +7,7 @@ export interface AuthorNode {
   order: number;
   draft: { title: string; body: string; details: Record<string,string>; pages?: string[] };
   revision: number;
-  published: { value: { title: string; body: string; details: Record<string,string>; pages?: string[] }; sourceRevision: number; publishedAt: number } | null;
+  published: { value: { title: string; body: string; details: Record<string,string>; pages?: string[] }; sourceRevision: number; publishedAt: number; parentId?: string | null } | null;
   isPublic: boolean;
   publicSince: number | null;
   updatedAt: number;

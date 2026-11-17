@@ -84,6 +84,7 @@ try {
     await command(['scripts/run-test-junit.mjs', 'browser-mobile-touch', 'apps/web/browser-acceptance/mobile-touch-editor.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-chapter-autosave', 'apps/web/browser-acceptance/author-chapter-autosave.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-tip-category-move', 'apps/web/browser-acceptance/author-tip-category-move.test.mjs']);
+    await command(['scripts/run-test-junit.mjs', 'browser-publication-published-parent', 'apps/web/browser-acceptance/author-publication-published-parent.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-soft-delete', 'apps/web/browser-acceptance/author-soft-delete.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-timeline-integer', 'apps/web/browser-acceptance/author-timeline-integer-year.test.mjs']);
     await command(['scripts/run-test-junit.mjs', 'browser-locale-switch', 'apps/web/browser-acceptance/locale-switch.test.mjs']);

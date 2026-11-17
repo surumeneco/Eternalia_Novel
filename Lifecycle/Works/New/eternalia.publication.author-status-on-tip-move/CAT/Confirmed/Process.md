@@ -2,13 +2,14 @@
 kind: process
 id: eternalia.publication.author-status-on-tip-move
 cat_version: '0.3'
-status: draft
+status: confirmed
 process: eternalia.publication.author-status-on-tip-move
 source_refs:
   - https://drive.google.com/file/d/1LqX-Noytb_oWymIrpO01eO5PvThGlVGx/view
 semantic_contract: markdown-v2
 language: ja
 refs: ["eternalia.publication.author-status-on-tip-move.pi"]
+decision_ref: CAT/Decisions/MOVE-07-user-approval-20261117.md
 ---
 
 # Process: 下書き所属移動中の作者向け実効公開状態

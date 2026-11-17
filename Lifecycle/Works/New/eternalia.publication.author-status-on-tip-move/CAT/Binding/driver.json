@@ -1,0 +1,5 @@
+{
+  "schema": "cat-test-driver/v2",
+  "process": "eternalia.publication.author-status-on-tip-move",
+  "driver": "./cat_move07_driver.mjs"
+}
