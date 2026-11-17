@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  createNode, editNode, newLibrary, publishNode, setVisibility, toReader,
+  createNode, editNode, newLibrary, publishNode, setVisibility, softDeleteNode, toReader,
 } from '../dist/index.js';
 
 const ids = {
@@ -108,4 +108,41 @@ test('AC-06/69: a related Tip title changes publicly only after explicit publica
     'the related link must reflect the explicitly published target revision');
   assert.deepEqual(JSON.parse(byId(db, ids.source).draft.details.relatedTipIds), [ids.target],
     'publishing a related target must not mutate the source draft');
+});
+
+test('AC-06/76: related Tip deletion is blocked until draft and published backlinks are both removed', () => {
+  let db = setupPublishedRelatedTips();
+  // A currently private, formerly published Tip can be deleted only if no
+  // other live draft or published snapshot retains a relation to it.
+  db = setVisibility(db, ids.target, 1, false, null, 3001);
+  const targetBefore = structuredClone(byId(db, ids.target));
+  const rejectReferencedDelete = () => assert.throws(
+    () => softDeleteNode(db, ids.target, 2, 3002),
+    error => error?.code === 'bad-request' && /関連設定/.test(error.message),
+  );
+  rejectReferencedDelete();
+  assert.deepEqual(byId(db, ids.target), targetBefore,
+    'failed delete must preserve the target revision, publication and content');
+
+  // Removing the draft reference alone does not remove the public snapshot.
+  db = editNode(db, ids.source, 2,
+    contentOf('Source', { relatedTipIds: '[]' }), 3002);
+  assert.deepEqual(JSON.parse(byId(db, ids.source).draft.details.relatedTipIds), []);
+  assert.deepEqual(
+    JSON.parse(byId(db, ids.source).published.value.details.relatedTipIds),
+    [ids.target],
+  );
+  rejectReferencedDelete();
+  assert.deepEqual(byId(db, ids.target), targetBefore);
+
+  // Explicit publication removes the last backlink. Deleting the now
+  // unreferenced private target must preserve the source and its revision.
+  db = publishNode(db, ids.source, 3, 3003);
+  assert.deepEqual(publicRelated(db, 3004), []);
+  const sourceBefore = structuredClone(byId(db, ids.source));
+  db = softDeleteNode(db, ids.target, 2, 3004);
+  assert.equal(byId(db, ids.target).deletedAt, 3004);
+  assert.equal(byId(db, ids.target).revision, 3);
+  assert.deepEqual(byId(db, ids.source), sourceBefore);
+  assert.equal(toReader(db, ids.source, 3005)?.id, ids.source);
 });
