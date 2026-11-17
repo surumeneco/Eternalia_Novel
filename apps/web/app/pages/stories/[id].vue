@@ -17,7 +17,9 @@ const chaptersOf = (partId: string) => sorted(partId, 'chapter');
 </script>
 <template>
   <div>
-    <TopicPath v-if="!revalidating" :items="[{ label: t('home'), to: '/' }, { label: t('stories'), to: '/stories' }, { label: series?.content.title ?? t('readerKindSeries') }]" />
+    <TopicPath v-if="!revalidating" :items="[{ label: t('home'), to: '/' },
+  { label: series?.content.title ?? t('readerKindSeries'), to: '/series/' + id },
+  { label: t('stories') }]" />
     <ReaderPanel>
       <ReadingSkeleton v-if="revalidating || pending" :label="t('readerLoadingToc')" />
       <div v-else-if="error || !series" role="alert">
