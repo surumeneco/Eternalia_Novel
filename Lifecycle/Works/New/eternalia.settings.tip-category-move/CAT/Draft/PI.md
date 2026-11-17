@@ -17,7 +17,7 @@ refs: []
 
 | 相手Process | 方向 |
 | --- | --- |
-| eternalia.publication.reader | 双方向 |
+| eternalia.author.publication-manager | 双方向 |
 
 ## 項目
 
