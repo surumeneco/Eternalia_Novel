@@ -20,7 +20,8 @@ test('AUTHOR-L10N-01/02: author management type labels follow live locale withou
       }]);
       const page = await context.newPage();
 
-      await page.goto(base + '/studio/publication');
+      await page.goto(base + '/studio/publication?series=' + fixture.seriesA);
+      await page.getByLabel('領域').selectOption('tips');
       const row = page.locator('.publication-row').filter({
         has: page.getByRole('heading', { name: privateTip, exact: true }),
       });
@@ -38,13 +39,13 @@ test('AUTHOR-L10N-01/02: author management type labels follow live locale withou
       assert.match(await kindLabel.innerText(), /^設定 · /,
         'published content type must react to en→ja');
 
-      await page.goto(base + '/studio/order');
-      const parent = page.locator('.order-filters select').first();
-      const kind = page.locator('.order-filters select').nth(1);
+      await page.goto(base + '/studio/order?series=' + fixture.seriesA);
+      const parent = page.getByRole('combobox', { name: '親となる項目' });
+      const kind = page.getByRole('combobox', { name: '項目の種類' });
       await parent.locator('option[value="' + fixture.seriesA + '"]').waitFor({ state: 'attached' });
       await parent.selectOption(fixture.seriesA);
       await page.waitForFunction(() =>
-        document.querySelectorAll('.order-filters select')[1]?.value === 'volume',
+        document.querySelectorAll('.order-filters select')[2]?.value === 'volume',
       );
       assert.match(await parent.locator('option:checked').innerText(), /（シリーズ）$/,
         'Japanese parent kind before switching');
@@ -106,6 +107,9 @@ test('AUTHOR-DOM-02: publication and ordering screens compose shell/panel and fi
       for (const path of ['/studio/publication', '/studio/order']) {
         const response = await page.goto(base + path);
         assert.equal(response?.status(), 200);
+        if (path.endsWith('publication')) {
+          await page.getByLabel('シリーズを選択').selectOption(fixture.seriesA);
+        }
         const data = path.endsWith('publication') ? '.publication-row' : '.order-filters select';
         await page.locator(data).first().waitFor();
         const dom = await page.evaluate(() => {
