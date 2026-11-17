@@ -92,7 +92,7 @@ test('PUB-LIST-RESUME-01/02/04: home series and recent vanish, restore, and fail
         const restored = page.waitForResponse(r => r.url().endsWith('/api/public/series') && r.status() === 200);
         await simulateVisibility(page, 'visible');
         await restored;
-        await page.getByRole('link', { name: marker + '-WORLD', exact: true }).waitFor();
+        await page.locator('main ul.reader-list').getByRole('link', { name: marker + '-WORLD', exact: true }).waitFor();
         await page.getByRole('link', { name: marker + '-RECENT-TIP', exact: true }).waitFor();
 
         // BFCache-style pageshow with failing public series response must not
