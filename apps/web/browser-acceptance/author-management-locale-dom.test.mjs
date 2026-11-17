@@ -40,8 +40,10 @@ test('AUTHOR-L10N-01/02: author management type labels follow live locale withou
         'published content type must react to en→ja');
 
       await page.goto(base + '/studio/order?series=' + fixture.seriesA);
-      const parent = page.getByRole('combobox', { name: '親となる項目' });
-      const kind = page.getByRole('combobox', { name: '項目の種類' });
+      // Reuse stable structural positions across locale switches: getByRole
+      // with a Japanese accessible name no longer resolves in English.
+      const parent = page.locator('.order-filters select').nth(1);
+      const kind = page.locator('.order-filters select').nth(2);
       await parent.locator('option[value="' + fixture.seriesA + '"]').waitFor({ state: 'attached' });
       await parent.selectOption(fixture.seriesA);
       assert.equal(await parent.inputValue(), fixture.seriesA,
