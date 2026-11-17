@@ -2,7 +2,9 @@
 
 作者向けの小説・設定集・創作言語/辞書・年表の編集管理と、匿名読者向けの公開/閲覧を行うWebアプリ。採用構成は **Nuxt 4 / Vue / TypeScript + NestJS / TypeScript + PostgreSQL + Discord OAuth2**。下書き保存と明示的な公開版更新を分離し、公開可否はサーバー側で祖先の状態・公開開始日時を含めて判定します。
 
-**受入確認対象は `develop`**。変更は作業ブランチで検証して随時 `develop` に統合します。`main` への統合・リリースはユーザーの明示的な承認を要します。GitHub Actionsの自動テスト成功は実Discord認証・実機操作・CAT-TDD正式Gate・旧v0.3視覚受入の完了を意味しません。
+**α版開発は2026-11-17に完了しました。** 完了条件は、採用された主要機能が`develop`に統合され、利用者が実機確認を開始できることです（[完了判定と受入検証の正本](https://drive.google.com/file/d/14no6MWmkFuyWYPVS6QdcRmbLbrUBbOpc/view)）。**実機確認・受入判断・確認後の不具合修正や意図との差異の調整・β版開発はα版完了後の工程**です。
+
+**実機確認対象は `develop`**。変更は作業ブランチで検証して随時 `develop` に統合します。`main` への統合・リリースはユーザーの明示的な承認を要します。GitHub Actionsの自動テスト成功は実Discord認証・実機操作・CAT-TDD正式Gate・旧v0.3視覚受入の完了を意味しません。
 
 ## 起動・確認
 
@@ -24,8 +26,8 @@
 | 用途 | 参照先 |
 | --- | --- |
 | **要件・設計・旧版の採否** | [Driveプロジェクトインデックス](https://drive.google.com/file/d/1iyt-eHelLjROHcgO699p86poC0Y_-7pd/view)（要件100、採用決定215、受入条件400など） |
-| **現在の残Work** | [CAT-HANDOFF.md](CAT-HANDOFF.md) |
-| **AC-01〜78のコード/自動試験証拠と未完了境界** | [ACトレーサビリティ](docs/alpha-ac-traceability.md) |
+| **α版完了後の実機確認・改善Work** | [CAT-HANDOFF.md](CAT-HANDOFF.md) |
+| **AC-01〜78のコード/自動試験証拠と未検証境界** | [ACトレーサビリティ](docs/alpha-ac-traceability.md) |
 | **実機・実Discord・旧UI対比の手順と実測** | [MAN-01〜15](docs/alpha-manual-acceptance.md)、[IME/Android補助手順](docs/verification/editor-ime-android-handoff.md) |
 | **CIの構成と証拠の解釈** | [workflow](.github/workflows/alpha-checks.yml)、[検証境界](docs/alpha-check-evidence.md)、[Actions](https://github.com/surumeneco/Eternalia_Novel/actions) |
 | **CAT-TDDのWork/Candidates** | `docs/cat/`、`Lifecycle/`。Draftは正式Confirmedではない |
