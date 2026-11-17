@@ -597,7 +597,10 @@ async function createItem() {
     }
     createOpen.value = false;
     selectedId.value = response.id;
-    selectedSeriesId.value = createKind.value === 'series' ? response.id : owningSeriesId(response.id);
+    // The new child is not in byId until the server readback. Resolve its
+    // series from its already-validated parent to keep the creation context.
+    selectedSeriesId.value = createKind.value === 'series'
+      ? response.id : owningSeriesId(createParentId.value);
     filter.value = areaForKind(createKind.value);
     createdId = response.id;
   }, t('studioCreated'));
