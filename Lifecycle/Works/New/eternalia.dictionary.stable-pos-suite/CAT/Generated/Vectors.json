@@ -1,0 +1,34 @@
+{
+  "cases": [
+    {
+      "id": "case.unspecified",
+      "input": {
+        "入力.公開マスタ内に同IDあり": false,
+        "入力.品詞ID指定あり": false
+      },
+      "state": {},
+      "trigger": "品詞名解決"
+    },
+    {
+      "id": "case.published",
+      "input": {
+        "入力.公開マスタ内に同IDあり": true,
+        "入力.品詞ID指定あり": true
+      },
+      "state": {},
+      "trigger": "品詞名解決"
+    },
+    {
+      "id": "case.hidden",
+      "input": {
+        "入力.公開マスタ内に同IDあり": false,
+        "入力.品詞ID指定あり": true
+      },
+      "state": {},
+      "trigger": "品詞名解決"
+    }
+  ],
+  "process": "eternalia.dictionary.stable-pos-reference",
+  "schema": "cat-test-vectors/v2",
+  "selection_rule": "rule-witness/v1"
+}
