@@ -5,6 +5,13 @@ const menuOpen = ref(false);
 const clientReady = ref(false);
 onMounted(() => { clientReady.value = true; });
 const { t, language } = useUiLocale();
+const route = useRoute();
+// Four content areas belong to a selected series, never the global site root.
+const seriesId = computed(() => {
+  const match = /^\/(?:series|stories|tips|dictionaries|timeline)\/([^/]+)$/.exec(route.path);
+  if (match) return decodeURIComponent(match[1]!);
+  return typeof route.query.series === 'string' ? route.query.series : null;
+});
 function toggleLanguage() {
   language.value = language.value === 'en' ? 'ja' : 'en';
   menuOpen.value = false;
@@ -12,12 +19,15 @@ function toggleLanguage() {
 useHead({ htmlAttrs: { lang: computed(() => language.value === 'en' ? 'en' : 'ja') } });
 const navigation = computed(() => [
   { to: '/', label: t('home') },
-  { to: '/stories', label: t('stories') },
-  { to: '/tips', label: t('tips') },
-  { to: '/dictionaries', label: t('dictionaries') },
-  { to: '/timeline', label: t('timeline') },
+  ...(seriesId.value ? [
+    { to: '/series/' + seriesId.value, label: t('readerKindSeries') },
+    { to: '/stories/' + seriesId.value, label: t('stories') },
+    { to: '/tips/' + seriesId.value, label: t('tips') },
+    { to: '/dictionaries/' + seriesId.value, label: t('dictionaries') },
+    { to: '/timeline/' + seriesId.value, label: t('timeline') },
+  ] : []),
   { to: '/search', label: t('shellSearch') },
-] as const);
+]);
 </script>
 
 <template>
@@ -40,10 +50,12 @@ const navigation = computed(() => [
     <div class="site-content">
       <aside class="site-aside" :aria-label="t('shellAside')">
         <section class="stone-panel">
-          <h2>{{ t('browse') }}</h2>
+          <h2>{{ seriesId ? t('readerSeriesAreas') : t('publishedSeries') }}</h2>
           <nav :aria-label="t('shellResourceTypes')">
             <ul>
-              <li v-for="link in navigation.slice(1)" :key="link.to"><NuxtLink :to="link.to">{{ link.label }}</NuxtLink></li>
+              <li v-for="link in (seriesId ? navigation.slice(1) : navigation.slice(0, 1))" :key="link.to">
+                <NuxtLink :to="link.to">{{ link.label }}</NuxtLink>
+              </li>
             </ul>
           </nav>
         </section>
