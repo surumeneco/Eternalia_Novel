@@ -1,0 +1,38 @@
+name: Chat isolated source snapshot (temporary)
+on:
+  push:
+    branches:
+      - infra/chat-eternalia-snapshot-20261117
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out exact product revision
+        uses: actions/checkout@v4
+        with:
+          repository: surumeneco/Eternalia_Novel
+          ref: 6ee6adaeecca5f645974c71145d81823bc6eda53
+          persist-credentials: false
+      - name: Validate and archive exact revision
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "6ee6adaeecca5f645974c71145d81823bc6eda53"
+          printf '%s\n' "6ee6adaeecca5f645974c71145d81823bc6eda53" > source.commit
+          git rev-parse HEAD^{tree} > source.tree
+          git archive --format=tar HEAD | gzip -n > source.tar.gz
+          sha256sum source.tar.gz > source.tar.gz.sha256
+          cat source.commit source.tree source.tar.gz.sha256
+      - name: Upload read-only source snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: eternalia-snapshot-6ee6adaeecca
+          path: |
+            source.commit
+            source.tree
+            source.tar.gz
+            source.tar.gz.sha256
+          if-no-files-found: error
+          retention-days: 1
