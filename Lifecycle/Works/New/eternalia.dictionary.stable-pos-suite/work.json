@@ -1,0 +1,120 @@
+{
+  "schema": "cat-work/v1",
+  "id": "eternalia.dictionary.stable-pos-suite",
+  "entry": "confirmed-spec",
+  "flow": "spec-test-sync",
+  "mode": "implementation",
+  "work_kind": "test-maintenance",
+  "issue_ref": "https://github.com/surumeneco/Eternalia_Novel/issues/1",
+  "project_entry_ref": "https://drive.google.com/file/d/1clwfVJ3e_t1_QKFfOWxxRIzE9WMFvTiM/view",
+  "normative": [
+    {
+      "uri": "https://drive.google.com/file/d/1LqX-Noytb_oWymIrpO01eO5PvThGlVGx/view"
+    }
+  ],
+  "evidence": [
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/2f1043a5bbdf9c424be1b7fc6c9345b2f327dcbe/packages/contracts/src/word-pos-reference.ts"
+    }
+  ],
+  "repositories": [
+    {
+      "name": "eternalia",
+      "path": "../../../..",
+      "branch_pattern": "feature/*",
+      "allowed_paths": [
+        "Lifecycle/Works/New/eternalia.dictionary.stable-pos-suite/**",
+        "packages/contracts/tests/generated/**",
+        ".cat-flow/test-suite-manifest.pos.json",
+        ".cat-flow/evidence/test-suite-pos.json",
+        "scripts/run-cat-vitest-suite-junit.mjs"
+      ],
+      "production_paths": [],
+      "test_paths": [
+        "packages/contracts/tests/generated/cat_case_unspecified_f580e3247222.test.ts",
+        "packages/contracts/tests/generated/cat_case_published_12f388ea99c1.test.ts",
+        "packages/contracts/tests/generated/cat_case_hidden_df5ca511ad2e.test.ts"
+      ]
+    }
+  ],
+  "scope": {
+    "process_ids": [
+      "eternalia.dictionary.stable-pos-reference"
+    ],
+    "changed_ids": [
+      "dictionary.reader.public-master-name"
+    ],
+    "preserved_ids": [
+      "dictionary.classes.stable-id-reference",
+      "publication.snapshot-separation",
+      "dictionary.reader.spelling-order"
+    ]
+  },
+  "specification": {
+    "status": "confirmed",
+    "decision_ref": "https://drive.google.com/file/d/1LqX-Noytb_oWymIrpO01eO5PvThGlVGx/view",
+    "artifact_refs": [
+      "Lifecycle/Works/New/eternalia.dictionary.stable-pos-reference/CAT/Confirmed/Process.md",
+      "Lifecycle/Works/New/eternalia.dictionary.stable-pos-reference/CAT/Confirmed/PI.md",
+      "Lifecycle/Works/New/eternalia.dictionary.stable-pos-reference/CAT/Confirmed/TCE.md"
+    ]
+  },
+  "technologies": [
+    "TypeScript",
+    "Vitest"
+  ],
+  "checks": [
+    {
+      "id": "suite-stable-pos-3",
+      "stage": "suite-run",
+      "runner": "junit",
+      "cwd": "@repo:eternalia",
+      "argv": [
+        "node",
+        "scripts/run-cat-vitest-suite-junit.mjs",
+        "--report",
+        "{report}",
+        "--process",
+        "eternalia.dictionary.stable-pos-reference",
+        "--ids",
+        "case.unspecified,case.published,case.hidden",
+        "--",
+        "packages/contracts/tests/generated/cat_case_unspecified_f580e3247222.test.ts",
+        "packages/contracts/tests/generated/cat_case_published_12f388ea99c1.test.ts",
+        "packages/contracts/tests/generated/cat_case_hidden_df5ca511ad2e.test.ts"
+      ],
+      "input_paths": [
+        "packages/contracts/tests/generated/cat_case_unspecified_f580e3247222.test.ts",
+        "packages/contracts/tests/generated/cat_case_published_12f388ea99c1.test.ts",
+        "packages/contracts/tests/generated/cat_case_hidden_df5ca511ad2e.test.ts",
+        "packages/contracts/tests/generated/stable-pos-driver.ts",
+        "packages/contracts/src/word-pos-reference.ts",
+        "Lifecycle/Works/New/eternalia.dictionary.stable-pos-suite/CAT/Binding/driver.json",
+        "scripts/run-cat-vitest-suite-junit.mjs"
+      ],
+      "test_ids": [
+        "case.unspecified",
+        "case.published",
+        "case.hidden"
+      ],
+      "timeout_seconds": 60
+    }
+  ],
+  "depends_on": [],
+  "compilation": {
+    "schema": "cat-compile/v2",
+    "process": "@workspace/Lifecycle/Works/New/eternalia.dictionary.stable-pos-reference/CAT/Confirmed/Process.md",
+    "pi": "@workspace/Lifecycle/Works/New/eternalia.dictionary.stable-pos-reference/CAT/Confirmed/PI.md",
+    "pis": [
+      "@workspace/Lifecycle/Works/New/eternalia.dictionary.stable-pos-reference/CAT/Confirmed/PI.md"
+    ],
+    "tce": "@workspace/Lifecycle/Works/New/eternalia.dictionary.stable-pos-reference/CAT/Confirmed/TCE.md",
+    "tces": [
+      "@workspace/Lifecycle/Works/New/eternalia.dictionary.stable-pos-reference/CAT/Confirmed/TCE.md"
+    ],
+    "model": "CAT/Generated/TestModel.json",
+    "vectors": "CAT/Generated/Vectors.json",
+    "binding": "CAT/Binding/driver.json",
+    "allow_draft": false
+  }
+}

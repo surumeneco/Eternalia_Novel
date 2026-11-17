@@ -1,0 +1,274 @@
+{
+  "coverage_checks": {
+    "品詞名解決": {
+      "excluded_by_pi_constraints": false,
+      "guard_refs": [
+        "入力.公開マスタ内に同IDあり",
+        "入力.品詞ID指定あり"
+      ],
+      "overlap_count": 0,
+      "overlaps": [],
+      "result": "proved",
+      "uncovered": [],
+      "uncovered_count": 0,
+      "unreachable_rules": []
+    }
+  },
+  "coverage_claim": "closed",
+  "coverage_requirement": "closed",
+  "definitions": [],
+  "fields": [
+    {
+      "direction": "receive",
+      "domain": {
+        "type": "boolean"
+      },
+      "id": "入力.品詞ID指定あり",
+      "presence": "required",
+      "role": "input",
+      "source_pi": "eternalia.dictionary.stable-pos-reference.pi"
+    },
+    {
+      "direction": "receive",
+      "domain": {
+        "type": "boolean"
+      },
+      "id": "入力.公開マスタ内に同IDあり",
+      "presence": "required",
+      "role": "input",
+      "source_pi": "eternalia.dictionary.stable-pos-reference.pi"
+    },
+    {
+      "direction": "send",
+      "domain": {
+        "type": "boolean"
+      },
+      "id": "出力.公開名を表示",
+      "presence": "required",
+      "role": "output",
+      "source_pi": "eternalia.dictionary.stable-pos-reference.pi"
+    }
+  ],
+  "language": "ja",
+  "limits": [
+    "finite-guard-closure-only",
+    "no-general-reachability-proof",
+    "no-process-composition"
+  ],
+  "local_coverage_requirements": {
+    "eternalia.dictionary.stable-pos-reference.tce": "closed"
+  },
+  "model_type": "symbolic-relation",
+  "normalized_ir": "cat-machine/v2",
+  "normative_rule_inputs": [],
+  "operation_presence": [],
+  "pi_artifacts": [
+    "eternalia.dictionary.stable-pos-reference.pi"
+  ],
+  "pi_boundaries": [
+    {
+      "artifact": "eternalia.dictionary.stable-pos-reference.pi",
+      "direction": "bidirectional",
+      "peer": "eternalia.dictionary.public-reader"
+    }
+  ],
+  "pi_boundary": {
+    "direction": "bidirectional",
+    "peer": "eternalia.dictionary.public-reader"
+  },
+  "pi_constraints": [],
+  "pi_operations": [
+    {
+      "direction": "accept",
+      "id": "resolve",
+      "source_pi": "eternalia.dictionary.stable-pos-reference.pi",
+      "trigger": "品詞名解決"
+    }
+  ],
+  "presence_unproven": [],
+  "process": "eternalia.dictionary.stable-pos-reference",
+  "process_interfaces": [
+    "eternalia.dictionary.stable-pos-reference.pi"
+  ],
+  "rule_obligations": [],
+  "rules": [
+    {
+      "allowed": [
+        {
+          "absent_outputs": [],
+          "unchanged": [],
+          "write": [
+            {
+              "expr": {
+                "literal": false
+              },
+              "target": "出力.公開名を表示"
+            }
+          ]
+        }
+      ],
+      "id": "unspecified",
+      "source_artifact": "eternalia.dictionary.stable-pos-reference.tce",
+      "trigger": "品詞名解決",
+      "when": {
+        "args": [
+          {
+            "ref": "入力.品詞ID指定あり"
+          }
+        ],
+        "op": "not"
+      }
+    },
+    {
+      "allowed": [
+        {
+          "absent_outputs": [],
+          "unchanged": [],
+          "write": [
+            {
+              "expr": {
+                "literal": true
+              },
+              "target": "出力.公開名を表示"
+            }
+          ]
+        }
+      ],
+      "id": "published",
+      "source_artifact": "eternalia.dictionary.stable-pos-reference.tce",
+      "trigger": "品詞名解決",
+      "when": {
+        "args": [
+          {
+            "ref": "入力.品詞ID指定あり"
+          },
+          {
+            "ref": "入力.公開マスタ内に同IDあり"
+          }
+        ],
+        "op": "and"
+      }
+    },
+    {
+      "allowed": [
+        {
+          "absent_outputs": [],
+          "unchanged": [],
+          "write": [
+            {
+              "expr": {
+                "literal": false
+              },
+              "target": "出力.公開名を表示"
+            }
+          ]
+        }
+      ],
+      "id": "hidden",
+      "source_artifact": "eternalia.dictionary.stable-pos-reference.tce",
+      "trigger": "品詞名解決",
+      "when": {
+        "args": [
+          {
+            "ref": "入力.品詞ID指定あり"
+          },
+          {
+            "args": [
+              {
+                "ref": "入力.公開マスタ内に同IDあり"
+              }
+            ],
+            "op": "not"
+          }
+        ],
+        "op": "and"
+      }
+    }
+  ],
+  "schema": "cat-test-model/v2",
+  "semantic_authority": "cat-markdown/v2",
+  "source_artifacts": [
+    "eternalia.dictionary.stable-pos-reference",
+    "eternalia.dictionary.stable-pos-reference.pi",
+    "eternalia.dictionary.stable-pos-reference.tce"
+  ],
+  "source_records": [
+    {
+      "id": "eternalia.dictionary.stable-pos-reference",
+      "kind": "process",
+      "sha256": "aea0b8aa9f159fda1bbc28993773a96f693134c19cf72e03041c97854963a012"
+    },
+    {
+      "id": "eternalia.dictionary.stable-pos-reference.pi",
+      "kind": "pi",
+      "sha256": "1423047d75ab9001779da719449ea92d2ed01c240dbf03e533659e66be3f2aea"
+    },
+    {
+      "id": "eternalia.dictionary.stable-pos-reference.tce",
+      "kind": "tce",
+      "sha256": "ea411300a8956236344dbc1e209b62d8942b40d953e4003d90ddeaedd95db903"
+    }
+  ],
+  "source_semantic_map": {
+    "common_rules": [],
+    "domain_rule": {
+      "artifact": null,
+      "definitions": []
+    },
+    "domain_specs": [],
+    "pi": {
+      "artifact": "eternalia.dictionary.stable-pos-reference.pi",
+      "artifacts": [
+        "eternalia.dictionary.stable-pos-reference.pi"
+      ],
+      "constraint_count": 0,
+      "fields": [
+        "入力.品詞ID指定あり",
+        "入力.公開マスタ内に同IDあり",
+        "出力.公開名を表示"
+      ],
+      "operations": [
+        "resolve"
+      ]
+    },
+    "process": {
+      "actions": [],
+      "artifact": "eternalia.dictionary.stable-pos-reference",
+      "interfaces": [
+        "eternalia.dictionary.stable-pos-reference.pi"
+      ],
+      "observations": [],
+      "state": [],
+      "triggers": [
+        "品詞名解決"
+      ]
+    },
+    "tce": [
+      {
+        "artifact": "eternalia.dictionary.stable-pos-reference.tce",
+        "local_coverage": "closed",
+        "outcome_count": 3,
+        "rules": [
+          "unspecified",
+          "published",
+          "hidden"
+        ]
+      }
+    ]
+  },
+  "source_sha256": {
+    "pi": "1423047d75ab9001779da719449ea92d2ed01c240dbf03e533659e66be3f2aea",
+    "process": "aea0b8aa9f159fda1bbc28993773a96f693134c19cf72e03041c97854963a012",
+    "tce": "ea411300a8956236344dbc1e209b62d8942b40d953e4003d90ddeaedd95db903"
+  },
+  "status": "confirmed",
+  "triggers": [
+    {
+      "id": "品詞名解決",
+      "origin": "eternalia.dictionary.stable-pos-reference.pi/resolve"
+    }
+  ],
+  "unresolved_domains": [],
+  "unresolved_interfaces": [],
+  "unverified_rule_ids": []
+}
