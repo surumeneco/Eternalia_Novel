@@ -1,0 +1,43 @@
+{
+  "cases": [
+    {
+      "id": "case.master.selected",
+      "input": {
+        "入力.マスタ外旧値あり": false,
+        "入力.マスタ登録あり": true
+      },
+      "state": {},
+      "trigger": "品詞欄表示"
+    },
+    {
+      "id": "case.master.legacy",
+      "input": {
+        "入力.マスタ外旧値あり": true,
+        "入力.マスタ登録あり": true
+      },
+      "state": {},
+      "trigger": "品詞欄表示"
+    },
+    {
+      "id": "case.empty.no-legacy",
+      "input": {
+        "入力.マスタ外旧値あり": false,
+        "入力.マスタ登録あり": false
+      },
+      "state": {},
+      "trigger": "品詞欄表示"
+    },
+    {
+      "id": "case.empty.legacy",
+      "input": {
+        "入力.マスタ外旧値あり": true,
+        "入力.マスタ登録あり": false
+      },
+      "state": {},
+      "trigger": "品詞欄表示"
+    }
+  ],
+  "process": "eternalia.dictionary.master-only-input",
+  "schema": "cat-test-vectors/v2",
+  "selection_rule": "rule-witness/v1"
+}

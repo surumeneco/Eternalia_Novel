@@ -1,0 +1,274 @@
+{
+  "coverage_checks": {
+    "品詞照合": {
+      "excluded_by_pi_constraints": false,
+      "guard_refs": [
+        "入力.品詞が所属言語マスタ内",
+        "入力.品詞指定あり"
+      ],
+      "overlap_count": 0,
+      "overlaps": [],
+      "result": "proved",
+      "uncovered": [],
+      "uncovered_count": 0,
+      "unreachable_rules": []
+    }
+  },
+  "coverage_claim": "closed",
+  "coverage_requirement": "closed",
+  "definitions": [],
+  "fields": [
+    {
+      "direction": "receive",
+      "domain": {
+        "type": "boolean"
+      },
+      "id": "入力.品詞指定あり",
+      "presence": "required",
+      "role": "input",
+      "source_pi": "eternalia.dictionary.master-only-create.pi"
+    },
+    {
+      "direction": "receive",
+      "domain": {
+        "type": "boolean"
+      },
+      "id": "入力.品詞が所属言語マスタ内",
+      "presence": "required",
+      "role": "input",
+      "source_pi": "eternalia.dictionary.master-only-create.pi"
+    },
+    {
+      "direction": "send",
+      "domain": {
+        "type": "boolean"
+      },
+      "id": "出力.登録可",
+      "presence": "required",
+      "role": "output",
+      "source_pi": "eternalia.dictionary.master-only-create.pi"
+    }
+  ],
+  "language": "ja",
+  "limits": [
+    "finite-guard-closure-only",
+    "no-general-reachability-proof",
+    "no-process-composition"
+  ],
+  "local_coverage_requirements": {
+    "eternalia.dictionary.master-only-create.tce": "closed"
+  },
+  "model_type": "symbolic-relation",
+  "normalized_ir": "cat-machine/v2",
+  "normative_rule_inputs": [],
+  "operation_presence": [],
+  "pi_artifacts": [
+    "eternalia.dictionary.master-only-create.pi"
+  ],
+  "pi_boundaries": [
+    {
+      "artifact": "eternalia.dictionary.master-only-create.pi",
+      "direction": "bidirectional",
+      "peer": "eternalia.dictionary.author-create"
+    }
+  ],
+  "pi_boundary": {
+    "direction": "bidirectional",
+    "peer": "eternalia.dictionary.author-create"
+  },
+  "pi_constraints": [],
+  "pi_operations": [
+    {
+      "direction": "accept",
+      "id": "check",
+      "source_pi": "eternalia.dictionary.master-only-create.pi",
+      "trigger": "品詞照合"
+    }
+  ],
+  "presence_unproven": [],
+  "process": "eternalia.dictionary.master-only-create",
+  "process_interfaces": [
+    "eternalia.dictionary.master-only-create.pi"
+  ],
+  "rule_obligations": [],
+  "rules": [
+    {
+      "allowed": [
+        {
+          "absent_outputs": [],
+          "unchanged": [],
+          "write": [
+            {
+              "expr": {
+                "literal": true
+              },
+              "target": "出力.登録可"
+            }
+          ]
+        }
+      ],
+      "id": "none",
+      "source_artifact": "eternalia.dictionary.master-only-create.tce",
+      "trigger": "品詞照合",
+      "when": {
+        "args": [
+          {
+            "ref": "入力.品詞指定あり"
+          }
+        ],
+        "op": "not"
+      }
+    },
+    {
+      "allowed": [
+        {
+          "absent_outputs": [],
+          "unchanged": [],
+          "write": [
+            {
+              "expr": {
+                "literal": true
+              },
+              "target": "出力.登録可"
+            }
+          ]
+        }
+      ],
+      "id": "member",
+      "source_artifact": "eternalia.dictionary.master-only-create.tce",
+      "trigger": "品詞照合",
+      "when": {
+        "args": [
+          {
+            "ref": "入力.品詞指定あり"
+          },
+          {
+            "ref": "入力.品詞が所属言語マスタ内"
+          }
+        ],
+        "op": "and"
+      }
+    },
+    {
+      "allowed": [
+        {
+          "absent_outputs": [],
+          "unchanged": [],
+          "write": [
+            {
+              "expr": {
+                "literal": false
+              },
+              "target": "出力.登録可"
+            }
+          ]
+        }
+      ],
+      "id": "absent",
+      "source_artifact": "eternalia.dictionary.master-only-create.tce",
+      "trigger": "品詞照合",
+      "when": {
+        "args": [
+          {
+            "ref": "入力.品詞指定あり"
+          },
+          {
+            "args": [
+              {
+                "ref": "入力.品詞が所属言語マスタ内"
+              }
+            ],
+            "op": "not"
+          }
+        ],
+        "op": "and"
+      }
+    }
+  ],
+  "schema": "cat-test-model/v2",
+  "semantic_authority": "cat-markdown/v2",
+  "source_artifacts": [
+    "eternalia.dictionary.master-only-create",
+    "eternalia.dictionary.master-only-create.pi",
+    "eternalia.dictionary.master-only-create.tce"
+  ],
+  "source_records": [
+    {
+      "id": "eternalia.dictionary.master-only-create",
+      "kind": "process",
+      "sha256": "f2f6441e53d3c7c1a4a2d9e8f9ce20ca0f71832f0d76b40bd38cbf4e208293e9"
+    },
+    {
+      "id": "eternalia.dictionary.master-only-create.pi",
+      "kind": "pi",
+      "sha256": "42a7fb6380259d526e7e285ff589191e4d820f89922d1fc580da706cd3701802"
+    },
+    {
+      "id": "eternalia.dictionary.master-only-create.tce",
+      "kind": "tce",
+      "sha256": "36be8df006793178e5c2398a3f73df434d4614ad8a6543956588b4a43e28d7eb"
+    }
+  ],
+  "source_semantic_map": {
+    "common_rules": [],
+    "domain_rule": {
+      "artifact": null,
+      "definitions": []
+    },
+    "domain_specs": [],
+    "pi": {
+      "artifact": "eternalia.dictionary.master-only-create.pi",
+      "artifacts": [
+        "eternalia.dictionary.master-only-create.pi"
+      ],
+      "constraint_count": 0,
+      "fields": [
+        "入力.品詞指定あり",
+        "入力.品詞が所属言語マスタ内",
+        "出力.登録可"
+      ],
+      "operations": [
+        "check"
+      ]
+    },
+    "process": {
+      "actions": [],
+      "artifact": "eternalia.dictionary.master-only-create",
+      "interfaces": [
+        "eternalia.dictionary.master-only-create.pi"
+      ],
+      "observations": [],
+      "state": [],
+      "triggers": [
+        "品詞照合"
+      ]
+    },
+    "tce": [
+      {
+        "artifact": "eternalia.dictionary.master-only-create.tce",
+        "local_coverage": "closed",
+        "outcome_count": 3,
+        "rules": [
+          "none",
+          "member",
+          "absent"
+        ]
+      }
+    ]
+  },
+  "source_sha256": {
+    "pi": "42a7fb6380259d526e7e285ff589191e4d820f89922d1fc580da706cd3701802",
+    "process": "f2f6441e53d3c7c1a4a2d9e8f9ce20ca0f71832f0d76b40bd38cbf4e208293e9",
+    "tce": "36be8df006793178e5c2398a3f73df434d4614ad8a6543956588b4a43e28d7eb"
+  },
+  "status": "confirmed",
+  "triggers": [
+    {
+      "id": "品詞照合",
+      "origin": "eternalia.dictionary.master-only-create.pi/check"
+    }
+  ],
+  "unresolved_domains": [],
+  "unresolved_interfaces": [],
+  "unverified_rule_ids": []
+}

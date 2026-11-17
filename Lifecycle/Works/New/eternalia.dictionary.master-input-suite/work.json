@@ -1,0 +1,123 @@
+{
+  "schema": "cat-work/v1",
+  "id": "eternalia.dictionary.master-input-suite",
+  "entry": "confirmed-spec",
+  "flow": "spec-test-sync",
+  "mode": "implementation",
+  "work_kind": "test-maintenance",
+  "issue_ref": "https://github.com/surumeneco/Eternalia_Novel/issues/1",
+  "project_entry_ref": "https://drive.google.com/file/d/1clwfVJ3e_t1_QKFfOWxxRIzE9WMFvTiM/view",
+  "normative": [
+    {
+      "uri": "https://drive.google.com/file/d/1LqX-Noytb_oWymIrpO01eO5PvThGlVGx/view"
+    }
+  ],
+  "evidence": [
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/4a4bb8164c275f83f1040147888c66c44d685047/apps/web/app/utils/word-class-input-policy.ts"
+    }
+  ],
+  "repositories": [
+    {
+      "name": "eternalia",
+      "path": "../../../..",
+      "branch_pattern": "feature/*",
+      "allowed_paths": [
+        "Lifecycle/Works/New/eternalia.dictionary.master-input-suite/**",
+        "packages/contracts/tests/generated/**",
+        ".cat-flow/test-suite-manifest.master-input.json",
+        ".cat-flow/evidence/test-suite-master-input.json",
+        "scripts/run-cat-vitest-suite-junit.mjs"
+      ],
+      "production_paths": [],
+      "test_paths": [
+        "packages/contracts/tests/generated/cat_case_master_selected_36e8a4814922.test.ts",
+        "packages/contracts/tests/generated/cat_case_master_legacy_90ee49093adb.test.ts",
+        "packages/contracts/tests/generated/cat_case_empty_no_legacy_ed8ed079cd74.test.ts",
+        "packages/contracts/tests/generated/cat_case_empty_legacy_e496b3f229ee.test.ts"
+      ]
+    }
+  ],
+  "scope": {
+    "process_ids": [
+      "eternalia.dictionary.master-only-input"
+    ],
+    "changed_ids": [
+      "dictionary.master-only-input.symbolic-suite"
+    ],
+    "preserved_ids": [
+      "publication.snapshot-separation",
+      "dictionary.spelling-collision.boolean-decision"
+    ]
+  },
+  "specification": {
+    "status": "confirmed",
+    "decision_ref": "https://drive.google.com/file/d/1LqX-Noytb_oWymIrpO01eO5PvThGlVGx/view",
+    "artifact_refs": [
+      "Lifecycle/Works/New/eternalia.dictionary.master-only-author-input/CAT/Confirmed/Process.md",
+      "Lifecycle/Works/New/eternalia.dictionary.master-only-author-input/CAT/Confirmed/PI.md",
+      "Lifecycle/Works/New/eternalia.dictionary.master-only-author-input/CAT/Confirmed/TCE.md"
+    ]
+  },
+  "technologies": [
+    "TypeScript",
+    "Vitest"
+  ],
+  "checks": [
+    {
+      "id": "suite-master-input-4",
+      "stage": "suite-run",
+      "runner": "junit",
+      "cwd": "@repo:eternalia",
+      "argv": [
+        "node",
+        "scripts/run-cat-vitest-suite-junit.mjs",
+        "--report",
+        "{report}",
+        "--process",
+        "eternalia.dictionary.master-only-input",
+        "--ids",
+        "case.empty.legacy,case.empty.no-legacy,case.master.legacy,case.master.selected",
+        "--",
+        "packages/contracts/tests/generated/cat_case_master_selected_36e8a4814922.test.ts",
+        "packages/contracts/tests/generated/cat_case_master_legacy_90ee49093adb.test.ts",
+        "packages/contracts/tests/generated/cat_case_empty_no_legacy_ed8ed079cd74.test.ts",
+        "packages/contracts/tests/generated/cat_case_empty_legacy_e496b3f229ee.test.ts"
+      ],
+      "input_paths": [
+        "packages/contracts/tests/generated/cat_case_master_selected_36e8a4814922.test.ts",
+        "packages/contracts/tests/generated/cat_case_master_legacy_90ee49093adb.test.ts",
+        "packages/contracts/tests/generated/cat_case_empty_no_legacy_ed8ed079cd74.test.ts",
+        "packages/contracts/tests/generated/cat_case_empty_legacy_e496b3f229ee.test.ts",
+        "packages/contracts/tests/generated/master-input-driver.ts",
+        "apps/web/app/utils/word-class-input-policy.ts",
+        "Lifecycle/Works/New/eternalia.dictionary.master-input-suite/CAT/Binding/driver.json",
+        "scripts/run-cat-vitest-suite-junit.mjs"
+      ],
+      "test_ids": [
+        "case.master.selected",
+        "case.master.legacy",
+        "case.empty.no-legacy",
+        "case.empty.legacy"
+      ],
+      "timeout_seconds": 60
+    }
+  ],
+  "depends_on": [],
+  "compilation": {
+    "schema": "cat-compile/v2",
+    "process": "@workspace/Lifecycle/Works/New/eternalia.dictionary.master-only-author-input/CAT/Confirmed/Process.md",
+    "pi": "@workspace/Lifecycle/Works/New/eternalia.dictionary.master-only-author-input/CAT/Confirmed/PI.md",
+    "pis": [
+      "@workspace/Lifecycle/Works/New/eternalia.dictionary.master-only-author-input/CAT/Confirmed/PI.md"
+    ],
+    "tce": "@workspace/Lifecycle/Works/New/eternalia.dictionary.master-only-author-input/CAT/Confirmed/TCE.md",
+    "tces": [
+      "@workspace/Lifecycle/Works/New/eternalia.dictionary.master-only-author-input/CAT/Confirmed/TCE.md"
+    ],
+    "model": "CAT/Generated/TestModel.json",
+    "vectors": "CAT/Generated/Vectors.json",
+    "binding": "CAT/Binding/driver.json",
+    "allow_draft": false
+  }
+}

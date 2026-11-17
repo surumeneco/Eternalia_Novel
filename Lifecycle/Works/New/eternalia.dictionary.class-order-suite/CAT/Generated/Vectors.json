@@ -1,0 +1,43 @@
+{
+  "cases": [
+    {
+      "id": "case.class.up.available",
+      "input": {
+        "入力.方向": "前",
+        "入力.移動可能": true
+      },
+      "state": {},
+      "trigger": "順序変更"
+    },
+    {
+      "id": "case.class.up.boundary",
+      "input": {
+        "入力.方向": "前",
+        "入力.移動可能": false
+      },
+      "state": {},
+      "trigger": "順序変更"
+    },
+    {
+      "id": "case.class.down.available",
+      "input": {
+        "入力.方向": "後",
+        "入力.移動可能": true
+      },
+      "state": {},
+      "trigger": "順序変更"
+    },
+    {
+      "id": "case.class.down.boundary",
+      "input": {
+        "入力.方向": "後",
+        "入力.移動可能": false
+      },
+      "state": {},
+      "trigger": "順序変更"
+    }
+  ],
+  "process": "eternalia.dictionary.class-order",
+  "schema": "cat-test-vectors/v2",
+  "selection_rule": "rule-witness/v1"
+}
