@@ -72,15 +72,28 @@ test('AC-76: draft or published children block non-cascading delete',()=>{
  assert.ok(current(f.db,section));
 });
 test('AC-76: old published parent remains a dependent during draft category move',()=>{
- const f=setup(),{category}=f.ids;
- // A Tip stays publicly under the old category until explicit publication.
+ const f=setup();
+ // A Tip stays published under its old category until it is explicitly republished.
  const source=f.add('category',f.ids.series,'削除元');
  f.publish(source);
  f.hide(source);
  const moving=f.add('tip',source,'移動予定');
  f.publish(moving);
  const target=f.ids.category;
- f.db= (awaitMove => awaitMove)(f.db); // fixed by subsequent operation below
+ f.db=moveTip(f.db,moving,current(f.db,moving).revision,target,t0+1);
+ assert.equal(current(f.db,moving).parentId,target,'draft parent switched');
+ assert.equal(current(f.db,moving).published?.parentId,source,'published parent retained');
+ assert.throws(()=>softDeleteNode(f.db,source,current(f.db,source).revision,t0+2),
+   error=>error?.code==='bad-request','old published parent still has a child');
+ assert.equal(current(f.db,source).deletedAt,null,'rejected deletion is nonmutating');
+ // Only explicit publication moves the published ancestry. The old private
+ // category can then be deleted, while the Tip and target category survive.
+ f.publish(moving);
+ assert.equal(current(f.db,moving).published?.parentId,target);
+ f.db=softDeleteNode(f.db,source,current(f.db,source).revision,t0+3);
+ assert.equal(current(f.db,source).deletedAt,t0+3);
+ assert.equal(current(f.db,moving).deletedAt,null);
+ assert.equal(current(f.db,moving).parentId,target);
 });
 test('AC-76: both draft and published Tip references block source deletion',()=>{
  const f=setup(),{tip,leaf}=f.ids;
