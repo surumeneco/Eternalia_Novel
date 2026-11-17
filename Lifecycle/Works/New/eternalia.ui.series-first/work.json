@@ -16,6 +16,15 @@
     },
     {
       "uri": "https://drive.google.com/file/d/1I7o6XHzRCqDZXxnL265oA1hZ8VifoNrA/view"
+    },
+    {
+      "uri": "https://drive.google.com/file/d/1KOMCuTbIapr9bOgOiWQAAo-CQx1FQ0zn/view"
+    },
+    {
+      "uri": "https://drive.google.com/file/d/1KWdJwnJox2a_nei9_kn4WyN1lUcHWIAf/view"
+    },
+    {
+      "uri": "https://drive.google.com/file/d/1n7iZBCTEdzr2b2e5W7p2JiMkHTxQLHhi/view"
     }
   ],
   "evidence": [
@@ -30,43 +39,63 @@
       "branch_pattern": "feature/*",
       "allowed_paths": [
         "Lifecycle/Works/New/eternalia.ui.series-first/work.json",
-        "docs/cat/drafts/series-first-ia.md",
-        "apps/web/app/pages/index.vue",
-        "apps/web/app/layouts/default.vue",
-        "apps/web/app/pages/series/[id].vue",
-        "apps/web/app/pages/studio.vue",
-        "apps/web/app/pages/studio/publication.vue",
-        "apps/web/app/pages/studio/order.vue",
-        "apps/web/app/pages/stories/[id].vue",
-        "apps/web/app/pages/tips/[id].vue",
-        "apps/web/app/pages/dictionaries/[id].vue",
-        "apps/web/app/pages/timeline/[id].vue",
-        "apps/web/app/types/reader.ts",
-        "apps/web/app/composables/useUiLocale.ts",
         "apps/web/app/composables/ui-messages-en.ts",
-        "packages/contracts/src/novel.ts",
+        "apps/web/app/composables/useUiLocale.ts",
+        "apps/web/app/layouts/default.vue",
+        "apps/web/app/pages/dictionaries/[id].vue",
+        "apps/web/app/pages/index.vue",
+        "apps/web/app/pages/items/[id].vue",
+        "apps/web/app/pages/read/[id].vue",
+        "apps/web/app/pages/series/[id].vue",
+        "apps/web/app/pages/stories/[id].vue",
+        "apps/web/app/pages/studio.vue",
+        "apps/web/app/pages/studio/order.vue",
+        "apps/web/app/pages/studio/publication.vue",
+        "apps/web/app/pages/timeline/[id].vue",
+        "apps/web/app/pages/tips/[id].vue",
+        "apps/web/app/types/reader.ts",
+        "apps/web/browser-acceptance/author-jst-publication.test.mjs",
+        "apps/web/browser-acceptance/author-management-locale-dom.test.mjs",
+        "apps/web/browser-acceptance/author-publication-published-parent.test.mjs",
+        "apps/web/browser-acceptance/browser-acceptance.test.mjs",
+        "apps/web/browser-acceptance/locale-switch.test.mjs",
+        "apps/web/browser-acceptance/mobile-touch-editor.test.mjs",
+        "apps/web/browser-acceptance/series-first-ia.test.mjs",
+        "apps/web/tests/ui-locale.test.mjs",
+        "docs/cat/drafts/series-first-ia.md",
         "packages/contracts/exploratory/public-recent-privacy.test.mjs",
-        "apps/web/browser-acceptance/series-first-ia.test.mjs"
+        "packages/contracts/src/novel.ts",
+        "scripts/check-http-acceptance.mjs"
       ],
       "production_paths": [
-        "apps/web/app/pages/index.vue",
-        "apps/web/app/layouts/default.vue",
-        "apps/web/app/pages/series/[id].vue",
-        "apps/web/app/pages/studio.vue",
-        "apps/web/app/pages/studio/publication.vue",
-        "apps/web/app/pages/studio/order.vue",
-        "apps/web/app/pages/stories/[id].vue",
-        "apps/web/app/pages/tips/[id].vue",
-        "apps/web/app/pages/dictionaries/[id].vue",
-        "apps/web/app/pages/timeline/[id].vue",
-        "apps/web/app/types/reader.ts",
-        "apps/web/app/composables/useUiLocale.ts",
         "apps/web/app/composables/ui-messages-en.ts",
+        "apps/web/app/composables/useUiLocale.ts",
+        "apps/web/app/layouts/default.vue",
+        "apps/web/app/pages/dictionaries/[id].vue",
+        "apps/web/app/pages/index.vue",
+        "apps/web/app/pages/items/[id].vue",
+        "apps/web/app/pages/read/[id].vue",
+        "apps/web/app/pages/series/[id].vue",
+        "apps/web/app/pages/stories/[id].vue",
+        "apps/web/app/pages/studio.vue",
+        "apps/web/app/pages/studio/order.vue",
+        "apps/web/app/pages/studio/publication.vue",
+        "apps/web/app/pages/timeline/[id].vue",
+        "apps/web/app/pages/tips/[id].vue",
+        "apps/web/app/types/reader.ts",
         "packages/contracts/src/novel.ts"
       ],
       "test_paths": [
+        "apps/web/browser-acceptance/author-jst-publication.test.mjs",
+        "apps/web/browser-acceptance/author-management-locale-dom.test.mjs",
+        "apps/web/browser-acceptance/author-publication-published-parent.test.mjs",
+        "apps/web/browser-acceptance/browser-acceptance.test.mjs",
+        "apps/web/browser-acceptance/locale-switch.test.mjs",
+        "apps/web/browser-acceptance/mobile-touch-editor.test.mjs",
+        "apps/web/browser-acceptance/series-first-ia.test.mjs",
+        "apps/web/tests/ui-locale.test.mjs",
         "packages/contracts/exploratory/public-recent-privacy.test.mjs",
-        "apps/web/browser-acceptance/series-first-ia.test.mjs"
+        "scripts/check-http-acceptance.mjs"
       ]
     }
   ],
