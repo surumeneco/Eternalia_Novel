@@ -62,6 +62,11 @@ test('IA-05/06/07: author editing and publication each require their own series/
       'story editing tree must not mix settings nodes');
     await page.getByRole('button', { name: '設定' }).first().click();
     await page.getByText(fixture.prefix + '-visible-setting').first().waitFor();
+    await page.getByRole('button', { name: '項目を追加', exact: true }).click();
+    await page.locator('form.create-form select').waitFor();
+    assert.equal(await page.locator('form.create-form select').inputValue(), 'category',
+      'creating from the settings domain must propose a series-owned category');
+    await page.getByRole('button', { name: 'キャンセル', exact: true }).click();
 
     // Switching editing domains must not leave the previous domain's editor
     // visible under an unrelated filter.
