@@ -1,0 +1,349 @@
+{
+  "coverage_checks": {
+    "順序変更": {
+      "excluded_by_pi_constraints": false,
+      "guard_refs": [
+        "入力.方向",
+        "入力.移動可能"
+      ],
+      "overlap_count": 0,
+      "overlaps": [],
+      "result": "proved",
+      "uncovered": [],
+      "uncovered_count": 0,
+      "unreachable_rules": []
+    }
+  },
+  "coverage_claim": "closed",
+  "coverage_requirement": "closed",
+  "definitions": [],
+  "fields": [
+    {
+      "direction": "receive",
+      "domain": {
+        "type": "enum",
+        "values": [
+          "前",
+          "後"
+        ]
+      },
+      "id": "入力.方向",
+      "presence": "required",
+      "role": "input",
+      "source_pi": "eternalia.dictionary.class-order.pi"
+    },
+    {
+      "direction": "receive",
+      "domain": {
+        "type": "boolean"
+      },
+      "id": "入力.移動可能",
+      "presence": "required",
+      "role": "input",
+      "source_pi": "eternalia.dictionary.class-order.pi"
+    },
+    {
+      "direction": "send",
+      "domain": {
+        "type": "boolean"
+      },
+      "id": "出力.順序変化",
+      "presence": "required",
+      "role": "output",
+      "source_pi": "eternalia.dictionary.class-order.pi"
+    }
+  ],
+  "language": "ja",
+  "limits": [
+    "finite-guard-closure-only",
+    "no-general-reachability-proof",
+    "no-process-composition"
+  ],
+  "local_coverage_requirements": {
+    "eternalia.dictionary.class-order.tce": "closed"
+  },
+  "model_type": "symbolic-relation",
+  "normalized_ir": "cat-machine/v2",
+  "normative_rule_inputs": [],
+  "operation_presence": [],
+  "pi_artifacts": [
+    "eternalia.dictionary.class-order.pi"
+  ],
+  "pi_boundaries": [
+    {
+      "artifact": "eternalia.dictionary.class-order.pi",
+      "direction": "bidirectional",
+      "peer": "eternalia.dictionary.author-edit"
+    }
+  ],
+  "pi_boundary": {
+    "direction": "bidirectional",
+    "peer": "eternalia.dictionary.author-edit"
+  },
+  "pi_constraints": [],
+  "pi_operations": [
+    {
+      "direction": "accept",
+      "id": "move",
+      "source_pi": "eternalia.dictionary.class-order.pi",
+      "trigger": "順序変更"
+    }
+  ],
+  "presence_unproven": [],
+  "process": "eternalia.dictionary.class-order",
+  "process_interfaces": [
+    "eternalia.dictionary.class-order.pi"
+  ],
+  "rule_obligations": [],
+  "rules": [
+    {
+      "allowed": [
+        {
+          "absent_outputs": [],
+          "unchanged": [],
+          "write": [
+            {
+              "expr": {
+                "literal": true
+              },
+              "target": "出力.順序変化"
+            }
+          ]
+        }
+      ],
+      "id": "class.up.available",
+      "source_artifact": "eternalia.dictionary.class-order.tce",
+      "trigger": "順序変更",
+      "when": {
+        "args": [
+          {
+            "args": [
+              {
+                "ref": "入力.方向"
+              },
+              {
+                "literal": "前"
+              }
+            ],
+            "op": "eq"
+          },
+          {
+            "ref": "入力.移動可能"
+          }
+        ],
+        "op": "and"
+      }
+    },
+    {
+      "allowed": [
+        {
+          "absent_outputs": [],
+          "unchanged": [],
+          "write": [
+            {
+              "expr": {
+                "literal": false
+              },
+              "target": "出力.順序変化"
+            }
+          ]
+        }
+      ],
+      "id": "class.up.boundary",
+      "source_artifact": "eternalia.dictionary.class-order.tce",
+      "trigger": "順序変更",
+      "when": {
+        "args": [
+          {
+            "args": [
+              {
+                "ref": "入力.方向"
+              },
+              {
+                "literal": "前"
+              }
+            ],
+            "op": "eq"
+          },
+          {
+            "args": [
+              {
+                "ref": "入力.移動可能"
+              }
+            ],
+            "op": "not"
+          }
+        ],
+        "op": "and"
+      }
+    },
+    {
+      "allowed": [
+        {
+          "absent_outputs": [],
+          "unchanged": [],
+          "write": [
+            {
+              "expr": {
+                "literal": true
+              },
+              "target": "出力.順序変化"
+            }
+          ]
+        }
+      ],
+      "id": "class.down.available",
+      "source_artifact": "eternalia.dictionary.class-order.tce",
+      "trigger": "順序変更",
+      "when": {
+        "args": [
+          {
+            "args": [
+              {
+                "ref": "入力.方向"
+              },
+              {
+                "literal": "後"
+              }
+            ],
+            "op": "eq"
+          },
+          {
+            "ref": "入力.移動可能"
+          }
+        ],
+        "op": "and"
+      }
+    },
+    {
+      "allowed": [
+        {
+          "absent_outputs": [],
+          "unchanged": [],
+          "write": [
+            {
+              "expr": {
+                "literal": false
+              },
+              "target": "出力.順序変化"
+            }
+          ]
+        }
+      ],
+      "id": "class.down.boundary",
+      "source_artifact": "eternalia.dictionary.class-order.tce",
+      "trigger": "順序変更",
+      "when": {
+        "args": [
+          {
+            "args": [
+              {
+                "ref": "入力.方向"
+              },
+              {
+                "literal": "後"
+              }
+            ],
+            "op": "eq"
+          },
+          {
+            "args": [
+              {
+                "ref": "入力.移動可能"
+              }
+            ],
+            "op": "not"
+          }
+        ],
+        "op": "and"
+      }
+    }
+  ],
+  "schema": "cat-test-model/v2",
+  "semantic_authority": "cat-markdown/v2",
+  "source_artifacts": [
+    "eternalia.dictionary.class-order",
+    "eternalia.dictionary.class-order.pi",
+    "eternalia.dictionary.class-order.tce"
+  ],
+  "source_records": [
+    {
+      "id": "eternalia.dictionary.class-order",
+      "kind": "process",
+      "sha256": "e3e781b91383b3147aa0fabf2bb486c8924a16598534394ccd74d87a2a45ee57"
+    },
+    {
+      "id": "eternalia.dictionary.class-order.pi",
+      "kind": "pi",
+      "sha256": "e1ce0e0a923ef7c78248d9208316a20029c5bd7eb9bf2410fd261b4a51eafa5b"
+    },
+    {
+      "id": "eternalia.dictionary.class-order.tce",
+      "kind": "tce",
+      "sha256": "305afab65eb86c8a2f7cf85f1c11d9af3cc1e26f2bc840574cfaf94767a0e3f9"
+    }
+  ],
+  "source_semantic_map": {
+    "common_rules": [],
+    "domain_rule": {
+      "artifact": null,
+      "definitions": []
+    },
+    "domain_specs": [],
+    "pi": {
+      "artifact": "eternalia.dictionary.class-order.pi",
+      "artifacts": [
+        "eternalia.dictionary.class-order.pi"
+      ],
+      "constraint_count": 0,
+      "fields": [
+        "入力.方向",
+        "入力.移動可能",
+        "出力.順序変化"
+      ],
+      "operations": [
+        "move"
+      ]
+    },
+    "process": {
+      "actions": [],
+      "artifact": "eternalia.dictionary.class-order",
+      "interfaces": [
+        "eternalia.dictionary.class-order.pi"
+      ],
+      "observations": [],
+      "state": [],
+      "triggers": [
+        "順序変更"
+      ]
+    },
+    "tce": [
+      {
+        "artifact": "eternalia.dictionary.class-order.tce",
+        "local_coverage": "closed",
+        "outcome_count": 4,
+        "rules": [
+          "class.up.available",
+          "class.up.boundary",
+          "class.down.available",
+          "class.down.boundary"
+        ]
+      }
+    ]
+  },
+  "source_sha256": {
+    "pi": "e1ce0e0a923ef7c78248d9208316a20029c5bd7eb9bf2410fd261b4a51eafa5b",
+    "process": "e3e781b91383b3147aa0fabf2bb486c8924a16598534394ccd74d87a2a45ee57",
+    "tce": "305afab65eb86c8a2f7cf85f1c11d9af3cc1e26f2bc840574cfaf94767a0e3f9"
+  },
+  "status": "confirmed",
+  "triggers": [
+    {
+      "id": "順序変更",
+      "origin": "eternalia.dictionary.class-order.pi/move"
+    }
+  ],
+  "unresolved_domains": [],
+  "unresolved_interfaces": [],
+  "unverified_rule_ids": []
+}

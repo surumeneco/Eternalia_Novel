@@ -1,0 +1,31 @@
+{
+  "cases": [
+    {
+      "id": "case.order.left",
+      "input": {
+        "入力.スペル比較": "左前"
+      },
+      "state": {},
+      "trigger": "順序確認"
+    },
+    {
+      "id": "case.order.equal",
+      "input": {
+        "入力.スペル比較": "同順位"
+      },
+      "state": {},
+      "trigger": "順序確認"
+    },
+    {
+      "id": "case.order.right",
+      "input": {
+        "入力.スペル比較": "右前"
+      },
+      "state": {},
+      "trigger": "順序確認"
+    }
+  ],
+  "process": "eternalia.dictionary.reader-spelling-order",
+  "schema": "cat-test-vectors/v2",
+  "selection_rule": "rule-witness/v1"
+}

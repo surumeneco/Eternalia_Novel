@@ -1,0 +1,270 @@
+{
+  "coverage_checks": {
+    "順序確認": {
+      "excluded_by_pi_constraints": false,
+      "guard_refs": [
+        "入力.スペル比較"
+      ],
+      "overlap_count": 0,
+      "overlaps": [],
+      "result": "proved",
+      "uncovered": [],
+      "uncovered_count": 0,
+      "unreachable_rules": []
+    }
+  },
+  "coverage_claim": "closed",
+  "coverage_requirement": "closed",
+  "definitions": [],
+  "fields": [
+    {
+      "direction": "receive",
+      "domain": {
+        "type": "enum",
+        "values": [
+          "左前",
+          "同順位",
+          "右前"
+        ]
+      },
+      "id": "入力.スペル比較",
+      "presence": "required",
+      "role": "input",
+      "source_pi": "eternalia.dictionary.reader-spelling-order.pi"
+    },
+    {
+      "direction": "send",
+      "domain": {
+        "type": "enum",
+        "values": [
+          "左前",
+          "同順位",
+          "右前"
+        ]
+      },
+      "id": "出力.表示順",
+      "presence": "required",
+      "role": "output",
+      "source_pi": "eternalia.dictionary.reader-spelling-order.pi"
+    }
+  ],
+  "language": "ja",
+  "limits": [
+    "finite-guard-closure-only",
+    "no-general-reachability-proof",
+    "no-process-composition"
+  ],
+  "local_coverage_requirements": {
+    "eternalia.dictionary.reader-spelling-order.tce": "closed"
+  },
+  "model_type": "symbolic-relation",
+  "normalized_ir": "cat-machine/v2",
+  "normative_rule_inputs": [],
+  "operation_presence": [],
+  "pi_artifacts": [
+    "eternalia.dictionary.reader-spelling-order.pi"
+  ],
+  "pi_boundaries": [
+    {
+      "artifact": "eternalia.dictionary.reader-spelling-order.pi",
+      "direction": "bidirectional",
+      "peer": "eternalia.dictionary.reader"
+    }
+  ],
+  "pi_boundary": {
+    "direction": "bidirectional",
+    "peer": "eternalia.dictionary.reader"
+  },
+  "pi_constraints": [],
+  "pi_operations": [
+    {
+      "direction": "accept",
+      "id": "compare",
+      "source_pi": "eternalia.dictionary.reader-spelling-order.pi",
+      "trigger": "順序確認"
+    }
+  ],
+  "presence_unproven": [],
+  "process": "eternalia.dictionary.reader-spelling-order",
+  "process_interfaces": [
+    "eternalia.dictionary.reader-spelling-order.pi"
+  ],
+  "rule_obligations": [],
+  "rules": [
+    {
+      "allowed": [
+        {
+          "absent_outputs": [],
+          "unchanged": [],
+          "write": [
+            {
+              "expr": {
+                "literal": "左前"
+              },
+              "target": "出力.表示順"
+            }
+          ]
+        }
+      ],
+      "id": "order.left",
+      "source_artifact": "eternalia.dictionary.reader-spelling-order.tce",
+      "trigger": "順序確認",
+      "when": {
+        "args": [
+          {
+            "ref": "入力.スペル比較"
+          },
+          {
+            "literal": "左前"
+          }
+        ],
+        "op": "eq"
+      }
+    },
+    {
+      "allowed": [
+        {
+          "absent_outputs": [],
+          "unchanged": [],
+          "write": [
+            {
+              "expr": {
+                "literal": "同順位"
+              },
+              "target": "出力.表示順"
+            }
+          ]
+        }
+      ],
+      "id": "order.equal",
+      "source_artifact": "eternalia.dictionary.reader-spelling-order.tce",
+      "trigger": "順序確認",
+      "when": {
+        "args": [
+          {
+            "ref": "入力.スペル比較"
+          },
+          {
+            "literal": "同順位"
+          }
+        ],
+        "op": "eq"
+      }
+    },
+    {
+      "allowed": [
+        {
+          "absent_outputs": [],
+          "unchanged": [],
+          "write": [
+            {
+              "expr": {
+                "literal": "右前"
+              },
+              "target": "出力.表示順"
+            }
+          ]
+        }
+      ],
+      "id": "order.right",
+      "source_artifact": "eternalia.dictionary.reader-spelling-order.tce",
+      "trigger": "順序確認",
+      "when": {
+        "args": [
+          {
+            "ref": "入力.スペル比較"
+          },
+          {
+            "literal": "右前"
+          }
+        ],
+        "op": "eq"
+      }
+    }
+  ],
+  "schema": "cat-test-model/v2",
+  "semantic_authority": "cat-markdown/v2",
+  "source_artifacts": [
+    "eternalia.dictionary.reader-spelling-order",
+    "eternalia.dictionary.reader-spelling-order.pi",
+    "eternalia.dictionary.reader-spelling-order.tce"
+  ],
+  "source_records": [
+    {
+      "id": "eternalia.dictionary.reader-spelling-order",
+      "kind": "process",
+      "sha256": "5315a1cbe0de3a88ceee8287314319b750d3f4e842b78cf8aea0f65cac140c5d"
+    },
+    {
+      "id": "eternalia.dictionary.reader-spelling-order.pi",
+      "kind": "pi",
+      "sha256": "21a0244c9fdfd060525b1e3d782c5abed871352fe9eb1e26a8a058c063796f2d"
+    },
+    {
+      "id": "eternalia.dictionary.reader-spelling-order.tce",
+      "kind": "tce",
+      "sha256": "13bf21711ceb601451c5304c682e507bd574e5004270a7895d23fe4e730fceba"
+    }
+  ],
+  "source_semantic_map": {
+    "common_rules": [],
+    "domain_rule": {
+      "artifact": null,
+      "definitions": []
+    },
+    "domain_specs": [],
+    "pi": {
+      "artifact": "eternalia.dictionary.reader-spelling-order.pi",
+      "artifacts": [
+        "eternalia.dictionary.reader-spelling-order.pi"
+      ],
+      "constraint_count": 0,
+      "fields": [
+        "入力.スペル比較",
+        "出力.表示順"
+      ],
+      "operations": [
+        "compare"
+      ]
+    },
+    "process": {
+      "actions": [],
+      "artifact": "eternalia.dictionary.reader-spelling-order",
+      "interfaces": [
+        "eternalia.dictionary.reader-spelling-order.pi"
+      ],
+      "observations": [],
+      "state": [],
+      "triggers": [
+        "順序確認"
+      ]
+    },
+    "tce": [
+      {
+        "artifact": "eternalia.dictionary.reader-spelling-order.tce",
+        "local_coverage": "closed",
+        "outcome_count": 3,
+        "rules": [
+          "order.left",
+          "order.equal",
+          "order.right"
+        ]
+      }
+    ]
+  },
+  "source_sha256": {
+    "pi": "21a0244c9fdfd060525b1e3d782c5abed871352fe9eb1e26a8a058c063796f2d",
+    "process": "5315a1cbe0de3a88ceee8287314319b750d3f4e842b78cf8aea0f65cac140c5d",
+    "tce": "13bf21711ceb601451c5304c682e507bd574e5004270a7895d23fe4e730fceba"
+  },
+  "status": "confirmed",
+  "triggers": [
+    {
+      "id": "順序確認",
+      "origin": "eternalia.dictionary.reader-spelling-order.pi/compare"
+    }
+  ],
+  "unresolved_domains": [],
+  "unresolved_interfaces": [],
+  "unverified_rule_ids": []
+}

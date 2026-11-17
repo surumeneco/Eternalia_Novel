@@ -1,0 +1,123 @@
+{
+  "schema": "cat-work/v1",
+  "id": "eternalia.dictionary.class-order-suite",
+  "entry": "confirmed-spec",
+  "flow": "spec-test-sync",
+  "mode": "implementation",
+  "work_kind": "test-maintenance",
+  "issue_ref": "https://github.com/surumeneco/Eternalia_Novel/issues/1",
+  "project_entry_ref": "https://drive.google.com/file/d/1clwfVJ3e_t1_QKFfOWxxRIzE9WMFvTiM/view",
+  "normative": [
+    {
+      "uri": "https://drive.google.com/file/d/1LqX-Noytb_oWymIrpO01eO5PvThGlVGx/view"
+    }
+  ],
+  "evidence": [
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/4a4bb8164c275f83f1040147888c66c44d685047/apps/web/app/utils/language-class-order.ts"
+    }
+  ],
+  "repositories": [
+    {
+      "name": "eternalia",
+      "path": "../../../..",
+      "branch_pattern": "feature/*",
+      "allowed_paths": [
+        "Lifecycle/Works/New/eternalia.dictionary.class-order-suite/**",
+        "packages/contracts/tests/generated/**",
+        ".cat-flow/test-suite-manifest.class.json",
+        ".cat-flow/evidence/test-suite-class.json",
+        "scripts/run-cat-vitest-suite-junit.mjs"
+      ],
+      "production_paths": [],
+      "test_paths": [
+        "packages/contracts/tests/generated/cat_case_class_up_available_013cd63258de.test.ts",
+        "packages/contracts/tests/generated/cat_case_class_up_boundary_9dd56198cf01.test.ts",
+        "packages/contracts/tests/generated/cat_case_class_down_available_5b1b10ddbb18.test.ts",
+        "packages/contracts/tests/generated/cat_case_class_down_boundary_b1c11e57e175.test.ts"
+      ]
+    }
+  ],
+  "scope": {
+    "process_ids": [
+      "eternalia.dictionary.class-order"
+    ],
+    "changed_ids": [
+      "dictionary.class-order.symbolic-suite"
+    ],
+    "preserved_ids": [
+      "publication.snapshot-separation",
+      "dictionary.spelling-collision.boolean-decision"
+    ]
+  },
+  "specification": {
+    "status": "confirmed",
+    "decision_ref": "https://drive.google.com/file/d/1LqX-Noytb_oWymIrpO01eO5PvThGlVGx/view",
+    "artifact_refs": [
+      "Lifecycle/Works/New/eternalia.dictionary.class-master-order-implementation/CAT/Confirmed/Process.md",
+      "Lifecycle/Works/New/eternalia.dictionary.class-master-order-implementation/CAT/Confirmed/PI.md",
+      "Lifecycle/Works/New/eternalia.dictionary.class-master-order-implementation/CAT/Confirmed/TCE.md"
+    ]
+  },
+  "technologies": [
+    "TypeScript",
+    "Vitest"
+  ],
+  "checks": [
+    {
+      "id": "suite-class-4",
+      "stage": "suite-run",
+      "runner": "junit",
+      "cwd": "@repo:eternalia",
+      "argv": [
+        "node",
+        "scripts/run-cat-vitest-suite-junit.mjs",
+        "--report",
+        "{report}",
+        "--process",
+        "eternalia.dictionary.class-order",
+        "--ids",
+        "case.class.down.available,case.class.down.boundary,case.class.up.available,case.class.up.boundary",
+        "--",
+        "packages/contracts/tests/generated/cat_case_class_up_available_013cd63258de.test.ts",
+        "packages/contracts/tests/generated/cat_case_class_up_boundary_9dd56198cf01.test.ts",
+        "packages/contracts/tests/generated/cat_case_class_down_available_5b1b10ddbb18.test.ts",
+        "packages/contracts/tests/generated/cat_case_class_down_boundary_b1c11e57e175.test.ts"
+      ],
+      "input_paths": [
+        "packages/contracts/tests/generated/cat_case_class_up_available_013cd63258de.test.ts",
+        "packages/contracts/tests/generated/cat_case_class_up_boundary_9dd56198cf01.test.ts",
+        "packages/contracts/tests/generated/cat_case_class_down_available_5b1b10ddbb18.test.ts",
+        "packages/contracts/tests/generated/cat_case_class_down_boundary_b1c11e57e175.test.ts",
+        "packages/contracts/tests/generated/class-order-driver.ts",
+        "apps/web/app/utils/language-class-order.ts",
+        "Lifecycle/Works/New/eternalia.dictionary.class-order-suite/CAT/Binding/driver.json",
+        "scripts/run-cat-vitest-suite-junit.mjs"
+      ],
+      "test_ids": [
+        "case.class.up.available",
+        "case.class.up.boundary",
+        "case.class.down.available",
+        "case.class.down.boundary"
+      ],
+      "timeout_seconds": 60
+    }
+  ],
+  "depends_on": [],
+  "compilation": {
+    "schema": "cat-compile/v2",
+    "process": "@workspace/Lifecycle/Works/New/eternalia.dictionary.class-master-order-implementation/CAT/Confirmed/Process.md",
+    "pi": "@workspace/Lifecycle/Works/New/eternalia.dictionary.class-master-order-implementation/CAT/Confirmed/PI.md",
+    "pis": [
+      "@workspace/Lifecycle/Works/New/eternalia.dictionary.class-master-order-implementation/CAT/Confirmed/PI.md"
+    ],
+    "tce": "@workspace/Lifecycle/Works/New/eternalia.dictionary.class-master-order-implementation/CAT/Confirmed/TCE.md",
+    "tces": [
+      "@workspace/Lifecycle/Works/New/eternalia.dictionary.class-master-order-implementation/CAT/Confirmed/TCE.md"
+    ],
+    "model": "CAT/Generated/TestModel.json",
+    "vectors": "CAT/Generated/Vectors.json",
+    "binding": "CAT/Binding/driver.json",
+    "allow_draft": false
+  }
+}

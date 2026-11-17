@@ -1,0 +1,393 @@
+{
+  "coverage_checks": {
+    "品詞欄表示": {
+      "excluded_by_pi_constraints": false,
+      "guard_refs": [
+        "入力.マスタ外旧値あり",
+        "入力.マスタ登録あり"
+      ],
+      "overlap_count": 0,
+      "overlaps": [],
+      "result": "proved",
+      "uncovered": [],
+      "uncovered_count": 0,
+      "unreachable_rules": []
+    }
+  },
+  "coverage_claim": "closed",
+  "coverage_requirement": "closed",
+  "definitions": [],
+  "fields": [
+    {
+      "direction": "receive",
+      "domain": {
+        "type": "boolean"
+      },
+      "id": "入力.マスタ登録あり",
+      "presence": "required",
+      "role": "input",
+      "source_pi": "eternalia.dictionary.master-only-input.pi"
+    },
+    {
+      "direction": "receive",
+      "domain": {
+        "type": "boolean"
+      },
+      "id": "入力.マスタ外旧値あり",
+      "presence": "required",
+      "role": "input",
+      "source_pi": "eternalia.dictionary.master-only-input.pi"
+    },
+    {
+      "direction": "send",
+      "domain": {
+        "type": "boolean"
+      },
+      "id": "出力.選択有効",
+      "presence": "required",
+      "role": "output",
+      "source_pi": "eternalia.dictionary.master-only-input.pi"
+    },
+    {
+      "direction": "send",
+      "domain": {
+        "type": "boolean"
+      },
+      "id": "出力.旧値保持表示",
+      "presence": "required",
+      "role": "output",
+      "source_pi": "eternalia.dictionary.master-only-input.pi"
+    },
+    {
+      "direction": "send",
+      "domain": {
+        "type": "boolean"
+      },
+      "id": "出力.自由入力",
+      "presence": "required",
+      "role": "output",
+      "source_pi": "eternalia.dictionary.master-only-input.pi"
+    }
+  ],
+  "language": "ja",
+  "limits": [
+    "finite-guard-closure-only",
+    "no-general-reachability-proof",
+    "no-process-composition"
+  ],
+  "local_coverage_requirements": {
+    "eternalia.dictionary.master-only-input.tce": "closed"
+  },
+  "model_type": "symbolic-relation",
+  "normalized_ir": "cat-machine/v2",
+  "normative_rule_inputs": [],
+  "operation_presence": [],
+  "pi_artifacts": [
+    "eternalia.dictionary.master-only-input.pi"
+  ],
+  "pi_boundaries": [
+    {
+      "artifact": "eternalia.dictionary.master-only-input.pi",
+      "direction": "bidirectional",
+      "peer": "eternalia.dictionary.author-edit"
+    }
+  ],
+  "pi_boundary": {
+    "direction": "bidirectional",
+    "peer": "eternalia.dictionary.author-edit"
+  },
+  "pi_constraints": [],
+  "pi_operations": [
+    {
+      "direction": "accept",
+      "id": "show",
+      "source_pi": "eternalia.dictionary.master-only-input.pi",
+      "trigger": "品詞欄表示"
+    }
+  ],
+  "presence_unproven": [],
+  "process": "eternalia.dictionary.master-only-input",
+  "process_interfaces": [
+    "eternalia.dictionary.master-only-input.pi"
+  ],
+  "rule_obligations": [],
+  "rules": [
+    {
+      "allowed": [
+        {
+          "absent_outputs": [],
+          "unchanged": [],
+          "write": [
+            {
+              "expr": {
+                "literal": true
+              },
+              "target": "出力.選択有効"
+            },
+            {
+              "expr": {
+                "literal": false
+              },
+              "target": "出力.旧値保持表示"
+            },
+            {
+              "expr": {
+                "literal": false
+              },
+              "target": "出力.自由入力"
+            }
+          ]
+        }
+      ],
+      "id": "master.selected",
+      "source_artifact": "eternalia.dictionary.master-only-input.tce",
+      "trigger": "品詞欄表示",
+      "when": {
+        "args": [
+          {
+            "ref": "入力.マスタ登録あり"
+          },
+          {
+            "args": [
+              {
+                "ref": "入力.マスタ外旧値あり"
+              }
+            ],
+            "op": "not"
+          }
+        ],
+        "op": "and"
+      }
+    },
+    {
+      "allowed": [
+        {
+          "absent_outputs": [],
+          "unchanged": [],
+          "write": [
+            {
+              "expr": {
+                "literal": true
+              },
+              "target": "出力.選択有効"
+            },
+            {
+              "expr": {
+                "literal": true
+              },
+              "target": "出力.旧値保持表示"
+            },
+            {
+              "expr": {
+                "literal": false
+              },
+              "target": "出力.自由入力"
+            }
+          ]
+        }
+      ],
+      "id": "master.legacy",
+      "source_artifact": "eternalia.dictionary.master-only-input.tce",
+      "trigger": "品詞欄表示",
+      "when": {
+        "args": [
+          {
+            "ref": "入力.マスタ登録あり"
+          },
+          {
+            "ref": "入力.マスタ外旧値あり"
+          }
+        ],
+        "op": "and"
+      }
+    },
+    {
+      "allowed": [
+        {
+          "absent_outputs": [],
+          "unchanged": [],
+          "write": [
+            {
+              "expr": {
+                "literal": false
+              },
+              "target": "出力.選択有効"
+            },
+            {
+              "expr": {
+                "literal": false
+              },
+              "target": "出力.旧値保持表示"
+            },
+            {
+              "expr": {
+                "literal": false
+              },
+              "target": "出力.自由入力"
+            }
+          ]
+        }
+      ],
+      "id": "empty.no-legacy",
+      "source_artifact": "eternalia.dictionary.master-only-input.tce",
+      "trigger": "品詞欄表示",
+      "when": {
+        "args": [
+          {
+            "args": [
+              {
+                "ref": "入力.マスタ登録あり"
+              }
+            ],
+            "op": "not"
+          },
+          {
+            "args": [
+              {
+                "ref": "入力.マスタ外旧値あり"
+              }
+            ],
+            "op": "not"
+          }
+        ],
+        "op": "and"
+      }
+    },
+    {
+      "allowed": [
+        {
+          "absent_outputs": [],
+          "unchanged": [],
+          "write": [
+            {
+              "expr": {
+                "literal": false
+              },
+              "target": "出力.選択有効"
+            },
+            {
+              "expr": {
+                "literal": true
+              },
+              "target": "出力.旧値保持表示"
+            },
+            {
+              "expr": {
+                "literal": false
+              },
+              "target": "出力.自由入力"
+            }
+          ]
+        }
+      ],
+      "id": "empty.legacy",
+      "source_artifact": "eternalia.dictionary.master-only-input.tce",
+      "trigger": "品詞欄表示",
+      "when": {
+        "args": [
+          {
+            "args": [
+              {
+                "ref": "入力.マスタ登録あり"
+              }
+            ],
+            "op": "not"
+          },
+          {
+            "ref": "入力.マスタ外旧値あり"
+          }
+        ],
+        "op": "and"
+      }
+    }
+  ],
+  "schema": "cat-test-model/v2",
+  "semantic_authority": "cat-markdown/v2",
+  "source_artifacts": [
+    "eternalia.dictionary.master-only-input",
+    "eternalia.dictionary.master-only-input.pi",
+    "eternalia.dictionary.master-only-input.tce"
+  ],
+  "source_records": [
+    {
+      "id": "eternalia.dictionary.master-only-input",
+      "kind": "process",
+      "sha256": "d855a028a56d0141fd03add86752b4db356c4a43db74dafa3f1f008b2b994509"
+    },
+    {
+      "id": "eternalia.dictionary.master-only-input.pi",
+      "kind": "pi",
+      "sha256": "ce6a5edaa693844d6dc380a0ec2bc49e6895b9917159169ef6581544ba2f55f8"
+    },
+    {
+      "id": "eternalia.dictionary.master-only-input.tce",
+      "kind": "tce",
+      "sha256": "171fda93be72e3118e2544cabcb5c519de3b16659643dc37f95911b747cdfac1"
+    }
+  ],
+  "source_semantic_map": {
+    "common_rules": [],
+    "domain_rule": {
+      "artifact": null,
+      "definitions": []
+    },
+    "domain_specs": [],
+    "pi": {
+      "artifact": "eternalia.dictionary.master-only-input.pi",
+      "artifacts": [
+        "eternalia.dictionary.master-only-input.pi"
+      ],
+      "constraint_count": 0,
+      "fields": [
+        "入力.マスタ登録あり",
+        "入力.マスタ外旧値あり",
+        "出力.選択有効",
+        "出力.旧値保持表示",
+        "出力.自由入力"
+      ],
+      "operations": [
+        "show"
+      ]
+    },
+    "process": {
+      "actions": [],
+      "artifact": "eternalia.dictionary.master-only-input",
+      "interfaces": [
+        "eternalia.dictionary.master-only-input.pi"
+      ],
+      "observations": [],
+      "state": [],
+      "triggers": [
+        "品詞欄表示"
+      ]
+    },
+    "tce": [
+      {
+        "artifact": "eternalia.dictionary.master-only-input.tce",
+        "local_coverage": "closed",
+        "outcome_count": 4,
+        "rules": [
+          "master.selected",
+          "master.legacy",
+          "empty.no-legacy",
+          "empty.legacy"
+        ]
+      }
+    ]
+  },
+  "source_sha256": {
+    "pi": "ce6a5edaa693844d6dc380a0ec2bc49e6895b9917159169ef6581544ba2f55f8",
+    "process": "d855a028a56d0141fd03add86752b4db356c4a43db74dafa3f1f008b2b994509",
+    "tce": "171fda93be72e3118e2544cabcb5c519de3b16659643dc37f95911b747cdfac1"
+  },
+  "status": "confirmed",
+  "triggers": [
+    {
+      "id": "品詞欄表示",
+      "origin": "eternalia.dictionary.master-only-input.pi/show"
+    }
+  ],
+  "unresolved_domains": [],
+  "unresolved_interfaces": [],
+  "unverified_rule_ids": []
+}

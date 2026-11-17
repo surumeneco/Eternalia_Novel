@@ -1,0 +1,34 @@
+{
+  "cases": [
+    {
+      "id": "case.none",
+      "input": {
+        "入力.品詞が所属言語マスタ内": false,
+        "入力.品詞指定あり": false
+      },
+      "state": {},
+      "trigger": "品詞照合"
+    },
+    {
+      "id": "case.member",
+      "input": {
+        "入力.品詞が所属言語マスタ内": true,
+        "入力.品詞指定あり": true
+      },
+      "state": {},
+      "trigger": "品詞照合"
+    },
+    {
+      "id": "case.absent",
+      "input": {
+        "入力.品詞が所属言語マスタ内": false,
+        "入力.品詞指定あり": true
+      },
+      "state": {},
+      "trigger": "品詞照合"
+    }
+  ],
+  "process": "eternalia.dictionary.master-only-create",
+  "schema": "cat-test-vectors/v2",
+  "selection_rule": "rule-witness/v1"
+}
