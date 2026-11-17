@@ -84,13 +84,19 @@ test('touch toolbar preserves selected Japanese text and separates draft from pu
         await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
         let publicResponse = await author.request.get(base + '/api/public/items/' + chapter);
         assert.equal(publicResponse.status(), 404, 'a saved mobile draft is not public');
+        // Publishing is a separate author responsibility, not an editor button.
+        await page.getByRole('link', { name: '公開管理', exact: true }).last().tap();
+        const chapterRow = page.locator('.publication-row').filter({
+          has: page.getByRole('heading', { name: fixture.prefix + '-mobile-touch-chapter', exact: true }),
+        }).first();
+        await chapterRow.waitFor();
         page.once('dialog', dialog => dialog.accept());
-        await page.getByRole('button', { name: '保存済み下書きを公開版へ反映' }).tap();
-        await page.getByText('公開スナップショットを更新しました。').waitFor();
+        await chapterRow.getByRole('button', { name: '公開版を更新' }).tap();
+        await page.getByText('公開設定を更新しました。').waitFor();
         publicResponse = await author.request.get(base + '/api/public/items/' + chapter);
         assert.equal(publicResponse.status(), 200, 'published chapter must be visible to readers');
         assert.deepEqual((await publicResponse.json()).content.pages, [firstPage, '二頁']);
-        await page.reload();
+        await page.goto(base + '/studio?item=' + chapter);
         assert.equal(await editor.inputValue(), firstPage, 'first page survives reload');
         await page.getByRole('button', { name: '次のページ' }).tap();
         assert.equal(await editor.inputValue(), '二頁', 'second page survives reload');
@@ -177,8 +183,8 @@ test('reader shell preserves runtime colors and mobile navigation for keyboard a
 
         await menu.tap();
         assert.equal(await menu.getAttribute('aria-expanded'), 'true');
-        await nav.locator('a[href="/dictionaries"]').tap();
-        await page.waitForURL(base + '/dictionaries');
+        await nav.locator('a[href="/dictionaries/' + fixture.seriesA + '"]').tap();
+        await page.waitForURL(base + '/dictionaries/' + fixture.seriesA);
         assert.equal(await menu.getAttribute('aria-expanded'), 'false',
           'touch navigation should close after a route transition');
       } finally { await reader.close(); }
