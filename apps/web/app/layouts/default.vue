@@ -53,7 +53,7 @@ const navigation = computed(() => [
           <h2>{{ seriesId ? t('readerSeriesAreas') : t('publishedSeries') }}</h2>
           <nav :aria-label="t('shellResourceTypes')">
             <ul>
-              <li v-for="link in (seriesId ? navigation.slice(1) : navigation.slice(0, 1))" :key="link.to">
+              <li v-for="link in (seriesId ? navigation.slice(1) : [{ to: '/', label: t('publishedSeries') }])" :key="link.to">
                 <NuxtLink :to="link.to">{{ link.label }}</NuxtLink>
               </li>
             </ul>
