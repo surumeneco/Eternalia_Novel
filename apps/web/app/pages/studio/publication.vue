@@ -47,8 +47,9 @@ function ancestry(node: AuthorNode, usePublishedParent = false): AuthorNode[] {
     path.unshift(current);
     // Published ancestry is immutable across draft moves. Missing legacy
     // snapshot-parent data retains the existing draft-parent fallback.
-    const parentId = usePublishedParent && current.published?.parentId !== undefined
-      ? current.published.parentId : current.parentId;
+    const publishedParentId: string | null | undefined = current.published?.parentId;
+    const parentId: string | null = usePublishedParent && publishedParentId !== undefined
+      ? publishedParentId : current.parentId;
     current = parentId ? byId.value.get(parentId) : undefined;
   }
   return path;
