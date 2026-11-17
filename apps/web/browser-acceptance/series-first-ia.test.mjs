@@ -56,11 +56,11 @@ test('IA-05/06/07: author editing and publication each require their own series/
     assert.equal(await page.locator('.studio-sidebar li').count(), 0,
       'edit library must not merge items from every series before selection');
     await page.getByLabel('シリーズを選択').selectOption(fixture.seriesA);
-    await page.getByRole('button', { name: 'ストーリー' }).first().waitFor();
+    await page.getByRole('button', { name: '執筆' }).first().waitFor();
     assert.equal(await page.locator('.studio-sidebar').innerText()
       .then(value => value.includes(fixture.prefix + '-visible-setting')), false,
       'story editing tree must not mix settings nodes');
-    await page.getByRole('button', { name: '設定集' }).first().click();
+    await page.getByRole('button', { name: '設定' }).first().click();
     await page.getByText(fixture.prefix + '-visible-setting').first().waitFor();
 
     await page.goto(base + '/studio/publication');
