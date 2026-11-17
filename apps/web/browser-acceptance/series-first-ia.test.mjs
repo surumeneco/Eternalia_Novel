@@ -63,6 +63,16 @@ test('IA-05/06/07: author editing and publication each require their own series/
     await page.getByRole('button', { name: '設定' }).first().click();
     await page.getByText(fixture.prefix + '-visible-setting').first().waitFor();
 
+    // Switching editing domains must not leave the previous domain's editor
+    // visible under an unrelated filter.
+    await page.goto(base + '/studio?item=' + fixture.chapter);
+    await page.getByRole('heading', { name: '章：' + fixture.prefix + '-chapter-A' }).waitFor();
+    await page.getByRole('group', { name: '資料種別' })
+      .getByRole('button', { name: '設定', exact: true }).click();
+    assert.equal(await page.getByRole('heading', {
+      name: '章：' + fixture.prefix + '-chapter-A',
+    }).count(), 0, 'domain change must clear the previous chapter editing scope');
+
     await page.goto(base + '/studio/publication');
     await page.getByRole('heading', { name: '公開管理' }).waitFor();
     assert.equal(await page.locator('.publication-row').count(), 0,
