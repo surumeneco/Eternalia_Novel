@@ -39,7 +39,7 @@ test('CM-08: header switches ja/en and preserves published author text on reload
       await page.getByRole('button',{name:'Switch to Japanese'}).waitFor();
       await page.locator('html[lang="en"]').waitFor();
       assert.equal(await page.locator('html').getAttribute('lang'),'en');
-      assert.equal(await page.locator('#global-navigation a[href="/stories"]').innerText(),'Stories');
+      assert.equal(await page.locator('#global-navigation a[href="/stories/'+fixture.seriesA+'"]').innerText(),'Stories');
       assert.equal(await page.locator('main a[href="/tips/'+fixture.seriesA+'"]').innerText(),'Worldbuilding',
         'the series page must update without a reload as well as the shared shell');
       assert.ok((await page.locator('main').innerText()).includes(authoredTitle),
@@ -50,13 +50,13 @@ test('CM-08: header switches ja/en and preserves published author text on reload
       await page.getByRole('button',{name:'Switch to Japanese'}).waitFor();
       await page.locator('html[lang="en"]').waitFor();
       assert.equal(await page.locator('html').getAttribute('lang'),'en');
-      assert.equal(await page.locator('#global-navigation a[href="/stories"]').innerText(),'Stories');
+      assert.equal(await page.locator('#global-navigation a[href="/stories/'+fixture.seriesA+'"]').innerText(),'Stories');
       assert.ok((await page.locator('main').innerText()).includes(authoredTitle));
       await page.getByRole('button',{name:'Switch to Japanese'}).click();
       await page.getByRole('button',{name:'英語に切り替え'}).waitFor();
       await page.locator('html[lang="ja"]').waitFor();
       assert.equal(await page.locator('html').getAttribute('lang'),'ja');
-      assert.equal(await page.locator('#global-navigation a[href="/stories"]').innerText(),'ストーリー');
+      assert.equal(await page.locator('#global-navigation a[href="/stories/'+fixture.seriesA+'"]').innerText(),'ストーリー');
       assert.equal(await page.locator('main a[href="/tips/'+fixture.seriesA+'"]').innerText(),'設定集');
       assert.ok((await page.locator('main').innerText()).includes(authoredTitle));
       await context.close();
