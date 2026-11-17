@@ -1500,6 +1500,8 @@ test('LG-08: author editor warns about retained published spelling, then clears 
     await page.locator('.spelling-warnings').waitFor({ state: 'detached' });
     await input.fill(publishedSpelling);
     await warning.waitFor();
+    await input.fill(prefix + '-editor');
+    await page.locator('.spelling-warnings').waitFor({ state: 'detached' });
 
     await update(originalId, '/visibility', {
       expectedRevision: (await getNode(originalId)).revision, isPublic: false, publicSince: null,
@@ -1508,6 +1510,8 @@ test('LG-08: author editor warns about retained published spelling, then clears 
     await page.getByRole('heading', { name: '単語：' + prefix + '-editor' }).waitFor();
     await page.getByRole('textbox', { name: '名称・見出し', exact: true }).fill(publishedSpelling);
     await warning.waitFor();
+    await page.getByRole('textbox', { name: '名称・見出し', exact: true }).fill(prefix + '-editor');
+    await page.locator('.spelling-warnings').waitFor({ state: 'detached' });
     await update(originalId, '/soft-delete', {
       expectedRevision: (await getNode(originalId)).revision,
     });
