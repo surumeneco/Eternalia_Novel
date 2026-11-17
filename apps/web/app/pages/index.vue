@@ -26,7 +26,6 @@ const seriesById = computed(() => new Map((series.value ?? []).map(item => [item
     <ReaderPanel>
       <h1>Eternalia</h1>
       <p>{{ t('siteDescription') }}</p>
-      <p class="note">{{ t('publishedSeries') }}：{{ t('siteDescription') }}</p>
     </ReaderPanel>
     <ReaderPanel class="reader-panel-spaced">
       <h2 class="section-heading">{{ t('publishedSeries') }}</h2>
@@ -67,5 +66,10 @@ const seriesById = computed(() => new Map((series.value ?? []).map(item => [item
 </template>
 
 <style scoped>
-.reader-panel-spaced { margin-top: 1.2rem; }
+ .reader-panel-spaced { margin-top: 1.2rem; }
+.reader-list .recent-series-link {
+  display: inline; padding: 0; border: 0; background: transparent;
+  text-decoration: underline; border-radius: 0;
+}
+.reader-list .recent-series-link:hover { background: transparent; }
 </style>
