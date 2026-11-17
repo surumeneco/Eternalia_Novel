@@ -14,4 +14,6 @@ export interface ReaderNode {
     details: Record<string, string>;
   };
   publishedAt: number;
+  /** Present on recent-feed items: already-public ancestor series. */
+  seriesId?: string;
 }
