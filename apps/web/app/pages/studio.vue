@@ -864,7 +864,8 @@ async function logout() {
               </div>
               <hr />
               <div class="action-row">
-                <NuxtLink :to="{ path: '/studio/publication', query: { series: selectedSeriesId, target: selected.id } }">
+                <NuxtLink :to="{ path: '/studio/publication', query: { series: selectedSeriesId, target: selected.id } }"
+                  target="_blank" rel="noopener noreferrer">
                   {{ t('studioPublicationManagement') }}
                 </NuxtLink>
               </div>
