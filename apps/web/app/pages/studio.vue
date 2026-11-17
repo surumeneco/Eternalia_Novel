@@ -375,6 +375,16 @@ function areaForKind(kind: ReaderKind): Filter {
   if (kind === 'periodization' || kind === 'event') return 'timeline';
   return 'stories';
 }
+function chooseArea(next: Filter) {
+  if (filter.value === next || busy.value || autosavingChapter.value) return;
+  if (!confirmDiscard()) return;
+  cancelAutosaveTimer();
+  if (selected.value?.kind === 'chapter') clearChapterRecovery(selected.value.id);
+  createOpen.value = false;
+  selectedId.value = null;
+  filter.value = next;
+  restoreEditor();
+}
 function chooseSeries(event: Event) {
   const target = event.target as HTMLSelectElement;
   if (busy.value || autosavingChapter.value || !confirmDiscard()) {
@@ -745,7 +755,8 @@ async function logout() {
               <h3>{{ t('studioMaterialType') }}</h3>
             <div class="filter-row" role="group" :aria-label="t('studioMaterialType')">
               <button v-for="(f, key) in filters" :key="key" class="inline-action"
-                type="button" :aria-pressed="filter === key" @click="filter = key">{{ f.label }}</button>
+                type="button" :disabled="busy || autosavingChapter" :aria-pressed="filter === key"
+                @click="chooseArea(key as Filter)">{{ f.label }}</button>
             </div>
             <ul class="node-list">
               <li v-for="entry in ordered" :key="entry.node.id">
