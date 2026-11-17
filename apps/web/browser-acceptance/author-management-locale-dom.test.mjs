@@ -55,8 +55,25 @@ test('AUTHOR-L10N-01/02: author management type labels follow live locale withou
 
       await page.getByRole('button', { name: '英語に切り替え' }).click();
       await page.getByRole('heading', { name: 'Reorder' }).waitFor();
-      assert.match(await parent.locator('option[value="' + fixture.seriesA + '"]').innerText(), /（Series）$/,
-        'parent option kind must react to ja→en');
+      const orderEnglishState = await page.evaluate(() => {
+        const selects = [...document.querySelectorAll('.order-filters select')];
+        return {
+          url: location.href,
+          selectCount: selects.length,
+          seriesValue: selects[0]?.value,
+          parentValue: selects[1]?.value,
+          parentOptions: [...(selects[1]?.options ?? [])].map(option => ({
+            value: option.value, text: option.textContent,
+          })),
+          kindValue: selects[2]?.value,
+        };
+      });
+      assert.equal(orderEnglishState.seriesValue, fixture.seriesA,
+        'locale switch must preserve selected series: ' + JSON.stringify(orderEnglishState));
+      assert.equal(orderEnglishState.parentValue, fixture.seriesA,
+        'locale switch must preserve selected parent: ' + JSON.stringify(orderEnglishState));
+      assert.match(orderEnglishState.parentOptions.find(item => item.value === fixture.seriesA)?.text ?? '',
+        /（Series）$/, 'parent kind must localize: ' + JSON.stringify(orderEnglishState));
       assert.equal(await kind.locator('option[value="volume"]').innerText(), 'Arc',
         'child kind option must react to ja→en');
       assert.equal(await parent.inputValue(), fixture.seriesA,
