@@ -9,6 +9,9 @@ source_refs:
   - https://drive.google.com/file/d/1G4q4DbJZdOk7jIfgvuZu0a2e4L1LIMti/view
   - https://drive.google.com/file/d/1I7o6XHzRCqDZXxnL265oA1hZ8VifoNrA/view
   - https://github.com/surumeneco/Eternalia_Novel/issues/165
+  - https://drive.google.com/file/d/1KOMCuTbIapr9bOgOiWQAAo-CQx1FQ0zn/view
+  - https://drive.google.com/file/d/1KWdJwnJox2a_nei9_kn4WyN1lUcHWIAf/view
+  - https://drive.google.com/file/d/1n7iZBCTEdzr2b2e5W7p2JiMkHTxQLHhi/view
 refs: []
 semantic_contract: markdown-v2
 language: ja
@@ -19,6 +22,12 @@ language: ja
 ## 根拠と権限
 
 採用済みのSR-01〜04、WR-01/08、旧v0.3のホーム/読者/管理ルート、新着へのジャンプ、現行200・220のシリーズ起点の画面設計および利用者の受入指摘（Issue #165）。既存の公開制御・作者認可・下書き保存・明示公開版更新・新規作成の深いリンクは維持する。本書はAI作成のDraftであり無断でConfirmedに昇格しない。既存文書にない画面仕様は提案として扱う。
+
+## 旧v0.3との整合関係
+
+旧v0.3の基本設計は、公開`Stories`/`Tips`/`Dictionaries`/`Timeline`と、これらとは別の`Manage`を区分する。管理内部はストーリー/設定/辞書/年表の各担当画面と、公開管理/メモ/マスタメンテナンスという横断機能に分かれていた。全体共通機能には「編集トップ画面からの編集対象選択」「ホーム・一覧からの新規投稿」「閲覧画面から編集画面移行」がある。
+
+後続の採用済み要件SR-01〜04と現行200では、シリーズをルートに公開4領域を所属させる。したがって**旧v0.3の公開ルートURLをそのまま構造正本としない**。ただし**編集・管理を分離する責務とドメイン内部の階層**は旧版から継承する。v0.3の単一`Manage`という入口名や個別URL表記を変更するなら、正式な画面導線レビューで判断する。
 
 ## 画面とデータの境界
 
