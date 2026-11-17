@@ -590,7 +590,7 @@ test('author browser reorders only sibling chapters and protects unapplied chang
     const first = await create('chapter', part, 'first');
     const second = await create('chapter', part, 'second');
     const page = await author.newPage();
-    await page.goto(base + '/studio/order');
+    await page.goto(base + '/studio/order?series=' + series);
     await page.getByLabel('親となる項目').selectOption(part);
     await page.getByLabel('項目の種類').selectOption('chapter');
     const list = page.locator('.order-list li');
@@ -1939,7 +1939,7 @@ test('AC-02: author reorders sibling volumes and renames one without changing id
     const first = await create('volume', series, firstTitle);
     const second = await create('volume', series, secondTitle);
     const page = await author.newPage();
-    await page.goto(base + '/studio/order');
+    await page.goto(base + '/studio/order?series=' + series);
     await page.getByRole('combobox', { name: '親となる項目' }).selectOption(series);
     await page.getByRole('button', { name: firstTitle + 'を下へ移動' }).waitFor();
     assert.deepEqual(await page.locator('.order-list li > span').allInnerTexts(), [firstTitle, secondTitle]);
@@ -2558,7 +2558,7 @@ test('AC-02: part ordering and part/chapter renames preserve identity and ancest
     const second = await create('part', volume, 'part-B');
     const chapter = await create('chapter', first, 'chapter');
     const page = await author.newPage();
-    await page.goto(base + '/studio/order');
+    await page.goto(base + '/studio/order?series=' + series);
     await page.getByRole('combobox', { name: '親となる項目' }).selectOption(volume);
     await page.getByRole('combobox', { name: '項目の種類' }).selectOption('part');
     const list = page.locator('.order-list li > span');
