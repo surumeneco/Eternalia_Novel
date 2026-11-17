@@ -71,7 +71,7 @@ test('IA-05/06/07: author editing and publication each require their own series/
     // Switching editing domains must not leave the previous domain's editor
     // visible under an unrelated filter.
     await page.goto(base + '/studio?item=' + fixture.chapter);
-    const selectedChapterHeading = page.locator('.studio-editor h2');
+    const selectedChapterHeading = page.locator('.studio-editor h2').filter({ hasText: /^章：/ });
     await selectedChapterHeading.waitFor();
     // Earlier acceptance suites may legitimately rename this seeded draft.
     // Assert the restored kind and stable item identity, not an obsolete title.
