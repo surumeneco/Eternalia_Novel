@@ -16,7 +16,7 @@
     "test:alpha": "npm run build:contracts && node --test packages/contracts/exploratory/*.test.mjs apps/preview/tests/*.test.mjs && node --experimental-strip-types --test apps/web/tests/*.test.mjs && node --test scripts/audit-ui-component-deps.test.mjs scripts/audit-ui6-trial.test.mjs scripts/audit-ui6-route-composition.test.mjs",
     "check:alpha": "npm run test:alpha",
     "check:ac-traceability": "node --test scripts/check-ac-traceability.test.mjs && node scripts/check-ac-traceability.mjs docs/alpha-ac-traceability.md",
-    "check:junit-tooling": "node --test scripts/run-test-junit.test.mjs",
+    "check:junit-tooling": "node --test scripts/run-test-junit.test.mjs scripts/run-cat-vitest-suite-junit.test.mjs",
     "alpha:offline": "node apps/preview/src/server.mjs",
     "seed:alpha": "node apps/preview/src/seed.mjs",
     "db:migrate": "node --env-file-if-exists=.env scripts/migrate.mjs",

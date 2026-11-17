@@ -1,0 +1,323 @@
+{
+  "coverage_checks": {
+    "重複確認": {
+      "excluded_by_pi_constraints": false,
+      "guard_refs": [
+        "入力.下書き同綴",
+        "入力.公開版同綴"
+      ],
+      "overlap_count": 0,
+      "overlaps": [],
+      "result": "proved",
+      "uncovered": [],
+      "uncovered_count": 0,
+      "unreachable_rules": []
+    }
+  },
+  "coverage_claim": "closed",
+  "coverage_requirement": "closed",
+  "definitions": [],
+  "fields": [
+    {
+      "direction": "receive",
+      "domain": {
+        "type": "boolean"
+      },
+      "id": "入力.下書き同綴",
+      "presence": "required",
+      "role": "input",
+      "source_pi": "eternalia.dictionary.spelling-collision.pi"
+    },
+    {
+      "direction": "receive",
+      "domain": {
+        "type": "boolean"
+      },
+      "id": "入力.公開版同綴",
+      "presence": "required",
+      "role": "input",
+      "source_pi": "eternalia.dictionary.spelling-collision.pi"
+    },
+    {
+      "direction": "send",
+      "domain": {
+        "type": "boolean"
+      },
+      "id": "出力.拒否",
+      "presence": "required",
+      "role": "output",
+      "source_pi": "eternalia.dictionary.spelling-collision.pi"
+    }
+  ],
+  "language": "ja",
+  "limits": [
+    "finite-guard-closure-only",
+    "no-general-reachability-proof",
+    "no-process-composition"
+  ],
+  "local_coverage_requirements": {
+    "eternalia.dictionary.spelling-collision.tce": "closed"
+  },
+  "model_type": "symbolic-relation",
+  "normalized_ir": "cat-machine/v2",
+  "normative_rule_inputs": [],
+  "operation_presence": [],
+  "pi_artifacts": [
+    "eternalia.dictionary.spelling-collision.pi"
+  ],
+  "pi_boundaries": [
+    {
+      "artifact": "eternalia.dictionary.spelling-collision.pi",
+      "direction": "bidirectional",
+      "peer": "eternalia.dictionary.author-write"
+    }
+  ],
+  "pi_boundary": {
+    "direction": "bidirectional",
+    "peer": "eternalia.dictionary.author-write"
+  },
+  "pi_constraints": [],
+  "pi_operations": [
+    {
+      "direction": "accept",
+      "id": "check",
+      "source_pi": "eternalia.dictionary.spelling-collision.pi",
+      "trigger": "重複確認"
+    }
+  ],
+  "presence_unproven": [],
+  "process": "eternalia.dictionary.spelling-collision",
+  "process_interfaces": [
+    "eternalia.dictionary.spelling-collision.pi"
+  ],
+  "rule_obligations": [],
+  "rules": [
+    {
+      "allowed": [
+        {
+          "absent_outputs": [],
+          "unchanged": [],
+          "write": [
+            {
+              "expr": {
+                "literal": false
+              },
+              "target": "出力.拒否"
+            }
+          ]
+        }
+      ],
+      "id": "collision.none",
+      "source_artifact": "eternalia.dictionary.spelling-collision.tce",
+      "trigger": "重複確認",
+      "when": {
+        "args": [
+          {
+            "args": [
+              {
+                "ref": "入力.下書き同綴"
+              }
+            ],
+            "op": "not"
+          },
+          {
+            "args": [
+              {
+                "ref": "入力.公開版同綴"
+              }
+            ],
+            "op": "not"
+          }
+        ],
+        "op": "and"
+      }
+    },
+    {
+      "allowed": [
+        {
+          "absent_outputs": [],
+          "unchanged": [],
+          "write": [
+            {
+              "expr": {
+                "literal": true
+              },
+              "target": "出力.拒否"
+            }
+          ]
+        }
+      ],
+      "id": "collision.draft-only",
+      "source_artifact": "eternalia.dictionary.spelling-collision.tce",
+      "trigger": "重複確認",
+      "when": {
+        "args": [
+          {
+            "ref": "入力.下書き同綴"
+          },
+          {
+            "args": [
+              {
+                "ref": "入力.公開版同綴"
+              }
+            ],
+            "op": "not"
+          }
+        ],
+        "op": "and"
+      }
+    },
+    {
+      "allowed": [
+        {
+          "absent_outputs": [],
+          "unchanged": [],
+          "write": [
+            {
+              "expr": {
+                "literal": true
+              },
+              "target": "出力.拒否"
+            }
+          ]
+        }
+      ],
+      "id": "collision.published-only",
+      "source_artifact": "eternalia.dictionary.spelling-collision.tce",
+      "trigger": "重複確認",
+      "when": {
+        "args": [
+          {
+            "args": [
+              {
+                "ref": "入力.下書き同綴"
+              }
+            ],
+            "op": "not"
+          },
+          {
+            "ref": "入力.公開版同綴"
+          }
+        ],
+        "op": "and"
+      }
+    },
+    {
+      "allowed": [
+        {
+          "absent_outputs": [],
+          "unchanged": [],
+          "write": [
+            {
+              "expr": {
+                "literal": true
+              },
+              "target": "出力.拒否"
+            }
+          ]
+        }
+      ],
+      "id": "collision.both",
+      "source_artifact": "eternalia.dictionary.spelling-collision.tce",
+      "trigger": "重複確認",
+      "when": {
+        "args": [
+          {
+            "ref": "入力.下書き同綴"
+          },
+          {
+            "ref": "入力.公開版同綴"
+          }
+        ],
+        "op": "and"
+      }
+    }
+  ],
+  "schema": "cat-test-model/v2",
+  "semantic_authority": "cat-markdown/v2",
+  "source_artifacts": [
+    "eternalia.dictionary.spelling-collision",
+    "eternalia.dictionary.spelling-collision.pi",
+    "eternalia.dictionary.spelling-collision.tce"
+  ],
+  "source_records": [
+    {
+      "id": "eternalia.dictionary.spelling-collision",
+      "kind": "process",
+      "sha256": "522d92889d6aa0c35e20b92b11f3edbf6618b64c0da3831a9e008b70eed5cf99"
+    },
+    {
+      "id": "eternalia.dictionary.spelling-collision.pi",
+      "kind": "pi",
+      "sha256": "be763083335dd0c9cff95f073f9c9bd018f069ae7fe249329f9eca032559e41b"
+    },
+    {
+      "id": "eternalia.dictionary.spelling-collision.tce",
+      "kind": "tce",
+      "sha256": "f48f30d77b8793c517ed9359bd19241160100423674366d1111c9a3d7816c1e8"
+    }
+  ],
+  "source_semantic_map": {
+    "common_rules": [],
+    "domain_rule": {
+      "artifact": null,
+      "definitions": []
+    },
+    "domain_specs": [],
+    "pi": {
+      "artifact": "eternalia.dictionary.spelling-collision.pi",
+      "artifacts": [
+        "eternalia.dictionary.spelling-collision.pi"
+      ],
+      "constraint_count": 0,
+      "fields": [
+        "入力.下書き同綴",
+        "入力.公開版同綴",
+        "出力.拒否"
+      ],
+      "operations": [
+        "check"
+      ]
+    },
+    "process": {
+      "actions": [],
+      "artifact": "eternalia.dictionary.spelling-collision",
+      "interfaces": [
+        "eternalia.dictionary.spelling-collision.pi"
+      ],
+      "observations": [],
+      "state": [],
+      "triggers": [
+        "重複確認"
+      ]
+    },
+    "tce": [
+      {
+        "artifact": "eternalia.dictionary.spelling-collision.tce",
+        "local_coverage": "closed",
+        "outcome_count": 4,
+        "rules": [
+          "collision.none",
+          "collision.draft-only",
+          "collision.published-only",
+          "collision.both"
+        ]
+      }
+    ]
+  },
+  "source_sha256": {
+    "pi": "be763083335dd0c9cff95f073f9c9bd018f069ae7fe249329f9eca032559e41b",
+    "process": "522d92889d6aa0c35e20b92b11f3edbf6618b64c0da3831a9e008b70eed5cf99",
+    "tce": "f48f30d77b8793c517ed9359bd19241160100423674366d1111c9a3d7816c1e8"
+  },
+  "status": "confirmed",
+  "triggers": [
+    {
+      "id": "重複確認",
+      "origin": "eternalia.dictionary.spelling-collision.pi/check"
+    }
+  ],
+  "unresolved_domains": [],
+  "unresolved_interfaces": [],
+  "unverified_rule_ids": []
+}
