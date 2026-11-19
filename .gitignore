@@ -1,11 +1,26 @@
+# Dependencies and generated build output
 node_modules/
-**/node_modules/
 **/dist/
 **/.nuxt/
 **/.output/
-.env
-.env.*.local
-.DS_Store
+**/.cache/
+**/.vite/
+*.tsbuildinfo
 
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Local test output
+**/coverage/
+**/playwright-report/
+**/test-results/
+
+# Local previews, artifacts, logs and OS files
 .local/
 artifacts/
+*.log
+.DS_Store
+Thumbs.db
