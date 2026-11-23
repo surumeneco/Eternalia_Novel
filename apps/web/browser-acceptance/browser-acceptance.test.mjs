@@ -43,11 +43,11 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
   try {
     const reader = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const readerPage = await reader.newPage();
-    const storyResponse = await readerPage.goto(base + '/stories/' + fixture.seriesA);
+    const storyResponse = await readerPage.goto(base + '/series/' + fixture.seriesA + '/stories');
     const storyText = await readerPage.locator('body').innerText();
     assert.equal(storyResponse?.status(), 200, 'story HTTP response: ' + storyText.slice(0, 1500));
     assert.ok(storyText.includes(fixture.prefix + '-world-A') &&
-      storyText.includes(fixture.prefix + '-chapter-A'),
+      storyText.includes(fixture.prefix + '-book-A'),
       'story DOM should display published series and chapter; got: ' + storyText.slice(0, 2000));
     for (const selector of ['.site-header', '.site-aside', '.site-main', '.site-footer', '.topic-path']) {
       assert.equal(await readerPage.locator(selector).count(), 1,
@@ -1346,30 +1346,26 @@ test('dictionary browser keeps identical spellings separate by language filter',
     for (const id of [series, languageA, languageB, wordA, wordB]) await publish(id);
 
     const page = await anonymous.newPage();
-    await page.goto(base + '/dictionaries/' + series);
-    await page.getByLabel('単語を検索').fill(wordTitle);
+    // Reader hierarchy owns word lists by Language; there is no cross-language
+    // language dropdown on this page. The same spelling must resolve separately.
+    await page.goto(base + '/series/' + series + '/dictionaries');
+    await page.getByRole('link', { name: prefix + '-language-A', exact: true }).waitFor();
+    await page.getByRole('link', { name: prefix + '-language-B', exact: true }).waitFor();
     const words = page.getByRole('link', { name: wordTitle, exact: true });
-    await words.nth(1).waitFor();
-    assert.equal(await words.count(), 2, 'same spelling must appear under both public languages');
-
-    const language = page.getByLabel('言語');
-    await language.selectOption(languageA);
-    await words.nth(1).waitFor({ state: 'hidden' });
-    assert.equal(await words.count(), 1);
-    assert.ok((await page.locator('.dictionary-language').innerText()).includes(prefix + '-meaning-A'));
-    assert.ok(!(await page.locator('.dictionary-language').innerText()).includes(prefix + '-meaning-B'));
-    assert.ok((await words.first().getAttribute('href'))?.endsWith('/items/' + wordA));
-
-    await language.selectOption(languageB);
-    await words.nth(1).waitFor({ state: 'hidden' });
-    assert.equal(await words.count(), 1);
-    assert.ok((await page.locator('.dictionary-language').innerText()).includes(prefix + '-meaning-B'));
-    assert.ok(!(await page.locator('.dictionary-language').innerText()).includes(prefix + '-meaning-A'));
-    assert.ok((await words.first().getAttribute('href'))?.endsWith('/items/' + wordB));
-
-    await language.selectOption('');
-    await words.nth(1).waitFor();
-    assert.equal(await words.count(), 2, 'removing language filter restores both distinct words');
+    for (const [language, word, meaning, otherMeaning] of [
+      [languageA, wordA, 'meaning-A', 'meaning-B'],
+      [languageB, wordB, 'meaning-B', 'meaning-A'],
+    ]) {
+      await page.goto(base + '/series/' + series + '/dictionaries/' + language);
+      await page.getByLabel('単語を検索').fill(wordTitle);
+      await words.first().waitFor();
+      assert.equal(await words.count(), 1, 'a language list contains only its own spelling');
+      assert.equal(await words.first().getAttribute('href'),
+        '/series/' + series + '/dictionaries/' + language + '/words/' + word);
+      const text = await page.locator('main').innerText();
+      assert.ok(text.includes(prefix + '-' + meaning));
+      assert.ok(!text.includes(prefix + '-' + otherMeaning));
+    }
     await page.close();
     await anonymous.close();
     await author.close();
@@ -1751,34 +1747,37 @@ test('published tags search across categories without changing ownership or priv
     for (const id of [series, categoryA, categoryB, tipA, tipB]) await publish(id);
 
     const page = await anonymous.newPage();
-    await page.goto(base + '/tips/' + series);
-    await page.getByRole('combobox', { name: 'タグ', exact: true }).selectOption(tag);
-    await page.getByRole('link', { name: prefix + '-tip-B', exact: true }).waitFor();
-    const groups = page.locator('.tip-category');
-    assert.equal(await groups.count(), 2, 'tag filter should span both categories');
-    assert.equal(await page.getByRole('link', { name: prefix + '-tip-A', exact: true }).count(), 1);
-    assert.equal(await page.getByRole('link', { name: prefix + '-tip-B', exact: true }).count(), 1);
-
-    await page.getByRole('combobox', { name: 'カテゴリ', exact: true }).selectOption(categoryA);
-    await page.getByRole('link', { name: prefix + '-tip-B', exact: true }).waitFor({ state: 'hidden' });
-    assert.equal(await groups.count(), 1);
-    assert.ok((await groups.innerText()).includes(prefix + '-tip-A'));
-    assert.ok(!(await groups.innerText()).includes(prefix + '-tip-B'));
-    await page.getByRole('combobox', { name: 'カテゴリ', exact: true }).selectOption(categoryB);
-    await page.getByRole('link', { name: prefix + '-tip-A', exact: true }).waitFor({ state: 'hidden' });
-    assert.equal(await groups.count(), 1);
-    assert.ok((await groups.innerText()).includes(prefix + '-tip-B'));
+    // Site-wide search finds published Tag labels across the series' Categories;
+    // each Category still owns a separate reader page and its Tip list.
+    const searchUrl = base + '/search?series=' + series;
+    await page.goto(searchUrl);
+    await page.locator('.search-filters select').first()
+      .locator('option[value="' + series + '"]').waitFor({ state: 'attached' });
+    await page.locator('.search-filters select').nth(1).selectOption('tips');
+    await page.locator('.search-filters input[type="search"]').fill(tag);
+    const results = page.locator('main .search-result a');
+    await page.getByRole('status').filter({ hasText: '：2' }).waitFor();
+    assert.deepEqual((await results.allInnerTexts()).sort(),
+      [prefix + '-tip-A', prefix + '-tip-B'].sort(), 'tag search spans categories');
+    for (const [category, own, other] of [
+      [categoryA, 'tip-A', 'tip-B'], [categoryB, 'tip-B', 'tip-A'],
+    ]) {
+      await page.goto(base + '/series/' + series + '/settings/' + category);
+      await page.getByRole('link', { name: prefix + '-' + own, exact: true }).waitFor();
+      assert.equal(await page.getByRole('link', { name: prefix + '-' + other, exact: true }).count(), 0);
+    }
 
     const hidden = await author.request.post(base + '/api/admin/nodes/' + tipA + '/visibility', {
       headers: { Origin: base },
       data: { expectedRevision: 1, isPublic: false, publicSince: null },
     });
     assert.equal(hidden.status(), 200);
-    await page.reload();
-    await page.getByRole('combobox', { name: 'タグ', exact: true }).selectOption(tag);
-    await page.getByRole('link', { name: prefix + '-tip-B', exact: true }).waitFor();
-    assert.equal(await page.getByRole('link', { name: prefix + '-tip-A', exact: true }).count(), 0);
-    assert.equal(await page.getByRole('link', { name: prefix + '-tip-B', exact: true }).count(), 1);
+    await page.goto(searchUrl);
+    await page.locator('.search-filters select').nth(1).selectOption('tips');
+    await page.locator('.search-filters input[type="search"]').fill(tag);
+    await page.getByRole('status').filter({ hasText: '：1' }).waitFor();
+    assert.equal(await page.locator('main .search-result a').filter({hasText:prefix + '-tip-A'}).count(), 0);
+    assert.equal(await page.locator('main .search-result a').filter({hasText:prefix + '-tip-B'}).count(), 1);
     assert.equal((await anonymous.request.get(base + '/api/public/items/' + tipA)).status(), 404);
     assert.equal((await anonymous.request.get(base + '/api/public/items/' + tipB)).status(), 200);
     await page.close();
@@ -2092,9 +2091,9 @@ test('AC-55: anonymous recent listing links published chapter and removes it aft
     assert.ok(items.some(item => item.id === chapter && item.content.title === chapterTitle));
     const page = await reader.newPage();
     await page.goto(base + '/');
-    const link = page.getByRole('link', { name: chapterTitle, exact: true });
+    const link = page.locator('#main-content').getByRole('link', { name: chapterTitle, exact: true });
     await link.waitFor();
-    assert.equal(await link.getAttribute('href'), '/read/' + chapter);
+    assert.equal(await link.getAttribute('href'), '/jump/' + chapter);
     await link.click();
     await page.locator('.rich-body').getByText('新着から開ける公開章本文').waitFor();
 
@@ -2107,7 +2106,7 @@ test('AC-55: anonymous recent listing links published chapter and removes it aft
       'hidden chapter must not appear in anonymous recent API');
     assert.equal((await reader.request.get(base + '/api/public/items/' + chapter)).status(), 404);
     await page.goto(base + '/');
-    assert.equal(await page.getByRole('link', { name: chapterTitle, exact: true }).count(), 0,
+    assert.equal(await page.locator('#main-content').getByRole('link', { name: chapterTitle, exact: true }).count(), 0,
       'hidden chapter must not appear in recent home links');
     await page.close();
     await reader.close();
@@ -2348,9 +2347,9 @@ test('AC-56: shared author navigation works while anonymous editor and API write
       '/timeline/' + fixture.seriesA,
     ]) {
       await page.goto(base + route);
-      await page.getByRole('contentinfo').getByRole('link', { name: '執筆・編集' }).click();
-      await page.getByRole('heading', { name: '執筆・編集' }).waitFor();
-      await page.getByRole('button', { name: '新規シリーズ' }).waitFor();
+      await page.locator('.site-header').getByRole('link', { name: '管理ホーム' }).click();
+      await page.getByRole('heading', { name: '管理ホーム' }).waitFor();
+      await page.getByRole('link', { name: 'マスタメンテ' }).waitFor();
     }
 
     // Item-specific author navigation must select the exact published chapter.
@@ -2363,7 +2362,7 @@ test('AC-56: shared author navigation works while anonymous editor and API write
     await page.getByRole('textbox', { name: '本文・説明', exact: true }).waitFor();
 
     // The series detail page must also link directly to the exact series editor.
-    await page.goto(base + '/stories/' + series);
+    await page.goto(base + '/series/' + series);
     await page.getByRole('link', { name: 'この項目を編集' }).click();
     await page.waitForURL(url => url.pathname === '/studio'
       && url.searchParams.get('item') === series);
@@ -2373,7 +2372,7 @@ test('AC-56: shared author navigation works while anonymous editor and API write
     await readerPage.goto(base + '/read/' + fixture.chapter);
     await readerPage.locator('.author-edit-link').waitFor({ state: 'hidden' });
     assert.equal(await readerPage.getByRole('link', { name: 'この項目を編集' }).count(), 0);
-    await readerPage.goto(base + '/stories/' + series);
+    await readerPage.goto(base + '/series/' + series);
     assert.equal(await readerPage.getByRole('link', { name: 'この項目を編集' }).count(), 0,
       'anonymous series reader must not see an author edit control');
     await readerPage.goto(base + '/studio');
@@ -2494,7 +2493,7 @@ test('related Tip projection respects a hidden category ancestor and restores on
     const page = await author.newPage();
     await page.goto(base + '/studio?item=' + source);
     const links = page.locator('.tip-links-editor');
-    await links.locator('select').selectOption(target);
+    await links.locator('.related-add select').selectOption(target);
     await links.getByRole('button', { name: '関連に追加' }).click();
     await page.getByRole('button', { name: '下書きを保存' }).click();
     await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
@@ -2660,7 +2659,7 @@ test('AC-06: related Tip reorder and removal affect readers only after explicit 
     await page.goto(base + '/studio?item=' + source);
     const links = page.locator('.tip-links-editor');
     for (const target of [targetA, targetB]) {
-      await links.locator('select').selectOption(target);
+      await links.locator('.related-add select').selectOption(target);
       await links.getByRole('button', { name: '関連に追加' }).click();
     }
     const titles = links.locator('.related-list li > span');

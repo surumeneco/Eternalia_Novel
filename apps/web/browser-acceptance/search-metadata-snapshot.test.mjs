@@ -121,7 +121,9 @@ test('SEARCH-METADATA-01/02/03: tags and word definitions only expose explicitly
                   && (visible ? links.length === 1 && links[0].getAttribute('href') === href
                     : links.length === 0);
               },
-              { visible, href: '/items/' + expectedId },
+              { visible, href: '/series/' + seriesId + (domain === 'tips'
+                ? '/settings/' + categoryId + '/' + expectedId
+                : '/dictionaries/' + languageId + '/words/' + expectedId) },
               { timeout: 20_000 },
             );
             const links = await page.locator('main .search-result a').all();

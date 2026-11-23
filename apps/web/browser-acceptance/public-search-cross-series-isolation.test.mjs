@@ -112,6 +112,8 @@ test('SEARCH-ISOLATION-01/02/03: identical public tags and dictionary meanings n
         items.push({ seriesId, category, language, tip, word, letter });
       }
       const [a, b, c] = items;
+      const tipHref = item => '/series/' + item.seriesId + '/settings/' + item.category + '/' + item.tip;
+      const wordHref = item => '/series/' + item.seriesId + '/dictionaries/' + item.language + '/words/' + item.word;
       // Private series C has the same token and published children but must
       // disappear from all anonymous choices and direct public tree lookups.
       await visibility(seriesC, null, false);
@@ -135,22 +137,22 @@ test('SEARCH-ISOLATION-01/02/03: identical public tags and dictionary meanings n
 
         await selectAndSearch(page, {
           seriesId: seriesA, seriesTitle: seriesAName, domain: 'tips', term: tag,
-          expectedHrefs: ['/items/' + a.tip],
+          expectedHrefs: [tipHref(a)],
         });
         assert.ok(!(await page.locator('main').innerText()).includes(stamp + '-tip-B'));
         await selectAndSearch(page, {
           seriesId: seriesB, seriesTitle: seriesBName, domain: 'tips', term: tag,
-          expectedHrefs: ['/items/' + b.tip],
+          expectedHrefs: [tipHref(b)],
         });
         assert.ok(!(await page.locator('main').innerText()).includes(stamp + '-tip-A'));
 
         await selectAndSearch(page, {
           seriesId: seriesA, seriesTitle: seriesAName, domain: 'dictionaries', term: meaning,
-          expectedHrefs: ['/items/' + a.word],
+          expectedHrefs: [wordHref(a)],
         });
         await selectAndSearch(page, {
           seriesId: seriesB, seriesTitle: seriesBName, domain: 'dictionaries', term: meaning,
-          expectedHrefs: ['/items/' + b.word],
+          expectedHrefs: [wordHref(b)],
         });
         assert.ok(!(await page.locator('main').innerText()).includes(stamp + '-word-A'));
 
@@ -161,7 +163,7 @@ test('SEARCH-ISOLATION-01/02/03: identical public tags and dictionary meanings n
         assert.equal((await fetch(base + '/api/public/items/' + b.word)).status, 404);
         await selectAndSearch(page, {
           seriesId: seriesA, seriesTitle: seriesAName, domain: 'dictionaries', term: meaning,
-          expectedHrefs: ['/items/' + a.word],
+          expectedHrefs: [wordHref(a)],
         });
         await selectAndSearch(page, {
           seriesId: seriesB, seriesTitle: seriesBName, domain: 'dictionaries', term: meaning,
