@@ -47,7 +47,7 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
     const storyText = await readerPage.locator('body').innerText();
     assert.equal(storyResponse?.status(), 200, 'story HTTP response: ' + storyText.slice(0, 1500));
     assert.ok(storyText.includes(fixture.prefix + '-world-A') &&
-      storyText.includes(fixture.prefix + '-volume-A'),
+      storyText.includes(fixture.prefix + '-book-A'),
       'story DOM should display published series and chapter; got: ' + storyText.slice(0, 2000));
     for (const selector of ['.site-header', '.site-aside', '.site-main', '.site-footer', '.topic-path']) {
       assert.equal(await readerPage.locator(selector).count(), 1,
@@ -1722,17 +1722,17 @@ test('published tags search across categories without changing ownership or priv
     await page.getByRole('status').filter({ hasText: 'series' }).waitFor();
     await page.locator('.search-filters select').nth(1).selectOption('tips');
     await page.getByLabel('検索語').fill(tag);
-    await page.getByRole('link', { name: prefix + '-tip-B', exact: true }).waitFor();
+    await page.locator('main').getByRole('link', { name: prefix + '-tip-B', exact: true }).waitFor();
     assert.equal(await page.locator('main .search-result').count(), 2,
       'tag search must span both categories');
-    assert.equal(await page.getByRole('link', { name: prefix + '-tip-A', exact: true }).count(), 1);
-    assert.equal(await page.getByRole('link', { name: prefix + '-tip-B', exact: true }).count(), 1);
+    assert.equal(await page.locator('main').getByRole('link', { name: prefix + '-tip-A', exact: true }).count(), 1);
+    assert.equal(await page.locator('main').getByRole('link', { name: prefix + '-tip-B', exact: true }).count(), 1);
     await page.goto(base + '/series/' + series + '/settings/' + categoryA);
-    await page.getByRole('link', { name: prefix + '-tip-A', exact: true }).waitFor();
-    assert.equal(await page.getByRole('link', { name: prefix + '-tip-B', exact: true }).count(), 0);
+    await page.locator('main').getByRole('link', { name: prefix + '-tip-A', exact: true }).waitFor();
+    assert.equal(await page.locator('main').getByRole('link', { name: prefix + '-tip-B', exact: true }).count(), 0);
     await page.goto(base + '/series/' + series + '/settings/' + categoryB);
-    await page.getByRole('link', { name: prefix + '-tip-B', exact: true }).waitFor();
-    assert.equal(await page.getByRole('link', { name: prefix + '-tip-A', exact: true }).count(), 0);
+    await page.locator('main').getByRole('link', { name: prefix + '-tip-B', exact: true }).waitFor();
+    assert.equal(await page.locator('main').getByRole('link', { name: prefix + '-tip-A', exact: true }).count(), 0);
     const hidden = await author.request.post(base + '/api/admin/nodes/' + tipA + '/visibility', {
       headers: { Origin: base },
       data: { expectedRevision: 1, isPublic: false, publicSince: null },
@@ -1741,9 +1741,9 @@ test('published tags search across categories without changing ownership or priv
     await page.goto(base + '/search?series=' + series);
     await page.locator('.search-filters select').nth(1).selectOption('tips');
     await page.getByLabel('検索語').fill(tag);
-    await page.getByRole('link', { name: prefix + '-tip-B', exact: true }).waitFor();
-    assert.equal(await page.getByRole('link', { name: prefix + '-tip-A', exact: true }).count(), 0);
-    assert.equal(await page.getByRole('link', { name: prefix + '-tip-B', exact: true }).count(), 1);
+    await page.locator('main').getByRole('link', { name: prefix + '-tip-B', exact: true }).waitFor();
+    assert.equal(await page.locator('main').getByRole('link', { name: prefix + '-tip-A', exact: true }).count(), 0);
+    assert.equal(await page.locator('main').getByRole('link', { name: prefix + '-tip-B', exact: true }).count(), 1);
     assert.equal((await anonymous.request.get(base + '/api/public/items/' + tipA)).status(), 404);
     assert.equal((await anonymous.request.get(base + '/api/public/items/' + tipB)).status(), 200);
     await page.close();
