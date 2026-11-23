@@ -158,7 +158,7 @@ export class CommonMastersService implements OnModuleDestroy {
       SELECT (
         EXISTS (
           SELECT 1 FROM content_nodes n WHERE n.kind='tip' AND n.deleted_at IS NULL
-            AND COALESCE((n.draft_content #>> '{details,tags}')::jsonb, '[]'::jsonb) ? $1
+            AND COALESCE((n.draft_content #>> '{details,tagIds}')::jsonb, '[]'::jsonb) ? $1
         ) OR EXISTS (
           SELECT 1 FROM published_snapshots p JOIN content_nodes n ON n.id=p.node_id
           WHERE n.kind='tip' AND n.deleted_at IS NULL

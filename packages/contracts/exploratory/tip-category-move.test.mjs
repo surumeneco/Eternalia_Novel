@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { newLibrary, createNode, editNode, publishNode, moveTip, publicTree, publicPath, toReader } from '../dist/index.js';
 
 const now=1_800_000_000_000;
+const tagId={person:'99999999-9999-4999-8999-999999999999',geo:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',world:'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'};
 const id={
   s:'11111111-1111-4111-8111-111111111111',
   s2:'22222222-2222-4222-8222-222222222222',
@@ -22,7 +23,7 @@ function setup() {
  add(id.a,'category',id.s);
  add(id.b,'category',id.s,{presets:'[{"title":"新雛形","body":"無断伝播しない"}]'});
  add(id.other,'category',id.s2);
- add(id.tip,'tip',id.a,{tags:'["人物"]'});
+ add(id.tip,'tip',id.a,{tagIds:JSON.stringify([tagId.person])});
  add(id.section,'tipSection',id.tip);
  for(const uid of [id.s,id.a,id.b,id.tip,id.section]) {
   const rev=db.nodes.find(n=>n.id===uid).revision;
@@ -84,12 +85,12 @@ test('AC-05: moving a tagged related Tip never propagates presets or leaks draft
    .map(n=>structuredClone(n));
  // Related settings may be in a different Category, but must remain in the same Series.
  db=createNode(db,{id:related,kind:'tip',parentId:id.b,
-   content:{title:'関連設定',body:'関連説明',details:{tags:'["世界設定"]'}},now});
+   content:{title:'関連設定',body:'関連説明',details:{tagIds:JSON.stringify([tagId.world])}},now});
  db=publishNode(db,related,item(related).revision,now);
  // Explicitly publish the initial related link so readers can observe it.
  db=editNode(db,id.tip,item(id.tip).revision,{title:item(id.tip).draft.title,
    body:item(id.tip).draft.body,
-   details:{tags:'["人物"]',relatedTipIds:JSON.stringify([related])}},now+1);
+   details:{tagIds:JSON.stringify([tagId.person]),relatedTipIds:JSON.stringify([related])}},now+1);
  db=publishNode(db,id.tip,item(id.tip).revision,now+2);
  const originalSnapshot=structuredClone(item(id.tip).published);
  db=moveTip(db,id.tip,item(id.tip).revision,id.b,now+3);
@@ -99,8 +100,9 @@ test('AC-05: moving a tagged related Tip never propagates presets or leaks draft
  assert.deepEqual(item(id.tip).published,originalSnapshot);
  db=editNode(db,id.tip,item(id.tip).revision,{title:item(id.tip).draft.title,
    body:item(id.tip).draft.body,
-   details:{tags:'["人物","地理"]',relatedTipIds:JSON.stringify([related])}},now+4);
- assert.deepEqual(JSON.parse(toReader(db,id.tip,now+5).content.details.tags),['人物']);
+   details:{tagIds:JSON.stringify([tagId.person,tagId.geo]),relatedTipIds:JSON.stringify([related])}},now+4);
+ assert.deepEqual(JSON.parse(item(id.tip).published.value.details.tagIds),[tagId.person]);
+ assert.equal(toReader(db,id.tip,now+5).content.details.tagIds,undefined);
  assert.deepEqual(publicPath(db,id.tip,now+5).map(n=>n.id),[id.s,id.a,id.tip]);
  assert.equal(item(id.tip).published.parentId,id.a);
  assert.deepEqual(JSON.parse(toReader(db,id.tip,now+5).content.details.relatedTips)
@@ -108,7 +110,8 @@ test('AC-05: moving a tagged related Tip never propagates presets or leaks draft
  db=publishNode(db,id.tip,item(id.tip).revision,now+6);
  assert.equal(item(id.tip).published.parentId,id.b);
  assert.deepEqual(publicPath(db,id.tip,now+7).map(n=>n.id),[id.s,id.b,id.tip]);
- assert.deepEqual(JSON.parse(toReader(db,id.tip,now+7).content.details.tags),['人物','地理']);
+ assert.deepEqual(JSON.parse(item(id.tip).published.value.details.tagIds),[tagId.person,tagId.geo]);
+ assert.equal(toReader(db,id.tip,now+7).content.details.tagIds,undefined);
  assert.deepEqual(JSON.parse(toReader(db,id.tip,now+7).content.details.relatedTips)
    .map(tip=>tip.id),[related]);
  assert.deepEqual(db.nodes.filter(n=>n.kind==='tipSection' && n.parentId===id.tip),sectionsBefore);

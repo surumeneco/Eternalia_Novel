@@ -21,7 +21,20 @@ const newMemo = ref(false);
 const search = ref('');
 const title = ref('');
 const body = ref('');
-const tagsText = ref('');
+interface TagEntry { id: string; group: string; name: string; order: number; }
+const tagCatalog = ref<TagEntry[]>([]);
+const tagIds = ref<string[]>([]);
+const selectedTagId = ref('');
+const catalogNames = computed(() => new Map(tagCatalog.value.map(tag => [tag.id,tag.name])));
+const availableTags = computed(() => tagCatalog.value.filter(tag => !tagIds.value.includes(tag.id)));
+const localized = (ja: string, en: string) => language.value === 'en' ? en : ja;
+function addTag() {
+  if (selectedTagId.value && availableTags.value.some(tag => tag.id === selectedTagId.value)) {
+    tagIds.value = [...tagIds.value, selectedTagId.value];
+    selectedTagId.value = '';
+  }
+}
+function removeTag(id: string) { tagIds.value = tagIds.value.filter(value => value !== id); }
 const errorText = ref('');
 const statusText = ref('');
 const selected = computed(() => memos.value.find(memo => memo.id === selectedId.value) ?? null);
@@ -29,11 +42,11 @@ const dirty = computed(() =>
   (newMemo.value || selected.value !== null) && (
     title.value !== (newMemo.value ? '' : selected.value?.title ?? '') ||
     body.value !== (newMemo.value ? '' : selected.value?.body ?? '') ||
-    tagsText.value !== (newMemo.value ? '' : (selected.value?.tags ?? []).join(', '))
+    tagIds.value.join('\u0000') !== (newMemo.value ? '' : (selected.value?.tags ?? []).join('\u0000'))
   ),
 );
 const visibleMemos = computed(() => memos.value.filter(memo =>
-  !search.value.trim() || [memo.title,memo.body,...memo.tags]
+  !search.value.trim() || [memo.title,memo.body,...memo.tags.map(id => catalogNames.value.get(id) ?? id)]
     .some(value => value.toLocaleLowerCase().includes(search.value.trim().toLocaleLowerCase())),
 ));
 async function confirmDiscard() {
@@ -42,7 +55,8 @@ async function confirmDiscard() {
 function applySelected() {
   title.value = newMemo.value ? '' : selected.value?.title ?? '';
   body.value = newMemo.value ? '' : selected.value?.body ?? '';
-  tagsText.value = newMemo.value ? '' : (selected.value?.tags ?? []).join(', ');
+  tagIds.value = newMemo.value ? [] : [...(selected.value?.tags ?? [])];
+  selectedTagId.value = '';
 }
 async function selectMemo(id: string) {
   if (busy.value) return;
@@ -66,7 +80,12 @@ async function load(): Promise<boolean> {
   if (!auth.value?.authenticated) return false;
   loading.value = true;
   try {
-    memos.value = await $fetch<Memo[]>('/api/admin/memos');
+    const [records, catalog] = await Promise.all([
+      $fetch<Memo[]>('/api/admin/memos'),
+      $fetch<TagEntry[]>('/api/admin/masters/tags'),
+    ]);
+    memos.value = records;
+    tagCatalog.value = catalog;
     if (selectedId.value && !memos.value.some(memo => memo.id === selectedId.value)) {
       selectedId.value = null;
     }
@@ -77,9 +96,7 @@ async function load(): Promise<boolean> {
     return false;
   } finally { loading.value = false; }
 }
-function tags(): string[] {
-  return tagsText.value.split(/[,、\n]+/).map(value => value.trim()).filter(Boolean);
-}
+function tags(): string[] { return [...tagIds.value]; }
 async function save() {
   if (busy.value) return;
   if (!title.value.trim()) { errorText.value = t('studioCreateTitleRequired'); return; }
@@ -157,9 +174,31 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload',beforeUnload));
               <h2>{{ newMemo ? t('memoNew') : t('memoEdit') }}</h2>
               <label>{{ t('studioTitleLabel') }} <input v-model="title" maxlength="150" required /></label>
               <label>{{ t('memoBody') }} <textarea v-model="body" rows="14" maxlength="100000" /></label>
-              <label>{{ t('memoTags') }}
-                <input v-model="tagsText" :placeholder="t('memoTagsPlaceholder')" />
-              </label>
+              <div class="memo-tag-selector">
+                <label>{{ t('memoTags') }}
+                  <select v-model="selectedTagId" :aria-label="t('memoTags')">
+                    <option value="">{{ t('tipSelect') }}</option>
+                    <option v-for="tag in availableTags" :key="tag.id" :value="tag.id">
+                      {{ tag.group }} / {{ tag.name }}
+                    </option>
+                  </select>
+                </label>
+                <button type="button" class="inline-action" :disabled="!selectedTagId" @click="addTag">
+                  {{ localized('タグを追加', 'Add tag') }}
+                </button>
+                <ul class="memo-tag-list">
+                  <li v-for="id in tagIds" :key="id">
+                    <span>{{ catalogNames.get(id) ?? id }}</span>
+                    <button type="button" class="inline-action"
+                      :aria-label="(catalogNames.get(id) ?? id) + t('tipRemoveSuffix')"
+                      @click="removeTag(id)">{{ t('tipRemove') }}</button>
+                  </li>
+                </ul>
+                <p class="note">
+                  {{ localized('タグは共通マスタから選択します。', 'Tags are selected from the shared catalog.') }}
+                  <NuxtLink to="/admin/masters/tags">{{ t('tagMaster') }}</NuxtLink>
+                </p>
+              </div>
               <p v-if="selected && !newMemo" class="note">{{ t('memoRevision') }} {{ selected.revision }}</p>
               <button type="submit" class="primary" :disabled="busy">{{ t('memoSave') }}</button>
             </form>
@@ -180,8 +219,11 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload',beforeUnload));
 .memo-list button[aria-pressed="true"] { background:#005f7f; }
 .memo-list .note { display:block;font-size:var(--font-size-xs); }
 label { display:block;margin:1rem 0; }
-input,textarea { display:block;width:100%;min-width:0;margin-top:.4rem;padding:.6rem;background:var(--color-background-input);color:var(--color-text-base);border:1px solid var(--color-border-base);border-radius:var(--radius-input); }
+input,textarea,select { display:block;width:100%;min-width:0;margin-top:.4rem;padding:.6rem;background:var(--color-background-input);color:var(--color-text-base);border:1px solid var(--color-border-base);border-radius:var(--radius-input); }
 textarea { min-height:10rem;resize:vertical; }
+.memo-tag-selector{margin-block:1rem;}
+.memo-tag-list{list-style:none;padding:0;display:flex;gap:.5rem;flex-wrap:wrap;}
+.memo-tag-list li{display:flex;align-items:center;gap:.35rem;}
 .primary { padding:.45rem .8rem;background:#00698c;border:1px solid var(--color-concept-main);color:#fff; }
 @media (max-width:800px) { .memo-grid { grid-template-columns:minmax(0,1fr); } }
 </style>

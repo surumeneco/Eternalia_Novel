@@ -3,9 +3,9 @@
  * relations. All mutations are serialized and committed transactionally.
  * No HTTP reader is given this repository's internal draft projection.
  */
-import { Injectable, OnModuleDestroy } from '@nestjs/common';
+import { BadRequestException, Injectable, OnModuleDestroy } from '@nestjs/common';
 import { Pool, type PoolClient } from 'pg';
-import { type Content, type Library, type NovelNode } from '@eternalia/contracts';
+import { parseTipTagIds, type Content, type Library, type NovelNode } from '@eternalia/contracts';
 
 type StorageRow = {
   id: string;
@@ -87,6 +87,36 @@ export class PostgresLibraryService implements OnModuleDestroy {
       const previous = await readFrom(client);
       const next = transform(previous);
       const before = new Map(previous.nodes.map(node => [node.id, node]));
+      // Tag IDs are authoritative for author edits. Public display labels are frozen
+      // when the author explicitly publishes, not when a catalog entry changes.
+      // This shares the transaction/advisory lock with catalog modifications.
+      for (const node of next.nodes) {
+        if (node.kind !== 'tip' || node.deletedAt != null) continue;
+        const prior = before.get(node.id);
+        const draftChanged = !prior || JSON.stringify(prior.draft) !== JSON.stringify(node.draft);
+        const publicationChanged = JSON.stringify(prior?.published ?? null) !== JSON.stringify(node.published);
+        if (!draftChanged && !publicationChanged) continue;
+        const draftIds = parseTipTagIds(node.draft.details.tagIds ?? '[]');
+        const publishedIds = publicationChanged && node.published
+          ? parseTipTagIds(node.published.value.details.tagIds ?? '[]') : [];
+        const requested = [...new Set([...draftIds, ...publishedIds])];
+        const names = new Map<string, string>();
+        if (requested.length) {
+          const records = await client.query<{ id: string; name: string }>(
+            'SELECT id,name FROM common_master_tags WHERE id=ANY($1::uuid[])', [requested]);
+          for (const record of records.rows) names.set(record.id, record.name);
+          if (names.size !== requested.length) {
+            throw new BadRequestException('未登録のタグIDは設定に指定できません。');
+          }
+        }
+        if (publicationChanged && node.published) {
+          const values = node.published.value.details;
+          // A reader receives the label snapshot, not internal Tag IDs.
+          if (values.tagIds !== undefined) {
+            values.tags = JSON.stringify(publishedIds.map(id => names.get(id)));
+          }
+        }
+      }
       for (const node of next.nodes) {
         const prior = before.get(node.id);
         if (prior && JSON.stringify(prior) === JSON.stringify(node)) continue;

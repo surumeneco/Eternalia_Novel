@@ -43,11 +43,11 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
   try {
     const reader = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const readerPage = await reader.newPage();
-    const storyResponse = await readerPage.goto(base + '/series/' + fixture.seriesA + '/stories');
+    const storyResponse = await readerPage.goto(base + '/stories/' + fixture.seriesA);
     const storyText = await readerPage.locator('body').innerText();
     assert.equal(storyResponse?.status(), 200, 'story HTTP response: ' + storyText.slice(0, 1500));
     assert.ok(storyText.includes(fixture.prefix + '-world-A') &&
-      storyText.includes(fixture.prefix + '-book-A'),
+      storyText.includes(fixture.prefix + '-chapter-A'),
       'story DOM should display published series and chapter; got: ' + storyText.slice(0, 2000));
     for (const selector of ['.site-header', '.site-aside', '.site-main', '.site-footer', '.topic-path']) {
       assert.equal(await readerPage.locator(selector).count(), 1,
@@ -60,7 +60,7 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
     assert.ok(overflow.content <= overflow.viewport + 2,
       'story page must not require horizontal scrolling on mobile: ' + JSON.stringify(overflow));
 
-    await readerPage.goto(base + '/series/' + fixture.seriesA + '/stories/' + fixture.volume + '/parts/' + fixture.part + '/chapters/' + fixture.chapter);
+    await readerPage.goto(base + '/read/' + fixture.chapter);
     await readerPage.getByRole('button', { name: '次のページ' }).waitFor();
     assert.ok((await readerPage.locator('.rich-body').innerText())
       .includes(fixture.prefix + '-published-body'));
@@ -71,11 +71,11 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
 
     // These routes must show their actual per-series views, not collection parents.
     for (const [path, marker] of [
-      ['/series/' + fixture.seriesA + '/settings', '設定集'],
-      ['/series/' + fixture.seriesA + '/dictionaries', '辞書'],
-      ['/series/' + fixture.seriesA + '/timeline', '年表'],
+      ['/tips/', '設定を検索'],
+      ['/dictionaries/', '単語を検索'],
+      ['/timeline/', '年代区分'],
     ]) {
-      await readerPage.goto(base + path);
+      await readerPage.goto(base + path + fixture.seriesA);
       const content = await readerPage.locator('body').innerText();
       assert.ok(content.includes(marker), 'missing nested domain UI at ' + path);
       assert.ok(content.includes(fixture.prefix + '-world-A'), 'missing series at ' + path);
@@ -88,7 +88,7 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
     for (const width of [320, 390, 768, 1280]) {
       await readerPage.setViewportSize({ width, height: 844 });
       for (const domain of ['stories', 'tips', 'dictionaries', 'timeline']) {
-        await readerPage.goto(base + '/series/' + fixture.seriesA + '/' + (domain === 'tips' ? 'settings' : domain));
+        await readerPage.goto(base + '/' + domain + '/' + fixture.seriesA);
         const dimensions = await readerPage.evaluate(() => ({
           viewport: document.documentElement.clientWidth,
           content: document.documentElement.scrollWidth,
@@ -497,6 +497,14 @@ test('author memo browser persists tags and handles failed post-write readback',
       name: 'eternalia_author', value: fixture.authorToken, url: base,
       httpOnly: true, sameSite: 'Lax',
     }]);
+    const memoTags = [];
+    for (const name of ['人物', '調査']) {
+      const response = await author.request.post(base + '/api/admin/masters/tags', {
+        headers:{ Origin:base }, data:{group:fixture.prefix + '-memo-catalog',name,order:memoTags.length},
+      });
+      assert.equal(response.status(),201,await response.text());
+      memoTags.push(await response.json());
+    }
     const page = await author.newPage();
     await page.goto(base + '/studio/memos');
     await page.getByRole('button', { name: '新規メモ' }).click();
@@ -504,7 +512,10 @@ test('author memo browser persists tags and handles failed post-write readback',
     await page.locator('.memo-editor input').first().fill(title);
     const editor = page.locator('.memo-editor textarea');
     await editor.fill('メモ本文の初稿');
-    await page.locator('.memo-editor input').nth(1).fill('人物, 調査');
+    for (const tag of memoTags) {
+      await page.locator('.memo-tag-selector select').selectOption(tag.id);
+      await page.locator('.memo-tag-selector').getByRole('button',{name:'タグを追加'}).click();
+    }
     await page.getByRole('button', { name: '保存', exact: true }).click();
     await page.getByText('メモを保存しました。').waitFor();
 
@@ -512,7 +523,7 @@ test('author memo browser persists tags and handles failed post-write readback',
     assert.equal(listResponse.status(), 200);
     const created = (await listResponse.json()).find(memo => memo.title === title);
     assert.ok(created?.id, 'memo must persist to PostgreSQL');
-    assert.deepEqual(created.tags, ['人物', '調査']);
+    assert.deepEqual(created.tags, memoTags.map(item => item.id));
     await page.locator('.memo-sidebar input[type="search"]').fill('調査');
     await page.getByRole('button', { name: new RegExp(title) }).waitFor();
 
@@ -818,7 +829,7 @@ test('authenticated non-author reader cannot enter the author workspace', { time
       'a signed-in reader must not receive author editing controls');
     assert.equal((await reader.request.get(base + '/api/admin/nodes')).status(), 401,
       'a signed-in reader must not read private author data');
-    const publicPage = await page.goto(base + '/series/' + fixture.seriesA + '/stories');
+    const publicPage = await page.goto(base + '/stories/' + fixture.seriesA);
     assert.equal(publicPage?.status(), 200,
       'non-author login must not prevent reading public content');
     assert.ok((await page.locator('body').innerText()).includes(fixture.prefix + '-world-A'));
@@ -921,11 +932,22 @@ test('related setting links exclude hidden targets from public projection', { ti
     const source = await create('tip', category, 'source');
     const target = await create('tip', category, 'target');
     for (const id of [series, category, target]) await publish(id);
+    const catalogTags = [];
+    for (const name of ['人物','地名']) {
+      const response = await author.request.post(base + '/api/admin/masters/tags', {
+        headers:{ Origin:base },data:{group:prefix,name,order:catalogTags.length},
+      });
+      assert.equal(response.status(),201,await response.text());
+      catalogTags.push(await response.json());
+    }
     const page = await author.newPage();
     await page.goto(base + '/studio?item=' + source);
     const links = page.locator('.tip-links-editor');
-    await links.locator('input').fill('人物, 地名');
-    await links.locator('select').selectOption(target);
+    for (const tag of catalogTags) {
+      await links.locator('.tag-add select').selectOption(tag.id);
+      await links.locator('.tag-add').getByRole('button', { name:'タグを追加' }).click();
+    }
+    await links.locator('.related-add select').selectOption(target);
     await links.getByRole('button', { name: '関連に追加' }).click();
     await page.getByRole('button', { name: '下書きを保存' }).click();
     await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
@@ -1324,24 +1346,30 @@ test('dictionary browser keeps identical spellings separate by language filter',
     for (const id of [series, languageA, languageB, wordA, wordB]) await publish(id);
 
     const page = await anonymous.newPage();
-    const wordLink = page.getByRole('link', { name: wordTitle, exact: true });
-    await page.goto(base + '/series/' + series + '/dictionaries/' + languageA);
+    await page.goto(base + '/dictionaries/' + series);
     await page.getByLabel('単語を検索').fill(wordTitle);
-    await wordLink.waitFor();
-    assert.equal(await wordLink.count(), 1, 'language A shows only its own spelling');
-    assert.ok((await page.locator('main').innerText()).includes(prefix + '-meaning-A'));
-    assert.ok(!(await page.locator('main').innerText()).includes(prefix + '-meaning-B'));
-    assert.ok((await wordLink.getAttribute('href'))?.endsWith('/dictionaries/' + languageA + '/words/' + wordA));
-    await page.goto(base + '/series/' + series + '/dictionaries/' + languageB);
-    await page.getByLabel('単語を検索').fill(wordTitle);
-    await wordLink.waitFor();
-    assert.equal(await wordLink.count(), 1, 'language B shows only its own spelling');
-    assert.ok((await page.locator('main').innerText()).includes(prefix + '-meaning-B'));
-    assert.ok(!(await page.locator('main').innerText()).includes(prefix + '-meaning-A'));
-    assert.ok((await wordLink.getAttribute('href'))?.endsWith('/dictionaries/' + languageB + '/words/' + wordB));
-    await page.goto(base + '/series/' + series + '/dictionaries');
-    await page.getByRole('link', { name: prefix + '-language-A', exact: true }).waitFor();
-    await page.getByRole('link', { name: prefix + '-language-B', exact: true }).waitFor();
+    const words = page.getByRole('link', { name: wordTitle, exact: true });
+    await words.nth(1).waitFor();
+    assert.equal(await words.count(), 2, 'same spelling must appear under both public languages');
+
+    const language = page.getByLabel('言語');
+    await language.selectOption(languageA);
+    await words.nth(1).waitFor({ state: 'hidden' });
+    assert.equal(await words.count(), 1);
+    assert.ok((await page.locator('.dictionary-language').innerText()).includes(prefix + '-meaning-A'));
+    assert.ok(!(await page.locator('.dictionary-language').innerText()).includes(prefix + '-meaning-B'));
+    assert.ok((await words.first().getAttribute('href'))?.endsWith('/items/' + wordA));
+
+    await language.selectOption(languageB);
+    await words.nth(1).waitFor({ state: 'hidden' });
+    assert.equal(await words.count(), 1);
+    assert.ok((await page.locator('.dictionary-language').innerText()).includes(prefix + '-meaning-B'));
+    assert.ok(!(await page.locator('.dictionary-language').innerText()).includes(prefix + '-meaning-A'));
+    assert.ok((await words.first().getAttribute('href'))?.endsWith('/items/' + wordB));
+
+    await language.selectOption('');
+    await words.nth(1).waitFor();
+    assert.equal(await words.count(), 2, 'removing language filter restores both distinct words');
     await page.close();
     await anonymous.close();
     await author.close();
@@ -1713,37 +1741,44 @@ test('published tags search across categories without changing ownership or priv
     const series = await create('series', null, 'series');
     const categoryA = await create('category', series, 'category-A');
     const categoryB = await create('category', series, 'category-B');
-    const tipA = await create('tip', categoryA, 'tip-A', { tags: JSON.stringify([tag]) });
-    const tipB = await create('tip', categoryB, 'tip-B', { tags: JSON.stringify([tag]) });
+    const tagResponse = await author.request.post(base + '/api/admin/masters/tags', {
+      headers: { Origin: base }, data:{group:prefix,name:tag,order:0},
+    });
+    assert.equal(tagResponse.status(),201,await tagResponse.text());
+    const catalogTag = await tagResponse.json();
+    const tipA = await create('tip', categoryA, 'tip-A', { tagIds: JSON.stringify([catalogTag.id]) });
+    const tipB = await create('tip', categoryB, 'tip-B', { tagIds: JSON.stringify([catalogTag.id]) });
     for (const id of [series, categoryA, categoryB, tipA, tipB]) await publish(id);
 
     const page = await anonymous.newPage();
-    await page.goto(base + '/search?series=' + series);
-    await page.getByRole('status').filter({ hasText: 'series' }).waitFor();
-    await page.locator('.search-filters select').nth(1).selectOption('tips');
-    await page.getByLabel('検索語').fill(tag);
-    await page.locator('main').getByRole('link', { name: prefix + '-tip-B', exact: true }).waitFor();
-    assert.equal(await page.locator('main .search-result').count(), 2,
-      'tag search must span both categories');
-    assert.equal(await page.locator('main').getByRole('link', { name: prefix + '-tip-A', exact: true }).count(), 1);
-    assert.equal(await page.locator('main').getByRole('link', { name: prefix + '-tip-B', exact: true }).count(), 1);
-    await page.goto(base + '/series/' + series + '/settings/' + categoryA);
-    await page.locator('main').getByRole('link', { name: prefix + '-tip-A', exact: true }).waitFor();
-    assert.equal(await page.locator('main').getByRole('link', { name: prefix + '-tip-B', exact: true }).count(), 0);
-    await page.goto(base + '/series/' + series + '/settings/' + categoryB);
-    await page.locator('main').getByRole('link', { name: prefix + '-tip-B', exact: true }).waitFor();
-    assert.equal(await page.locator('main').getByRole('link', { name: prefix + '-tip-A', exact: true }).count(), 0);
+    await page.goto(base + '/tips/' + series);
+    await page.getByRole('combobox', { name: 'タグ', exact: true }).selectOption(tag);
+    await page.getByRole('link', { name: prefix + '-tip-B', exact: true }).waitFor();
+    const groups = page.locator('.tip-category');
+    assert.equal(await groups.count(), 2, 'tag filter should span both categories');
+    assert.equal(await page.getByRole('link', { name: prefix + '-tip-A', exact: true }).count(), 1);
+    assert.equal(await page.getByRole('link', { name: prefix + '-tip-B', exact: true }).count(), 1);
+
+    await page.getByRole('combobox', { name: 'カテゴリ', exact: true }).selectOption(categoryA);
+    await page.getByRole('link', { name: prefix + '-tip-B', exact: true }).waitFor({ state: 'hidden' });
+    assert.equal(await groups.count(), 1);
+    assert.ok((await groups.innerText()).includes(prefix + '-tip-A'));
+    assert.ok(!(await groups.innerText()).includes(prefix + '-tip-B'));
+    await page.getByRole('combobox', { name: 'カテゴリ', exact: true }).selectOption(categoryB);
+    await page.getByRole('link', { name: prefix + '-tip-A', exact: true }).waitFor({ state: 'hidden' });
+    assert.equal(await groups.count(), 1);
+    assert.ok((await groups.innerText()).includes(prefix + '-tip-B'));
+
     const hidden = await author.request.post(base + '/api/admin/nodes/' + tipA + '/visibility', {
       headers: { Origin: base },
       data: { expectedRevision: 1, isPublic: false, publicSince: null },
     });
     assert.equal(hidden.status(), 200);
-    await page.goto(base + '/search?series=' + series);
-    await page.locator('.search-filters select').nth(1).selectOption('tips');
-    await page.getByLabel('検索語').fill(tag);
-    await page.locator('main').getByRole('link', { name: prefix + '-tip-B', exact: true }).waitFor();
-    assert.equal(await page.locator('main').getByRole('link', { name: prefix + '-tip-A', exact: true }).count(), 0);
-    assert.equal(await page.locator('main').getByRole('link', { name: prefix + '-tip-B', exact: true }).count(), 1);
+    await page.reload();
+    await page.getByRole('combobox', { name: 'タグ', exact: true }).selectOption(tag);
+    await page.getByRole('link', { name: prefix + '-tip-B', exact: true }).waitFor();
+    assert.equal(await page.getByRole('link', { name: prefix + '-tip-A', exact: true }).count(), 0);
+    assert.equal(await page.getByRole('link', { name: prefix + '-tip-B', exact: true }).count(), 1);
     assert.equal((await anonymous.request.get(base + '/api/public/items/' + tipA)).status(), 404);
     assert.equal((await anonymous.request.get(base + '/api/public/items/' + tipB)).status(), 200);
     await page.close();
@@ -2057,9 +2092,9 @@ test('AC-55: anonymous recent listing links published chapter and removes it aft
     assert.ok(items.some(item => item.id === chapter && item.content.title === chapterTitle));
     const page = await reader.newPage();
     await page.goto(base + '/');
-    const link = page.locator('main').getByRole('link', { name: chapterTitle, exact: true });
+    const link = page.getByRole('link', { name: chapterTitle, exact: true });
     await link.waitFor();
-    assert.equal(await link.getAttribute('href'), '/jump/' + chapter);
+    assert.equal(await link.getAttribute('href'), '/read/' + chapter);
     await link.click();
     await page.locator('.rich-body').getByText('新着から開ける公開章本文').waitFor();
 
@@ -2307,36 +2342,38 @@ test('AC-56: shared author navigation works while anonymous editor and API write
     const page = await author.newPage();
     for (const route of [
       '/', '/stories', '/series/' + series,
-      '/series/' + fixture.seriesA + '/stories/' + fixture.volume + '/parts/' + fixture.part + '/chapters/' + fixture.chapter,
-      '/series/' + fixture.seriesA + '/settings',
-      '/series/' + fixture.seriesA + '/dictionaries',
-      '/series/' + fixture.seriesA + '/timeline',
+      '/read/' + fixture.chapter + '?series=' + fixture.seriesA,
+      '/tips/' + fixture.seriesA,
+      '/dictionaries/' + fixture.seriesA,
+      '/timeline/' + fixture.seriesA,
     ]) {
       await page.goto(base + route);
-      await page.locator('#global-navigation a[href="/admin"]').click();
-      await page.getByRole('heading', { name: '管理ホーム' }).waitFor();
-      await page.locator('main a[href="/admin/series"]').waitFor();
+      await page.getByRole('contentinfo').getByRole('link', { name: '執筆・編集' }).click();
+      await page.getByRole('heading', { name: '執筆・編集' }).waitFor();
+      await page.getByRole('button', { name: '新規シリーズ' }).waitFor();
     }
 
     // Item-specific author navigation must select the exact published chapter.
-    await page.goto(base + '/series/' + fixture.seriesA + '/stories/' + fixture.volume + '/parts/' + fixture.part + '/chapters/' + fixture.chapter);
+    await page.goto(base + '/read/' + fixture.chapter);
     const editLink = page.getByRole('link', { name: 'この項目を編集' });
     await editLink.waitFor();
     await editLink.click();
-    await page.waitForURL(url => url.pathname === '/admin/series/' + fixture.seriesA + '/stories/chapters/' + fixture.chapter + '/edit');
+    await page.waitForURL(url => url.pathname === '/studio'
+      && url.searchParams.get('item') === fixture.chapter);
     await page.getByRole('textbox', { name: '本文・説明', exact: true }).waitFor();
 
     // The series detail page must also link directly to the exact series editor.
-    await page.goto(base + '/series/' + series);
+    await page.goto(base + '/stories/' + series);
     await page.getByRole('link', { name: 'この項目を編集' }).click();
-    await page.waitForURL(url => url.pathname === '/admin/series/' + series + '/edit');
+    await page.waitForURL(url => url.pathname === '/studio'
+      && url.searchParams.get('item') === series);
     await page.getByRole('heading', { name: 'シリーズ：' + title }).waitFor();
 
     const readerPage = await anonymous.newPage();
-    await readerPage.goto(base + '/series/' + fixture.seriesA + '/stories/' + fixture.volume + '/parts/' + fixture.part + '/chapters/' + fixture.chapter);
+    await readerPage.goto(base + '/read/' + fixture.chapter);
     await readerPage.locator('.author-edit-link').waitFor({ state: 'hidden' });
     assert.equal(await readerPage.getByRole('link', { name: 'この項目を編集' }).count(), 0);
-    await readerPage.goto(base + '/series/' + series);
+    await readerPage.goto(base + '/stories/' + series);
     assert.equal(await readerPage.getByRole('link', { name: 'この項目を編集' }).count(), 0,
       'anonymous series reader must not see an author edit control');
     await readerPage.goto(base + '/studio');

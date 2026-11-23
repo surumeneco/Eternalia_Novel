@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { AuthorNode } from '~/types/author';
-import { parseTipTags, parseTipRelationIds } from '@eternalia/contracts';
-const { t } = useUiLocale();
+import { parseTipTagIds, parseTipRelationIds } from '@eternalia/contracts';
+const { t, language } = useUiLocale();
 
 const props = defineProps<{
   selectedId: string;
@@ -13,12 +13,33 @@ const emit = defineEmits<{
   'update:tags': [value: string];
   'update:relatedTipIds': [value: string];
 }>();
-const tagText = ref('');
+interface TagMaster { id: string; group: string; name: string; order: number; }
+const tagCatalog = ref<TagMaster[]>([]);
+const tagLoadError = ref(false);
+const selectedTagId = ref('');
+const text = (ja: string, en: string) => language.value === 'en' ? en : ja;
+async function refreshTagCatalog() {
+  try {
+    tagCatalog.value = await $fetch<TagMaster[]>('/api/admin/masters/tags');
+    tagLoadError.value = false;
+  } catch { tagLoadError.value = true; }
+}
+onMounted(refreshTagCatalog);
 const selectedRelatedId = ref('');
 const byId = computed(() => new Map(props.nodes.map(node => [node.id, node])));
 function parseOrEmpty<T>(raw: string, parse: (raw: string) => T[]): T[] {
   try { return parse(raw); } catch { return []; }
 }
+const tagIds = computed(() => parseOrEmpty(props.tags || '[]', parseTipTagIds));
+const catalogById = computed(() => new Map(tagCatalog.value.map(tag => [tag.id, tag])));
+const availableTags = computed(() => tagCatalog.value.filter(tag => !tagIds.value.includes(tag.id)));
+function changeTags(ids: string[]) { emit('update:tags', JSON.stringify(ids)); }
+function addTag() {
+  if (!selectedTagId.value || !availableTags.value.some(tag => tag.id === selectedTagId.value)) return;
+  changeTags([...tagIds.value, selectedTagId.value]);
+  selectedTagId.value = '';
+}
+function removeTag(id: string) { changeTags(tagIds.value.filter(value => value !== id)); }
 const relationIds = computed(() => parseOrEmpty(props.relatedTipIds || '[]', parseTipRelationIds));
 const relatedNodes = computed(() => relationIds.value
   .map(id => byId.value.get(id))
@@ -47,13 +68,7 @@ const choices = computed(() => props.nodes
   .filter(node => node.kind === 'tip' && node.id !== props.selectedId &&
     !relationIds.value.includes(node.id) && belongsToSeries(node))
   .sort((a, b) => a.draft.title.localeCompare(b.draft.title, 'ja')));
-watch(() => [props.selectedId, props.tags], () => {
-  tagText.value = parseOrEmpty(props.tags || '[]', parseTipTags).join(', ');
-}, { immediate: true });
-watch(() => props.selectedId, () => { selectedRelatedId.value = ''; });
-function updateTags() {
-  emit('update:tags', JSON.stringify(tagText.value.split(/[,、\n]+/).map(tag => tag.trim()).filter(Boolean)));
-}
+watch(() => props.selectedId, () => { selectedRelatedId.value = ''; selectedTagId.value = ''; });
 function changeRelations(ids: string[]) {
   emit('update:relatedTipIds', JSON.stringify(ids));
 }
@@ -77,10 +92,37 @@ function removeRelated(id: string) {
 <template>
   <section class="tip-links-editor" :aria-label="t('tipLinksAria')">
     <h3>{{ t('tipTags') }}</h3>
-    <label>{{ t('tipTagName') }}
-      <input v-model="tagText" type="text" maxlength="1600" :placeholder="t('tipTagPlaceholder')" @change="updateTags" @blur="updateTags" />
-    </label>
-    <p class="note">{{ t('tipTagNote') }}</p>
+    <div class="tag-add">
+      <label>{{ t('tipTagName') }}
+        <select v-model="selectedTagId" :aria-label="t('tipTagName')">
+          <option value="">{{ t('tipSelect') }}</option>
+          <option v-for="tag in availableTags" :key="tag.id" :value="tag.id">
+            {{ tag.group }} / {{ tag.name }}
+          </option>
+        </select>
+      </label>
+      <button class="inline-action" type="button" :disabled="!selectedTagId" @click="addTag">
+        {{ text('タグを追加', 'Add tag') }}
+      </button>
+      <button class="inline-action" type="button" @click="refreshTagCatalog">
+        {{ t('studioReload') }}
+      </button>
+    </div>
+    <p v-if="tagLoadError" role="alert" class="error-text">
+      {{ text('タグマスタを取得できません。', 'Could not load tag catalog.') }}
+    </p>
+    <p class="note">
+      {{ text('タグは共通マスタから選択します。未登録なら', 'Choose tags from the shared catalog. For new tags, open') }}
+      <NuxtLink to="/admin/masters/tags">{{ t('tagMaster') }}</NuxtLink>
+    </p>
+    <ul v-if="tagIds.length" class="tag-list">
+      <li v-for="id in tagIds" :key="id">
+        <span>{{ catalogById.get(id)?.name ?? id }}</span>
+        <button type="button" class="inline-action"
+          :aria-label="(catalogById.get(id)?.name ?? id) + t('tipRemoveSuffix')"
+          @click="removeTag(id)">{{ t('tipRemove') }}</button>
+      </li>
+    </ul>
     <h3>{{ t('tipRelated') }}</h3>
     <div class="related-add">
       <label>{{ t('tipSameSeries') }}
@@ -110,7 +152,9 @@ function removeRelated(id: string) {
 .tip-links-editor { border:1px solid var(--color-border-base);border-radius:var(--radius-panel);padding:1rem;margin:1rem 0; }
 .tip-links-editor label { display:block;flex:1;min-width:0; }
 .tip-links-editor input,.tip-links-editor select { display:block;width:100%;margin-top:.35rem; }
-.related-add { display:flex;align-items:end;gap:.5rem;flex-wrap:wrap; }
+.tag-add,.related-add { display:flex;align-items:end;gap:.5rem;flex-wrap:wrap; }
+.tag-list{list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:.5rem;}
+.tag-list li{display:flex;align-items:center;gap:.35rem;}
 .related-list { padding-inline-start:1.5rem; }
 .related-list li { margin-block:.6rem;display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap; }
 .action-row { display:flex;gap:.25rem; }

@@ -6,7 +6,7 @@
 import { canReadPublished } from './publication.js';
 import { joinChapterPages, pagesForChapter, validateChapterPages } from './manuscript-pages.js';
 import { parseWordMeanings, type WordMeaning } from './word-meanings.js';
-import { parseTipTags, parseTipRelationIds } from './tip-links.js';
+import { parseTipTags, parseTipTagIds, parseTipRelationIds } from './tip-links.js';
 import { parseLanguageCharacters, parseLanguageWordClasses } from './language-structure.js';
 import { isRegisteredCreateWordPartOfSpeech } from './word-pos-create-policy.js';
 import { publishedWordClassName } from './word-pos-reference.js';
@@ -118,7 +118,9 @@ function validateWordClassIds(library: Library, languageId: string, content: Con
 }
 /** Related settings must resolve to another Tip inside the same Series. */
 function validateTipReferences(library: Library, sourceId: string, categoryId: string, content: Content): void {
-  if (content.details.tags !== undefined) parseTipTags(content.details.tags);
+  if (content.details.tagIds !== undefined) parseTipTagIds(content.details.tagIds);
+  // Published display tags are projection-owned; author submissions use tagIds.
+  if (content.details.tags !== undefined) domainError('bad-request', 'タグはマスタIDで指定してください。');
   if (content.details.relatedTipIds === undefined) return;
   const seriesId = ancestorsOf(library, categoryId)[0]?.id;
   for (const targetId of parseTipRelationIds(content.details.relatedTipIds)) {
