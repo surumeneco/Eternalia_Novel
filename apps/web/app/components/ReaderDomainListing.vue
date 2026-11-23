@@ -15,7 +15,7 @@ const valid=computed(()=>!!series.value&&(!props.parentId||!!current.value&&
   belongsToPublicSeries(tree.value??[],props.parentId,props.seriesId,
     props.area==='stories'?(current.value.kind==='volume'?'volume':'part'):expectedKind.value))&&
   (!props.parentId||props.area==='stories'||current.value?.kind===expectedKind.value)&&
-  route.path===(!props.parentId?publicAreaRoute(props.seriesId,props.area):publicNodeRoute(tree.value??[],props.parentId))); 
+  route.path===(!props.parentId?publicAreaRoute(props.seriesId,props.area):publicNodeRoute(tree.value??[],props.parentId)));
 const childKind=computed<ReaderKind>(()=>!props.parentId?expectedKind.value:props.area==='stories'?
   current.value?.kind==='volume'?'part':'chapter':props.area==='settings'?'tip':'word');
 const entries=computed(()=>(tree.value??[]).filter(n=>n.parentId===(props.parentId??props.seriesId)&&n.kind===childKind.value)
