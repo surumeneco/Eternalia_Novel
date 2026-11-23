@@ -17,8 +17,8 @@ function parseArray(raw: string, label: string, maximum: number): string[] {
 }
 export function parseTipTags(raw: string): string[] {
   const tags = parseArray(raw, 'タグ', 30);
-  if (tags.some(tag => !tag.trim() || tag !== tag.trim() || tag.length > 50)) {
-    invalid('タグは前後の空白を除いた1〜50文字で指定してください。');
+  if (tags.some(tag => !tag.trim() || tag !== tag.trim() || tag.length > 100)) {
+    invalid('タグは前後の空白を除いた1〜100文字で指定してください。');
   }
   if (new Set(tags).size !== tags.length) invalid('同じタグは複数指定できません。');
   return tags;

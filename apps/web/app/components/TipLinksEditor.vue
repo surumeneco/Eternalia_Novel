@@ -93,8 +93,8 @@ function removeRelated(id: string) {
   <section class="tip-links-editor" :aria-label="t('tipLinksAria')">
     <h3>{{ t('tipTags') }}</h3>
     <div class="tag-add">
-      <label>{{ t('tipTagName') }}
-        <select v-model="selectedTagId" :aria-label="t('tipTagName')">
+      <label>{{ text('タグを選択', 'Choose a tag') }}
+        <select v-model="selectedTagId" :aria-label="text('タグを選択', 'Choose a tag')">
           <option value="">{{ t('tipSelect') }}</option>
           <option v-for="tag in availableTags" :key="tag.id" :value="tag.id">
             {{ tag.group }} / {{ tag.name }}

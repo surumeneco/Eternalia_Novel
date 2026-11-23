@@ -40,6 +40,11 @@ test('author Tag IDs are stable and distinct from reader-facing label arrays', (
   assert.throws(() => parseTipRelationIds('["a","a"]'));
   assert.throws(() => parseTipRelationIds('{"id":"a"}'));
 });
+test('published Tag names accept catalog maximum without reader projection failure', () => {
+  const fullName = '青'.repeat(100);
+  assert.deepEqual(parseTipTags(JSON.stringify([fullName])), [fullName]);
+  assert.throws(() => parseTipTags(JSON.stringify(['青'.repeat(101)])));
+});
 test('tip relations reject self, absent, non-tip and cross-series targets', () => {
   const { db, first, second, category, foreign } = fixture();
   assert.throws(() => editNode(db, first.id, 1,
