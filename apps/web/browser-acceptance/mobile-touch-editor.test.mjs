@@ -84,19 +84,12 @@ test('touch toolbar preserves selected Japanese text and separates draft from pu
         await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor();
         let publicResponse = await author.request.get(base + '/api/public/items/' + chapter);
         assert.equal(publicResponse.status(), 404, 'a saved mobile draft is not public');
-        // Publishing is a separate author responsibility, not an editor button.
-        const managementLink = page.locator('.studio-editor a[href*="/studio/publication"]');
-        const managementHref = await managementLink.getAttribute('href');
-        assert.ok(managementHref?.includes('target=' + chapter), 'editor must link to this chapter publication record');
-        await page.goto(new URL(managementHref, base).href);
-        await page.getByLabel('領域').selectOption('stories');
-        const chapterRow = page.locator('.publication-row').filter({
-          has: page.getByRole('heading', { name: fixture.prefix + '-mobile-touch-chapter', exact: true }),
-        }).first();
-        await chapterRow.waitFor();
-        page.once('dialog', dialog => dialog.accept());
-        await chapterRow.getByRole('button', { name: '公開版を更新' }).tap();
-        await page.getByText('公開設定を更新しました。').waitFor();
+        // Every editor now owns its publication state; the batch grid is an optional bulk entrypoint.
+        await page.getByRole('button', { name: '保存済み下書きを公開版へ反映' }).tap();
+        const confirmation = page.locator('dialog.eternalia-dialog[open]');
+        await confirmation.waitFor();
+        await confirmation.getByRole('button', { name: '実行' }).tap();
+        await page.getByText('公開スナップショットを更新しました。').waitFor();
         publicResponse = await author.request.get(base + '/api/public/items/' + chapter);
         assert.equal(publicResponse.status(), 200, 'published chapter must be visible to readers');
         assert.deepEqual((await publicResponse.json()).content.pages, [firstPage, '二頁']);
@@ -149,7 +142,7 @@ test('reader shell preserves runtime colors and mobile navigation for keyboard a
       });
       try {
         const page = await reader.newPage();
-        const response = await page.goto(base + '/stories/' + fixture.seriesA);
+        const response = await page.goto(base + '/series/' + fixture.seriesA + '/stories');
         assert.equal(response?.status(), 200);
         const styles = await page.evaluate(() => {
           const header = document.querySelector('.site-header');
@@ -187,8 +180,8 @@ test('reader shell preserves runtime colors and mobile navigation for keyboard a
 
         await menu.tap();
         assert.equal(await menu.getAttribute('aria-expanded'), 'true');
-        await nav.locator('a[href="/dictionaries/' + fixture.seriesA + '"]').tap();
-        await page.waitForURL(base + '/dictionaries/' + fixture.seriesA);
+        await nav.locator('a[href="/series/' + fixture.seriesA + '/dictionaries"]').tap();
+        await page.waitForURL(base + '/series/' + fixture.seriesA + '/dictionaries');
         assert.equal(await menu.getAttribute('aria-expanded'), 'false',
           'touch navigation should close after a route transition');
       } finally { await reader.close(); }
@@ -296,6 +289,7 @@ test('MANUSCRIPT-UX-01/02/03: chapter writing surface has readable width and mob
           lineHeight: Number.parseFloat(style.lineHeight),
           fontSize: Number.parseFloat(style.fontSize),
           fontFamily: style.fontFamily,
+          bodyFontFamily: getComputedStyle(document.body).fontFamily,
           fontWeight: Number.parseFloat(style.fontWeight),
         };
       });
@@ -304,7 +298,8 @@ test('MANUSCRIPT-UX-01/02/03: chapter writing surface has readable width and mob
       assert.ok(metrics.height >= 420, 'long manuscript should have a substantial editing height');
       assert.ok(metrics.lineHeight >= metrics.fontSize * 1.9,
         'manuscript line spacing should be visibly greater than standard inputs');
-      assert.match(metrics.fontFamily, /serif/i, 'prefer a Japanese literary manuscript font');
+      assert.equal(metrics.fontFamily, metrics.bodyFontFamily,
+        'manuscript font must inherit the platform default rather than choosing a family');
       assert.ok(metrics.fontWeight <= 500,
         'form label emphasis must not turn the chapter prose itself bold');
       for (const width of [320, 390]) {
