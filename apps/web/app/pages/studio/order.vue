@@ -2,6 +2,7 @@
 import type { AuthorNode } from '~/types/author';
 import type { ReaderKind } from '~/types/reader';
 const { t } = useUiLocale();
+const { confirm: showConfirmation } = useAppDialog();
 const route = useRoute();
 
 interface AuthState { configured: boolean; authenticated: boolean }
@@ -84,7 +85,7 @@ async function load(): Promise<boolean> {
 }
 async function save() {
   if (!changed.value || busy.value) return;
-  if (!window.confirm(t('orderConfirm'))) return;
+  if (!await showConfirmation(t('orderConfirm'))) return;
   busy.value=true;
   errorText.value='';
   statusText.value='';
@@ -105,12 +106,12 @@ async function save() {
     errorText.value=response.data?.message ?? t('orderSaveFailed');
   } finally {busy.value=false;}
 }
-function confirmDiscard() {
-  return !changed.value || window.confirm(t('orderDiscard'));
+async function confirmDiscard() {
+  return !changed.value || await showConfirmation(t('orderDiscard'));
 }
 async function changeSeries(event: Event) {
   const select = event.target as HTMLSelectElement;
-  if (!confirmDiscard()) {
+  if (!await confirmDiscard()) {
     select.value = selectedSeriesId.value;
     return;
   }
@@ -118,24 +119,24 @@ async function changeSeries(event: Event) {
   selectedParent.value = selectedSeriesId.value || 'root';
   await navigateTo({ path: '/studio/order', query: selectedSeriesId.value ? { series: selectedSeriesId.value } : {} }, { replace: true });
 }
-function changeParent(event: Event) {
+async function changeParent(event: Event) {
   const select = event.target as HTMLSelectElement;
-  if (!confirmDiscard()) {
+  if (!await confirmDiscard()) {
     select.value = selectedParent.value;
     return;
   }
   selectedParent.value = select.value;
 }
-function changeKind(event: Event) {
+async function changeKind(event: Event) {
   const select = event.target as HTMLSelectElement;
-  if (!confirmDiscard()) {
+  if (!await confirmDiscard()) {
     select.value = selectedKind.value;
     return;
   }
   selectedKind.value = select.value as ReaderKind;
 }
 async function reload() {
-  if (confirmDiscard()) await load();
+  if (await confirmDiscard()) await load();
 }
 onBeforeRouteLeave(()=>confirmDiscard());
 function beforeUnload(event: BeforeUnloadEvent) {

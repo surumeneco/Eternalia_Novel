@@ -1,6 +1,17 @@
 <script setup lang="ts">
 const { t } = useUiLocale();
-const props = defineProps<{ itemId: string }>();
+const props = defineProps<{ itemId: string; itemKind?:string; seriesId?:string }>();
+const destination=computed(()=>{
+  if(!props.itemKind||!props.seriesId)return {path:'/studio',query:{item:props.itemId}};
+  const s='/admin/series/'+encodeURIComponent(props.seriesId);
+  if(props.itemKind==='series')return s+'/edit';
+  const areas:Record<string,string>={volume:'stories/volumes',part:'stories/parts',chapter:'stories/chapters',
+    category:'settings/categories',tip:'settings/tips',tipSection:'settings/sections',
+    language:'dictionaries/languages',word:'dictionaries/words',grammar:'dictionaries/grammar',
+    periodization:'timeline/periods',event:'timeline/events'};
+  return areas[props.itemKind]?s+'/'+areas[props.itemKind]+'/'+encodeURIComponent(props.itemId)+'/edit':
+    {path:'/studio',query:{item:props.itemId}};
+});
 const isAuthor = ref(false);
 onMounted(async () => {
   try {
@@ -13,7 +24,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <NuxtLink v-if="isAuthor" :to="{ path: '/studio', query: { item: props.itemId } }" class="author-edit-link">
+  <NuxtLink v-if="isAuthor" :to="destination" class="author-edit-link">
     {{ t('readerAuthorEdit') }}
   </NuxtLink>
 </template>

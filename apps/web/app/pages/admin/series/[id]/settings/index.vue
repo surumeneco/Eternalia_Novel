@@ -1,0 +1,2 @@
+<script setup lang="ts">const route=useRoute();const {t}=useUiLocale();</script>
+<template><div><ReaderPanel><h1>{{t('tips')}}</h1><nav class="reader-list"><NuxtLink :to="'/admin/series/'+route.params.id+'/settings/categories'">{{t('studioKindCategory')}}</NuxtLink><NuxtLink :to="'/admin/series/'+route.params.id+'/settings/tips'">{{t('tip')}}</NuxtLink></nav></ReaderPanel></div></template>

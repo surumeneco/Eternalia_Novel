@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ReaderKind, ReaderNode } from '~/types/reader';
+import { publicNodeRoute } from '~/utils/public-node-route';
 import { formatJstDisplay } from '~/utils/jst-publication-time';
 
 type Domain = 'all' | 'stories' | 'tips' | 'dictionaries' | 'timeline';
@@ -116,7 +117,7 @@ const results = computed(() => (tree.value ?? [])
     return manualOrder(a, b);
   }));
 function itemLink(node: ReaderNode): string {
-  return (node.kind === 'chapter' ? '/read/' : '/items/') + node.id;
+  return publicNodeRoute(tree.value ?? [],node.id) ?? '/jump/' + encodeURIComponent(node.id);
 }
 function parentName(node: ReaderNode): string {
   return node.parentId ? byId.value.get(node.parentId)?.content.title ?? '' : '';
