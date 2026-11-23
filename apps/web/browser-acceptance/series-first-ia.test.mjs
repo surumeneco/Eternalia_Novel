@@ -112,3 +112,75 @@ test('IA-05/06/07: author editing and publication each require their own series/
     await context.close();
   } finally { await browser.close(); }
 });
+
+test('NAV-1/2/3/4: mobile menus are independent overlays and locale selection is explicit', { timeout: 60_000 }, async () => {
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const page = await context.newPage();
+    await page.goto(base + '/');
+    await page.getByRole('heading', { name: '公開シリーズ' }).waitFor();
+    assert.equal(await page.locator('#global-navigation a[href="/admin"]').count(), 0);
+    assert.equal(await page.locator('.site-footer a[href="/admin"]').count(), 0);
+    const header = page.locator('.site-header');
+    const before = (await header.boundingBox()).height;
+    const mainMenu = page.getByRole('button', { name: 'メインメニュー' });
+    const updateMenu = page.getByRole('button', { name: '新着・更新メニュー' });
+    await mainMenu.click();
+    assert.equal(await page.locator('#global-navigation').isVisible(), true);
+    assert.ok(Math.abs((await header.boundingBox()).height - before) <= 1,
+      'opening main menu must not resize the header');
+    assert.equal(await page.locator('#updates-aside').isVisible(), false);
+    await updateMenu.click();
+    assert.equal(await page.locator('#global-navigation').isVisible(), false);
+    assert.equal(await page.locator('#updates-aside').isVisible(), true);
+    assert.ok(Math.abs((await header.boundingBox()).height - before) <= 1,
+      'opening the separate update panel must not resize the header');
+    await page.getByRole('button', { name: '表示言語を選択' }).click();
+    const languageMenu = page.locator('#language-list');
+    await languageMenu.getByRole('button', { name: '日本語' }).waitFor();
+    await languageMenu.getByRole('button', { name: 'English' }).click();
+    await page.locator('html[lang="en"]').waitFor();
+    assert.equal(await languageMenu.count(), 0, 'selection closes the language menu');
+    assert.ok(Math.abs((await header.boundingBox()).height - before) <= 1,
+      'language selection must not resize the header');
+    await context.close();
+  } finally { await browser.close(); }
+});
+
+test('IA-04: canonical detail breadcrumbs include the domain level, not only entity ancestry', { timeout: 60_000 }, async () => {
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const page = await browser.newPage();
+    const chapter = '/series/' + fixture.seriesA + '/stories/' + fixture.volume +
+      '/parts/' + fixture.part + '/chapters/' + fixture.chapter;
+    await page.goto(base + chapter);
+    await page.getByRole('heading', { name: fixture.prefix + '-chapter-A' }).waitFor();
+    assert.equal(await page.locator('main .topic-path a[href="/series/' + fixture.seriesA + '/stories"]').innerText(), 'ストーリー');
+    await page.goto(base + '/series/' + fixture.seriesA + '/settings/' + fixture.category + '/' + fixture.tip);
+    await page.getByRole('heading', { name: fixture.prefix + '-visible-setting' }).waitFor();
+    assert.equal(await page.locator('main .topic-path a[href="/series/' + fixture.seriesA + '/settings"]').innerText(), '設定集');
+  } finally { await browser.close(); }
+});
+
+test('UI-3: cancellation in the shared in-document dialog does not publish an author draft', { timeout: 60_000 }, async () => {
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const context = await browser.newContext();
+    await context.addCookies([{ name:'eternalia_author', value:fixture.authorToken,
+      url:base, httpOnly:true, sameSite:'Lax' }]);
+    const page = await context.newPage();
+    const url = base + '/studio?item=' + fixture.tip;
+    await page.goto(url);
+    await page.getByRole('heading', { name: fixture.prefix + '-visible-setting' }).waitFor();
+    const snapshot = page.locator('.publication-editor').getByRole('button', {
+      name: '保存済み下書きを公開版へ反映',
+    });
+    await snapshot.click();
+    await page.locator('dialog[open]').waitFor();
+    await page.locator('dialog[open]').getByRole('button', { name: 'キャンセル' }).click();
+    await page.locator('dialog[open]').waitFor({ state: 'hidden' });
+    assert.equal(await page.locator('.status-success').filter({ hasText: '公開スナップショットを更新しました。' }).count(), 0);
+    await context.close();
+  } finally { await browser.close(); }
+});
