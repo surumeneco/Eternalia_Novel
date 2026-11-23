@@ -79,9 +79,11 @@ try {
   await ready('http://127.0.0.1:' + port + '/');
   // Browser interactions use the synthetic author session before HTTP tests
   // revoke that fixture during their logout assertion.
+  // Collect all browser failures, run the independent HTTP suites as well,
+  // and fail the whole command rather than silently succeeding with red JUnit.
+  const failures = [];
   if (process.env.HTTP_BROWSER_ACCEPTANCE === '1') {
     // Inspect every independent suite in one CI run; report failures together.
-    const failures = [];
     try { await command(['scripts/run-test-junit.mjs', 'browser-auth-boundary', 'apps/web/browser-acceptance/author-csrf-oauth.test.mjs']); } catch (error) { failures.push({ suite: 'browser-auth-boundary', error: String(error) }); console.error(String(error)); }
     try { await command(['scripts/run-test-junit.mjs', 'browser-mobile-touch', 'apps/web/browser-acceptance/mobile-touch-editor.test.mjs']); } catch (error) { failures.push({ suite: 'browser-mobile-touch', error: String(error) }); console.error(String(error)); }
     try { await command(['scripts/run-test-junit.mjs', 'browser-chapter-autosave', 'apps/web/browser-acceptance/author-chapter-autosave.test.mjs']); } catch (error) { failures.push({ suite: 'browser-chapter-autosave', error: String(error) }); console.error(String(error)); }
@@ -132,6 +134,10 @@ try {
   await command(['scripts/run-test-junit.mjs', 'http-word-pos-create-master', 'apps/api/http-acceptance/word-pos-create-master.test.mjs']);
   await command(['scripts/run-test-junit.mjs', 'http-word-pos-stable-id', 'apps/api/http-acceptance/word-pos-stable-id.test.mjs']);
   await command(['scripts/run-test-junit.mjs', 'http', 'apps/api/http-acceptance/http-acceptance.test.mjs']);
+  if (failures.length > 0) {
+    const suites = failures.map(failure => failure.suite).join(', ');
+    throw new Error('Browser acceptance suites failed: ' + suites);
+  }
 } finally {
   for (const child of processes) child.kill();
   await rm(tmp, { recursive: true, force: true });
