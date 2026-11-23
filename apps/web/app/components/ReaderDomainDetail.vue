@@ -22,7 +22,19 @@ const crumbs=computed(()=>{
   const chain:ReaderNode[]=[];
   let node=byId.value.get(props.nodeId);
   while(node&&chain.length<7){chain.unshift(node);node=node.parentId?byId.value.get(node.parentId):undefined;}
-  for(const [i,n] of chain.entries()) path.push({label:n.content.title,...(i===chain.length-1?{}:{to:publicNodeRoute(tree.value??[],n.id)??undefined})});
+  const area=props.kind==='chapter'?'stories':(['tip','tipSection','category'].includes(props.kind)?'settings':
+    (['word','grammar','language'].includes(props.kind)?'dictionaries':'timeline'));
+  const label=area==='stories'?t('stories'):area==='settings'?t('tips'):area==='dictionaries'?t('dictionaries'):t('timeline');
+  for(const [i,n] of chain.entries()){
+    if(i===0&&n.kind==='series'){
+      path.push({label:n.content.title,to:publicNodeRoute(tree.value??[],n.id)??undefined});
+      path.push({label,to:publicAreaRoute(props.seriesId,area)});
+    }else{
+      const isLast=i===chain.length-1&&!props.languageDetails;
+      path.push({label:n.content.title,to:isLast?undefined:publicNodeRoute(tree.value??[],n.id)??undefined});
+    }
+  }
+  if(props.languageDetails)path.push({label:t('readerDetails')});
   return path;
 });
 const displayDetails=computed(()=>Object.fromEntries(Object.entries(item.value?.content.details??{}).filter(([key])=>

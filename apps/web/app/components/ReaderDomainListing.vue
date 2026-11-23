@@ -52,14 +52,26 @@ const parentCrumbs=computed(()=>{
   }
   return chain;
 });
+const breadcrumbItems=computed(()=>{
+  const areaLabel=props.area==='stories'?t('stories'):props.area==='settings'?t('tips'):t('dictionaries');
+  const parents=parentCrumbs.value;
+  return [
+    {label:t('home'),to:'/'},
+    ...parents.slice(0,1),
+    {label:areaLabel,to:props.parentId?publicAreaRoute(props.seriesId,props.area):undefined},
+    ...parents.slice(1).map((item,index,rest)=>({
+      label:item.label,
+      to:index===rest.length-1?undefined:item.to,
+    })),
+  ];
+});
 const title=computed(()=>!props.parentId?(props.area==='stories'?t('stories'):props.area==='settings'?t('tips'):t('dictionaries')):current.value?.content.title??'');
 const grammar=computed(()=>props.area==='dictionaries'&&props.parentId?
   (tree.value??[]).filter(n=>n.kind==='grammar'&&n.parentId===props.parentId):[]);
 </script>
 <template>
   <div>
-    <TopicPath :items="[{label:t('home'),to:'/'},...parentCrumbs,
-      {label:!parentId?(area==='stories'?t('stories'):area==='settings'?t('tips'):t('dictionaries')):childKind=== 'part'?t('readerKindPart'):childKind==='chapter'?t('chapter'):childKind==='tip'?t('tip'):t('word')}]" />
+    <TopicPath :items="breadcrumbItems" />
     <ReaderPanel>
       <ReadingSkeleton v-if="revalidating||pending" :label="t('loading')" />
       <div v-else-if="error||!valid" role="alert">
