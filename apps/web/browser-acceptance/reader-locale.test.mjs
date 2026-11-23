@@ -1,3 +1,4 @@
+import { selectUiLanguage } from './ui-language.mjs';
 /** CM-08/AC-59: reader-facing ja/en labels in the real Nuxt+Nest+PostgreSQL app. */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -18,7 +19,7 @@ test('READER-01/02/03: public series and reader areas localize immediately witho
    const title=fixture.prefix+'-world-A';
    await page.getByRole('heading',{name:title}).waitFor();
    assert.equal(await page.locator('main .series-areas a[href="/stories/'+fixture.seriesA+'"]').innerText(),'ストーリーの目次');
-   await page.getByRole('button',{name:'英語に切り替え'}).click();
+   await selectUiLanguage(page, 'en');
    await page.getByRole('link',{name:'Story table of contents'}).waitFor();
    assert.equal(await page.locator('main .series-areas a[href="/stories/'+fixture.seriesA+'"]').innerText(),'Story table of contents');
    await page.goto(base+'/stories/'+fixture.seriesA);
@@ -51,7 +52,7 @@ test('READER-01/02/03: public series and reader areas localize immediately witho
    await page.getByRole('button',{name:'Next page'}).waitFor();
    await page.getByRole('link',{name:'Back to contents'}).waitFor();
 
-   await page.getByRole('button',{name:'Switch to Japanese'}).click();
+   await selectUiLanguage(page, 'ja');
    await page.getByRole('link',{name:'目次へ戻る'}).waitFor();
    await page.getByRole('button',{name:'次のページ'}).waitFor();
    assert.ok((await page.locator('main').innerText()).includes(chapterTitle));

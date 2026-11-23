@@ -42,8 +42,8 @@ test('PB-05: LA/UTC browsers input JST in the publication screen across author t
     const studio=await author.newPage();
     await studio.goto(base+'/studio?item='+fixture.scheduled);
     await studio.getByRole('heading',{name:'章：'+title}).waitFor();
-    assert.equal(await studio.locator('input[type="datetime-local"]').count(),0,
-      'date management belongs to the publication screen, not the manuscript editor');
+    assert.equal(await studio.locator('.publication-editor input[type="datetime-local"]').count(),1,
+      'publication date must be editable in every individual editor as well as the bulk grid');
     await row.locator('input[type="datetime-local"]').fill('2032-03-04T21:30');
     await row.getByRole('button',{name:'日時を保存'}).click();
     await management.getByText('公開開始日時を更新しました。').waitFor();

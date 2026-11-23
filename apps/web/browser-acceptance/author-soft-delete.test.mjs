@@ -57,8 +57,10 @@ test('AC-76: nonpublic leaf soft-delete, dependent refusal and reader privacy', 
   const page=await author.newPage();
   await page.goto(base+'/studio?item='+tip);
   await page.getByRole('heading',{name:'設定：'+prefix+'-leaf'}).waitFor();
-  page.once('dialog',dialog=>dialog.accept());
   await page.getByRole('button',{name:'この非公開項目を削除'}).click();
+  const dialog=page.locator('dialog.eternalia-dialog[open]');
+  await dialog.waitFor();
+  await dialog.getByRole('button',{name:'実行'}).click();
   await page.getByText('論理削除しました。',{exact:false}).waitFor();
   assert.equal((await nodes()).some(n=>n.id===tip),false);
   assert.equal((await anon.request.get(base+'/api/public/items/'+tip)).status(),404);

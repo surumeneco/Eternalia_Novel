@@ -1,3 +1,4 @@
+import { selectUiLanguage } from './ui-language.mjs';
 /** CM-08 / AC-59: real Nuxt/Chromium anonymous ja/en interface behavior. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -31,33 +32,33 @@ test('CM-08: header switches ja/en and preserves published author text on reload
       // SSR markup can precede Nuxt/Vue hydration; wait until click handlers are mounted.
       await page.waitForFunction(() => Boolean(document.querySelector('#__nuxt')?.__vue_app__));
       await page.locator('button.locale-switch:not(:disabled)').waitFor();
-      await page.getByRole('button',{name:'英語に切り替え'}).waitFor();
+      await page.locator('button.locale-switch:not(:disabled)').waitFor();
       await page.locator('html[lang="ja"]').waitFor();
       assert.equal(await page.locator('html').getAttribute('lang'),'ja');
       assert.ok((await page.locator('main').innerText()).includes(authoredTitle));
-      await page.getByRole('button',{name:'英語に切り替え'}).click();
-      await page.getByRole('button',{name:'Switch to Japanese'}).waitFor();
+      await selectUiLanguage(page, 'en');
+      await page.locator('html[lang=\"en\"]').waitFor();
       await page.locator('html[lang="en"]').waitFor();
       assert.equal(await page.locator('html').getAttribute('lang'),'en');
-      assert.equal(await page.locator('#global-navigation a[href="/stories/'+fixture.seriesA+'"]').innerText(),'Stories');
-      assert.equal(await page.locator('main a[href="/tips/'+fixture.seriesA+'"]').innerText(),'Worldbuilding',
+      assert.equal(await page.locator('#global-navigation a[href="/series/'+fixture.seriesA+'/stories"]').innerText(),'Stories');
+      assert.equal(await page.locator('main a[href="/series/'+fixture.seriesA+'/settings"]').innerText(),'Worldbuilding',
         'the series page must update without a reload as well as the shared shell');
       assert.ok((await page.locator('main').innerText()).includes(authoredTitle),
         'English interface must not translate author-created content');
       await page.reload();
       await page.waitForFunction(() => Boolean(document.querySelector('#__nuxt')?.__vue_app__));
       await page.locator('button.locale-switch:not(:disabled)').waitFor();
-      await page.getByRole('button',{name:'Switch to Japanese'}).waitFor();
+      await page.locator('html[lang=\"en\"]').waitFor();
       await page.locator('html[lang="en"]').waitFor();
       assert.equal(await page.locator('html').getAttribute('lang'),'en');
-      assert.equal(await page.locator('#global-navigation a[href="/stories/'+fixture.seriesA+'"]').innerText(),'Stories');
+      assert.equal(await page.locator('#global-navigation a[href="/series/'+fixture.seriesA+'/stories"]').innerText(),'Stories');
       assert.ok((await page.locator('main').innerText()).includes(authoredTitle));
-      await page.getByRole('button',{name:'Switch to Japanese'}).click();
-      await page.getByRole('button',{name:'英語に切り替え'}).waitFor();
+      await selectUiLanguage(page, 'ja');
+      await page.locator('button.locale-switch:not(:disabled)').waitFor();
       await page.locator('html[lang="ja"]').waitFor();
       assert.equal(await page.locator('html').getAttribute('lang'),'ja');
-      assert.equal(await page.locator('#global-navigation a[href="/stories/'+fixture.seriesA+'"]').innerText(),'ストーリー');
-      assert.equal(await page.locator('main a[href="/tips/'+fixture.seriesA+'"]').innerText(),'設定集');
+      assert.equal(await page.locator('#global-navigation a[href="/series/'+fixture.seriesA+'/stories"]').innerText(),'ストーリー');
+      assert.equal(await page.locator('main a[href="/series/'+fixture.seriesA+'/settings"]').innerText(),'設定集');
       assert.ok((await page.locator('main').innerText()).includes(authoredTitle));
       await context.close();
     }finally{await browser.close();}

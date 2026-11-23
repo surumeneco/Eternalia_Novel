@@ -1,3 +1,4 @@
+import { selectUiLanguage } from './ui-language.mjs';
 /** CM-02/07/08 + UI6 trial: author memo conflict language, privacy and DOM. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -52,7 +53,7 @@ test('AUTHOR-MEMO-01/02: stale author memo save localizes 409 in en and ja, pres
       const concurrent = await concurrentResponse.json();
       assert.equal(concurrent.revision, created.revision + 1);
 
-      await page.getByRole('button', { name: '英語に切り替え' }).click();
+      await selectUiLanguage(page, 'en');
       await page.getByRole('heading', { name: 'Notes' }).waitFor();
       await editor.getByRole('button', { name: 'Save', exact: true }).click();
       await page.getByRole('alert').getByText(
@@ -63,7 +64,7 @@ test('AUTHOR-MEMO-01/02: stale author memo save localizes 409 in en and ja, pres
         'English conflict must not replace author-written unsaved body');
       assert.equal(await editor.locator('input[maxlength="150"]').inputValue(), title);
 
-      await page.getByRole('button', { name: 'Switch to Japanese' }).click();
+      await selectUiLanguage(page, 'ja');
       await page.getByRole('heading', { name: 'メモ', exact: true }).waitFor();
       await editor.getByRole('button', { name: '保存', exact: true }).click();
       await page.getByRole('alert').getByText('メモが他の編集により更新されました。', { exact: true }).waitFor();

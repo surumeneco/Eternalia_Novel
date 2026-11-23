@@ -1,3 +1,4 @@
+import { selectUiLanguage } from './ui-language.mjs';
 /** Source-derived UI6-DOM-OBS: actual DOM and no-JS SSR, not a normative CAT Gate. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -269,7 +270,7 @@ test('UI6-SLOT-DOM-02: authenticated memo and Tip editor preserve direct slot pr
         breadcrumbBeforePanel: true, directHeading: 'メモ',
         gridDirect: true, sidebarDirect: true, editorDirect: true,
       });
-      await page.getByRole('button', { name: '英語に切り替え' }).click();
+      await selectUiLanguage(page, 'en');
       await page.locator('main.site-main section.stone-panel > h1').filter({ hasText: 'Notes' }).waitFor();
       assert.equal(await page.locator('main.site-main section.stone-panel > .memo-grid').count(), 1);
 

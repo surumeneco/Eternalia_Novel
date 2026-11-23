@@ -26,9 +26,9 @@ test('IA-01/02/03: readers select a series before its four content domains', { t
 
     await page.goto(base + '/series/' + fixture.seriesA);
     await page.getByRole('heading', { name: fixture.prefix + '-world-A', exact: true }).waitFor();
-    for (const area of ['stories','tips','dictionaries','timeline']) {
-      await page.locator('#global-navigation a[href="/' + area + '/' + fixture.seriesA + '"]').waitFor();
-      await page.locator('main a[href="/' + area + '/' + fixture.seriesA + '"]').first().waitFor();
+    for (const area of ['stories','settings','dictionaries','timeline']) {
+      await page.locator('#global-navigation a[href="/series/' + fixture.seriesA + '/' + area + '"]').waitFor();
+      await page.locator('main a[href="/series/' + fixture.seriesA + '/' + area + '"]').first().waitFor();
       assert.equal(await page.locator('main .reader-list a[href="/' + area + '"]').count(), 0);
     }
     assert.equal(await page.locator('main .reader-list a[href^="/read/"]').count(), 0,
@@ -77,7 +77,7 @@ test('IA-05/06/07: author editing and publication each require their own series/
     // Assert the restored kind and stable item identity, not an obsolete title.
     const chapterHeadingText = await selectedChapterHeading.innerText();
     assert.match(chapterHeadingText, /^章：/);
-    await page.locator('.studio-editor a[href*="target=' + fixture.chapter + '"]').waitFor();
+    await page.locator('.studio-editor button').filter({hasText:'公開'}).first().waitFor();
     await page.getByRole('group', { name: '資料種別' })
       .getByRole('button', { name: '設定', exact: true }).click();
     assert.equal(await page.getByRole('heading', {

@@ -12,44 +12,28 @@ import { chromium } from 'playwright';
 
 const fixture = JSON.parse(await readFile(process.env.HTTP_FIXTURE_FILE, 'utf8'));
 const base = process.env.HTTP_BASE_URL;
-// Manage publication in a separate author page, leaving any unsaved editor
-// buffer intact in the originating tab. These helpers exercise actual UI.
-async function withPublicationFromEditor(editor, operate) {
-  const href = await editor.locator('.studio-editor a[href*="/studio/publication"]').getAttribute('href');
-  assert.ok(href, 'a selected editing item must expose its publication management link');
-  const targetId = new URL(href, base).searchParams.get('target');
-  assert.ok(targetId, 'publication deep link must carry the selected item identity');
-  const management = await editor.context().newPage();
-  try {
-    await management.goto(new URL(href, base).href);
-    const row = management.locator('.publication-row').filter({
-      has: management.locator('a[href*="item=' + encodeURIComponent(targetId) + '"]'),
-    }).first();
-    await row.waitFor();
-    return await operate(management, row);
-  } finally {
-    await management.close();
-  }
+// Publication remains editable on each author editor; the separate management
+// grid is reserved for bulk work and is tested independently.
+async function respondToAppDialog(page, accepted) {
+  const dialog = page.locator('dialog.eternalia-dialog[open]');
+  await dialog.waitFor({ timeout: 8000 });
+  await dialog.getByRole('button', { name: accepted ? '実行' : 'キャンセル', exact: true }).click();
 }
 async function publishFromEditor(editor) {
-  await withPublicationFromEditor(editor, async (management, row) => {
-    management.once('dialog', dialog => dialog.accept());
-    await row.getByRole('button', { name: '公開版を更新' }).click();
-    await management.getByText('公開設定を更新しました。').waitFor();
-  });
+  await editor.locator('.publication-editor').getByRole('button', { name: '保存済み下書きを公開版へ反映' }).click();
+  await respondToAppDialog(editor, true);
+  await editor.getByText('公開スナップショットを更新しました。').waitFor();
 }
 async function setEditorVisibility(editor, visible) {
-  await withPublicationFromEditor(editor, async (management, row) => {
-    await row.getByRole('button', { name: visible ? '公開にする' : '非公開にする' }).click();
-    await management.getByText('公開設定を更新しました。').waitFor();
-  });
+  const section = editor.locator('.publication-editor');
+  await section.getByRole('button', { name: visible ? '公開に戻す' : '非公開にする' }).click();
+  await editor.getByText('公開条件を変更しました。').waitFor();
 }
 async function setEditorSchedule(editor, date) {
-  await withPublicationFromEditor(editor, async (management, row) => {
-    await row.locator('input[type="datetime-local"]').fill(date);
-    await row.getByRole('button', { name: '日時を保存' }).click();
-    await management.getByText('公開開始日時を更新しました。').waitFor();
-  });
+  const section = editor.locator('.publication-editor');
+  await section.locator('input[type="datetime-local"]').fill(date);
+  await section.getByRole('button', { name: '日時を設定' }).click();
+  await editor.getByText('公開条件を変更しました。').waitFor();
 }
 
 
@@ -233,17 +217,17 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
 
     // Cancelling the native discard warning must preserve unsaved text.
     await textarea.fill('下書き未保存の編集内容');
-    studio.once('dialog', dialog => dialog.dismiss());
     await studio.getByRole('button', { name: '新規シリーズ' }).click();
+    await respondToAppDialog(studio, false);
     assert.equal(await textarea.inputValue(), '下書き未保存の編集内容');
-    studio.once('dialog', dialog => dialog.dismiss());
     await studio.getByRole('link', { name: 'メモ', exact: true }).click();
+    await respondToAppDialog(studio, false);
     assert.equal(new URL(studio.url()).pathname, '/studio',
       'cancelled nested-route navigation must retain the editor');
     assert.equal(await textarea.inputValue(), '下書き未保存の編集内容');
 
-    studio.once('dialog', dialog => dialog.accept());
     await studio.getByRole('link', { name: 'メモ', exact: true }).click();
+    await respondToAppDialog(studio, true);
     await studio.getByRole('heading', { name: 'メモ', exact: true }).waitFor();
 
     // The chapter editor must preserve the selected text and place the caret
@@ -533,8 +517,8 @@ test('author memo browser persists tags and handles failed post-write readback',
     await page.getByRole('button', { name: new RegExp(title) }).waitFor();
 
     await editor.fill('未保存のメモ変更');
-    page.once('dialog', dialog => dialog.dismiss());
     await page.getByLabel('パンくずリスト').getByRole('link', { name: '執筆・編集' }).click();
+    await respondToAppDialog(page, false);
     assert.equal(new URL(page.url()).pathname, '/studio/memos');
     assert.equal(await editor.inputValue(), '未保存のメモ変更');
 
@@ -551,8 +535,8 @@ test('author memo browser persists tags and handles failed post-write readback',
       'memo save must not claim verified success after failed readback');
 
     await page.unroute('**/api/admin/memos');
-    page.once('dialog', dialog => dialog.accept());
     await page.getByRole('button', { name: '再読込' }).click();
+    await respondToAppDialog(page, true);
     assert.equal(await editor.inputValue(), '未保存のメモ変更',
       'reloading after a successful write must recover the persisted edit');
     const finalResponse = await author.request.get(base + '/api/admin/memos');
@@ -600,14 +584,14 @@ test('author browser reorders only sibling chapters and protects unapplied chang
     await list.nth(0).getByRole('button', { name: '下へ' }).click();
     assert.ok((await list.nth(0).innerText()).includes(prefix + '-second'));
 
-    page.once('dialog', dialog => dialog.dismiss());
     await page.getByRole('link', { name: '執筆・編集に戻る' }).click();
+    await respondToAppDialog(page, false);
     assert.equal(new URL(page.url()).pathname, '/studio/order',
       'cancelling the discard dialog must retain unapplied ordering');
     assert.ok((await list.nth(0).innerText()).includes(prefix + '-second'));
 
-    page.once('dialog', dialog => dialog.accept());
     await page.getByRole('button', { name: '表示順を反映' }).click();
+    await respondToAppDialog(page, true);
     await page.getByText('順序を反映しました。').waitFor();
     const response = await author.request.get(base + '/api/admin/nodes');
     assert.equal(response.status(), 200);
@@ -640,14 +624,14 @@ test('unsaved manuscript survives cancelled navigation and is discarded only aft
     const persisted = await editor.inputValue();
     const unsaved = persisted + '\n未保存の移動保護確認';
     await editor.fill(unsaved);
-    page.once('dialog', dialog => dialog.dismiss());
     await page.getByRole('link', { name: 'メモ', exact: true }).click();
+    await respondToAppDialog(page, false);
     assert.equal(new URL(page.url()).pathname, '/studio',
       'cancelled navigation must stay in the manuscript editor');
     assert.equal(await editor.inputValue(), unsaved,
       'cancelled navigation must preserve unsaved manuscript input');
-    page.once('dialog', dialog => dialog.accept());
     await page.getByRole('link', { name: 'メモ', exact: true }).click();
+    await respondToAppDialog(page, true);
     await page.getByRole('heading', { name: 'メモ', exact: true }).waitFor();
     await page.goto(base + '/studio?item=' + fixture.chapter);
     await editor.waitFor();
@@ -1945,8 +1929,8 @@ test('AC-02: author reorders sibling volumes and renames one without changing id
     assert.deepEqual(await page.locator('.order-list li > span').allInnerTexts(), [firstTitle, secondTitle]);
     await page.getByRole('button', { name: firstTitle + 'を下へ移動' }).click();
     assert.deepEqual(await page.locator('.order-list li > span').allInnerTexts(), [secondTitle, firstTitle]);
-    page.once('dialog', dialog => dialog.accept());
     await page.getByRole('button', { name: '表示順を反映' }).click();
+    await respondToAppDialog(page, true);
     await page.getByRole('status').getByText('順序を反映しました。').waitFor();
 
     let nodes = await (await author.request.get(base + '/api/admin/nodes')).json();
@@ -2565,8 +2549,8 @@ test('AC-02: part ordering and part/chapter renames preserve identity and ancest
     await page.getByRole('button', { name: prefix + '-part-Aを下へ移動' }).waitFor();
     assert.deepEqual(await list.allInnerTexts(), [prefix + '-part-A', prefix + '-part-B']);
     await page.getByRole('button', { name: prefix + '-part-Aを下へ移動' }).click();
-    page.once('dialog', dialog => dialog.accept());
     await page.getByRole('button', { name: '表示順を反映' }).click();
+    await respondToAppDialog(page, true);
     await page.getByRole('status').getByText('順序を反映しました。').waitFor();
     await page.reload();
     await page.getByRole('combobox', { name: '親となる項目' }).selectOption(volume);
