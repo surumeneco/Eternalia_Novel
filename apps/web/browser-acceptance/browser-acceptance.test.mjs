@@ -12,44 +12,28 @@ import { chromium } from 'playwright';
 
 const fixture = JSON.parse(await readFile(process.env.HTTP_FIXTURE_FILE, 'utf8'));
 const base = process.env.HTTP_BASE_URL;
-// Manage publication in a separate author page, leaving any unsaved editor
-// buffer intact in the originating tab. These helpers exercise actual UI.
-async function withPublicationFromEditor(editor, operate) {
-  const href = await editor.locator('.studio-editor a[href*="/studio/publication"]').getAttribute('href');
-  assert.ok(href, 'a selected editing item must expose its publication management link');
-  const targetId = new URL(href, base).searchParams.get('target');
-  assert.ok(targetId, 'publication deep link must carry the selected item identity');
-  const management = await editor.context().newPage();
-  try {
-    await management.goto(new URL(href, base).href);
-    const row = management.locator('.publication-row').filter({
-      has: management.locator('a[href*="item=' + encodeURIComponent(targetId) + '"]'),
-    }).first();
-    await row.waitFor();
-    return await operate(management, row);
-  } finally {
-    await management.close();
-  }
+// Publication remains editable on each author editor; the separate management
+// grid is reserved for bulk work and is tested independently.
+async function respondToAppDialog(page, accepted) {
+  const dialog = page.locator('dialog.eternalia-dialog[open]');
+  await dialog.waitFor({ timeout: 8000 });
+  await dialog.getByRole('button', { name: accepted ? '実行' : 'キャンセル', exact: true }).click();
 }
 async function publishFromEditor(editor) {
-  await withPublicationFromEditor(editor, async (management, row) => {
-    management.once('dialog', dialog => dialog.accept());
-    await row.getByRole('button', { name: '公開版を更新' }).click();
-    await management.getByText('公開設定を更新しました。').waitFor();
-  });
+  await editor.locator('.publication-editor').getByRole('button', { name: '保存済み下書きを公開版へ反映' }).click();
+  await respondToAppDialog(editor, true);
+  await editor.getByText('公開スナップショットを更新しました。').waitFor();
 }
 async function setEditorVisibility(editor, visible) {
-  await withPublicationFromEditor(editor, async (management, row) => {
-    await row.getByRole('button', { name: visible ? '公開にする' : '非公開にする' }).click();
-    await management.getByText('公開設定を更新しました。').waitFor();
-  });
+  const section = editor.locator('.publication-editor');
+  await section.getByRole('button', { name: visible ? '公開に戻す' : '非公開にする' }).click();
+  await editor.getByText('公開条件を変更しました。').waitFor();
 }
 async function setEditorSchedule(editor, date) {
-  await withPublicationFromEditor(editor, async (management, row) => {
-    await row.locator('input[type="datetime-local"]').fill(date);
-    await row.getByRole('button', { name: '日時を保存' }).click();
-    await management.getByText('公開開始日時を更新しました。').waitFor();
-  });
+  const section = editor.locator('.publication-editor');
+  await section.locator('input[type="datetime-local"]').fill(date);
+  await section.getByRole('button', { name: '日時を設定' }).click();
+  await editor.getByText('公開条件を変更しました。').waitFor();
 }
 
 
@@ -59,11 +43,11 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
   try {
     const reader = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const readerPage = await reader.newPage();
-    const storyResponse = await readerPage.goto(base + '/stories/' + fixture.seriesA);
+    const storyResponse = await readerPage.goto(base + '/series/' + fixture.seriesA + '/stories');
     const storyText = await readerPage.locator('body').innerText();
     assert.equal(storyResponse?.status(), 200, 'story HTTP response: ' + storyText.slice(0, 1500));
     assert.ok(storyText.includes(fixture.prefix + '-world-A') &&
-      storyText.includes(fixture.prefix + '-chapter-A'),
+      storyText.includes(fixture.prefix + '-book-A'),
       'story DOM should display published series and chapter; got: ' + storyText.slice(0, 2000));
     for (const selector of ['.site-header', '.site-aside', '.site-main', '.site-footer', '.topic-path']) {
       assert.equal(await readerPage.locator(selector).count(), 1,
@@ -76,7 +60,7 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
     assert.ok(overflow.content <= overflow.viewport + 2,
       'story page must not require horizontal scrolling on mobile: ' + JSON.stringify(overflow));
 
-    await readerPage.goto(base + '/read/' + fixture.chapter);
+    await readerPage.goto(base + '/series/' + fixture.seriesA + '/stories/' + fixture.volume + '/parts/' + fixture.part + '/chapters/' + fixture.chapter);
     await readerPage.getByRole('button', { name: '次のページ' }).waitFor();
     assert.ok((await readerPage.locator('.rich-body').innerText())
       .includes(fixture.prefix + '-published-body'));
@@ -87,11 +71,11 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
 
     // These routes must show their actual per-series views, not collection parents.
     for (const [path, marker] of [
-      ['/tips/', '設定を検索'],
-      ['/dictionaries/', '単語を検索'],
-      ['/timeline/', '年代区分'],
+      ['/series/' + fixture.seriesA + '/settings', '設定集'],
+      ['/series/' + fixture.seriesA + '/dictionaries', '辞書'],
+      ['/series/' + fixture.seriesA + '/timeline', '年表'],
     ]) {
-      await readerPage.goto(base + path + fixture.seriesA);
+      await readerPage.goto(base + path);
       const content = await readerPage.locator('body').innerText();
       assert.ok(content.includes(marker), 'missing nested domain UI at ' + path);
       assert.ok(content.includes(fixture.prefix + '-world-A'), 'missing series at ' + path);
@@ -104,7 +88,7 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
     for (const width of [320, 390, 768, 1280]) {
       await readerPage.setViewportSize({ width, height: 844 });
       for (const domain of ['stories', 'tips', 'dictionaries', 'timeline']) {
-        await readerPage.goto(base + '/' + domain + '/' + fixture.seriesA);
+        await readerPage.goto(base + '/series/' + fixture.seriesA + '/' + (domain === 'tips' ? 'settings' : domain));
         const dimensions = await readerPage.evaluate(() => ({
           viewport: document.documentElement.clientWidth,
           content: document.documentElement.scrollWidth,
@@ -233,17 +217,17 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
 
     // Cancelling the native discard warning must preserve unsaved text.
     await textarea.fill('下書き未保存の編集内容');
-    studio.once('dialog', dialog => dialog.dismiss());
     await studio.getByRole('button', { name: '新規シリーズ' }).click();
+    await respondToAppDialog(studio, false);
     assert.equal(await textarea.inputValue(), '下書き未保存の編集内容');
-    studio.once('dialog', dialog => dialog.dismiss());
     await studio.getByRole('link', { name: 'メモ', exact: true }).click();
+    await respondToAppDialog(studio, false);
     assert.equal(new URL(studio.url()).pathname, '/studio',
       'cancelled nested-route navigation must retain the editor');
     assert.equal(await textarea.inputValue(), '下書き未保存の編集内容');
 
-    studio.once('dialog', dialog => dialog.accept());
     await studio.getByRole('link', { name: 'メモ', exact: true }).click();
+    await respondToAppDialog(studio, true);
     await studio.getByRole('heading', { name: 'メモ', exact: true }).waitFor();
 
     // The chapter editor must preserve the selected text and place the caret
@@ -533,8 +517,8 @@ test('author memo browser persists tags and handles failed post-write readback',
     await page.getByRole('button', { name: new RegExp(title) }).waitFor();
 
     await editor.fill('未保存のメモ変更');
-    page.once('dialog', dialog => dialog.dismiss());
     await page.getByLabel('パンくずリスト').getByRole('link', { name: '執筆・編集' }).click();
+    await respondToAppDialog(page, false);
     assert.equal(new URL(page.url()).pathname, '/studio/memos');
     assert.equal(await editor.inputValue(), '未保存のメモ変更');
 
@@ -551,8 +535,8 @@ test('author memo browser persists tags and handles failed post-write readback',
       'memo save must not claim verified success after failed readback');
 
     await page.unroute('**/api/admin/memos');
-    page.once('dialog', dialog => dialog.accept());
     await page.getByRole('button', { name: '再読込' }).click();
+    await respondToAppDialog(page, true);
     assert.equal(await editor.inputValue(), '未保存のメモ変更',
       'reloading after a successful write must recover the persisted edit');
     const finalResponse = await author.request.get(base + '/api/admin/memos');
@@ -600,14 +584,14 @@ test('author browser reorders only sibling chapters and protects unapplied chang
     await list.nth(0).getByRole('button', { name: '下へ' }).click();
     assert.ok((await list.nth(0).innerText()).includes(prefix + '-second'));
 
-    page.once('dialog', dialog => dialog.dismiss());
     await page.getByRole('link', { name: '執筆・編集に戻る' }).click();
+    await respondToAppDialog(page, false);
     assert.equal(new URL(page.url()).pathname, '/studio/order',
       'cancelling the discard dialog must retain unapplied ordering');
     assert.ok((await list.nth(0).innerText()).includes(prefix + '-second'));
 
-    page.once('dialog', dialog => dialog.accept());
     await page.getByRole('button', { name: '表示順を反映' }).click();
+    await respondToAppDialog(page, true);
     await page.getByText('順序を反映しました。').waitFor();
     const response = await author.request.get(base + '/api/admin/nodes');
     assert.equal(response.status(), 200);
@@ -640,14 +624,14 @@ test('unsaved manuscript survives cancelled navigation and is discarded only aft
     const persisted = await editor.inputValue();
     const unsaved = persisted + '\n未保存の移動保護確認';
     await editor.fill(unsaved);
-    page.once('dialog', dialog => dialog.dismiss());
     await page.getByRole('link', { name: 'メモ', exact: true }).click();
+    await respondToAppDialog(page, false);
     assert.equal(new URL(page.url()).pathname, '/studio',
       'cancelled navigation must stay in the manuscript editor');
     assert.equal(await editor.inputValue(), unsaved,
       'cancelled navigation must preserve unsaved manuscript input');
-    page.once('dialog', dialog => dialog.accept());
     await page.getByRole('link', { name: 'メモ', exact: true }).click();
+    await respondToAppDialog(page, true);
     await page.getByRole('heading', { name: 'メモ', exact: true }).waitFor();
     await page.goto(base + '/studio?item=' + fixture.chapter);
     await editor.waitFor();
@@ -834,7 +818,7 @@ test('authenticated non-author reader cannot enter the author workspace', { time
       'a signed-in reader must not receive author editing controls');
     assert.equal((await reader.request.get(base + '/api/admin/nodes')).status(), 401,
       'a signed-in reader must not read private author data');
-    const publicPage = await page.goto(base + '/stories/' + fixture.seriesA);
+    const publicPage = await page.goto(base + '/series/' + fixture.seriesA + '/stories');
     assert.equal(publicPage?.status(), 200,
       'non-author login must not prevent reading public content');
     assert.ok((await page.locator('body').innerText()).includes(fixture.prefix + '-world-A'));
@@ -1340,30 +1324,24 @@ test('dictionary browser keeps identical spellings separate by language filter',
     for (const id of [series, languageA, languageB, wordA, wordB]) await publish(id);
 
     const page = await anonymous.newPage();
-    await page.goto(base + '/dictionaries/' + series);
+    const wordLink = page.getByRole('link', { name: wordTitle, exact: true });
+    await page.goto(base + '/series/' + series + '/dictionaries/' + languageA);
     await page.getByLabel('単語を検索').fill(wordTitle);
-    const words = page.getByRole('link', { name: wordTitle, exact: true });
-    await words.nth(1).waitFor();
-    assert.equal(await words.count(), 2, 'same spelling must appear under both public languages');
-
-    const language = page.getByLabel('言語');
-    await language.selectOption(languageA);
-    await words.nth(1).waitFor({ state: 'hidden' });
-    assert.equal(await words.count(), 1);
-    assert.ok((await page.locator('.dictionary-language').innerText()).includes(prefix + '-meaning-A'));
-    assert.ok(!(await page.locator('.dictionary-language').innerText()).includes(prefix + '-meaning-B'));
-    assert.ok((await words.first().getAttribute('href'))?.endsWith('/items/' + wordA));
-
-    await language.selectOption(languageB);
-    await words.nth(1).waitFor({ state: 'hidden' });
-    assert.equal(await words.count(), 1);
-    assert.ok((await page.locator('.dictionary-language').innerText()).includes(prefix + '-meaning-B'));
-    assert.ok(!(await page.locator('.dictionary-language').innerText()).includes(prefix + '-meaning-A'));
-    assert.ok((await words.first().getAttribute('href'))?.endsWith('/items/' + wordB));
-
-    await language.selectOption('');
-    await words.nth(1).waitFor();
-    assert.equal(await words.count(), 2, 'removing language filter restores both distinct words');
+    await wordLink.waitFor();
+    assert.equal(await wordLink.count(), 1, 'language A shows only its own spelling');
+    assert.ok((await page.locator('main').innerText()).includes(prefix + '-meaning-A'));
+    assert.ok(!(await page.locator('main').innerText()).includes(prefix + '-meaning-B'));
+    assert.ok((await wordLink.getAttribute('href'))?.endsWith('/dictionaries/' + languageA + '/words/' + wordA));
+    await page.goto(base + '/series/' + series + '/dictionaries/' + languageB);
+    await page.getByLabel('単語を検索').fill(wordTitle);
+    await wordLink.waitFor();
+    assert.equal(await wordLink.count(), 1, 'language B shows only its own spelling');
+    assert.ok((await page.locator('main').innerText()).includes(prefix + '-meaning-B'));
+    assert.ok(!(await page.locator('main').innerText()).includes(prefix + '-meaning-A'));
+    assert.ok((await wordLink.getAttribute('href'))?.endsWith('/dictionaries/' + languageB + '/words/' + wordB));
+    await page.goto(base + '/series/' + series + '/dictionaries');
+    await page.getByRole('link', { name: prefix + '-language-A', exact: true }).waitFor();
+    await page.getByRole('link', { name: prefix + '-language-B', exact: true }).waitFor();
     await page.close();
     await anonymous.close();
     await author.close();
@@ -1740,34 +1718,32 @@ test('published tags search across categories without changing ownership or priv
     for (const id of [series, categoryA, categoryB, tipA, tipB]) await publish(id);
 
     const page = await anonymous.newPage();
-    await page.goto(base + '/tips/' + series);
-    await page.getByRole('combobox', { name: 'タグ', exact: true }).selectOption(tag);
-    await page.getByRole('link', { name: prefix + '-tip-B', exact: true }).waitFor();
-    const groups = page.locator('.tip-category');
-    assert.equal(await groups.count(), 2, 'tag filter should span both categories');
-    assert.equal(await page.getByRole('link', { name: prefix + '-tip-A', exact: true }).count(), 1);
-    assert.equal(await page.getByRole('link', { name: prefix + '-tip-B', exact: true }).count(), 1);
-
-    await page.getByRole('combobox', { name: 'カテゴリ', exact: true }).selectOption(categoryA);
-    await page.getByRole('link', { name: prefix + '-tip-B', exact: true }).waitFor({ state: 'hidden' });
-    assert.equal(await groups.count(), 1);
-    assert.ok((await groups.innerText()).includes(prefix + '-tip-A'));
-    assert.ok(!(await groups.innerText()).includes(prefix + '-tip-B'));
-    await page.getByRole('combobox', { name: 'カテゴリ', exact: true }).selectOption(categoryB);
-    await page.getByRole('link', { name: prefix + '-tip-A', exact: true }).waitFor({ state: 'hidden' });
-    assert.equal(await groups.count(), 1);
-    assert.ok((await groups.innerText()).includes(prefix + '-tip-B'));
-
+    await page.goto(base + '/search?series=' + series);
+    await page.getByRole('status').filter({ hasText: 'series' }).waitFor();
+    await page.locator('.search-filters select').nth(1).selectOption('tips');
+    await page.getByLabel('検索語').fill(tag);
+    await page.locator('main').getByRole('link', { name: prefix + '-tip-B', exact: true }).waitFor();
+    assert.equal(await page.locator('main .search-result').count(), 2,
+      'tag search must span both categories');
+    assert.equal(await page.locator('main').getByRole('link', { name: prefix + '-tip-A', exact: true }).count(), 1);
+    assert.equal(await page.locator('main').getByRole('link', { name: prefix + '-tip-B', exact: true }).count(), 1);
+    await page.goto(base + '/series/' + series + '/settings/' + categoryA);
+    await page.locator('main').getByRole('link', { name: prefix + '-tip-A', exact: true }).waitFor();
+    assert.equal(await page.locator('main').getByRole('link', { name: prefix + '-tip-B', exact: true }).count(), 0);
+    await page.goto(base + '/series/' + series + '/settings/' + categoryB);
+    await page.locator('main').getByRole('link', { name: prefix + '-tip-B', exact: true }).waitFor();
+    assert.equal(await page.locator('main').getByRole('link', { name: prefix + '-tip-A', exact: true }).count(), 0);
     const hidden = await author.request.post(base + '/api/admin/nodes/' + tipA + '/visibility', {
       headers: { Origin: base },
       data: { expectedRevision: 1, isPublic: false, publicSince: null },
     });
     assert.equal(hidden.status(), 200);
-    await page.reload();
-    await page.getByRole('combobox', { name: 'タグ', exact: true }).selectOption(tag);
-    await page.getByRole('link', { name: prefix + '-tip-B', exact: true }).waitFor();
-    assert.equal(await page.getByRole('link', { name: prefix + '-tip-A', exact: true }).count(), 0);
-    assert.equal(await page.getByRole('link', { name: prefix + '-tip-B', exact: true }).count(), 1);
+    await page.goto(base + '/search?series=' + series);
+    await page.locator('.search-filters select').nth(1).selectOption('tips');
+    await page.getByLabel('検索語').fill(tag);
+    await page.locator('main').getByRole('link', { name: prefix + '-tip-B', exact: true }).waitFor();
+    assert.equal(await page.locator('main').getByRole('link', { name: prefix + '-tip-A', exact: true }).count(), 0);
+    assert.equal(await page.locator('main').getByRole('link', { name: prefix + '-tip-B', exact: true }).count(), 1);
     assert.equal((await anonymous.request.get(base + '/api/public/items/' + tipA)).status(), 404);
     assert.equal((await anonymous.request.get(base + '/api/public/items/' + tipB)).status(), 200);
     await page.close();
@@ -1945,8 +1921,8 @@ test('AC-02: author reorders sibling volumes and renames one without changing id
     assert.deepEqual(await page.locator('.order-list li > span').allInnerTexts(), [firstTitle, secondTitle]);
     await page.getByRole('button', { name: firstTitle + 'を下へ移動' }).click();
     assert.deepEqual(await page.locator('.order-list li > span').allInnerTexts(), [secondTitle, firstTitle]);
-    page.once('dialog', dialog => dialog.accept());
     await page.getByRole('button', { name: '表示順を反映' }).click();
+    await respondToAppDialog(page, true);
     await page.getByRole('status').getByText('順序を反映しました。').waitFor();
 
     let nodes = await (await author.request.get(base + '/api/admin/nodes')).json();
@@ -2081,9 +2057,9 @@ test('AC-55: anonymous recent listing links published chapter and removes it aft
     assert.ok(items.some(item => item.id === chapter && item.content.title === chapterTitle));
     const page = await reader.newPage();
     await page.goto(base + '/');
-    const link = page.getByRole('link', { name: chapterTitle, exact: true });
+    const link = page.locator('main').getByRole('link', { name: chapterTitle, exact: true });
     await link.waitFor();
-    assert.equal(await link.getAttribute('href'), '/read/' + chapter);
+    assert.equal(await link.getAttribute('href'), '/jump/' + chapter);
     await link.click();
     await page.locator('.rich-body').getByText('新着から開ける公開章本文').waitFor();
 
@@ -2331,38 +2307,36 @@ test('AC-56: shared author navigation works while anonymous editor and API write
     const page = await author.newPage();
     for (const route of [
       '/', '/stories', '/series/' + series,
-      '/read/' + fixture.chapter + '?series=' + fixture.seriesA,
-      '/tips/' + fixture.seriesA,
-      '/dictionaries/' + fixture.seriesA,
-      '/timeline/' + fixture.seriesA,
+      '/series/' + fixture.seriesA + '/stories/' + fixture.volume + '/parts/' + fixture.part + '/chapters/' + fixture.chapter,
+      '/series/' + fixture.seriesA + '/settings',
+      '/series/' + fixture.seriesA + '/dictionaries',
+      '/series/' + fixture.seriesA + '/timeline',
     ]) {
       await page.goto(base + route);
-      await page.getByRole('contentinfo').getByRole('link', { name: '執筆・編集' }).click();
-      await page.getByRole('heading', { name: '執筆・編集' }).waitFor();
-      await page.getByRole('button', { name: '新規シリーズ' }).waitFor();
+      await page.locator('#global-navigation a[href="/admin"]').click();
+      await page.getByRole('heading', { name: '管理ホーム' }).waitFor();
+      await page.locator('main a[href="/admin/series"]').waitFor();
     }
 
     // Item-specific author navigation must select the exact published chapter.
-    await page.goto(base + '/read/' + fixture.chapter);
+    await page.goto(base + '/series/' + fixture.seriesA + '/stories/' + fixture.volume + '/parts/' + fixture.part + '/chapters/' + fixture.chapter);
     const editLink = page.getByRole('link', { name: 'この項目を編集' });
     await editLink.waitFor();
     await editLink.click();
-    await page.waitForURL(url => url.pathname === '/studio'
-      && url.searchParams.get('item') === fixture.chapter);
+    await page.waitForURL(url => url.pathname === '/admin/series/' + fixture.seriesA + '/stories/chapters/' + fixture.chapter + '/edit');
     await page.getByRole('textbox', { name: '本文・説明', exact: true }).waitFor();
 
     // The series detail page must also link directly to the exact series editor.
-    await page.goto(base + '/stories/' + series);
+    await page.goto(base + '/series/' + series);
     await page.getByRole('link', { name: 'この項目を編集' }).click();
-    await page.waitForURL(url => url.pathname === '/studio'
-      && url.searchParams.get('item') === series);
+    await page.waitForURL(url => url.pathname === '/admin/series/' + series + '/edit');
     await page.getByRole('heading', { name: 'シリーズ：' + title }).waitFor();
 
     const readerPage = await anonymous.newPage();
-    await readerPage.goto(base + '/read/' + fixture.chapter);
+    await readerPage.goto(base + '/series/' + fixture.seriesA + '/stories/' + fixture.volume + '/parts/' + fixture.part + '/chapters/' + fixture.chapter);
     await readerPage.locator('.author-edit-link').waitFor({ state: 'hidden' });
     assert.equal(await readerPage.getByRole('link', { name: 'この項目を編集' }).count(), 0);
-    await readerPage.goto(base + '/stories/' + series);
+    await readerPage.goto(base + '/series/' + series);
     assert.equal(await readerPage.getByRole('link', { name: 'この項目を編集' }).count(), 0,
       'anonymous series reader must not see an author edit control');
     await readerPage.goto(base + '/studio');
@@ -2565,8 +2539,8 @@ test('AC-02: part ordering and part/chapter renames preserve identity and ancest
     await page.getByRole('button', { name: prefix + '-part-Aを下へ移動' }).waitFor();
     assert.deepEqual(await list.allInnerTexts(), [prefix + '-part-A', prefix + '-part-B']);
     await page.getByRole('button', { name: prefix + '-part-Aを下へ移動' }).click();
-    page.once('dialog', dialog => dialog.accept());
     await page.getByRole('button', { name: '表示順を反映' }).click();
+    await respondToAppDialog(page, true);
     await page.getByRole('status').getByText('順序を反映しました。').waitFor();
     await page.reload();
     await page.getByRole('combobox', { name: '親となる項目' }).selectOption(volume);

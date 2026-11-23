@@ -79,14 +79,16 @@ test('UI6-ROUTE-02: relative Vue imports resolve by actual path, never same base
   });
 });
 
-test('UI6-ROUTE-04/05: current 17 pages and layout retain non-normative source observation', async () => {
+test('UI6-ROUTE-04/05: current series-first pages and layout retain non-normative source observation', async () => {
   const report = await inspectAppRouteComposition('apps/web/app');
-  assert.equal(report.pageCount, 17);
+  assert.equal(report.pageCount, 72);
   assert.equal(report.layoutCount, 1);
-  assert.equal(report.sourceCount, 19);
-  assert.equal(report.componentCount, 15);
+  assert.equal(report.sourceCount, 74);
+  assert.equal(report.componentCount, 23);
   assert.ok(report.owners.find(item => item.source === 'pages/index.vue')?.localComponents.includes('ReaderPanel'));
-  assert.ok(report.owners.find(item => item.source === 'pages/stories.vue')?.localComponents.includes('PublicCollectionPage'));
+  assert.ok(report.owners.find(item => item.source === 'pages/series/[id]/index.vue')?.localComponents.includes('ReaderPanel'));
+  assert.ok(report.owners.find(item => item.source === 'pages/series/[id]/stories/[volumeId]/parts/[partId]/chapters/[chapterId].vue')?.localComponents.includes('ReaderDomainDetail'));
+  assert.ok(report.owners.find(item => item.source === 'pages/admin/series/[id]/stories/chapters/index.vue')?.localComponents.includes('AdminNodeGrid'));
   assert.ok(report.owners.find(item => item.source === 'pages/studio/memos.vue')?.localComponents.includes('ReaderPanel'));
   assert.deepEqual(report.owners.find(item => item.source === 'app.vue')?.frameworkOutlets,
     ['NuxtLayout', 'NuxtPage']);

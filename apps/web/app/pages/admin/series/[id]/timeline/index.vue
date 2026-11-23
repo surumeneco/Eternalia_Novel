@@ -1,0 +1,2 @@
+<script setup lang="ts">const route=useRoute();const {t}=useUiLocale();</script>
+<template><div><ReaderPanel><h1>{{t('timeline')}}</h1><nav class="reader-list"><NuxtLink :to="'/admin/series/'+route.params.id+'/timeline/periods'">{{t('studioKindPeriodization')}}</NuxtLink><NuxtLink :to="'/admin/series/'+route.params.id+'/timeline/events'">{{t('event')}}</NuxtLink></nav></ReaderPanel></div></template>

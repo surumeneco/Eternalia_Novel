@@ -1,3 +1,4 @@
+import { selectUiLanguage } from './ui-language.mjs';
 /** CM-08/AC-59/75: public search locale updates without losing filters or user-authored content. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -25,10 +26,10 @@ test('SEARCH-01/02/03/04: search domain options and result kinds react instantly
       'test fixture volume must be visible to anonymous readers');
     // The header is SSR-rendered, so explicitly await client hydration by
     // making a reactive language change before controlling the search fields.
-    await page.getByRole('button',{name:'英語に切り替え'}).click();
-    await page.getByRole('button',{name:'Switch to Japanese'}).waitFor();
-    await page.getByRole('button',{name:'Switch to Japanese'}).click();
-    await page.getByRole('button',{name:'英語に切り替え'}).waitFor();
+    await selectUiLanguage(page, 'en');
+    await page.locator('html[lang=\"en\"]').waitFor();
+    await selectUiLanguage(page, 'ja');
+    await page.locator('button.locale-switch:not(:disabled)').waitFor();
     // SSR may already display the query-series selection before hydration.
     // Force a client-side series change and wait for the reactive tree fetch
     // before evaluating the search result; do not rely on SSR's initial value.
@@ -50,8 +51,8 @@ test('SEARCH-01/02/03/04: search domain options and result kinds react instantly
     const optionsJa=await domain.locator('option').allTextContents();
     assert.deepEqual(optionsJa.map(x=>x.trim()),['すべて','ストーリー','設定集','辞書','年表']);
     assert.match(await result.locator('span.note').innerText(),/編/);
-    await page.getByRole('button',{name:'英語に切り替え'}).click();
-    await page.getByRole('button',{name:'Switch to Japanese'}).waitFor();
+    await selectUiLanguage(page, 'en');
+    await page.locator('html[lang=\"en\"]').waitFor();
     assert.equal(await domain.locator('option[value="stories"]').textContent(),'Stories');
     assert.deepEqual((await domain.locator('option').allTextContents()).map(x=>x.trim()),
       ['All','Stories','Worldbuilding','Dictionary','Timeline']);
@@ -62,8 +63,8 @@ test('SEARCH-01/02/03/04: search domain options and result kinds react instantly
     assert.equal(await result.locator('a').getAttribute('href'),originalHref);
     assert.ok(!(await page.locator('main').innerText()).includes(fixture.prefix+'-private-tip'),
       'published search must never include private content');
-    await page.getByRole('button',{name:'Switch to Japanese'}).click();
-    await page.getByRole('button',{name:'英語に切り替え'}).waitFor();
+    await selectUiLanguage(page, 'ja');
+    await page.locator('button.locale-switch:not(:disabled)').waitFor();
     assert.equal(await domain.locator('option[value="stories"]').textContent(),'ストーリー');
     assert.match(await result.locator('span.note').innerText(),/編/);
     assert.equal(await search.inputValue(),fixture.prefix+'-book-A');

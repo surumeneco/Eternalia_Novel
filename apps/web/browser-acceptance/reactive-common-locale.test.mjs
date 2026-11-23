@@ -1,3 +1,4 @@
+import { selectUiLanguage } from './ui-language.mjs';
 /** CM-08 / AC-59,66,75: live ja/en across writer labels, dictionaries and dates. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -22,12 +23,12 @@ test('LABEL-01/02/03/04: writer filter/kind labels and public fixed dates follow
     await page.getByRole('group',{name:'資料種別'}).getByRole('button',{name:'設定',exact:true}).waitFor();
     const input=page.getByRole('textbox',{name:'名称・見出し'});
     await input.fill(title+'-local-unsaved');
-    await page.getByRole('button',{name:'英語に切り替え'}).click();
+    await selectUiLanguage(page, 'en');
     await page.getByRole('button',{name:'Worldbuilding'}).waitFor();
     await page.getByRole('heading',{name:'Setting：'+title}).waitFor();
     assert.equal(await page.getByRole('textbox',{name:'Name or heading'}).inputValue(),
       title+'-local-unsaved','language switch must preserve unsaved author input');
-    await page.getByRole('button',{name:'Switch to Japanese'}).click();
+    await selectUiLanguage(page, 'ja');
     await page.getByRole('heading',{name:'設定：'+title}).waitFor();
     assert.equal(await input.inputValue(),title+'-local-unsaved');
 
@@ -37,7 +38,7 @@ test('LABEL-01/02/03/04: writer filter/kind labels and public fixed dates follow
     await page.waitForFunction(() => Boolean(document.querySelector('#__nuxt')?.__vue_app__));
     await page.getByRole('heading',{name:'辞書',exact:true}).waitFor();
     await page.getByText('シリーズの創作言語、単語、文法を閲覧します。').waitFor();
-    await page.getByRole('button',{name:'英語に切り替え'}).click();
+    await selectUiLanguage(page, 'en');
     await page.getByRole('heading',{name:'Dictionary',exact:true}).waitFor();
     await page.getByText('Browse the languages, vocabulary and grammar of each series.').waitFor();
     assert.ok((await page.locator('main').innerText()).includes(fixture.prefix+'-world-A'),
@@ -52,8 +53,8 @@ test('LABEL-01/02/03/04: writer filter/kind labels and public fixed dates follow
     const en=await recentDate.innerText();
     assert.ok(en.includes('2026')||en.includes('2027')||en.includes('2031'),
       'published timestamp should include a year');
-    await page.getByRole('button',{name:'Switch to Japanese'}).click();
-    await page.getByRole('button',{name:'英語に切り替え'}).waitFor();
+    await selectUiLanguage(page, 'ja');
+    await page.locator('button.locale-switch:not(:disabled)').waitFor();
     assert.equal(await recentDate.getAttribute('datetime'),iso);
     const ja=await recentDate.innerText();
     assert.notEqual(ja,en,'locale formatting should be reactive');

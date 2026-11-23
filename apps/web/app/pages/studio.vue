@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import { parseJstLocalDateTime,formatJstLocalDateTime } from '~/utils/jst-publication-time';
 import { wordClassInputPolicy } from '~/utils/word-class-input-policy';
 import type { AuthorNode } from '~/types/author';
 import { localizeApiError } from '~/utils/api-error-localization';
 import { localizeSpellingWarning } from '~/utils/spelling-warning-localization';
 const { t, language } = useUiLocale();
+const { confirm: showConfirmation } = useAppDialog();
 const studioRoute = useRoute();
 import type { ReaderKind } from '~/types/reader';
 import { parseLanguageWordClasses, diagnoseWordSpelling, appendDuplicateWordMeaning, pagesForChapter, joinChapterPages } from '@eternalia/contracts';
@@ -57,6 +59,28 @@ const movableCategories = computed(() => {
 watch(() => selected.value?.parentId, parent => { moveCategoryTarget.value = parent ?? ''; }, { immediate: true });
 const publicationStatus = computed(() => !selected.value?.published ? t('studioUnpublished')
   : selected.value.isPublic ? t('studioPublishedState') : t('studioPrivateState'));
+// Publication settings belong to the individual editor, not exclusively to
+// the batch publication page. They must not change the unsaved draft buffer.
+const publicStartInput=ref('');
+watch(() => [selected.value?.id,selected.value?.publicSince], () => {
+  publicStartInput.value=selected.value?.publicSince===null||!selected.value
+    ? '' : formatJstLocalDateTime(selected.value.publicSince)??'';
+}, {immediate:true});
+const inheritedPublicationStatus=computed(()=>{
+  const subject=selected.value;
+  if(!subject)return '';
+  let parentId=subject.published?.parentId??subject.parentId;
+  const seen=new Set<string>([subject.id]);
+  while(parentId&&!seen.has(parentId)){
+    seen.add(parentId);
+    const parent=nodes.value.find(n=>n.id===parentId);
+    if(!parent||!parent.published||!parent.isPublic||parent.publicSince===null||parent.publicSince>Date.now())
+      return t('pubAncestorPrivate');
+    parentId=parent.published?.parentId??parent.parentId;
+  }
+  return '';
+});
+
 const filter = ref<Filter>('stories');
 const busy = ref(false);
 const errorText = ref('');
@@ -298,8 +322,8 @@ const creationDirty = computed(() => createOpen.value &&
   (createTitle.value.trim().length > 0 || (createKind.value === 'word' &&
     (!createWordIsPublic.value || createWordPartOfSpeech.value.length > 0 || createWordDefinition.value.length > 0))));
 const hasUnsavedChanges = computed(() => editorDirty.value || creationDirty.value);
-function confirmDiscard(): boolean {
-  return !hasUnsavedChanges.value || window.confirm(t('studioUnsavedDiscard'));
+async function confirmDiscard(): Promise<boolean> {
+  return !hasUnsavedChanges.value || await showConfirmation(t('studioUnsavedDiscard'));
 }
 function restoreEditor() {
   form.title = selected.value?.draft.title ?? '';
@@ -310,10 +334,10 @@ function restoreEditor() {
   form.details = { ...(selected.value?.draft.details ?? {}) };
   showRecoveryIfPresent();
 }
-function selectNode(nodeId: string) {
+async function selectNode(nodeId: string) {
   if (busy.value || autosavingChapter.value) return;
   if (selectedId.value === nodeId && !createOpen.value) return;
-  if (!confirmDiscard()) return;
+  if (!await confirmDiscard()) return;
   if (selected.value?.kind === 'chapter') clearChapterRecovery(selected.value.id);
   cancelAutosaveTimer();
   createOpen.value = false;
@@ -322,9 +346,9 @@ function selectNode(nodeId: string) {
   filter.value = areaForKind(byId.value.get(nodeId)?.kind ?? 'series');
   restoreEditor();
 }
-function cancelCreate() {
+async function cancelCreate() {
   if (busy.value) return;
-  if (creationDirty.value && !window.confirm(t('studioNewItemDiscard'))) return;
+  if (creationDirty.value && !await showConfirmation(t('studioNewItemDiscard'))) return;
   createOpen.value = false;
   createTitle.value = '';
   createWordPartOfSpeech.value = '';
@@ -335,16 +359,16 @@ function beforeUnload(event: BeforeUnloadEvent) {
   event.preventDefault();
   event.returnValue = '';
 }
-onBeforeRouteLeave(() => {
-  if (!confirmDiscard()) return false;
+onBeforeRouteLeave(async () => {
+  if (!await confirmDiscard()) return false;
   cancelAutosaveTimer();
   if (selected.value?.kind === 'chapter') clearChapterRecovery(selected.value.id);
 });
 // /studio/child is a nested route: its parent stays mounted, so the leave
 // guard alone does not protect unsaved editor input on child navigation.
-onBeforeRouteUpdate((to, from) => {
+onBeforeRouteUpdate(async (to, from) => {
   if (from.path !== '/studio' || to.fullPath === from.fullPath) return;
-  if (!confirmDiscard()) return false;
+  if (!await confirmDiscard()) return false;
   cancelAutosaveTimer();
   if (selected.value?.kind === 'chapter') clearChapterRecovery(selected.value.id);
   createOpen.value = false;
@@ -378,9 +402,9 @@ function areaForKind(kind: ReaderKind): Filter {
   if (kind === 'periodization' || kind === 'event') return 'timeline';
   return 'stories';
 }
-function chooseArea(next: Filter) {
+async function chooseArea(next: Filter) {
   if (filter.value === next || busy.value || autosavingChapter.value) return;
-  if (!confirmDiscard()) return;
+  if (!await confirmDiscard()) return;
   cancelAutosaveTimer();
   if (selected.value?.kind === 'chapter') clearChapterRecovery(selected.value.id);
   createOpen.value = false;
@@ -388,9 +412,9 @@ function chooseArea(next: Filter) {
   filter.value = next;
   restoreEditor();
 }
-function chooseSeries(event: Event) {
+async function chooseSeries(event: Event) {
   const target = event.target as HTMLSelectElement;
-  if (busy.value || autosavingChapter.value || !confirmDiscard()) {
+  if (busy.value || autosavingChapter.value || !await confirmDiscard()) {
     target.value = selectedSeriesId.value ?? '';
     return;
   }
@@ -509,13 +533,14 @@ onMounted(async () => {
           children[parentKind].includes(requestedCreate as ReaderKind)) {
         selectedSeriesId.value = owningSeriesId(parentId);
         filter.value = areaForKind(requestedCreate as ReaderKind);
-        openCreate(parentId);
-        createKind.value = requestedCreate as ReaderKind;
+        await openCreate(parentId, requestedCreate as ReaderKind);
       } else {
         errorText.value = t('studioInvalidCreateLink');
       }
     } else {
-      const requested = studioRoute.query.item;
+      const requested = typeof studioRoute.query.item === 'string' ? studioRoute.query.item :
+        (['volumeId','partId','chapterId','categoryId','tipId','languageId','wordId','periodId','eventId','seriesId','grammarId','sectionId','id']
+          .map(key=>studioRoute.params[key]).find(value=>typeof value==='string') as string|undefined);
       if (typeof requested === 'string' && nodes.value.some(node => node.id === requested)) {
         selectedId.value = requested;
         selectedSeriesId.value = owningSeriesId(requested);
@@ -525,7 +550,7 @@ onMounted(async () => {
   }
 });
 async function reloadNodes() {
-  if (!confirmDiscard()) return;
+  if (!await confirmDiscard()) return;
   cancelAutosaveTimer();
   if (await load()) {
     if (selected.value?.kind === 'chapter') clearChapterRecovery(selected.value.id);
@@ -556,8 +581,8 @@ async function runChange(work: () => Promise<void>, okText:string, reloadAfter =
     if (selected.value?.kind === 'chapter' && editorDirty.value) scheduleChapterAutosave();
   }
 }
-function openCreate(parentId: string | null, preferredKind?: ReaderKind) {
-  if (busy.value || autosavingChapter.value || !confirmDiscard()) return;
+async function openCreate(parentId: string | null, preferredKind?: ReaderKind) {
+  if (busy.value || autosavingChapter.value || !await confirmDiscard()) return;
   if (selected.value?.kind === 'chapter') clearChapterRecovery(selected.value.id);
   cancelAutosaveTimer();
   restoreEditor();
@@ -652,7 +677,7 @@ async function saveDraft() {
   let node = selected.value;
   if (!node || autosavingChapter.value) return;
   if (node.kind === 'chapter' && autosaveConflict) {
-    if (!window.confirm(t('studioAutosaveConflictConfirm'))) return;
+    if (!await showConfirmation(t('studioAutosaveConflictConfirm'))) return;
     if (!await load()) return;
     node = selected.value;
     if (!node) return;
@@ -687,10 +712,29 @@ async function moveTipCategory() {
     });
   }, t('studioMoveCategorySaved'));
 }
+async function updateOwnPublication(kind:'snapshot'|'visibility'|'date') {
+  const node=selected.value;
+  if(!node||busy.value||autosavingChapter.value)return;
+  if(kind==='snapshot'&&!await showConfirmation(t('studioPublishConfirm')))return;
+  if(kind==='visibility'&&!node.published){errorText.value=t('pubPublishFirst');return;}
+  const nextDate=publicStartInput.value?parseJstLocalDateTime(publicStartInput.value):null;
+  if(kind==='date'&&publicStartInput.value&&nextDate===null){errorText.value=t('studioInvalidDate');return;}
+  if(kind==='date'&&!node.published){errorText.value=t('pubPublishFirst');return;}
+  await runChange(async()=>{
+    const endpoint=kind==='snapshot'?'publish':'visibility';
+    await $fetch('/api/admin/nodes/'+encodeURIComponent(node.id)+'/'+endpoint,{
+      method:'POST',body:kind==='snapshot'?{expectedRevision:node.revision}:{
+        expectedRevision:node.revision,
+        isPublic:kind==='visibility'?!node.isPublic:node.isPublic,
+        publicSince:kind==='date'?nextDate:node.publicSince,
+      },
+    });
+  },kind==='snapshot'?t('studioPublished'):t('studioVisibilityChanged'));
+}
 async function softDeleteSelected() {
   const node = selected.value;
-  if (!node || !node.published || node.isPublic || !confirmDiscard() ||
-      !window.confirm(t('studioSoftDeleteConfirm'))) return;
+  if (!node || !node.published || node.isPublic || !await confirmDiscard() ||
+      !await showConfirmation(t('studioSoftDeleteConfirm'))) return;
   await runChange(async () => {
     await $fetch('/api/admin/nodes/' + node.id + '/soft-delete', {
       method: 'POST', body: { expectedRevision: node.revision },
@@ -699,7 +743,7 @@ async function softDeleteSelected() {
   }, t('studioSoftDeleted'));
 }
 async function logout() {
-  if (!confirmDiscard()) return;
+  if (!await confirmDiscard()) return;
   await runChange(async () => {
     await $fetch('/api/auth/logout',{method:'POST',body:{}});
     cancelAutosaveTimer();
@@ -712,7 +756,7 @@ async function logout() {
 </script>
 
 <template>
-  <NuxtPage v-if="studioRoute.matched.length > 1" />
+  <NuxtPage v-if="studioRoute.path.startsWith('/studio/')" />
   <div v-else>
     <TopicPath :items="[{label:t('home'),to:'/'},{label:t('studio')}]" />
     <ReaderPanel>
@@ -884,12 +928,23 @@ async function logout() {
                 <p v-if="editorDirty" class="note">{{ t('studioMoveSaveFirst') }}</p>
               </div>
               <hr />
-              <div class="action-row">
-                <NuxtLink :to="{ path: '/studio/publication', query: { series: selectedSeriesId, target: selected.id } }"
-                  target="_blank" rel="noopener noreferrer">
-                  {{ t('studioPublicationManagement') }}
-                </NuxtLink>
-              </div>
+              <section class="publication-editor" :aria-label="t('studioPublicationSettings')">
+                <h3>{{ t('studioPublicationSettings') }}</h3>
+                <p class="note">{{ t('studioPublicationNote') }}</p>
+                <p v-if="inheritedPublicationStatus" class="note">{{ inheritedPublicationStatus }}</p>
+                <p class="note">{{ publicationStatus }}</p>
+                <div class="action-row">
+                  <button type="button" class="inline-action" :disabled="busy||autosavingChapter"
+                    @click="updateOwnPublication('snapshot')">{{ t('studioApplyPublishedDraft') }}</button>
+                  <button type="button" class="inline-action" :disabled="busy||autosavingChapter||!selected.published"
+                    @click="updateOwnPublication('visibility')">{{ selected.isPublic?t('studioHide'):t('studioShow') }}</button>
+                </div>
+                <label>{{ t('studioPublicStartDate') }} — {{ t('pubJstZoneNote') }}
+                  <input v-model="publicStartInput" type="datetime-local" :disabled="busy||!selected.published" />
+                </label>
+                <button type="button" class="inline-action" :disabled="busy||!selected.published"
+                  @click="updateOwnPublication('date')">{{ t('studioSetDate') }}</button>
+              </section>
               <div v-if="selected.published && !selected.isPublic" class="action-row">
                 <button class="inline-action" type="button" :disabled="busy || autosavingChapter"
                   @click="softDeleteSelected">{{ t('studioSoftDelete') }}</button>
@@ -935,7 +990,6 @@ textarea.manuscript-body {
   max-width: 72ch;
   min-height: clamp(24rem, 58vh, 46rem);
   line-height: 1.95;
-  font-family: "Noto Serif JP", "Yu Mincho", serif;
   font-weight: 400; /* override bold label weight for the editable prose itself */
   padding: clamp(.8rem, 1.4vw, 1.1rem);
   overflow-wrap: anywhere;

@@ -5,6 +5,7 @@ import type { AuthorNode } from '~/types/author';
 import type { ReaderKind } from '~/types/reader';
 import { canReadPublished } from '@eternalia/contracts';
 const { t, language } = useUiLocale();
+const { confirm: showConfirmation } = useAppDialog();
 const route = useRoute();
 
 interface AuthState { configured: boolean; authenticated: boolean }
@@ -19,6 +20,7 @@ const section = ref('series');
 const statusFilter = ref('all');
 const search = ref('');
 const scheduled = reactive<Record<string, string>>({});
+const batchSelection=ref<string[]>([]);
 
 const types = computed<Record<ReaderKind, string>>(() => ({
   series: t('studioKindSeries'), volume: t('studioKindVolume'), part: t('studioKindPart'), chapter: t('chapter'),
@@ -138,7 +140,7 @@ async function load(): Promise<boolean> {
 onMounted(async () => {
   await refreshAuth();
   if (!auth.value?.authenticated || !await load()) return;
-  const requestedSeries = typeof route.query.series === 'string' ? route.query.series : '';
+  const requestedSeries = typeof route.params.id === 'string' ? route.params.id : typeof route.query.series === 'string' ? route.query.series : '';
   const requestedTarget = typeof route.query.target === 'string' ? byId.value.get(route.query.target) : null;
   const targetSeriesId = requestedTarget ? ancestry(requestedTarget)[0]?.id ?? '' : '';
   if (requestedSeries && seriesList.value.some(node => node.id === requestedSeries)) {
@@ -150,6 +152,31 @@ onMounted(async () => {
     section.value = sectionForKind(requestedTarget.kind);
   }
 });
+async function updateBatch(kind:'publish'|'show'|'hide') {
+  if(busyId.value||!auth.value?.authenticated)return;
+  const chosen=filtered.value.filter(n=>batchSelection.value.includes(n.id));
+  if(!chosen.length)return;
+  if(kind==='publish'&&!await showConfirmation(t('pubPublishConfirm')))return;
+  busyId.value='batch';errorText.value='';successText.value='';
+  let completed=0;
+  const errors:string[]=[];
+  for(const node of chosen){
+    if(kind==='show'&&!node.published){errors.push(node.draft.title);continue;}
+    try{
+      const endpoint=kind==='publish'?'publish':'visibility';
+      const body=kind==='publish'?{expectedRevision:node.revision}:{expectedRevision:node.revision,
+        isPublic:kind==='show',publicSince:node.publicSince};
+      await $fetch('/api/admin/nodes/'+encodeURIComponent(node.id)+'/'+endpoint,{method:'POST',body});
+      completed++;
+    }catch{errors.push(node.draft.title);}
+  }
+  batchSelection.value=[];
+  const loaded=await load();
+  successText.value=completed?t('pubBatchCompleted')+' '+completed:'';
+  if(errors.length)errorText.value=t('pubUpdateFailed')+' : '+errors.join('、');
+  if(!loaded)errorText.value=t('pubLoadError');
+  busyId.value=null;
+}
 async function saveSchedule(node: AuthorNode) {
   if (busyId.value || !node.published) return;
   const input = scheduled[node.id];
@@ -178,7 +205,7 @@ async function saveSchedule(node: AuthorNode) {
 }
 async function action(node: AuthorNode, kind: 'publish' | 'visibility') {
   if (busyId.value) return;
-  if (kind === 'publish' && !window.confirm(t('pubPublishConfirm'))) return;
+  if (kind === 'publish' && !await showConfirmation(t('pubPublishConfirm'))) return;
   const nextVisibility = !node.isPublic;
   if (kind === 'visibility' && nextVisibility && !node.published) {
     errorText.value = t('pubPublishFirst');
@@ -256,6 +283,12 @@ async function action(node: AuthorNode, kind: 'publish' | 'visibility') {
         </div>
         <div class="publication-toolbar">
           <p>{{ t('pubResultsLabel') }} {{ filtered.length }} {{ t('pubResultsUnit') }}</p>
+          <div class="batch-toolbar">
+            <button type="button" class="inline-action" :disabled="!!busyId" @click="batchSelection=filtered.map(n=>n.id)">{{ t('pubBatchSelectAll') }}</button>
+            <button type="button" class="inline-action" :disabled="!!busyId||!batchSelection.length" @click="updateBatch('publish')">{{ t('pubBatchPublish') }}</button>
+            <button type="button" class="inline-action" :disabled="!!busyId||!batchSelection.length" @click="updateBatch('show')">{{ t('pubBatchShow') }}</button>
+            <button type="button" class="inline-action" :disabled="!!busyId||!batchSelection.length" @click="updateBatch('hide')">{{ t('pubBatchHide') }}</button>
+          </div>
           <button type="button" class="inline-action" :disabled="loading || !!busyId" @click="load">{{ t('studioReload') }}</button>
         </div>
         <p v-if="successText" role="status">{{ successText }}</p>
@@ -266,6 +299,7 @@ async function action(node: AuthorNode, kind: 'publish' | 'visibility') {
         <ul v-else class="publication-list">
           <li v-for="node in filtered" :key="node.id">
             <div class="publication-row">
+              <label class="batch-check"><input v-model="batchSelection" type="checkbox" :value="node.id" :disabled="!!busyId" :aria-label="node.draft.title" /></label>
               <div class="publication-summary">
                 <span class="note">{{ types[node.kind] }} · {{ status(node) }}</span>
                 <h2>{{ node.draft.title }}</h2>
@@ -300,7 +334,10 @@ async function action(node: AuthorNode, kind: 'publish' | 'visibility') {
 
 <style scoped>
 .publication-header,.publication-toolbar,.publication-row { display:flex;justify-content:space-between;gap:1rem;align-items:flex-start; }
-.publication-row { flex-wrap:wrap; }
+.publication-row { display:grid;grid-template-columns:2rem minmax(13rem,1fr) minmax(17rem,1.5fr);align-items:start;gap:1rem; }
+.batch-check { margin:.4rem 0; }
+.batch-toolbar { display:flex;flex-wrap:wrap;gap:.3rem; }
+@media (max-width:950px) { .publication-row {grid-template-columns:2rem minmax(0,1fr);} .publication-actions{grid-column:2;} }
 .publication-header { align-items:center; }
 .publication-filters { display:flex;flex-wrap:wrap;gap:.8rem;margin:1.25rem 0; }
 .publication-filters label { flex:1 1 11rem;min-width:0; }

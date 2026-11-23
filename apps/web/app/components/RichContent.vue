@@ -38,7 +38,6 @@ function move(delta: number) {
 </template>
 <style scoped>
 .rich-page + .rich-page { border-top: 1px dashed var(--color-border-base); padding-top: 1.4rem; margin-top: 1.4rem; }
-.rich-body { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 2.05; font-family: "Noto Serif JP", "Yu Mincho", serif; }
 .reading-pages { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between; margin: 1rem 0 1.5rem; }
 ruby rt { font-size: .6em; }
 </style>

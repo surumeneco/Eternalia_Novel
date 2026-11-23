@@ -1,3 +1,4 @@
+import { selectUiLanguage } from './ui-language.mjs';
 /** WR-02/PB-13: published chapter pages must all be readable in SSR without JS. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -46,7 +47,7 @@ test('CHAPTER-NOJS-01/02/03: no-JS SSR shows every chapter page; hydration upgra
         await next.click();
         assert.equal((await page.locator('.reading-pages span').innerText()).trim(), '2 / 2');
         assert.equal(await page.locator('.rich-page').count(), 1);
-        await page.locator('button.locale-switch:not(:disabled)').click();
+        await selectUiLanguage(page, 'en');
         await page.locator('html[lang="en"]').waitFor();
         assert.equal((await page.locator('.reading-pages span').innerText()).trim(), '2 / 2');
         assert.equal(await page.getByRole('button', { name: 'Previous page' }).count(), 1);

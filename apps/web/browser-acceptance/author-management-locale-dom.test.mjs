@@ -1,3 +1,4 @@
+import { selectUiLanguage } from './ui-language.mjs';
 /** CM-08/UI6: live ja/en kind labels and author-only management DOM. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -28,13 +29,13 @@ test('AUTHOR-L10N-01/02: author management type labels follow live locale withou
       await row.locator('input[type="datetime-local"]').waitFor();
       const kindLabel = row.locator('.publication-summary > span.note');
       assert.match(await kindLabel.innerText(), /^設定 · /, 'Japanese Tip label before switching');
-      await page.getByRole('button', { name: '英語に切り替え' }).click();
+      await selectUiLanguage(page, 'en');
       await page.getByRole('heading', { name: 'Publication management' }).waitFor();
       assert.match(await kindLabel.innerText(), /^Setting · /,
         'published content type must react to ja→en without navigation');
       assert.equal(await row.locator('h2').innerText(), privateTip,
         'author-authored Tip title must not be translated');
-      await page.getByRole('button', { name: 'Switch to Japanese' }).click();
+      await selectUiLanguage(page, 'ja');
       await page.getByRole('heading', { name: '公開管理' }).waitFor();
       assert.match(await kindLabel.innerText(), /^設定 · /,
         'published content type must react to en→ja');
@@ -55,7 +56,7 @@ test('AUTHOR-L10N-01/02: author management type labels follow live locale withou
         'Japanese parent kind before switching');
       assert.equal(await kind.locator('option[value="volume"]').innerText(), '編');
 
-      await page.getByRole('button', { name: '英語に切り替え' }).click();
+      await selectUiLanguage(page, 'en');
       await page.getByRole('heading', { name: 'Reorder' }).waitFor();
       const orderEnglishState = await page.evaluate(() => {
         const selects = [...document.querySelectorAll('.order-filters select')];
@@ -82,7 +83,7 @@ test('AUTHOR-L10N-01/02: author management type labels follow live locale withou
         'locale change must preserve parent selection');
       assert.equal(await kind.inputValue(), 'volume',
         'locale change must preserve child kind selection');
-      await page.getByRole('button', { name: 'Switch to Japanese' }).click();
+      await selectUiLanguage(page, 'ja');
       await page.getByRole('heading', { name: '並べ替え' }).waitFor();
       assert.match(await parent.locator('option[value="' + fixture.seriesA + '"]').innerText(), /（シリーズ）$/);
       assert.equal(await kind.locator('option[value="volume"]').innerText(), '編');

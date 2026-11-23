@@ -128,7 +128,7 @@ test('PUB-RESUME-01/02: synthetic hidden/visible lifecycle in one anonymous sear
         await restoredTree;
         await page.locator('main .search-result a').filter({ hasText: tipTitle }).waitFor();
         assert.equal(await page.locator('main .search-result a').count(), 1);
-        assert.equal(await page.locator('main .search-result a').getAttribute('href'), '/items/' + tipId);
+        assert.equal(await page.locator('main .search-result a').getAttribute('href'), '/series/' + seriesId + '/settings/' + categoryId + '/' + tipId);
         assert.equal(await page.locator('.search-filters input[type=search]').inputValue(), tipTitle);
         await secondTab.close();
       } finally { await context.close(); }

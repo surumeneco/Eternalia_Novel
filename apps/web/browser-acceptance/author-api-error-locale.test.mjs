@@ -1,3 +1,4 @@
+import { selectUiLanguage } from './ui-language.mjs';
 /** AC-59: real author conflict must be expressed in the selected UI language. */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -18,8 +19,8 @@ test('ERROR-01/02/04: stale revision in Studio is English or Japanese without lo
     await page.goto(base+'/studio?item='+fixture.tip);
     const title=fixture.prefix+'-visible-setting';
     await page.getByRole('heading',{name:'設定：'+title}).waitFor();
-    await page.getByRole('button',{name:'英語に切り替え'}).click();
-    await page.getByRole('button',{name:'Switch to Japanese'}).waitFor();
+    await selectUiLanguage(page, 'en');
+    await page.locator('html[lang=\"en\"]').waitFor();
     const input=page.getByRole('textbox',{name:'Name or heading'});
     await input.fill(title+'-unsaved-local');
 
@@ -35,8 +36,8 @@ test('ERROR-01/02/04: stale revision in Studio is English or Japanese without lo
     await page.getByRole('alert').getByText('Another edit has changed this item.',{exact:false}).waitFor();
     assert.equal(await input.inputValue(),title+'-unsaved-local');
 
-    await page.getByRole('button',{name:'Switch to Japanese'}).click();
-    await page.getByRole('button',{name:'英語に切り替え'}).waitFor();
+    await selectUiLanguage(page, 'ja');
+    await page.locator('button.locale-switch:not(:disabled)').waitFor();
     await page.getByRole('button',{name:'下書きを保存'}).click();
     await page.getByRole('alert').getByText('他の編集により更新されています。',{exact:false}).waitFor();
     assert.equal(await page.getByRole('textbox',{name:'名称・見出し'}).inputValue(),title+'-unsaved-local');

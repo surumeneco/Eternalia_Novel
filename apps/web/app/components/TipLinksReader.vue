@@ -25,7 +25,7 @@ const related = computed(() => {
       <h2>{{ t('readerRelatedTips') }}</h2>
       <ol>
         <li v-for="item in related" :key="item.id">
-          <NuxtLink :to="'/items/' + encodeURIComponent(item.id)">{{ item.title }}</NuxtLink>
+          <NuxtLink :to="'/jump/' + encodeURIComponent(item.id)">{{ item.title }}</NuxtLink>
         </li>
       </ol>
     </section>

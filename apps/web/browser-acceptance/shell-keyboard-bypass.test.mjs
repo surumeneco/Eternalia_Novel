@@ -1,3 +1,4 @@
+import { selectUiLanguage } from './ui-language.mjs';
 /** AC-63/65/78: Shell keyboard bypass + inert SSR mobile navigation. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -43,7 +44,7 @@ test('SHELL-KEYBOARD-01/02/03: first Tab bypasses navigation and mobile menu wai
             'Enter must move actual keyboard focus to the main landmark');
 
           await page.locator('button.locale-switch:not(:disabled)').waitFor();
-          await page.locator('button.locale-switch').click();
+          await selectUiLanguage(page, 'en');
           await page.locator('html[lang="en"]').waitFor();
           assert.equal(await skip.innerText(), 'Skip to content');
           assert.equal(await skip.getAttribute('href'), '#main-content');

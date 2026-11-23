@@ -73,8 +73,10 @@ test('AC-11 chapter autosave, offline recovery, conflict and unpublished snapsho
     assert.equal((await chapterFrom(context.request)).draft.pages[0], '別タブの章');
     const conflictCache = await page.evaluate(id => sessionStorage.getItem('eternalia:chapter-recovery:' + id), fixture.chapter);
     assert.ok(conflictCache?.includes(local));
-    page.once('dialog', dialog => dialog.accept());
     await page.getByRole('button', { name:'下書きを保存' }).click();
+    const confirmation = page.locator('dialog.eternalia-dialog[open]');
+    await confirmation.waitFor();
+    await confirmation.getByRole('button', { name: '実行' }).click();
     await page.getByText('下書きを保存しました。公開版は変更されていません。').waitFor({timeout:15_000});
     assert.equal((await chapterFrom(context.request)).draft.pages[0], local);
     assert.deepEqual((await (await reader.request.get(base + '/api/public/items/' + fixture.chapter)).json()).content, originalPublished);

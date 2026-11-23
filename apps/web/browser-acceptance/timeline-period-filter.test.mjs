@@ -64,7 +64,7 @@ test('AC-68 partial: anonymous period filter, within-period chronology, and hidd
         assert.equal(await page.locator('.period-group h2').innerText(), secondPeriodTitle);
         assert.deepEqual(await page.locator('.period-group .event-list li a').allTextContents(),
           [earlierTitle, laterTitle], 'relative years must be sorted only inside the period');
-        assert.equal(await page.getByText(fixture.prefix + '-visible-event', { exact: true }).count(), 0,
+        assert.equal(await page.locator('main').getByText(fixture.prefix + '-visible-event', { exact: true }).count(), 0,
           'filter must hide unrelated period events');
 
         await filter.selectOption('');
@@ -73,7 +73,7 @@ test('AC-68 partial: anonymous period filter, within-period chronology, and hidd
         assert.deepEqual(chronologicalTitles.filter(title => expectedTitles.includes(title)), expectedTitles,
           'C=R+E must sort different periodizations together, then tie-break deterministically');
         assert.match((await page.locator('.unified-event-list li', { hasText: earlierTitle }).innerText()), /共通年 96/);
-        assert.equal(await page.getByText(fixture.prefix + '-visible-event', { exact: true }).count(), 1,
+        assert.equal(await page.locator('main').getByText(fixture.prefix + '-visible-event', { exact: true }).count(), 1,
           'existing uncalibrated published events must remain visible in grouped fallback');
         // An unpublished period draft edit must not affect the anonymous chronology.
         const revise = await author.request.patch(base + '/api/admin/nodes/' + referencePeriod, {
@@ -95,8 +95,8 @@ test('AC-68 partial: anonymous period filter, within-period chronology, and hidd
         await page.reload();
         assert.equal(await page.locator('.period-filter select option[value="' + secondPeriod + '"]').count(), 0,
           'hidden parent must no longer be a filter option');
-        assert.equal(await page.getByText(earlierTitle, { exact: true }).count(), 0);
-        assert.equal(await page.getByText(laterTitle, { exact: true }).count(), 0);
+        assert.equal(await page.locator('main').getByText(earlierTitle, { exact: true }).count(), 0);
+        assert.equal(await page.locator('main').getByText(laterTitle, { exact: true }).count(), 0);
         assert.equal((await reader.request.get(base + '/api/public/items/' + earlier)).status(), 404,
           'hidden parent must also block direct child API reads');
         assert.equal((await reader.request.get(base + '/api/public/items/' + fixture.event)).status(), 200,

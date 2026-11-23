@@ -41,10 +41,12 @@ test('reader structure retains header/navigation/sidebar/main/footer and domain 
     if (fragment === 'TopicPath') continue; // TopicPath is instantiated on pages, not shell.
     assert.ok(layout.includes(fragment), fragment);
   }
+  // Reader domain URLs are nested beneath the selected series; settings is the canonical route.
+  assert.match(layout, /\/series\//);
   assert.match(layout, /\/stories/);
-  assert.match(layout, /\/tips/);
+  assert.match(layout, /\/settings/);
   assert.match(layout, /\/dictionaries/);
   assert.match(layout, /\/timeline/);
   assert.match(source('apps/preview/public/index.html'), /class="container site-structure"/);
-  assert.match(source('apps/web/app/pages/series/[id].vue'), /<TopicPath/);
+  assert.match(source('apps/web/app/pages/series/[id]/index.vue'), /<TopicPath/);
 });

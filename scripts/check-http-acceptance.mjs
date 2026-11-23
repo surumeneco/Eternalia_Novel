@@ -79,48 +79,51 @@ try {
   await ready('http://127.0.0.1:' + port + '/');
   // Browser interactions use the synthetic author session before HTTP tests
   // revoke that fixture during their logout assertion.
+  // Collect all browser failures, run the independent HTTP suites as well,
+  // and fail the whole command rather than silently succeeding with red JUnit.
+  const failures = [];
   if (process.env.HTTP_BROWSER_ACCEPTANCE === '1') {
-    await command(['scripts/run-test-junit.mjs', 'browser-auth-boundary', 'apps/web/browser-acceptance/author-csrf-oauth.test.mjs']);
-    await command(['scripts/run-test-junit.mjs', 'browser-mobile-touch', 'apps/web/browser-acceptance/mobile-touch-editor.test.mjs']);
-    await command(['scripts/run-test-junit.mjs', 'browser-chapter-autosave', 'apps/web/browser-acceptance/author-chapter-autosave.test.mjs']);
-    await command(['scripts/run-test-junit.mjs', 'browser-tip-category-move', 'apps/web/browser-acceptance/author-tip-category-move.test.mjs']);
-    await command(['scripts/run-test-junit.mjs', 'browser-publication-published-parent', 'apps/web/browser-acceptance/author-publication-published-parent.test.mjs']);
-    await command(['scripts/run-test-junit.mjs', 'browser-soft-delete', 'apps/web/browser-acceptance/author-soft-delete.test.mjs']);
-    await command(['scripts/run-test-junit.mjs', 'browser-timeline-integer', 'apps/web/browser-acceptance/author-timeline-integer-year.test.mjs']);
-    await command(['scripts/run-test-junit.mjs', 'browser-locale-switch', 'apps/web/browser-acceptance/locale-switch.test.mjs']);
-    await command(['scripts/run-test-junit.mjs', 'browser-shell-keyboard-bypass', 'apps/web/browser-acceptance/shell-keyboard-bypass.test.mjs']);
-    await command(['scripts/run-test-junit.mjs', 'browser-reader-locale', 'apps/web/browser-acceptance/reader-locale.test.mjs']);
-    await command(['scripts/run-test-junit.mjs', 'browser-search-locale', 'apps/web/browser-acceptance/search-locale-live.test.mjs']);
-    await command(['scripts/run-test-junit.mjs', 'browser-series-first-ia', 'apps/web/browser-acceptance/series-first-ia.test.mjs']);
-    await command(['scripts/run-test-junit.mjs', 'browser-author-create-navigation', 'apps/web/browser-acceptance/author-create-navigation.test.mjs']);
-    await command(['scripts/run-test-junit.mjs', 'browser-author-detail-edit', 'apps/web/browser-acceptance/author-detail-edit-navigation.test.mjs']);
-    await command(['scripts/run-test-junit.mjs', 'browser-author-management-locale-dom', 'apps/web/browser-acceptance/author-management-locale-dom.test.mjs']);
-    await command(['scripts/run-test-junit.mjs', 'browser-author-editor-memo-locale-dom', 'apps/web/browser-acceptance/author-editor-memo-locale-dom.test.mjs']);
-    await command(['scripts/run-test-junit.mjs', 'browser-ui6-public-collection-dom', 'apps/web/browser-acceptance/ui6-public-collection-dom.test.mjs']);
-    await command(['scripts/run-test-junit.mjs', 'browser-reactive-common-locale', 'apps/web/browser-acceptance/reactive-common-locale.test.mjs']);
-    await command(['scripts/run-test-junit.mjs', 'browser-reader-detail-jst', 'apps/web/browser-acceptance/reader-detail-jst-display.test.mjs']);
-    await command(['scripts/run-test-junit.mjs', 'browser-chapter-pages-nojs', 'apps/web/browser-acceptance/chapter-pages-nojs.test.mjs']);
-    await command(['scripts/run-test-junit.mjs', 'browser-public-search-privacy', 'apps/web/browser-acceptance/publication-search-privacy.test.mjs']);
-    await command(['scripts/run-test-junit.mjs', 'browser-public-search-resume', 'apps/web/browser-acceptance/public-search-resume-revalidation.test.mjs']);
-    await command(['scripts/run-test-junit.mjs', 'browser-reader-detail-resume', 'apps/web/browser-acceptance/public-reader-detail-resume.test.mjs']);
-    await command(['scripts/run-test-junit.mjs', 'browser-home-collection-resume', 'apps/web/browser-acceptance/public-home-collection-resume.test.mjs']);
-    await command(['scripts/run-test-junit.mjs', 'browser-public-recent-navigation', 'apps/web/browser-acceptance/public-recent-navigation.test.mjs']);
-    await command(['scripts/run-test-junit.mjs', 'browser-public-series-resume', 'apps/web/browser-acceptance/public-series-resume.test.mjs']);
-    await command(['scripts/run-test-junit.mjs', 'browser-public-four-domain-resume', 'apps/web/browser-acceptance/public-four-domain-resume.test.mjs']);
-    await command(['scripts/run-test-junit.mjs', 'browser-search-metadata-snapshot', 'apps/web/browser-acceptance/search-metadata-snapshot.test.mjs']);
-    await command(['scripts/run-test-junit.mjs', 'browser-search-cross-series', 'apps/web/browser-acceptance/public-search-cross-series-isolation.test.mjs']);
-    await command(['scripts/run-test-junit.mjs', 'browser-search-compound', 'apps/web/browser-acceptance/public-search-compound-filters.test.mjs']);
-    await command(['scripts/run-test-junit.mjs', 'browser-author-error-locale', 'apps/web/browser-acceptance/author-api-error-locale.test.mjs']);
-    await command(['scripts/run-test-junit.mjs', 'browser-publication-jst', 'apps/web/browser-acceptance/author-jst-publication.test.mjs']);
-    await command(['scripts/run-test-junit.mjs', 'browser-timeline-period', 'apps/web/browser-acceptance/timeline-period-filter.test.mjs']);
-    await command(['scripts/run-test-junit.mjs', 'browser-dictionary-compound-filters', 'apps/web/browser-acceptance/dictionary-compound-filters.test.mjs']);
-    await command(['scripts/run-test-junit.mjs', 'browser-dictionary-spelling-order', 'apps/web/browser-acceptance/dictionary-spelling-order.test.mjs']);
-    await command(['scripts/run-test-junit.mjs', 'browser-language-class-manual-order', 'apps/web/browser-acceptance/language-class-manual-order.test.mjs']);
-    await command(['scripts/run-test-junit.mjs', 'browser-word-class-input-master', 'apps/web/browser-acceptance/word-class-input-master.test.mjs']);
-    await command(['scripts/run-test-junit.mjs', 'browser-word-published-draft-redirect', 'apps/web/browser-acceptance/word-published-draft-redirect.test.mjs']);
-    await command(['scripts/run-test-junit.mjs', 'browser', 'apps/web/browser-acceptance/browser-acceptance.test.mjs']);
-  }
-  // Run separate boundary tests before the main suite revokes the synthetic author session.
+    // Inspect every independent suite in one CI run; report failures together.
+    try { await command(['scripts/run-test-junit.mjs', 'browser-auth-boundary', 'apps/web/browser-acceptance/author-csrf-oauth.test.mjs']); } catch (error) { failures.push({ suite: 'browser-auth-boundary', error: String(error) }); console.error(String(error)); }
+    try { await command(['scripts/run-test-junit.mjs', 'browser-mobile-touch', 'apps/web/browser-acceptance/mobile-touch-editor.test.mjs']); } catch (error) { failures.push({ suite: 'browser-mobile-touch', error: String(error) }); console.error(String(error)); }
+    try { await command(['scripts/run-test-junit.mjs', 'browser-chapter-autosave', 'apps/web/browser-acceptance/author-chapter-autosave.test.mjs']); } catch (error) { failures.push({ suite: 'browser-chapter-autosave', error: String(error) }); console.error(String(error)); }
+    try { await command(['scripts/run-test-junit.mjs', 'browser-tip-category-move', 'apps/web/browser-acceptance/author-tip-category-move.test.mjs']); } catch (error) { failures.push({ suite: 'browser-tip-category-move', error: String(error) }); console.error(String(error)); }
+    try { await command(['scripts/run-test-junit.mjs', 'browser-publication-published-parent', 'apps/web/browser-acceptance/author-publication-published-parent.test.mjs']); } catch (error) { failures.push({ suite: 'browser-publication-published-parent', error: String(error) }); console.error(String(error)); }
+    try { await command(['scripts/run-test-junit.mjs', 'browser-soft-delete', 'apps/web/browser-acceptance/author-soft-delete.test.mjs']); } catch (error) { failures.push({ suite: 'browser-soft-delete', error: String(error) }); console.error(String(error)); }
+    try { await command(['scripts/run-test-junit.mjs', 'browser-timeline-integer', 'apps/web/browser-acceptance/author-timeline-integer-year.test.mjs']); } catch (error) { failures.push({ suite: 'browser-timeline-integer', error: String(error) }); console.error(String(error)); }
+    try { await command(['scripts/run-test-junit.mjs', 'browser-locale-switch', 'apps/web/browser-acceptance/locale-switch.test.mjs']); } catch (error) { failures.push({ suite: 'browser-locale-switch', error: String(error) }); console.error(String(error)); }
+    try { await command(['scripts/run-test-junit.mjs', 'browser-shell-keyboard-bypass', 'apps/web/browser-acceptance/shell-keyboard-bypass.test.mjs']); } catch (error) { failures.push({ suite: 'browser-shell-keyboard-bypass', error: String(error) }); console.error(String(error)); }
+    try { await command(['scripts/run-test-junit.mjs', 'browser-reader-locale', 'apps/web/browser-acceptance/reader-locale.test.mjs']); } catch (error) { failures.push({ suite: 'browser-reader-locale', error: String(error) }); console.error(String(error)); }
+    try { await command(['scripts/run-test-junit.mjs', 'browser-search-locale', 'apps/web/browser-acceptance/search-locale-live.test.mjs']); } catch (error) { failures.push({ suite: 'browser-search-locale', error: String(error) }); console.error(String(error)); }
+    try { await command(['scripts/run-test-junit.mjs', 'browser-series-first-ia', 'apps/web/browser-acceptance/series-first-ia.test.mjs']); } catch (error) { failures.push({ suite: 'browser-series-first-ia', error: String(error) }); console.error(String(error)); }
+    try { await command(['scripts/run-test-junit.mjs', 'browser-author-create-navigation', 'apps/web/browser-acceptance/author-create-navigation.test.mjs']); } catch (error) { failures.push({ suite: 'browser-author-create-navigation', error: String(error) }); console.error(String(error)); }
+    try { await command(['scripts/run-test-junit.mjs', 'browser-author-detail-edit', 'apps/web/browser-acceptance/author-detail-edit-navigation.test.mjs']); } catch (error) { failures.push({ suite: 'browser-author-detail-edit', error: String(error) }); console.error(String(error)); }
+    try { await command(['scripts/run-test-junit.mjs', 'browser-author-management-locale-dom', 'apps/web/browser-acceptance/author-management-locale-dom.test.mjs']); } catch (error) { failures.push({ suite: 'browser-author-management-locale-dom', error: String(error) }); console.error(String(error)); }
+    try { await command(['scripts/run-test-junit.mjs', 'browser-author-editor-memo-locale-dom', 'apps/web/browser-acceptance/author-editor-memo-locale-dom.test.mjs']); } catch (error) { failures.push({ suite: 'browser-author-editor-memo-locale-dom', error: String(error) }); console.error(String(error)); }
+    try { await command(['scripts/run-test-junit.mjs', 'browser-ui6-public-collection-dom', 'apps/web/browser-acceptance/ui6-public-collection-dom.test.mjs']); } catch (error) { failures.push({ suite: 'browser-ui6-public-collection-dom', error: String(error) }); console.error(String(error)); }
+    try { await command(['scripts/run-test-junit.mjs', 'browser-reactive-common-locale', 'apps/web/browser-acceptance/reactive-common-locale.test.mjs']); } catch (error) { failures.push({ suite: 'browser-reactive-common-locale', error: String(error) }); console.error(String(error)); }
+    try { await command(['scripts/run-test-junit.mjs', 'browser-reader-detail-jst', 'apps/web/browser-acceptance/reader-detail-jst-display.test.mjs']); } catch (error) { failures.push({ suite: 'browser-reader-detail-jst', error: String(error) }); console.error(String(error)); }
+    try { await command(['scripts/run-test-junit.mjs', 'browser-chapter-pages-nojs', 'apps/web/browser-acceptance/chapter-pages-nojs.test.mjs']); } catch (error) { failures.push({ suite: 'browser-chapter-pages-nojs', error: String(error) }); console.error(String(error)); }
+    try { await command(['scripts/run-test-junit.mjs', 'browser-public-search-privacy', 'apps/web/browser-acceptance/publication-search-privacy.test.mjs']); } catch (error) { failures.push({ suite: 'browser-public-search-privacy', error: String(error) }); console.error(String(error)); }
+    try { await command(['scripts/run-test-junit.mjs', 'browser-public-search-resume', 'apps/web/browser-acceptance/public-search-resume-revalidation.test.mjs']); } catch (error) { failures.push({ suite: 'browser-public-search-resume', error: String(error) }); console.error(String(error)); }
+    try { await command(['scripts/run-test-junit.mjs', 'browser-reader-detail-resume', 'apps/web/browser-acceptance/public-reader-detail-resume.test.mjs']); } catch (error) { failures.push({ suite: 'browser-reader-detail-resume', error: String(error) }); console.error(String(error)); }
+    try { await command(['scripts/run-test-junit.mjs', 'browser-home-collection-resume', 'apps/web/browser-acceptance/public-home-collection-resume.test.mjs']); } catch (error) { failures.push({ suite: 'browser-home-collection-resume', error: String(error) }); console.error(String(error)); }
+    try { await command(['scripts/run-test-junit.mjs', 'browser-public-recent-navigation', 'apps/web/browser-acceptance/public-recent-navigation.test.mjs']); } catch (error) { failures.push({ suite: 'browser-public-recent-navigation', error: String(error) }); console.error(String(error)); }
+    try { await command(['scripts/run-test-junit.mjs', 'browser-public-series-resume', 'apps/web/browser-acceptance/public-series-resume.test.mjs']); } catch (error) { failures.push({ suite: 'browser-public-series-resume', error: String(error) }); console.error(String(error)); }
+    try { await command(['scripts/run-test-junit.mjs', 'browser-public-four-domain-resume', 'apps/web/browser-acceptance/public-four-domain-resume.test.mjs']); } catch (error) { failures.push({ suite: 'browser-public-four-domain-resume', error: String(error) }); console.error(String(error)); }
+    try { await command(['scripts/run-test-junit.mjs', 'browser-search-metadata-snapshot', 'apps/web/browser-acceptance/search-metadata-snapshot.test.mjs']); } catch (error) { failures.push({ suite: 'browser-search-metadata-snapshot', error: String(error) }); console.error(String(error)); }
+    try { await command(['scripts/run-test-junit.mjs', 'browser-search-cross-series', 'apps/web/browser-acceptance/public-search-cross-series-isolation.test.mjs']); } catch (error) { failures.push({ suite: 'browser-search-cross-series', error: String(error) }); console.error(String(error)); }
+    try { await command(['scripts/run-test-junit.mjs', 'browser-search-compound', 'apps/web/browser-acceptance/public-search-compound-filters.test.mjs']); } catch (error) { failures.push({ suite: 'browser-search-compound', error: String(error) }); console.error(String(error)); }
+    try { await command(['scripts/run-test-junit.mjs', 'browser-author-error-locale', 'apps/web/browser-acceptance/author-api-error-locale.test.mjs']); } catch (error) { failures.push({ suite: 'browser-author-error-locale', error: String(error) }); console.error(String(error)); }
+    try { await command(['scripts/run-test-junit.mjs', 'browser-publication-jst', 'apps/web/browser-acceptance/author-jst-publication.test.mjs']); } catch (error) { failures.push({ suite: 'browser-publication-jst', error: String(error) }); console.error(String(error)); }
+    try { await command(['scripts/run-test-junit.mjs', 'browser-timeline-period', 'apps/web/browser-acceptance/timeline-period-filter.test.mjs']); } catch (error) { failures.push({ suite: 'browser-timeline-period', error: String(error) }); console.error(String(error)); }
+    try { await command(['scripts/run-test-junit.mjs', 'browser-dictionary-compound-filters', 'apps/web/browser-acceptance/dictionary-compound-filters.test.mjs']); } catch (error) { failures.push({ suite: 'browser-dictionary-compound-filters', error: String(error) }); console.error(String(error)); }
+    try { await command(['scripts/run-test-junit.mjs', 'browser-dictionary-spelling-order', 'apps/web/browser-acceptance/dictionary-spelling-order.test.mjs']); } catch (error) { failures.push({ suite: 'browser-dictionary-spelling-order', error: String(error) }); console.error(String(error)); }
+    try { await command(['scripts/run-test-junit.mjs', 'browser-language-class-manual-order', 'apps/web/browser-acceptance/language-class-manual-order.test.mjs']); } catch (error) { failures.push({ suite: 'browser-language-class-manual-order', error: String(error) }); console.error(String(error)); }
+    try { await command(['scripts/run-test-junit.mjs', 'browser-word-class-input-master', 'apps/web/browser-acceptance/word-class-input-master.test.mjs']); } catch (error) { failures.push({ suite: 'browser-word-class-input-master', error: String(error) }); console.error(String(error)); }
+    try { await command(['scripts/run-test-junit.mjs', 'browser-word-published-draft-redirect', 'apps/web/browser-acceptance/word-published-draft-redirect.test.mjs']); } catch (error) { failures.push({ suite: 'browser-word-published-draft-redirect', error: String(error) }); console.error(String(error)); }
+    try { await command(['scripts/run-test-junit.mjs', 'browser', 'apps/web/browser-acceptance/browser-acceptance.test.mjs']); } catch (error) { failures.push({ suite: 'browser', error: String(error) }); console.error(String(error)); }
+  }  // Run separate boundary tests before the main suite revokes the synthetic author session.
   await command(['scripts/run-test-junit.mjs', 'http-write-boundary', 'apps/api/http-acceptance/author-write-boundary.test.mjs']);
   await command(['scripts/run-test-junit.mjs', 'http-revision-conflict', 'apps/api/http-acceptance/author-revision-conflict.test.mjs']);
   await command(['scripts/run-test-junit.mjs', 'http-publication-four-domain', 'apps/api/http-acceptance/publication-schedule-crossdomain.test.mjs']);
@@ -131,6 +134,10 @@ try {
   await command(['scripts/run-test-junit.mjs', 'http-word-pos-create-master', 'apps/api/http-acceptance/word-pos-create-master.test.mjs']);
   await command(['scripts/run-test-junit.mjs', 'http-word-pos-stable-id', 'apps/api/http-acceptance/word-pos-stable-id.test.mjs']);
   await command(['scripts/run-test-junit.mjs', 'http', 'apps/api/http-acceptance/http-acceptance.test.mjs']);
+  if (failures.length > 0) {
+    const suites = failures.map(failure => failure.suite).join(', ');
+    throw new Error('Browser acceptance suites failed: ' + suites);
+  }
 } finally {
   for (const child of processes) child.kill();
   await rm(tmp, { recursive: true, force: true });

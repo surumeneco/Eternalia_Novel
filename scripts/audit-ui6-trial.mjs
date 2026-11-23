@@ -8,8 +8,17 @@ import { inspectComponentDirectory } from './audit-ui-component-deps.mjs';
 
 export const UI6_ROLES = Object.freeze(['room', 'furniture', 'partition', 'equipment', 'structure', 'decor']);
 
-/** Trial candidate table from reading all 15 extant component implementations. */
+/** Trial candidates reviewed against the currently scoped component SFCs; not normative. */
 export const UI6_TRIAL_ASSIGNMENTS = Object.freeze({
+  // Integrated pages and work areas (room), plus the modal focus boundary (partition).
+  AdminChapterPreview: 'room',
+  AdminEditBridge: 'room',
+  AdminMasterIndex: 'room',
+  AdminNodeGrid: 'room',
+  AdminPublicationPage: 'room',
+  AppDialogHost: 'partition',
+  ReaderDomainDetail: 'room',
+  ReaderDomainListing: 'room',
   AuthorCreateLink: 'equipment',
   AuthorEditLink: 'equipment',
   AuthorReferencePanel: 'furniture',

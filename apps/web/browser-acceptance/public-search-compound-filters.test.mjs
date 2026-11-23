@@ -119,9 +119,11 @@ test('SEARCH-COMPOUND-01/02/03: series × domain × term × sort remain isolated
       const wordNode = aTree.find(item => item.id === wordA);
       assert.ok(zNode && aNode && wordNode);
       assert.ok(zNode.order < aNode.order, 'manual sibling order follows initial Z→A creation');
+      const tipHref = (series, category, id) => '/series/' + series + '/settings/' + category + '/' + id;
+      const wordHref = (series, language, id) => '/series/' + series + '/dictionaries/' + language + '/words/' + id;
       const recentTips = [zNode, aNode]
         .sort((a, b) => b.publishedAt - a.publishedAt || a.id.localeCompare(b.id))
-        .map(node => '/items/' + node.id);
+        .map(node => tipHref(seriesA, categoryA, node.id));
 
       const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
       try {
@@ -135,28 +137,28 @@ test('SEARCH-COMPOUND-01/02/03: series × domain × term × sort remain isolated
 
         // Same term in tags and dictionary meanings must respect domain AND series.
         await search(page, seriesAName, 'tips', token, 'manual',
-          ['/items/' + tipZ, '/items/' + tipA]);
+          [tipHref(seriesA, categoryA, tipZ), tipHref(seriesA, categoryA, tipA)]);
         await search(page, seriesAName, 'tips', token, 'title',
-          ['/items/' + tipA, '/items/' + tipZ]);
+          [tipHref(seriesA, categoryA, tipA), tipHref(seriesA, categoryA, tipZ)]);
         await search(page, seriesAName, 'tips', token, 'recent', recentTips);
         await search(page, seriesAName, 'dictionaries', token, 'title',
-          ['/items/' + wordA]);
+          [wordHref(seriesA, languageA, wordA)]);
         await search(page, seriesAName, 'stories', token, 'manual', []);
         await search(page, seriesAName, 'all', token, 'title',
-          ['/items/' + tipA, '/items/' + tipZ, '/items/' + wordA]
+          [tipHref(seriesA, categoryA, tipA), tipHref(seriesA, categoryA, tipZ), wordHref(seriesA, languageA, wordA)]
             .sort((x, y) => {
               const name = new Map([
-                ['/items/' + tipA, aNode.content.title],
-                ['/items/' + tipZ, zNode.content.title],
-                ['/items/' + wordA, wordNode.content.title],
+                [tipHref(seriesA, categoryA, tipA), aNode.content.title],
+                [tipHref(seriesA, categoryA, tipZ), zNode.content.title],
+                [wordHref(seriesA, languageA, wordA), wordNode.content.title],
               ]);
               return name.get(x).localeCompare(name.get(y), 'ja');
             }));
-        assert.equal(await page.locator('main a[href="/items/' + tipB + '"]').count(), 0);
+        assert.equal(await page.locator('main .search-result a[href="' + tipHref(seriesB, categoryB, tipB) + '"]').count(), 0);
 
         await switchSeries(page, seriesB);
-        await search(page, seriesBName, 'all', token, 'manual', ['/items/' + tipB]);
-        assert.equal(await page.locator('main a[href="/items/' + tipA + '"]').count(), 0);
+        await search(page, seriesBName, 'all', token, 'manual', [tipHref(seriesB, categoryB, tipB)]);
+        assert.equal(await page.locator('main .search-result a[href="' + tipHref(seriesA, categoryA, tipA) + '"]').count(), 0);
 
         // A's ancestor becomes future-scheduled; a word under another parent stays public.
         await visibility(categoryA, future);
@@ -168,12 +170,12 @@ test('SEARCH-COMPOUND-01/02/03: series × domain × term × sort remain isolated
         }
         await switchSeries(page, seriesA);
         await search(page, seriesAName, 'tips', token, 'manual', []);
-        await search(page, seriesAName, 'all', token, 'manual', ['/items/' + wordA]);
+        await search(page, seriesAName, 'all', token, 'manual', [wordHref(seriesA, languageA, wordA)]);
         const visibleText = await page.locator('main.site-main').innerText();
         assert.ok(!visibleText.includes('Alpha-' + token));
         assert.ok(!visibleText.includes('Zeta-' + token));
         await switchSeries(page, seriesB);
-        await search(page, seriesBName, 'tips', token, 'manual', ['/items/' + tipB]);
+        await search(page, seriesBName, 'tips', token, 'manual', [tipHref(seriesB, categoryB, tipB)]);
         await page.close();
       } finally { await context.close(); }
     } finally {

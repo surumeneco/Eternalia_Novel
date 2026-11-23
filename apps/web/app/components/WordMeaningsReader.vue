@@ -28,10 +28,10 @@ function visibleOrigins(meaning: WordMeaning): WordEtymology[] {
           <ul>
             <li v-for="origin in visibleOrigins(meaning)" :key="origin.id">
               <template v-if="origin.languageId && origin.languageTitle">
-                <NuxtLink :to="'/items/' + origin.languageId">{{ origin.languageTitle }}</NuxtLink>
+                <NuxtLink :to="'/jump/' + origin.languageId">{{ origin.languageTitle }}</NuxtLink>
               </template>
               <template v-if="origin.wordId && origin.wordTitle">
-                <span> · </span><NuxtLink :to="'/items/' + origin.wordId">{{ origin.wordTitle }}</NuxtLink>
+                <span> · </span><NuxtLink :to="'/jump/' + origin.wordId">{{ origin.wordTitle }}</NuxtLink>
               </template>
               <span v-if="origin.note"> {{ origin.note }}</span>
             </li>

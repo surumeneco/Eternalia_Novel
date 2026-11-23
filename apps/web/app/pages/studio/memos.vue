@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { localizeApiError } from '~/utils/api-error-localization';
 const { t, language } = useUiLocale();
+const { confirm: showConfirmation } = useAppDialog();
 interface Memo {
   id: string;
   title: string;
@@ -35,26 +36,26 @@ const visibleMemos = computed(() => memos.value.filter(memo =>
   !search.value.trim() || [memo.title,memo.body,...memo.tags]
     .some(value => value.toLocaleLowerCase().includes(search.value.trim().toLocaleLowerCase())),
 ));
-function confirmDiscard() {
-  return !dirty.value || window.confirm(t('memoDiscardConfirm'));
+async function confirmDiscard() {
+  return !dirty.value || await showConfirmation(t('memoDiscardConfirm'));
 }
 function applySelected() {
   title.value = newMemo.value ? '' : selected.value?.title ?? '';
   body.value = newMemo.value ? '' : selected.value?.body ?? '';
   tagsText.value = newMemo.value ? '' : (selected.value?.tags ?? []).join(', ');
 }
-function selectMemo(id: string) {
+async function selectMemo(id: string) {
   if (busy.value) return;
   if (id === selectedId.value && !newMemo.value) return;
-  if (!confirmDiscard()) return;
+  if (!await confirmDiscard()) return;
   newMemo.value = false;
   selectedId.value = id;
   applySelected();
   errorText.value = '';
   statusText.value = '';
 }
-function startNew() {
-  if (busy.value || !confirmDiscard()) return;
+async function startNew() {
+  if (busy.value || !await confirmDiscard()) return;
   newMemo.value = true;
   selectedId.value = null;
   applySelected();
@@ -102,7 +103,7 @@ async function save() {
   } finally { busy.value = false; }
 }
 async function reload() {
-  if (!busy.value && confirmDiscard()) await load();
+  if (!busy.value && await confirmDiscard()) await load();
 }
 function beforeUnload(event: BeforeUnloadEvent) {
   if (!dirty.value) return;

@@ -1,3 +1,4 @@
+import { selectUiLanguage } from './ui-language.mjs';
 /** CM-09 / AC-66: author-only new item paths from home/section listings. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -92,7 +93,7 @@ test('CM-09: author-only home and area creation paths use validated existing Stu
 
     await page.goto(base+'/stories');
     await page.getByRole('link',{name:types.stories.label}).first().waitFor();
-    await page.getByRole('button',{name:'英語に切り替え'}).click();
+    await selectUiLanguage(page, 'en');
     await page.getByRole('link',{name:'Create a new arc in this series'}).first().waitFor();
     await page.getByRole('link',{name:fixture.prefix+'-world-A'}).waitFor();
     await context.close();

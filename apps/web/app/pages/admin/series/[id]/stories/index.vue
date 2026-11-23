@@ -1,0 +1,2 @@
+<script setup lang="ts">const route=useRoute();const {t}=useUiLocale();</script>
+<template><div><ReaderPanel><h1>{{t('stories')}}</h1><nav class="reader-list"><NuxtLink :to="'/admin/series/'+route.params.id+'/stories/volumes'">{{t('studioKindVolume')}}</NuxtLink><NuxtLink :to="'/admin/series/'+route.params.id+'/stories/parts'">{{t('studioKindPart')}}</NuxtLink><NuxtLink :to="'/admin/series/'+route.params.id+'/stories/chapters'">{{t('chapter')}}</NuxtLink></nav></ReaderPanel></div></template>

@@ -1,3 +1,4 @@
+import { selectUiLanguage } from './ui-language.mjs';
 /** PB-05 / CM-08 / AC-54,59: public detail dates use JST in every client timezone. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -45,7 +46,7 @@ test('READER-JST-01/02/03: reader detail and chapters keep JST instant across cl
               assert.equal(await time.innerText(), expectedDate(instant, 'ja'),
                 'Japanese reader display must use JST even in ' + timezoneId);
 
-              await page.locator('button.locale-switch').click();
+              await selectUiLanguage(page, 'en');
               await page.locator('html[lang="en"]').waitFor();
               assert.equal(await time.getAttribute('datetime'), iso,
                 'locale switch must not shift the publication instant');
@@ -54,7 +55,7 @@ test('READER-JST-01/02/03: reader detail and chapters keep JST instant across cl
               assert.equal(await page.getByRole('heading', { name: title, exact: true }).count(), 1,
                 'author-created title must not be translated');
 
-              await page.locator('button.locale-switch').click();
+              await selectUiLanguage(page, 'ja');
               await page.locator('html[lang="ja"]').waitFor();
               assert.equal(await time.innerText(), expectedDate(instant, 'ja'));
               assert.equal(await time.getAttribute('datetime'), iso);

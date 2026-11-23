@@ -10,7 +10,7 @@ const { revalidating } = usePublicReaderRevalidation([
   { clear: clearRecent, refresh: refreshRecent },
 ]);
 function contentLink(node: ReaderNode) {
-  return node.kind === 'chapter' ? '/read/' + node.id : '/items/' + node.id;
+  return '/jump/' + encodeURIComponent(node.id);
 }
 const kindNames = computed<Partial<Record<ReaderNode['kind'], string>>>(() => ({
   chapter: t('chapter'), tip: t('tip'), tipSection: t('tipSection'), word: t('word'),
