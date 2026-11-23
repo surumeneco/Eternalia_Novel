@@ -22,16 +22,25 @@ const entries=computed(()=>(tree.value??[]).filter(n=>n.parentId===(props.parent
   .sort((a,b)=>props.area==='dictionaries'&&props.parentId?
     a.content.title.localeCompare(b.content.title):a.order-b.order||a.content.title.localeCompare(b.content.title,'ja')));
 const query=ref('');const speech=ref('');
-function speechClasses(node: ReaderNode):string[]{
-  try { const v:unknown=JSON.parse(node.content.details.meanings??'[]');
-    if(!Array.isArray(v))return [];
-    return [...new Set(v.map(m=>(m as {partOfSpeech?:string}).partOfSpeech).filter((x):x is string=>!!x))];
-  }catch{return [];}
+type PublicWordMeaning = { partOfSpeech?: string; definition?: string };
+function wordMeanings(node: ReaderNode): PublicWordMeaning[] {
+  if (node.kind !== 'word') return [];
+  try {
+    const value: unknown = JSON.parse(node.content.details.meanings ?? '[]');
+    return Array.isArray(value) ? value.filter((entry): entry is PublicWordMeaning =>
+      !!entry && typeof entry === 'object') : [];
+  } catch { return []; }
+}
+function speechClasses(node: ReaderNode): string[] {
+  return [...new Set(wordMeanings(node).map(meaning => meaning.partOfSpeech).filter(
+    (value): value is string => typeof value === 'string' && value.length > 0,
+  ))];
 }
 const classes=computed(()=>[...new Set(entries.value.flatMap(speechClasses))].sort((a,b)=>a.localeCompare(b,'ja')));
 const filtered=computed(()=>entries.value.filter(node=>
   (!speech.value||speechClasses(node).includes(speech.value))&&
-  (!query.value||node.content.title.toLocaleLowerCase().includes(query.value.toLocaleLowerCase()))));
+  (!query.value||[node.content.title,node.content.body,...wordMeanings(node).map(meaning=>meaning.definition??'')]
+    .some(text=>text.toLocaleLowerCase().includes(query.value.toLocaleLowerCase())))));
 const parentCrumbs=computed(()=>{
   const chain:{label:string;to?:string}[]=[];
   let cur=current.value;

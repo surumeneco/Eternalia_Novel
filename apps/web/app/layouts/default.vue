@@ -7,7 +7,11 @@ const navOpen = ref(false);
 const asideOpen = ref(false);
 const languageOpen = ref(false);
 const { data: auth, refresh: refreshAuth } = await useFetch<{ authenticated: boolean }>('/api/auth/me');
-const { data: recent } = await useFetch<ReaderNode[]>('/api/public/recent');
+const { data: recent, error: recentError, clear: clearRecent, refresh: refreshRecent } =
+  await useFetch<ReaderNode[]>('/api/public/recent');
+const { revalidating: recentRevalidating } = usePublicReaderRevalidation([
+  { clear: clearRecent, refresh: refreshRecent },
+]);
 function dismissMenus(event:KeyboardEvent){
   if(event.key==='Escape'){navOpen.value=false;asideOpen.value=false;languageOpen.value=false;}
 }
@@ -83,7 +87,7 @@ useHead({ htmlAttrs: { lang: computed(() => language.value === 'en' ? 'en' : 'ja
       <aside id="updates-aside" class="site-aside" :class="{ 'is-open': asideOpen }" :aria-label="t('shellAside')">
         <section class="stone-panel">
           <h2>{{ t('recent') }}</h2>
-          <ol v-if="recent?.length" class="recent-aside-list">
+          <ol v-if="!recentRevalidating && !recentError && recent?.length" class="recent-aside-list">
             <li v-for="node in recent.slice(0, 10)" :key="node.id"><NuxtLink :to="recentLink(node)" @click="asideOpen = false">{{ node.content.title }}</NuxtLink></li>
           </ol>
           <p v-else>{{ t('noRecent') }}</p>
