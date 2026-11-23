@@ -48,7 +48,7 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
     assert.equal(storyResponse?.status(), 200, 'story HTTP response: ' + storyText.slice(0, 1500));
     assert.ok(storyText.includes(fixture.prefix + '-world-A') &&
       storyText.includes(fixture.prefix + '-book-A'),
-      'story DOM should display published series and chapter; got: ' + storyText.slice(0, 2000));
+      'story home must list its volumes under the published series; got: ' + storyText.slice(0, 2000));
     for (const selector of ['.site-header', '.site-aside', '.site-main', '.site-footer', '.topic-path']) {
       assert.equal(await readerPage.locator(selector).count(), 1,
         'legacy reader shell must preserve ' + selector + ' on the story page');
@@ -69,16 +69,16 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
     assert.ok(!(await readerPage.locator('body').innerText())
       .includes(fixture.prefix + '-unpublished-draft-body'));
 
-    // These routes must show their actual per-series views, not collection parents.
-    for (const [path, marker] of [
-      ['/tips/', '設定を検索'],
-      ['/dictionaries/', '単語を検索'],
-      ['/timeline/', '年代区分'],
+    // Each series-owned resource has a dedicated canonical route. The domain
+    // homepage lists its immediate children; deeply nested filters live below.
+    for (const [area, title] of [
+      ['stories', 'ストーリー'], ['settings', '設定集'],
+      ['dictionaries', '辞書'], ['timeline', '年表'],
     ]) {
-      await readerPage.goto(base + path + fixture.seriesA);
+      await readerPage.goto(base + '/series/' + fixture.seriesA + '/' + area);
+      await readerPage.locator('.site-main').getByRole('heading', { name: title, exact: true }).waitFor();
       const content = await readerPage.locator('body').innerText();
-      assert.ok(content.includes(marker), 'missing nested domain UI at ' + path);
-      assert.ok(content.includes(fixture.prefix + '-world-A'), 'missing series at ' + path);
+      assert.ok(content.includes(fixture.prefix + '-world-A'), 'missing series at ' + area);
     }
 
     // AC-65: all four public domain pages must remain within the document
@@ -87,8 +87,8 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
     if (screenshotDir) await mkdir(screenshotDir, { recursive: true });
     for (const width of [320, 390, 768, 1280]) {
       await readerPage.setViewportSize({ width, height: 844 });
-      for (const domain of ['stories', 'tips', 'dictionaries', 'timeline']) {
-        await readerPage.goto(base + '/' + domain + '/' + fixture.seriesA);
+      for (const domain of ['stories', 'settings', 'dictionaries', 'timeline']) {
+        await readerPage.goto(base + '/series/' + fixture.seriesA + '/' + domain);
         const dimensions = await readerPage.evaluate(() => ({
           viewport: document.documentElement.clientWidth,
           content: document.documentElement.scrollWidth,
@@ -2340,11 +2340,11 @@ test('AC-56: shared author navigation works while anonymous editor and API write
 
     const page = await author.newPage();
     for (const route of [
-      '/', '/stories', '/series/' + series,
+      '/', '/series/' + series + '/stories', '/series/' + series,
       '/read/' + fixture.chapter + '?series=' + fixture.seriesA,
-      '/tips/' + fixture.seriesA,
-      '/dictionaries/' + fixture.seriesA,
-      '/timeline/' + fixture.seriesA,
+      '/series/' + fixture.seriesA + '/settings',
+      '/series/' + fixture.seriesA + '/dictionaries',
+      '/series/' + fixture.seriesA + '/timeline',
     ]) {
       await page.goto(base + route);
       await page.locator('.site-header').getByRole('link', { name: '管理ホーム' }).click();
