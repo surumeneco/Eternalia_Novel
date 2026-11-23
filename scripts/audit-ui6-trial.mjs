@@ -14,6 +14,7 @@ export const UI6_TRIAL_ASSIGNMENTS = Object.freeze({
   AdminChapterPreview: 'room',
   AdminEditBridge: 'room',
   AdminMasterIndex: 'room',
+  AdminMasterCatalog: 'room',
   AdminNodeGrid: 'room',
   AdminPublicationPage: 'room',
   AppDialogHost: 'partition',

@@ -176,7 +176,7 @@ test('UI-DEP-OBS-09: slots and dynamic component sites are unresolved lexical ev
 
 test('UI-DEP-OBS-10: real ReaderPanel slot is observed without inventing UI6 conformance', async () => {
   const graph = await inspectComponentDirectory('apps/web/app/components');
-  assert.equal(graph.componentCount, 23);
+  assert.equal(graph.componentCount, 24);
   assert.deepEqual(graph.compositionEvidence.find(x => x.name === 'ReaderPanel')?.slotOutlets,
     ['default']);
   assert.equal(graph.compositionEvidence.length, graph.componentCount);

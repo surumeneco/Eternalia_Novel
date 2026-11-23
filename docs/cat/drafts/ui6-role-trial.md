@@ -17,7 +17,7 @@ language: ja
 
 ## 位置付けと根拠
 
-010_UI構造契約により六分類 `room/furniture/partition/equipment/structure/decor` の**試用のみ採用済み**。詳細判定条件・許可依存行列・DOM親子契約は未Confirmedである。本Draftは、当初15件と2026-11-23追加の8件、計23件のVue SFCの実コードを直接読んだうえで主たる責務に基づき**候補**を割当てる。旧v0.3の共通Shell/公開領域継承と、現行の作者編集・公開閲覧の境界を維持する。名称やファイルサイズ・タグ階層から自動推定しない。
+010_UI構造契約により六分類 `room/furniture/partition/equipment/structure/decor` の**試用のみ採用済み**。詳細判定条件・許可依存行列・DOM親子契約は未Confirmedである。本Draftは、当初15件と2026-11-23追加の8件、計24件のVue SFCの実コードを直接読んだうえで主たる責務に基づき**候補**を割当てる。旧v0.3の共通Shell/公開領域継承と、現行の作者編集・公開閲覧の境界を維持する。名称やファイルサイズ・タグ階層から自動推定しない。
 
 ## 対象
 
@@ -35,7 +35,7 @@ language: ja
 | PublicCollectionPage | room | 公開領域の一覧取得・エラー/空状態・各UI部品の統合を所有 |
 | AdminChapterPreview | room | 作者の章プレビューを構成し原稿ページを読み取り表示 |
 | AdminEditBridge | room | 編集対象の所属・種別を検証し、既存編集機能を作者画面に統合 |
-| AdminMasterIndex | room | マスタメンテナンスの機能別ナビゲーションを構成 |
+| AdminMasterIndex, AdminMasterCatalog | room | マスタメンテナンスの機能別ナビゲーションを構成 |
 | AdminNodeGrid | room | 一つの資料種別の管理グリッド・編集遷移・親選択を構成 |
 | AdminPublicationPage | room | 作者の公開管理画面を管理ルート内に配置 |
 | ReaderDomainDetail | room | シリーズ内の詳細・パンくず・章前後移動等を構成 |
@@ -56,7 +56,7 @@ language: ja
 | WordMeaningsEditor | furniture | 意味・品詞・語源の複数行編集 |
 | WordMeaningsReader | furniture | 意味と語源の複合公開表示 |
 
-`partition`候補は追加した`AppDialogHost`の1件である。**六分類すべてが存在すること自体は要求しない**。各ページ単位のレイアウトやNuxt内部部品はこの23件の対象外。とくに`RichContent`の表示とページ遷移を単純に`equipment`へ再分類せず、主責務は読書体験の合成として試用する。
+`partition`候補は追加した`AppDialogHost`の1件である。**六分類すべてが存在すること自体は要求しない**。各ページ単位のレイアウトやNuxt内部部品はこの24件の対象外。とくに`RichContent`の表示とページ遷移を単純に`equipment`へ再分類せず、主責務は読書体験の合成として試用する。
 
 ## 規則
 

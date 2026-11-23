@@ -4,7 +4,9 @@ import { AuthController } from './auth.controller';
 import { AdminNodesController } from './admin-nodes.controller';
 import { AuthorMemosController } from './author-memos.controller';
 import { AuthorOrderController } from './author-order.controller';
+import { CommonMastersController } from './common-masters.controller';
 import { AuthorMemosService } from './author-memos.service';
+import { CommonMastersService } from './common-masters.service';
 import { AuthorGuard } from './author.guard';
 import { DiscordAuthService } from './discord-auth.service';
 import { LocalAlphaLibraryService } from './local-alpha-library.service';
@@ -15,10 +17,10 @@ import { PublicPathController } from './public-path.controller';
 import { PublicClock } from './public-clock.service';
 
 @Module({
-  controllers: [HealthController, PublicSeriesController, PublicPathController, AuthController, AdminNodesController, AuthorMemosController, AuthorOrderController],
+  controllers: [HealthController, PublicSeriesController, PublicPathController, AuthController, AdminNodesController, AuthorMemosController, AuthorOrderController, CommonMastersController],
   providers: [
     LocalAlphaLibraryService, PostgresLibraryService, LibraryStorageService,
-    DiscordAuthService, AuthorGuard, AuthorMemosService, PublicClock,
+    DiscordAuthService, AuthorGuard, AuthorMemosService, CommonMastersService, PublicClock,
   ],
 })
 export class AppModule {}
