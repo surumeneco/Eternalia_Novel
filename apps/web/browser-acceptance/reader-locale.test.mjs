@@ -18,34 +18,34 @@ test('READER-01/02/03: public series and reader areas localize immediately witho
    await page.goto(base+'/series/'+fixture.seriesA);
    const title=fixture.prefix+'-world-A';
    await page.getByRole('heading',{name:title}).waitFor();
-   assert.equal(await page.locator('main .series-areas a[href="/stories/'+fixture.seriesA+'"]').innerText(),'ストーリーの目次');
+   assert.equal(await page.locator('main .series-areas a[href="/series/'+fixture.seriesA+'/stories"]').innerText(),'ストーリー');
    await selectUiLanguage(page, 'en');
-   await page.getByRole('link',{name:'Story table of contents'}).waitFor();
-   assert.equal(await page.locator('main .series-areas a[href="/stories/'+fixture.seriesA+'"]').innerText(),'Story table of contents');
-   await page.goto(base+'/stories/'+fixture.seriesA);
-   await page.getByRole('heading',{name:'Contents'}).waitFor();
-   await page.locator('.story-volume h3 a').first().waitFor();
+   await page.getByRole('link',{name:'Stories'}).waitFor();
+   assert.equal(await page.locator('main .series-areas a[href="/series/'+fixture.seriesA+'/stories"]').innerText(),'Stories');
+   await page.goto(base+'/series/'+fixture.seriesA+'/stories');
+   await page.getByRole('heading',{name:'Stories'}).waitFor();
+   await page.locator('.domain-list a').first().waitFor();
    assert.ok((await page.locator('main').innerText()).includes(title),'author title must remain identical');
 
-   await page.goto(base+'/dictionaries/'+fixture.seriesA);
+   await page.goto(base+'/series/'+fixture.seriesA+'/dictionaries/'+fixture.language);
    await page.getByRole('heading',{name:title+' — Dictionary'}).waitFor();
-   assert.ok((await page.locator('.dictionary-filters label').first().innerText()).includes('Language'));
-   await page.locator('.dictionary-filters select').first().selectOption(fixture.language);
+   assert.ok((await page.locator('.domain-filters label').first().innerText()).includes('Search words'));
+   
    await page.getByLabel('Search words').fill(fixture.prefix+'-visible-word');
-   assert.equal(await page.locator('.dictionary-language .reader-list li').first().locator('a').innerText(),fixture.prefix+'-visible-word');
+   assert.equal(await page.locator('.domain-list li').first().locator('a').innerText(),fixture.prefix+'-visible-word');
 
-   await page.goto(base+'/tips/'+fixture.seriesA);
-   await page.getByRole('heading',{name:title+' — Worldbuilding'}).waitFor();
-   await page.getByLabel('Search settings').fill(fixture.prefix+'-visible-setting');
+   await page.goto(base+'/series/'+fixture.seriesA+'/settings/'+fixture.category);
+   await page.getByRole('link',{name:fixture.prefix+'-visible-setting',exact:true}).waitFor();
+   
    assert.ok((await page.locator('main').innerText()).includes(fixture.prefix+'-visible-setting'));
 
-   await page.goto(base+'/timeline/'+fixture.seriesA);
+   await page.goto(base+'/series/'+fixture.seriesA+'/timeline');
    await page.getByRole('heading',{name:title+' — Timeline'}).waitFor();
    assert.ok((await page.locator('.period-filter').innerText()).includes('Period'));
    await page.locator('.period-filter select').selectOption(fixture.period);
    assert.ok((await page.locator('main').innerText()).includes('Relative year 12'));
 
-   await page.goto(base+'/read/'+fixture.chapter);
+   await page.goto(base+'/series/'+fixture.seriesA+'/stories/'+fixture.volume+'/parts/'+fixture.part+'/chapters/'+fixture.chapter);
    const chapterTitle=fixture.prefix+'-chapter-A';
    await page.getByRole('heading',{name:chapterTitle}).waitFor();
    assert.ok((await page.locator('main').innerText()).includes(fixture.prefix+'-published-body'));
@@ -56,9 +56,9 @@ test('READER-01/02/03: public series and reader areas localize immediately witho
    await page.getByRole('link',{name:'目次へ戻る'}).waitFor();
    await page.getByRole('button',{name:'次のページ'}).waitFor();
    assert.ok((await page.locator('main').innerText()).includes(chapterTitle));
-   await page.goto(base+'/dictionaries/'+fixture.seriesA);
-   assert.ok((await page.locator('.dictionary-filters label').first().innerText()).includes('言語'));
-   await page.locator('.dictionary-filters select').first().selectOption(fixture.language);
+   await page.goto(base+'/series/'+fixture.seriesA+'/dictionaries/'+fixture.language);
+   assert.ok((await page.locator('.domain-filters label').first().innerText()).includes('単語を検索'));
+   
    await ctx.close();
   } finally { await browser.close(); }
 });

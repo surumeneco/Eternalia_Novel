@@ -34,7 +34,7 @@ test('IA-01/02/03: readers select a series before its four content domains', { t
     assert.equal(await page.locator('main .reader-list a[href^="/read/"]').count(), 0,
       'series introduction must not flatten all authored content types into its own listing');
 
-    await page.goto(base + '/stories/' + fixture.seriesA);
+    await page.goto(base + '/series/' + fixture.seriesA + '/stories');
     const crumbs = await page.locator('main nav.topic-path a').allInnerTexts();
     assert.equal(crumbs[0], 'ホーム');
     assert.ok(crumbs.some(value => value.includes(fixture.prefix + '-world-A')));
@@ -61,7 +61,7 @@ test('IA-05/06/07: author editing and publication each require their own series/
       .then(value => value.includes(fixture.prefix + '-visible-setting')), false,
       'story editing tree must not mix settings nodes');
     await page.getByRole('button', { name: '設定' }).first().click();
-    await page.getByText(fixture.prefix + '-visible-setting').first().waitFor();
+    await page.locator('.studio-sidebar .node-button').filter({hasText:fixture.prefix + '-visible-setting'}).waitFor();
     await page.getByRole('button', { name: '項目を追加', exact: true }).click();
     await page.locator('form.create-form select').waitFor();
     assert.equal(await page.locator('form.create-form select').inputValue(), 'category',

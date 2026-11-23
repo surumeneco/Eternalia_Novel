@@ -78,22 +78,22 @@ test('AC-55: home recent links navigate for all six published item types',
       try {
         const page = await context.newPage();
         const destinations = [
-          { id: chapterId, title: chapterTitle, path: '/read/' },
-          { id: tipId, title: tipTitle, path: '/items/' },
-          { id: tipSectionId, title: tipSectionTitle, path: '/items/' },
-          { id: wordId, title: wordTitle, path: '/items/' },
-          { id: grammarId, title: grammarTitle, path: '/items/' },
-          { id: eventId, title: eventTitle, path: '/items/' },
+          { id: chapterId, title: chapterTitle, path: '/series/' + seriesId + '/stories/' + volumeId + '/parts/' + partId + '/chapters/' + chapterId },
+          { id: tipId, title: tipTitle, path: '/series/' + seriesId + '/settings/' + categoryId + '/' + tipId },
+          { id: tipSectionId, title: tipSectionTitle, path: '/series/' + seriesId + '/settings/' + categoryId + '/' + tipId + '/sections/' + tipSectionId },
+          { id: wordId, title: wordTitle, path: '/series/' + seriesId + '/dictionaries/' + languageId + '/words/' + wordId },
+          { id: grammarId, title: grammarTitle, path: '/series/' + seriesId + '/dictionaries/' + languageId + '/grammar/' + grammarId },
+          { id: eventId, title: eventTitle, path: '/series/' + seriesId + '/timeline/periods/' + periodId + '/events/' + eventId },
         ];
         for (const { id, title, path } of destinations) {
           await page.goto(base + '/');
           const recentList = page.locator('main ol.reader-list');
           const link = recentList.getByRole('link', { name: title, exact: true });
           await link.waitFor();
-          assert.equal(await link.getAttribute('href'), path + id,
+          assert.equal(await link.getAttribute('href'), '/jump/' + id,
             'new-post jump must target the published reader by stable ID');
           await link.click();
-          await page.waitForURL(url => url.pathname === path + id);
+          await page.waitForURL(url => url.pathname === path);
           await page.getByRole('heading', { name: title, exact: true }).waitFor();
           await page.getByText('published:' + title, { exact: false }).waitFor();
           assert.equal(await page.locator('main [role="alert"]').count(), 0);

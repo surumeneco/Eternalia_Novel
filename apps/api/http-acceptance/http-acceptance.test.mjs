@@ -31,10 +31,10 @@ test('anonymous published series and all four content domains load through Nuxt 
   ]) assert.ok(ids.includes(id), 'missing published id ' + id);
   assert.ok(!ids.includes(fixture.languageB), 'other series must not appear');
   const detailPages = [
-    ['/stories/' + fixture.seriesA, '目次'],
-    ['/tips/' + fixture.seriesA, '設定を検索'],
-    ['/dictionaries/' + fixture.seriesA, '単語を検索'],
-    ['/timeline/' + fixture.seriesA, '年代区分'],
+    ['/series/' + fixture.seriesA + '/stories', 'ストーリー'],
+    ['/series/' + fixture.seriesA + '/settings', '設定集'],
+    ['/series/' + fixture.seriesA + '/dictionaries', '辞書'],
+    ['/series/' + fixture.seriesA + '/timeline', '年表'],
   ];
   for (const [path, domainMarker] of detailPages) {
     const page = await get(path);
@@ -57,8 +57,8 @@ test('private ancestors, unpublished children and future publications never leak
     assert.ok(!recent.value.some(node => node.id === id), 'leaked recent id ' + id);
   }
   const pages = await Promise.all([
-    get('/stories/' + fixture.seriesA),
-    get('/tips/' + fixture.seriesA),
+    get('/series/' + fixture.seriesA + '/stories'),
+    get('/series/' + fixture.seriesA + '/settings'),
     get('/'),
   ]);
   for (const page of pages) {
@@ -234,10 +234,10 @@ test('authenticated non-author session cannot mutate author resources', async ()
 test('SSR-CACHE-01/02/03: HTML reader and author routes are no-store, private SSR cannot be cached', async () => {
   const publicPages = [
     '/',
-    '/stories/' + fixture.seriesA,
+    '/series/' + fixture.seriesA + '/stories',
     '/search?series=' + fixture.seriesA,
-    '/read/' + fixture.chapter,
-    '/items/' + fixture.tip,
+    '/series/' + fixture.seriesA + '/stories/' + fixture.volume + '/parts/' + fixture.part + '/chapters/' + fixture.chapter,
+    '/series/' + fixture.seriesA + '/settings/' + fixture.category + '/' + fixture.tip,
     '/studio',
   ];
   for (const path of publicPages) {
