@@ -84,7 +84,7 @@ test('UI6-ROUTE-04/05: current series-first pages and layout retain non-normativ
   assert.equal(report.pageCount, 72);
   assert.equal(report.layoutCount, 1);
   assert.equal(report.sourceCount, 74);
-  assert.equal(report.componentCount, 23);
+  assert.equal(report.componentCount, 24);
   assert.ok(report.owners.find(item => item.source === 'pages/index.vue')?.localComponents.includes('ReaderPanel'));
   assert.ok(report.owners.find(item => item.source === 'pages/series/[id]/index.vue')?.localComponents.includes('ReaderPanel'));
   assert.ok(report.owners.find(item => item.source === 'pages/series/[id]/stories/[volumeId]/parts/[partId]/chapters/[chapterId].vue')?.localComponents.includes('ReaderDomainDetail'));

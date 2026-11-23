@@ -4,16 +4,16 @@
 
 - 対象: `apps/web/app/components/*.vue`（既存同一ディレクトリ監査）および `apps/web/app/{app.vue,layouts/**/*.vue,pages/**/*.vue}`（ページ/レイアウト合成の追加観測）。
 - この記録は現行コードを起点にした**観測**であり、Drive正本 `010_UI構造契約・CAT-TDD試験導入方針.md` の6分類規則を確定したものではない。
-- UI6の`room/furniture/partition/equipment/structure/decor`は**試験導入方針のみ採用**。この文書と`docs/cat/drafts/ui6-role-trial.md`に23件の試用分類を具体化したが、分類の意味的正当性、許可依存表、DOM契約・例外はまだDraftである。AC-73の正式合格やCAT規範Gateを意味しない。
+- UI6の`room/furniture/partition/equipment/structure/decor`は**試験導入方針のみ採用**。この文書と`docs/cat/drafts/ui6-role-trial.md`に24件の試用分類を具体化したが、分類の意味的正当性、許可依存表、DOM契約・例外はまだDraftである。AC-73の正式合格やCAT規範Gateを意味しない。
 - 閲覧時には必ず最新HEADに対して `node scripts/audit-ui-component-deps.mjs` を実行する。この文書に固定された個数や構成を最新状態として扱わない。
 
-## 現行23部品のソース確認に基づく試用分類
+## 現行24部品のソース確認に基づく試用分類
 
 分類対象はVue SFC自身の**主たる責務**であり、コンポーネントのサイズ・DOM深度・名前ではない。複数の入力操作を持つ複合編集UIは、単一のボタン/入力部品（`equipment`）ではなく、現段階では用途を持った合成部品（`furniture`）とみなす。この判断の根拠・例外候補は[CAT Draft](cat/drafts/ui6-role-trial.md)へ集約し、確定仕様ではなく変更可能な試用表として扱う。
 
 | 試用分類 | 対象SFC | 根拠となる現行責務 |
 | --- | --- | --- |
-| `room` | `PublicCollectionPage`, `ReaderDomainDetail`, `ReaderDomainListing`, `AdminChapterPreview`, `AdminEditBridge`, `AdminMasterIndex`, `AdminNodeGrid`, `AdminPublicationPage` | 公開一覧と詳細・章プレビュー・作者用種別別管理・編集統合を行う画面領域 |
+| `room` | `PublicCollectionPage`, `ReaderDomainDetail`, `ReaderDomainListing`, `AdminChapterPreview`, `AdminEditBridge`, `AdminMasterIndex`, `AdminMasterCatalog`, `AdminNodeGrid`, `AdminPublicationPage` | 公開一覧と詳細・章プレビュー・作者用種別別管理・編集統合を行う画面領域。`AdminMasterCatalog` は共通Tag/Divの表編集と作成/保存/削除を組み合わせた独立管理領域 |
 | `furniture` | `AuthorReferencePanel`, `CategoryPresetEditor`, `LanguageStructureEditor`, `LanguageStructureReader`, `RichContent`, `TipLinksEditor`, `TipLinksReader`, `TopicPath`, `WordMeaningsEditor`, `WordMeaningsReader` | 参考資料検索、複合フォーム、表/読み物、本文ページ、パンくず等の目的別合成部品 |
 | `partition` | `AppDialogHost` | 開閉と確認結果・フォーカスを管理するモーダル境界 |
 | `equipment` | `AuthorCreateLink`, `AuthorEditLink` | 認証状態に応じた作成/編集ナビゲーションの単一操作 |
@@ -30,7 +30,7 @@
 
 ### ページ・レイアウトからの部分的な合成参照観測
 
-`node scripts/audit-ui6-route-composition.mjs` は、現行23コンポーネントの静的グラフとは**独立して** `app.vue`、`layouts/**/*.vue`、`pages/**/*.vue` を読み取り、各ソースで直接表記された既知の共通SFC開始タグ（`localComponents`）、NuxtPage/NuxtLayout/RouterViewの表示境界（`frameworkOutlets`）、slot受口/供給構文、動的`:is`構文を報告する。相対`.vue`の行頭静的importは**basenameではなく起点ファイルからの実パス**で確認し、`resolved`/`missing`/`outside-app`/`unresolved-alias`に分ける。アプリ境界外ファイルは探索しない。個々のソースを毎回再列挙し、現行の構成を固定数として仮定しない。
+`node scripts/audit-ui6-route-composition.mjs` は、現行24コンポーネントの静的グラフとは**独立して** `app.vue`、`layouts/**/*.vue`、`pages/**/*.vue` を読み取り、各ソースで直接表記された既知の共通SFC開始タグ（`localComponents`）、NuxtPage/NuxtLayout/RouterViewの表示境界（`frameworkOutlets`）、slot受口/供給構文、動的`:is`構文を報告する。相対`.vue`の行頭静的importは**basenameではなく起点ファイルからの実パス**で確認し、`resolved`/`missing`/`outside-app`/`unresolved-alias`に分ける。アプリ境界外ファイルは探索しない。個々のソースを毎回再列挙し、現行の構成を固定数として仮定しない。
 
 これらは**静的字句サイトと限定的な相対ファイル存在判定**であり、Nuxtのルート解決結果、条件分岐後の実DOM、`slotProviders`の受け先、コンポーネント自動登録の完全性を証明しない。出力の`compositionObservationStatus: lexical-partial`に対し、`runtimeResolution`、`normativeClassification`、`normativeDependencyRules`、`domContract`は全て`not-run`。観測器は`scripts/audit-ui6-route-composition.test.mjs`で合成ソースの誤認防止・実パス解決・導入時の17ページ検証を、現行72ページ＋1レイアウト＋app起点に改訂した検証を行う。**PR #107で既存16件＋新規3件のNode19/19成功**（[Push #43693273219](https://github.com/surumeneco/Eternalia_Novel/actions/runs/43693273219)・[PR #43693377359](https://github.com/surumeneco/Eternalia_Novel/actions/runs/43693377359)各4ジョブ成功）。既存`components[].dependsOn`の互換グラフは変更しない。
 
@@ -50,7 +50,7 @@ PR #106では匿名JavaScript無効のホーム・ストーリー一覧と、合
 
 ## 次に必要な判断
 
-1. 現行23件は個々のSFCを読んで候補へ対応付け済み。公開シリーズ・Tip詳細・章の本文とナビゲーション配置はブラウザDOMで部分観測済み。次は`RichContent`の複合責務の妥当性、作者参考パネルの動的内容・他の作者操作画面や未観測のページレイアウト境界を追加観測し、根拠があれば試用候補を修正する。
+1. 現行24件は個々のSFCを読んで候補へ対応付け済み。公開シリーズ・Tip詳細・章の本文とナビゲーション配置はブラウザDOMで部分観測済み。次は`RichContent`の複合責務の妥当性、作者参考パネルの動的内容・他の作者操作画面や未観測のページレイアウト境界を追加観測し、根拠があれば試用候補を修正する。
 2. 出所別に取得した同一ディレクトリSFC依存とページ/レイアウトの`localComponents`・相対`.vue`import解決を照合し、観測済みの既定slot直接子以外の受け口/供給接続、Nuxt動的ルートの実表示先、名前付きslotの実DOM投影を別途確認した上で、試用許可依存表と例外を検討する。単純な全順序を規範化しない。
 3. DOM契約を必要な画面で定義し、分類/依存のVerifierをCAT正本と照合して試験導入の適否を判断する。
 4. 正規CAT Gate・実画面/実機受入の証拠を別管理し、AC-73の状態を自動的にpassへ変えない。

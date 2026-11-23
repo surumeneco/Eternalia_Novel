@@ -6,16 +6,17 @@ import { describeUi6Trial, UI6_ROLES, UI6_TRIAL_ASSIGNMENTS } from './audit-ui6-
 test('UI6-TRIAL-01: real Vue components have an explicit, source-reviewed candidate role each', async () => {
   const graph = await inspectComponentDirectory('apps/web/app/components');
   const report = describeUi6Trial(graph);
-  assert.equal(report.componentCount, 23);
+  assert.equal(report.componentCount, 24);
   assert.deepEqual(report.unclassified, []);
   assert.deepEqual(report.staleAssignments, []);
   assert.deepEqual(report.invalidAssignments, []);
   assert.equal(report.candidateCoverage, 'complete-in-trial');
   assert.deepEqual(report.roleCounts, {
-    room: 8, furniture: 10, partition: 1, equipment: 2, structure: 1, decor: 1,
+    room: 9, furniture: 10, partition: 1, equipment: 2, structure: 1, decor: 1,
   });
   const roles = new Map(report.assignments.map(item => [item.name, item.role]));
   assert.equal(roles.get('PublicCollectionPage'), 'room');
+  assert.equal(roles.get('AdminMasterCatalog'), 'room');
   assert.equal(roles.get('AppDialogHost'), 'partition');
   assert.equal(roles.get('ReaderDomainDetail'), 'room');
   assert.equal(roles.get('ReaderPanel'), 'structure');
@@ -49,7 +50,7 @@ test('UI6-TRIAL-02: new, invalid and removed candidate entries remain visible in
   assert.deepEqual(report.staleAssignments, ['RetiredPanel']);
   assert.equal(report.assignments.find(x => x.name === 'FutureDialog')?.role, null);
   assert.equal(UI6_ROLES.length, 6);
-  assert.equal(Object.keys(UI6_TRIAL_ASSIGNMENTS).length, 23);
+  assert.equal(Object.keys(UI6_TRIAL_ASSIGNMENTS).length, 24);
 });
 
 test('UI6-TRIAL-03: candidate reverse dependencies require review, not automatic normative rejection', () => {
@@ -89,7 +90,7 @@ test('UI6-TRIAL-05: CLI coverage check reports observed current roles and fails 
   const current = spawnSync(process.execPath, args, { encoding: 'utf8' });
   assert.equal(current.status, 0, current.stderr);
   const report = JSON.parse(current.stdout);
-  assert.equal(report.componentCount, 23);
+  assert.equal(report.componentCount, 24);
   assert.equal(report.candidateCoverage, 'complete-in-trial');
   assert.equal(report.normativeClassification, 'not-run');
 
@@ -111,7 +112,7 @@ test('UI6-TRIAL-06: composition evidence is observable, not an approved dependen
   const graph = await inspectComponentDirectory('apps/web/app/components');
   const report = describeUi6Trial(graph);
   assert.equal(report.compositionObservationStatus, 'lexical-partial');
-  assert.equal(report.compositionEvidence.length, 23);
+  assert.equal(report.compositionEvidence.length, 24);
   assert.deepEqual(report.compositionEvidence.find(x => x.name === 'ReaderPanel')?.slotOutlets,
     ['default']);
   assert.equal(report.candidateCoverage, 'complete-in-trial');
