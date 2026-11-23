@@ -67,23 +67,21 @@ test('LG-07: each public language displays spelling ascending, independent of cr
     await publish(series); await publish(languageA); await publish(languageB);
     for (const id of wordIds) await publish(id);
     const page = await reader.newPage();
-    await page.goto(base + '/dictionaries/' + series);
-    await page.getByRole('heading', { name: languageBName }).waitFor();
-    const wordsIn = async languageName => {
-      const section = page.locator('.dictionary-language').filter({
-        has: page.getByRole('heading', { name: languageName, exact: true }),
-      });
-      return section.locator('ul.reader-list').first().locator(':scope > li > a').allTextContents();
+    const openLanguage = async (languageId, languageName) => {
+      await page.goto(base + '/series/' + series + '/dictionaries/' + languageId);
+      await page.getByRole('heading', { name: languageName, exact: true }).waitFor();
     };
-    assert.deepEqual(await wordsIn(languageAName), [alpha, beta, zeta]);
-    assert.deepEqual(await wordsIn(languageBName), [delta, omega]);
-    // POS filtering changes membership but not relative spelling order.
+    const words = async () => page.locator('.domain-list > li > a').allTextContents();
+    await openLanguage(languageA, languageAName);
+    assert.deepEqual(await words(), [alpha, beta, zeta]);
     await page.getByLabel('品詞').selectOption('名詞');
-    assert.deepEqual(await wordsIn(languageAName), [alpha, zeta]);
-    assert.deepEqual(await wordsIn(languageBName), [delta]);
+    assert.deepEqual(await words(), [alpha, zeta]);
     await page.getByLabel('品詞').selectOption('');
-    await page.getByLabel('言語').selectOption(languageB);
-    assert.deepEqual(await wordsIn(languageBName), [delta, omega]);
+    assert.deepEqual(await words(), [alpha, beta, zeta]);
+    await openLanguage(languageB, languageBName);
+    assert.deepEqual(await words(), [delta, omega]);
+    await page.getByLabel('品詞').selectOption('名詞');
+    assert.deepEqual(await words(), [delta]);
     assert.equal(await page.getByRole('heading', { name: languageAName, exact: true }).count(), 0);
     await page.close();
     await reader.close();

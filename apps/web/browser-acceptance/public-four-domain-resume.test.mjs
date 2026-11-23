@@ -64,16 +64,16 @@ test('FOUR-DOMAIN-RESUME-01/02/03: all four per-series readers revoke cached chi
 
       const context=await browser.newContext({viewport:{width:390,height:844}});
       try{
-        for(const [area,expectedTitle] of [
-          ['stories',marker+'volume'],
-          ['tips',marker+'tip'],
-          ['dictionaries',marker+'word'],
-          ['timeline',marker+'event'],
+        for(const [area,expectedTitle,url] of [
+          ['stories',marker+'volume','/series/'+seriesId+'/stories'],
+          ['settings',marker+'tip','/series/'+seriesId+'/settings/'+category],
+          ['dictionaries',marker+'word','/series/'+seriesId+'/dictionaries/'+language],
+          ['timeline',marker+'event','/series/'+seriesId+'/timeline'],
         ]){
           const page=await context.newPage();
           try{
-            const url=base+'/'+area+'/'+seriesId;
-            assert.equal((await page.goto(url))?.status(),200,area);
+            const target=base+url;
+            assert.equal((await page.goto(target))?.status(),200,area);
             await hydrated(page);
             await page.getByRole('link',{name:expectedTitle,exact:true}).waitFor();
             assert.ok((await page.locator('main').innerText()).includes(expectedTitle),area+' published initial content absent');
@@ -121,7 +121,7 @@ test('FOUR-DOMAIN-RESUME-04: a per-series dictionary fails closed when BFCache-s
       const context=await browser.newContext();
       try{
         const page=await context.newPage();
-        await page.goto(base+'/dictionaries/'+seriesId);
+        await page.goto(base+'/series/'+seriesId+'/dictionaries/'+language);
         await hydrated(page);
         await page.getByRole('link',{name:marker+'SECRET-word',exact:true}).waitFor();
         await visibility(seriesId,future);

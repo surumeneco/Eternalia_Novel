@@ -157,12 +157,12 @@ test('LG-05: a draft-only POS ID remains private until its owning language maste
     assert.equal(hidden.partOfSpeech ?? '', '', 'draft-only class name must be masked');
 
     const detail = await reader.newPage();
-    await detail.goto(base + '/items/' + word);
+    await detail.goto(base + '/series/' + series + '/dictionaries/' + language + '/words/' + word);
     await detail.locator('.meaning-definition').getByText('公開された意味の説明').waitFor();
     assert.equal(await detail.locator('.meaning-class').count(), 0);
 
     const listing = await reader.newPage();
-    await listing.goto(base + '/dictionaries/' + series);
+    await listing.goto(base + '/series/' + series + '/dictionaries/' + language);
     const publicFilter = listing.getByLabel('品詞');
     await publicFilter.waitFor();
     assert.equal(await publicFilter.locator('option').allTextContents().then(

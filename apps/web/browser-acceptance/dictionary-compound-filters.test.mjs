@@ -99,49 +99,31 @@ test('AC-67: language, part of speech and meaning filters combine without leakin
     }
 
     const page = await reader.newPage();
-    await page.goto(base + '/dictionaries/' + series);
-    const query = page.getByLabel('単語を検索');
-    const language = page.getByLabel('言語');
-    const part = page.getByLabel('品詞');
     const wordLink = name => page.getByRole('link', { name, exact: true });
-
+    await page.goto(base + '/series/' + series + '/dictionaries/' + languageA);
+    const query = page.getByLabel('単語を検索');
+    const part = page.getByLabel('品詞');
     await query.fill('海の意味');
-    await wordLink(wordCName).waitFor();
-    assert.equal(await wordLink(wordAName).count(), 1, 'word A must match its first meaning');
-    assert.equal(await wordLink(wordBName).count(), 0, 'word B has no matching meaning');
-    assert.equal(await wordLink(wordCName).count(), 1, 'word C belongs to the second language');
-
+    await wordLink(wordAName).waitFor();
+    assert.equal(await wordLink(wordBName).count(), 0, 'nonmatching sense is excluded');
+    assert.equal(await wordLink(wordCName).count(), 0, 'another language is not in this language home');
     await part.selectOption('名詞');
     assert.equal(await wordLink(wordAName).count(), 1);
-    assert.equal(await wordLink(wordCName).count(), 1);
-    await language.selectOption(languageA);
-    assert.equal(await wordLink(wordAName).count(), 1);
-    assert.equal(await wordLink(wordCName).count(), 0, 'language filter must prevent cross-language results');
-    assert.ok((await wordLink(wordAName).getAttribute('href'))?.endsWith('/items/' + wordA));
-
+    assert.ok((await wordLink(wordAName).getAttribute('href'))?.endsWith('/dictionaries/' + languageA + '/words/' + wordA));
     await part.selectOption('動詞');
     assert.equal(await wordLink(wordAName).count(), 1,
-      'multi-part-of-speech word stays in the filtered result as one word, even if the query matched another sense');
+      'word with noun and verb senses remains when filtering on verb');
     await query.fill('火の意味');
     await wordLink(wordBName).waitFor();
     assert.equal(await wordLink(wordAName).count(), 0);
-    assert.equal(await wordLink(wordBName).count(), 1);
     await part.selectOption('名詞');
-    assert.equal(await wordLink(wordBName).count(), 0,
-      'verb-only meaning is excluded by noun filter');
-
-    await query.fill('海の意味');
-    await language.selectOption(languageB);
+    assert.equal(await wordLink(wordBName).count(), 0);
+    await page.goto(base + '/series/' + series + '/dictionaries/' + languageB);
+    await page.getByLabel('単語を検索').fill('海の意味');
     await wordLink(wordCName).waitFor();
     assert.equal(await wordLink(wordAName).count(), 0);
-    assert.equal(await wordLink(wordCName).count(), 1);
-    assert.ok((await wordLink(wordCName).getAttribute('href'))?.endsWith('/items/' + wordC));
-
-    await language.selectOption('');
-    await wordLink(wordAName).waitFor();
-    assert.equal(await wordLink(wordAName).count(), 1);
-    assert.equal(await wordLink(wordCName).count(), 1);
-    const visible = await page.locator('body').innerText();
+    assert.ok((await wordLink(wordCName).getAttribute('href'))?.endsWith('/dictionaries/' + languageB + '/words/' + wordC));
+    const visible = await page.locator('main').innerText();
     for (const secret of [hiddenName, unpublishedName, foreignName, '海の秘密', '海の未公開']) {
       assert.ok(!visible.includes(secret), 'private, draft-only or other-series information leaked: ' + secret);
     }
