@@ -43,7 +43,7 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
   try {
     const reader = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const readerPage = await reader.newPage();
-    const storyResponse = await readerPage.goto(base + '/series/' + fixture.seriesA + '/stories);
+    const storyResponse = await readerPage.goto(base + '/series/' + fixture.seriesA + '/stories');
     const storyText = await readerPage.locator('body').innerText();
     assert.equal(storyResponse?.status(), 200, 'story HTTP response: ' + storyText.slice(0, 1500));
     assert.ok(storyText.includes(fixture.prefix + '-world-A') &&
@@ -818,7 +818,7 @@ test('authenticated non-author reader cannot enter the author workspace', { time
       'a signed-in reader must not receive author editing controls');
     assert.equal((await reader.request.get(base + '/api/admin/nodes')).status(), 401,
       'a signed-in reader must not read private author data');
-    const publicPage = await page.goto(base + '/series/' + fixture.seriesA + '/stories);
+    const publicPage = await page.goto(base + '/series/' + fixture.seriesA + '/stories');
     assert.equal(publicPage?.status(), 200,
       'non-author login must not prevent reading public content');
     assert.ok((await page.locator('body').innerText()).includes(fixture.prefix + '-world-A'));

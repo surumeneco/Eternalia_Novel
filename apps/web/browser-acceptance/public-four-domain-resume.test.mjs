@@ -123,7 +123,7 @@ test('FOUR-DOMAIN-RESUME-04: a per-series dictionary fails closed when BFCache-s
         const page=await context.newPage();
         await page.goto(base+'/series/'+seriesId+'/dictionaries/'+language);
         await hydrated(page);
-        await page.getByRole('link',{name:marker+'SECRET-word',exact:true}).waitFor();
+        await page.locator('main').getByRole('link',{name:marker+'SECRET-word',exact:true}).waitFor();
         await visibility(seriesId,future);
         await page.route('**/api/public/series/'+seriesId+'/tree',route=>
           route.fulfill({status:503,contentType:'application/json',body:'{"message":"unavailable"}'}));

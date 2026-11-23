@@ -28,7 +28,7 @@ test('READER-01/02/03: public series and reader areas localize immediately witho
    assert.ok((await page.locator('main').innerText()).includes(title),'author title must remain identical');
 
    await page.goto(base+'/series/'+fixture.seriesA+'/dictionaries/'+fixture.language);
-   await page.getByRole('heading',{name:title+' — Dictionary'}).waitFor();
+   await page.getByRole('heading',{name:fixture.prefix+'-visible-language',exact:true}).waitFor();
    assert.ok((await page.locator('.domain-filters label').first().innerText()).includes('Search words'));
    
    await page.getByLabel('Search words').fill(fixture.prefix+'-visible-word');
