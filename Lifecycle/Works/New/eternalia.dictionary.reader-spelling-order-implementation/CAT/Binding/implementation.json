@@ -10,5 +10,6 @@
   "interface_symbols": {
     "compareDictionaryWordSpelling": "compare"
   },
-  "capabilities": {}
+  "capabilities": {},
+  "capability_analysis": "typed-data-functions/v1"
 }
