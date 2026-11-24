@@ -11,6 +11,7 @@ import {
 const require = createRequire(import.meta.url);
 require('reflect-metadata');
 const { PostgresLibraryService } = require('../dist/postgres-library.service.js');
+const { CommonMastersService } = require('../dist/common-masters.service.js');
 
 const now = Date.UTC(2026, 9, 30, 12, 0, 0);
 const content = (title, details = {}) => ({ title, body: '', details });
@@ -18,11 +19,16 @@ const content = (title, details = {}) => ({ title, body: '', details });
 test('PostgreSQL persists tip tags and ordered related tips without exposing private references', async () => {
   assert.ok(process.env.DATABASE_URL, 'DATABASE_URL must identify a disposable migrated test database');
   const storage = new PostgresLibraryService();
+  const masters = new CommonMastersService();
+  let tagPerson, tagTravel;
   const ids = Object.fromEntries([
     'series', 'category', 'otherCategory', 'source', 'targetA', 'targetB',
     'foreignSeries', 'foreignCategory', 'foreignTip',
   ].map(key => [key, randomUUID()]));
   try {
+    const group = 'tip-relations-' + randomUUID();
+    tagPerson = await masters.create('tags',{group,name:'人物',order:0});
+    tagTravel = await masters.create('tags',{group,name:'旅',order:1});
     await storage.mutate(previous => {
       let db = previous;
       for (const [id, kind, parentId, title] of [
@@ -50,7 +56,7 @@ test('PostgreSQL persists tip tags and ordered related tips without exposing pri
     const relatedTipIds = JSON.stringify([ids.targetB, ids.targetA]);
     await storage.mutate(db => editNode(
       db, ids.source, 1, content('source', {
-        tags: JSON.stringify(['人物', '旅']),
+        tagIds: JSON.stringify([tagPerson.id,tagTravel.id]),
         relatedTipIds,
       }), now + 2,
     ));
@@ -58,10 +64,26 @@ test('PostgreSQL persists tip tags and ordered related tips without exposing pri
     assert.equal(db.nodes.find(node => node.id === ids.source).draft.details.relatedTipIds, relatedTipIds);
     assert.equal(toReader(db, ids.source, now + 3).content.details.tags, undefined,
       'saving draft must not publish tags or relation changes');
+    await assert.rejects(
+      masters.remove('tags',tagPerson.id,tagPerson.revision),
+      error => error?.getStatus?.() === 409,
+      'draft Tag ID reference must block catalog deletion');
+    await assert.rejects(
+      masters.edit('tags',tagPerson.id,{group:tagPerson.group,name:'new label',order:0,expectedRevision:tagPerson.revision}),
+      error => error?.getStatus?.() === 409,
+      'referenced catalog label cannot be renamed outside explicit publication');
+    await assert.rejects(
+      storage.mutate(previous => editNode(previous, ids.source, 2, content('source', {
+        tagIds: JSON.stringify([randomUUID()]),relatedTipIds,
+      }), now + 4)),
+      error => error?.getStatus?.() === 400,
+      'unknown Tag ID must be rejected before committing the draft');
+    assert.equal((await storage.read()).nodes.find(node => node.id === ids.source).draft.details.tagIds,
+      JSON.stringify([tagPerson.id,tagTravel.id]), 'invalid Tag ID write must rollback');
 
     await assert.rejects(
       storage.mutate(previous => editNode(previous, ids.source, 2, content('source', {
-        tags: '["人物"]', relatedTipIds: JSON.stringify([ids.foreignTip]),
+        tagIds: JSON.stringify([tagPerson.id]), relatedTipIds: JSON.stringify([ids.foreignTip]),
       }), now + 4)),
       err => err?.code === 'bad-request',
       'different series is forbidden even when both tips are published',
@@ -73,6 +95,9 @@ test('PostgreSQL persists tip tags and ordered related tips without exposing pri
     db = await storage.read();
     let exposed = toReader(db, ids.source, now + 6);
     assert.equal(exposed.content.details.tags, '["人物","旅"]');
+    assert.equal(exposed.content.details.tagIds, undefined, 'internal catalog IDs never enter the reader response');
+    await assert.rejects(masters.remove('tags',tagPerson.id,tagPerson.revision),
+      error => error?.getStatus?.() === 409, 'published Tag ID reference must also block deletion');
     assert.equal(exposed.content.details.relatedTipIds, undefined,
       'raw private IDs are never returned');
     assert.deepEqual(JSON.parse(exposed.content.details.relatedTips), [
@@ -94,6 +119,43 @@ test('PostgreSQL persists tip tags and ordered related tips without exposing pri
       { id: ids.targetB, title: 'second' },
     ], 'nonpublic ancestor suppresses a related tip');
   } finally {
+    await masters.onModuleDestroy();
+    await storage.onModuleDestroy();
+  }
+});
+ 
+test('distinct groups may share a Tag name without invalidating public labels or private ID references', async () => {
+  assert.ok(process.env.DATABASE_URL, 'DATABASE_URL must identify a disposable migrated test database');
+  const storage = new PostgresLibraryService();
+  const masters = new CommonMastersService();
+  const series = randomUUID(), category = randomUUID(), tip = randomUUID();
+  const group = 'same-label-' + randomUUID();
+  try {
+    const a = await masters.create('tags',{group:group+'-a',name:'共有名',order:0});
+    const b = await masters.create('tags',{group:group+'-b',name:'共有名',order:0});
+    assert.notEqual(a.id,b.id);
+    await storage.mutate(previous => {
+      let db = createNode(previous,{id:series,kind:'series',parentId:null,content:content('same-label-world'),now});
+      db = createNode(db,{id:category,kind:'category',parentId:series,content:content('same-label-category'),now});
+      db = createNode(db,{id:tip,kind:'tip',parentId:category,content:content('same-label-tip',{
+        tagIds:JSON.stringify([a.id,b.id]),
+      }),now});
+      for (const id of [series,category,tip]) db=publishNode(db,id,1,now);
+      return db;
+    });
+    const db = await storage.read();
+    const stored = db.nodes.find(node=>node.id===tip);
+    assert.deepEqual(JSON.parse(stored.draft.details.tagIds),[a.id,b.id]);
+    assert.deepEqual(JSON.parse(stored.published.value.details.tagIds),[a.id,b.id]);
+    const reader = toReader(db,tip,now+1);
+    assert.deepEqual(JSON.parse(reader.content.details.tags),['共有名']);
+    assert.equal(reader.content.details.tagIds,undefined);
+    for (const tag of [a,b]) {
+      await assert.rejects(masters.remove('tags',tag.id,tag.revision),
+        error=>error?.getStatus?.()===409);
+    }
+  } finally {
+    await masters.onModuleDestroy();
     await storage.onModuleDestroy();
   }
 });

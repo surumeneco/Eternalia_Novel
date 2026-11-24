@@ -158,7 +158,7 @@ export class CommonMastersService implements OnModuleDestroy {
       SELECT (
         EXISTS (
           SELECT 1 FROM content_nodes n WHERE n.kind='tip' AND n.deleted_at IS NULL
-            AND COALESCE((n.draft_content #>> '{details,tags}')::jsonb, '[]'::jsonb) ? $1
+            AND COALESCE((n.draft_content #>> '{details,tagIds}')::jsonb, '[]'::jsonb) ? $1
         ) OR EXISTS (
           SELECT 1 FROM published_snapshots p JOIN content_nodes n ON n.id=p.node_id
           WHERE n.kind='tip' AND n.deleted_at IS NULL
@@ -176,7 +176,7 @@ export class CommonMastersService implements OnModuleDestroy {
     return this.transaction(async client => {
       const prior = await this.rowForUpdate(client, type, id);
       if (prior.revision !== expectedRevision) throw new ConflictException('マスタ項目が更新されています。');
-      if (type === 'tags' && prior.name !== entry.name && await this.referenced(client,id)) {
+      if (type === 'tags' && prior.name !== entry.name && await this.referenced(client,prior.id)) {
         throw new ConflictException('使用中のタグは改名できません。');
       }
       const result = await client.query<StorageRow>(
@@ -193,7 +193,7 @@ export class CommonMastersService implements OnModuleDestroy {
     const cfg = config(type), revision = validRevision(expectedRevision);
     await this.transaction(async client => {
       const prior = await this.rowForUpdate(client,type,id);
-      const refs = type === 'tags' && await this.referenced(client,id);
+      const refs = type === 'tags' && await this.referenced(client,prior.id);
       const judgment = deleteAdmission(prior.revision === revision, refs);
       if (judgment === 'conflict') throw new ConflictException('マスタ項目が更新されています。');
       if (judgment === 'referenced') throw new ConflictException('使用中のタグは削除できません。');

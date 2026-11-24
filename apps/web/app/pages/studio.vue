@@ -280,8 +280,8 @@ const categoryPresets = computed<string>({
   set: value => { form.details.presets = value; },
 });
 const tipTags = computed<string>({
-  get: () => form.details.tags ?? '[]',
-  set: value => { form.details.tags = value; },
+  get: () => form.details.tagIds ?? '[]',
+  set: value => { form.details.tagIds = value; },
 });
 const tipRelatedTipIds = computed<string>({
   get: () => form.details.relatedTipIds ?? '[]',

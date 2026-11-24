@@ -81,8 +81,13 @@ test('SEARCH-METADATA-01/02/03: tags and word definitions only expose explicitly
       seriesId = await create('series', null, title);
       const categoryId = await create('category', seriesId, fixture.prefix + '-metadata-category');
       const languageId = await create('language', seriesId, fixture.prefix + '-metadata-language');
+      const createTag = async name => (await author('POST','/api/admin/masters/tags',{
+        group:fixture.prefix+'-metadata-tags',name,order:0,
+      })).id;
+      const oldTagId = await createTag(oldTag);
+      const draftTagId = await createTag(draftTag);
       const tipId = await create('tip', categoryId, fixture.prefix + '-metadata-tip', {
-        tags: JSON.stringify([oldTag]), relatedTipIds: '[]',
+        tagIds: JSON.stringify([oldTagId]), relatedTipIds: '[]',
       });
       const wordId = await create('word', languageId, fixture.prefix + '-metadata-word', {
         meanings: meaningData(oldMeaning),
@@ -116,9 +121,9 @@ test('SEARCH-METADATA-01/02/03: tags and word definitions only expose explicitly
                   && (visible ? links.length === 1 && links[0].getAttribute('href') === href
                     : links.length === 0);
               },
-              { visible, href: domain === 'tips'
-                ? '/series/' + seriesId + '/settings/' + categoryId + '/' + expectedId
-                : '/series/' + seriesId + '/dictionaries/' + languageId + '/words/' + expectedId },
+              { visible, href: '/series/' + seriesId + (domain === 'tips'
+                ? '/settings/' + categoryId + '/' + expectedId
+                : '/dictionaries/' + languageId + '/words/' + expectedId) },
               { timeout: 20_000 },
             );
             const links = await page.locator('main .search-result a').all();
@@ -131,7 +136,7 @@ test('SEARCH-METADATA-01/02/03: tags and word definitions only expose explicitly
         await search(oldMeaning, 'dictionaries', wordId, true);
 
         // Saving drafts must never update the publicly searchable metadata.
-        await changeDraft(tipId, { tags: JSON.stringify([draftTag]) });
+        await changeDraft(tipId, { tagIds: JSON.stringify([draftTagId]) });
         await changeDraft(wordId, { meanings: meaningData(draftMeaning) });
         const beforePublish = await publicTree(seriesId);
         assert.equal(beforePublish.find(n => n.id === tipId)?.content.details.tags, JSON.stringify([oldTag]));

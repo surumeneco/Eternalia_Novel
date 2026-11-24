@@ -93,12 +93,15 @@ test('SEARCH-ISOLATION-01/02/03: identical public tags and dictionary meanings n
       const seriesC = await create('series', null, stamp + '-private-C');
       createdSeries.push(seriesA, seriesB, seriesC);
 
+      const tagMaster = await author('POST','/api/admin/masters/tags',{
+        group:stamp,name:tag,order:0,
+      });
       const items = [];
       for (const [seriesId, letter] of [[seriesA, 'A'], [seriesB, 'B'], [seriesC, 'C']]) {
         const category = await create('category', seriesId, stamp + '-category-' + letter);
         const language = await create('language', seriesId, stamp + '-language-' + letter);
         const tip = await create('tip', category, stamp + '-tip-' + letter, {
-          tags: JSON.stringify([tag]), relatedTipIds: '[]',
+          tagIds: JSON.stringify([tagMaster.id]), relatedTipIds: '[]',
         });
         const word = await create('word', language, stamp + '-word-' + letter, {
           meanings: JSON.stringify([{
@@ -169,7 +172,7 @@ test('SEARCH-ISOLATION-01/02/03: identical public tags and dictionary meanings n
         const visibleSearch = await page.locator('main').innerText();
         assert.ok(!visibleSearch.includes(stamp + '-word-B'));
         assert.ok(!visibleSearch.includes(meaning));
-        assert.equal(await page.locator('main .search-result a[href="' + wordHref(b) + '"]').count(), 0);
+        assert.equal(await page.locator('main a[href="/items/' + b.word + '"]').count(), 0);
         await page.close();
       } finally { await context.close(); }
     } finally {

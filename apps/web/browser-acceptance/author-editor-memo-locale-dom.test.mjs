@@ -25,7 +25,13 @@ test('AUTHOR-MEMO-01/02: stale author memo save localizes 409 in en and ja, pres
     try {
       const context = await authorContext(browser);
       const title = fixture.prefix + '-memo-conflict-' + randomUUID().slice(0, 8);
-      const original = { title, body: '原稿のメモ', tags: ['資料'] };
+      const tagResponse = await context.request.post(base + '/api/admin/masters/tags', {
+        headers: { Origin: base },
+        data: { group:'memo-' + randomUUID(), name:'資料', order:0 },
+      });
+      assert.equal(tagResponse.status(),201,await tagResponse.text());
+      const tag = await tagResponse.json();
+      const original = { title, body: '原稿のメモ', tags: [tag.id] };
       const createdResponse = await context.request.post(base + '/api/admin/memos', {
         headers: { Origin: base }, data: original,
       });

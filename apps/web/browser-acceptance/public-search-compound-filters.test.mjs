@@ -93,13 +93,16 @@ test('SEARCH-COMPOUND-01/02/03: series × domain × term × sort remain isolated
       const seriesA = await create('series', null, seriesAName);
       const seriesB = await create('series', null, seriesBName);
       createdSeries.push(seriesA, seriesB);
+      const tagMaster = await author('POST','/api/admin/masters/tags',{
+        group:stamp,name:token,order:0,
+      });
       const categoryA = await create('category', seriesA, stamp + '-category-A');
       const languageA = await create('language', seriesA, stamp + '-language-A');
       const tipZ = await create('tip', categoryA, 'Zeta-' + token, {
-        tags: JSON.stringify([token]), relatedTipIds: '[]',
+        tagIds: JSON.stringify([tagMaster.id]), relatedTipIds: '[]',
       });
       const tipA = await create('tip', categoryA, 'Alpha-' + token, {
-        tags: JSON.stringify([token]), relatedTipIds: '[]',
+        tagIds: JSON.stringify([tagMaster.id]), relatedTipIds: '[]',
       });
       const wordA = await create('word', languageA, stamp + '-word', {
         meanings: JSON.stringify([{
@@ -108,7 +111,7 @@ test('SEARCH-COMPOUND-01/02/03: series × domain × term × sort remain isolated
       });
       const categoryB = await create('category', seriesB, stamp + '-category-B');
       const tipB = await create('tip', categoryB, 'Other-' + token, {
-        tags: JSON.stringify([token]), relatedTipIds: '[]',
+        tagIds: JSON.stringify([tagMaster.id]), relatedTipIds: '[]',
       });
       for (const id of [seriesA, seriesB, categoryA, languageA, categoryB, tipZ, tipA, wordA, tipB]) {
         await publish(id);
@@ -119,8 +122,8 @@ test('SEARCH-COMPOUND-01/02/03: series × domain × term × sort remain isolated
       const wordNode = aTree.find(item => item.id === wordA);
       assert.ok(zNode && aNode && wordNode);
       assert.ok(zNode.order < aNode.order, 'manual sibling order follows initial Z→A creation');
-      const tipHref = (series, category, id) => '/series/' + series + '/settings/' + category + '/' + id;
-      const wordHref = (series, language, id) => '/series/' + series + '/dictionaries/' + language + '/words/' + id;
+      const tipHref = (seriesId, categoryId, id) => '/series/' + seriesId + '/settings/' + categoryId + '/' + id;
+      const wordHref = (seriesId, languageId, id) => '/series/' + seriesId + '/dictionaries/' + languageId + '/words/' + id;
       const recentTips = [zNode, aNode]
         .sort((a, b) => b.publishedAt - a.publishedAt || a.id.localeCompare(b.id))
         .map(node => tipHref(seriesA, categoryA, node.id));
@@ -154,11 +157,11 @@ test('SEARCH-COMPOUND-01/02/03: series × domain × term × sort remain isolated
               ]);
               return name.get(x).localeCompare(name.get(y), 'ja');
             }));
-        assert.equal(await page.locator('main .search-result a[href="' + tipHref(seriesB, categoryB, tipB) + '"]').count(), 0);
+        assert.equal(await page.locator('main a[href="/items/' + tipB + '"]').count(), 0);
 
         await switchSeries(page, seriesB);
         await search(page, seriesBName, 'all', token, 'manual', [tipHref(seriesB, categoryB, tipB)]);
-        assert.equal(await page.locator('main .search-result a[href="' + tipHref(seriesA, categoryA, tipA) + '"]').count(), 0);
+        assert.equal(await page.locator('main a[href="/items/' + tipA + '"]').count(), 0);
 
         // A's ancestor becomes future-scheduled; a word under another parent stays public.
         await visibility(categoryA, future);

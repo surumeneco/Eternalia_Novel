@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import {
   newLibrary, createNode, editNode, publishNode, setVisibility,
-  toReader, parseTipTags, parseTipRelationIds,
+  toReader, parseTipTags, parseTipTagIds, parseTipRelationIds,
 } from '../dist/index.js';
 
 const now = Date.UTC(2026, 9, 30);
@@ -26,13 +26,24 @@ function fixture() {
   const foreign = add(db, 'tip', otherCategory.id, 'foreign'); db = foreign.db;
   return { db, series, category, extraCategory, first, second, otherSeries, otherCategory, foreign };
 }
-test('tip tags validate nonempty unique labels; relation IDs preserve deliberate order', () => {
+test('author Tag IDs are stable and distinct from reader-facing label arrays', () => {
+  const tagId = randomUUID();
+  assert.deepEqual(parseTipTagIds(JSON.stringify([tagId])), [tagId]);
+  assert.deepEqual(parseTipTagIds(JSON.stringify([tagId.toUpperCase()])), [tagId]);
+  assert.throws(() => parseTipTagIds(JSON.stringify([tagId,tagId.toUpperCase()])));
+  assert.throws(() => parseTipTagIds(JSON.stringify([tagId,tagId])));
+  assert.throws(() => parseTipTagIds('["people"]'));
   assert.deepEqual(parseTipTags('["people","travel"]'), ['people','travel']);
   assert.deepEqual(parseTipRelationIds('["a","b"]'), ['a','b']);
   assert.throws(() => parseTipTags('["people","people"]'));
   assert.throws(() => parseTipTags('[""]'));
   assert.throws(() => parseTipRelationIds('["a","a"]'));
   assert.throws(() => parseTipRelationIds('{"id":"a"}'));
+});
+test('published Tag names accept catalog maximum without reader projection failure', () => {
+  const fullName = '青'.repeat(100);
+  assert.deepEqual(parseTipTags(JSON.stringify([fullName])), [fullName]);
+  assert.throws(() => parseTipTags(JSON.stringify(['青'.repeat(101)])));
 });
 test('tip relations reject self, absent, non-tip and cross-series targets', () => {
   const { db, first, second, category, foreign } = fixture();
@@ -50,14 +61,15 @@ test('tip relations reject self, absent, non-tip and cross-series targets', () =
 test('published tip only exposes published related tips that pass ancestor visibility gate', () => {
   let { db, series, category, extraCategory, first, second } = fixture();
   db = editNode(db, first.id, 1, content('first', {
-    tags: JSON.stringify(['shared']),
+    tagIds: JSON.stringify([randomUUID()]),
     relatedTipIds: JSON.stringify([second.id]),
   }), now + 1);
   for (const id of [series.id, category.id, extraCategory.id])
     db = publishNode(db, id, 1, now + 2);
   db = publishNode(db, first.id, 2, now + 2);
   let reader = toReader(db, first.id, now + 3);
-  assert.equal(reader.content.details.tags, '["shared"]');
+  assert.equal(reader.content.details.tags, undefined, 'a pure model cannot invent catalog labels');
+  assert.equal(reader.content.details.tagIds, undefined, 'author IDs are not publicly projected');
   assert.deepEqual(JSON.parse(reader.content.details.relatedTips), [], 'unpublished target is not disclosed');
   assert.equal(reader.content.details.relatedTipIds, undefined, 'raw private IDs must not be exposed');
 
@@ -73,12 +85,27 @@ test('tip tags and references obey draft vs explicit published snapshot', () => 
   for (const id of [series.id, category.id, extraCategory.id, second.id]) db = publishNode(db,id,1,now);
   db = publishNode(db,first.id,1,now);
   db = editNode(db,first.id,1,content('first',{
-    tags: '["private-draft"]', relatedTipIds: JSON.stringify([second.id]),
+    tagIds: JSON.stringify([randomUUID()]), relatedTipIds: JSON.stringify([second.id]),
   }),now + 1);
   assert.equal(toReader(db,first.id,now + 2).content.details.tags, undefined,
     'draft details must stay private');
   db = publishNode(db,first.id,2,now + 3);
   const reader = toReader(db,first.id,now + 4);
-  assert.equal(reader.content.details.tags,'["private-draft"]');
+  assert.equal(reader.content.details.tagIds,undefined);
+  assert.equal(reader.content.details.tags,undefined,'label projection is persisted by PostgreSQL publication adapter');
   assert.deepEqual(JSON.parse(reader.content.details.relatedTips),[{id:second.id,title:'second'}]);
+});
+
+test('Tip creation and editing store canonical Tag UUIDs rather than input spelling', () => {
+  let { db, category, first } = fixture();
+  const id = 'abcdef12-3456-4789-abcd-1234567890ab';
+  const created = add(db, 'tip', category.id, 'upper-case reference', {
+    tagIds: JSON.stringify([id.toUpperCase()]),
+  });
+  db = created.db;
+  assert.equal(db.nodes.find(node => node.id === created.id).draft.details.tagIds, JSON.stringify([id]));
+  db = editNode(db, first.id, 1, content('first', {
+    tagIds: JSON.stringify([id.toUpperCase()]),
+  }), now + 1);
+  assert.equal(db.nodes.find(node => node.id === first.id).draft.details.tagIds, JSON.stringify([id]));
 });
