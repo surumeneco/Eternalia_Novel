@@ -4,6 +4,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import { randomUUID } from 'node:crypto';
 import { chromium } from 'playwright';
 
 const fixture = JSON.parse(await readFile(process.env.HTTP_FIXTURE_FILE, 'utf8'));
@@ -181,6 +182,87 @@ test('UI-3: cancellation in the shared in-document dialog does not publish an au
     await page.locator('dialog[open]').getByRole('button', { name: 'キャンセル' }).click();
     await page.locator('dialog[open]').waitFor({ state: 'hidden' });
     assert.equal(await page.locator('.status-success').filter({ hasText: '公開スナップショットを更新しました。' }).count(), 0);
+    await context.close();
+  } finally { await browser.close(); }
+});
+
+test('AC-94: bulk visibility is scoped to one series and reports conflicts and unverified readback', { timeout: 90000 }, async () => {
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const context = await browser.newContext();
+    await context.addCookies([{ name: 'eternalia_author', value: fixture.authorToken,
+      url: base, httpOnly: true, sameSite: 'Lax' }]);
+    const reader = await browser.newContext();
+    const page = await context.newPage();
+    const prefix = 'batch-' + randomUUID();
+    const headers = { Origin: base };
+    async function create(kind, parentId, suffix) {
+      const response = await context.request.post(base + '/api/admin/nodes', {
+        headers, data: { kind, parentId, content: { title: prefix + '-' + suffix, body: '', details: {} } },
+      });
+      assert.equal(response.status(), 201, await response.text());
+      const node = await response.json();
+      const published = await context.request.post(base + '/api/admin/nodes/' + node.id + '/publish', {
+        headers, data: { expectedRevision: 1 },
+      });
+      assert.equal(published.status(), 200, await published.text());
+      return node.id;
+    }
+    const series = await create('series', null, 'series');
+    const category = await create('category', series, 'category');
+    const first = await create('tip', category, 'first');
+    const second = await create('tip', category, 'second');
+    const foreignSeries = await create('series', null, 'foreign-series');
+    const foreignCategory = await create('category', foreignSeries, 'foreign-category');
+    const foreign = await create('tip', foreignCategory, 'foreign');
+    const publicStatus = async id => (await reader.request.get(base + '/api/public/items/' + id)).status();
+    const nodes = async () => {
+      const response = await context.request.get(base + '/api/admin/nodes');
+      assert.equal(response.status(), 200);
+      return await response.json();
+    };
+
+    await page.goto(base + '/admin/series/' + series + '/publication');
+    await page.getByLabel('シリーズを選択').locator('option[value="' + series + '"]').waitFor({ state: 'attached' });
+    await page.waitForFunction(id => document.querySelector('.publication-filters select')?.value === id, series);
+    await page.getByLabel('領域').selectOption('tips');
+    const check = id => page.locator('.publication-row input[type="checkbox"][value="' + id + '"]');
+    await check(first).waitFor();
+    await check(second).waitFor();
+    assert.equal(await check(foreign).count(), 0);
+    assert.equal(await publicStatus(first), 200);
+    assert.equal(await publicStatus(second), 200);
+    assert.equal(await publicStatus(foreign), 200);
+    await check(first).check();
+    await check(second).check();
+    const oldSecond = (await nodes()).find(node => node.id === second);
+    const external = await context.request.patch(base + '/api/admin/nodes/' + second, {
+      headers, data: { expectedRevision: oldSecond.revision,
+        content: { ...oldSecond.draft, title: prefix + '-second-revised' } },
+    });
+    assert.equal(external.status(), 200, await external.text());
+    await page.getByRole('button', { name: '選択項目を非公開', exact: true }).click();
+    await page.getByText('変更完了件数 1', { exact: true }).waitFor();
+    await page.locator('main [role="alert"]').filter({ hasText: prefix + '-second' }).waitFor();
+    assert.equal(await publicStatus(first), 404);
+    assert.equal(await publicStatus(second), 200);
+    assert.equal(await publicStatus(foreign), 200);
+    assert.equal((await nodes()).find(node => node.id === second).draft.title, prefix + '-second-revised');
+
+    // The next operation itself succeeds, but its management readback fails.
+    // Do not display a verified success count for stale management data.
+    await check(first).check();
+    await page.route('**/api/admin/nodes', async route => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({ status: 503, contentType: 'application/json', body: '{"error":"readback failed"}' });
+      } else await route.continue();
+    });
+    await page.getByRole('button', { name: '選択項目を公開', exact: true }).click();
+    await page.getByText('公開管理データを取得できません。', { exact: true }).waitFor();
+    assert.equal(await page.getByText('変更完了件数 1', { exact: true }).count(), 0);
+    assert.equal(await publicStatus(first), 200, 'write did succeed despite failed readback');
+    assert.equal(await publicStatus(foreign), 200);
+    await reader.close();
     await context.close();
   } finally { await browser.close(); }
 });
