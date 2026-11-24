@@ -61,7 +61,7 @@ test('AC-79/92: actual links traverse story hierarchy and exclude the scheduled 
     const nav = page.locator('main .chapter-navigation');
     await nav.waitFor();
     assert.equal(await nav.locator('a').count(), 1, 'only the contents link, no hidden next chapter');
-    assert.equal(await nav.locator('a').getAttribute('href'), story);
+    assert.equal(await nav.locator('a').getAttribute('href'), part);
     await page.goBack();
     await page.waitForURL(url => url.pathname === part);
     await page.locator('main').getByRole('heading', {name: title('part-A'), exact:true}).waitFor();
@@ -171,7 +171,7 @@ test('AC-92/95: chapter links cross parts and volumes, omit unpublished chapters
       await page.locator('main').getByRole('heading',{name:prefix+'-chapter-'+['A','B','C'][index],exact:true}).waitFor();
       const nav=page.locator('.chapter-navigation');
       await nav.waitFor();
-      const expected=[...(index>0?[paths[index-1]]:[]),root,...(index<2?[paths[index+1]]:[])];
+      const expected=[...(index>0?[paths[index-1]]:[]),paths[index].split('/chapters/')[0],...(index<2?[paths[index+1]]:[])];
       assert.deepEqual(await nav.locator('a').evaluateAll(a=>a.map(x=>x.getAttribute('href'))),expected);
       assert.equal(await page.locator('main a[href*="'+hidden+'"]').count(),0);
     }
@@ -186,8 +186,9 @@ test('AC-92/95: chapter links cross parts and volumes, omit unpublished chapters
       await page.locator('.chapter-navigation a[href="'+paths[i]+'"]').click();
       await page.waitForURL(url=>url.pathname===paths[i]);await check(i);
     }
-    await page.locator('.chapter-navigation a[href="'+root+'"]').click();
-    await page.waitForURL(url=>url.pathname===root);
+    const toc=paths[0].split('/chapters/')[0];
+    await page.locator('.chapter-navigation a[href="'+toc+'"]').click();
+    await page.waitForURL(url=>url.pathname===toc);
   }finally{
     if(series)try{await hide(series)}catch(error){console.error('fixture cleanup',error)}
     await browser.close();
