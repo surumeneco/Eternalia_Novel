@@ -8,7 +8,7 @@
 
 ## 起動・確認
 
-- **採用構成を確認する**: [Nuxt/Nest/PostgreSQLのローカル起動](docs/alpha-nuxt-setup.md)。既存クローンでは `git switch develop` → `git pull --ff-only origin develop` の後、専用検証DBを使って起動します。読者 `http://localhost:3000/`、作者 `http://localhost:3000/studio`。
+- **採用構成を確認する**: [Nuxt/Nest/PostgreSQLのローカル起動](docs/alpha-nuxt-setup.md)。既存クローンでは `git switch develop` → `git pull --ff-only origin develop` の後、専用検証DBを使って起動します。読者 `http://localhost:3000/`、作者 `http://localhost:3000/login` → `/admin`。
 - **旧独立プレビューの比較を行う**: [ローカルNodeプレビュー](docs/alpha-setup.md)。`apps/preview` のJSONストア・ローカル専用キーは採用構成のDB・Discord OAuthと独立しており、現在の機能・認証の受入に使いません。両者のデータは自動同期されません。
 
 ## 実装コードと構成
