@@ -2,7 +2,7 @@
 cat_version: '0.3'
 kind: tce
 id: eternalia.ui.reader-required-ia.tce
-status: draft
+status: confirmed
 process: eternalia.ui.reader-required-ia
 source_refs:
   - https://drive.google.com/file/d/1G4q4DbJZdOk7jIfgvuZu0a2e4L1LIMti/view
@@ -10,6 +10,7 @@ source_refs:
 refs: ["eternalia.ui.reader-required-ia.pi"]
 semantic_contract: markdown-v2
 language: ja
+decision_ref: https://drive.google.com/file/d/1G4q4DbJZdOk7jIfgvuZu0a2e4L1LIMti/view
 ---
 # TCE: eternalia.ui.reader-required-ia.tce
 

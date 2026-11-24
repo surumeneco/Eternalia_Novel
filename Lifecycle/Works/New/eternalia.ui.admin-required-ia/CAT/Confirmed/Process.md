@@ -2,7 +2,7 @@
 cat_version: '0.3'
 kind: process
 id: eternalia.ui.admin-required-ia
-status: draft
+status: confirmed
 process: eternalia.ui.admin-required-ia
 source_refs:
   - https://drive.google.com/file/d/1G4q4DbJZdOk7jIfgvuZu0a2e4L1LIMti/view
@@ -10,6 +10,7 @@ source_refs:
 refs: ["eternalia.ui.admin-required-ia.pi"]
 semantic_contract: markdown-v2
 language: ja
+decision_ref: https://drive.google.com/file/d/1G4q4DbJZdOk7jIfgvuZu0a2e4L1LIMti/view
 ---
 # Process: eternalia.ui.admin-required-ia
 

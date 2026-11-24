@@ -37,6 +37,9 @@ const crumbs=computed(()=>{
   if(props.languageDetails)path.push({label:t('readerDetails')});
   return path;
 });
+const detailChildren=computed(()=>valid.value?(tree.value??[]).filter(n=>n.parentId===props.nodeId&&
+  ((props.kind==='tip'&&n.kind==='tipSection')||(props.kind==='language'&&n.kind==='grammar')))
+  .sort((a,b)=>a.order-b.order||a.content.title.localeCompare(b.content.title,'ja')||a.id.localeCompare(b.id)):[]);
 const displayDetails=computed(()=>Object.fromEntries(Object.entries(item.value?.content.details??{}).filter(([key])=>
   !(item.value?.kind==='tip'&&['tags','relatedTips'].includes(key))&&
   !(item.value?.kind==='word'&&key==='meanings')&&
@@ -66,6 +69,19 @@ const languageHome=computed(()=>{
         <TipLinksReader v-if="kind==='tip'" :tags="item.content.details.tags" :related-tips="item.content.details.relatedTips" />
         <WordMeaningsReader v-if="kind==='word'" :serialized="item.content.details.meanings" />
         <LanguageStructureReader v-if="kind==='language'" :characters="item.content.details.characters" :word-classes="item.content.details.wordClasses" />
+        <section v-if="kind==='tip'&&detailChildren.length">
+          <h2>{{ t('readerKindTipSection') }}</h2>
+          <section v-for="child in detailChildren" :key="child.id">
+            <h3><NuxtLink :to="publicNodeRoute(tree??[],child.id)??'#'">{{ child.content.title }}</NuxtLink></h3>
+            <RichContent :source="child.content.body" />
+          </section>
+        </section>
+        <section v-if="kind==='language'&&detailChildren.length">
+          <h2>{{ t('readerKindGrammar') }}</h2>
+          <ul class="reader-list"><li v-for="child in detailChildren" :key="child.id">
+            <NuxtLink :to="publicNodeRoute(tree??[],child.id)??'#'">{{ child.content.title }}</NuxtLink>
+          </li></ul>
+        </section>
         <dl v-if="Object.keys(displayDetails).length" class="reader-details"><template v-for="(value,key) in displayDetails" :key="key">
           <dt>{{ key }}</dt><dd>{{ value }}</dd>
         </template></dl>

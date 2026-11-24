@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ReaderNode, ReaderKind } from '~/types/reader';
+import { parseTipTags } from '@eternalia/contracts';
 import { publicAreaRoute, publicNodeRoute, belongsToPublicSeries } from '~/utils/public-node-route';
 const props=defineProps<{ seriesId:string; area:'stories'|'settings'|'dictionaries'; parentId?:string }>();
 const { t }=useUiLocale();
@@ -21,7 +22,12 @@ const childKind=computed<ReaderKind>(()=>!props.parentId?expectedKind.value:prop
 const entries=computed(()=>(tree.value??[]).filter(n=>n.parentId===(props.parentId??props.seriesId)&&n.kind===childKind.value)
   .sort((a,b)=>props.area==='dictionaries'&&props.parentId?
     a.content.title.localeCompare(b.content.title):a.order-b.order||a.content.title.localeCompare(b.content.title,'ja')));
-const query=ref('');const speech=ref('');
+const query=ref('');const speech=ref('');const selectedTag=ref('');const tipOrder=ref('manual');
+watch(()=>[props.seriesId,props.area,props.parentId],()=>{query.value='';speech.value='';selectedTag.value='';tipOrder.value='manual';});
+function tipTags(node:ReaderNode):string[]{
+  try{return parseTipTags(node.content.details.tags??'[]');}catch{return [];}
+}
+const tags=computed(()=>[...new Set(entries.value.flatMap(tipTags))].sort((a,b)=>a.localeCompare(b,'ja')));
 type PublicWordMeaning = { partOfSpeech?: string; definition?: string };
 function wordMeanings(node: ReaderNode): PublicWordMeaning[] {
   if (node.kind !== 'word') return [];
@@ -37,10 +43,25 @@ function speechClasses(node: ReaderNode): string[] {
   ))];
 }
 const classes=computed(()=>[...new Set(entries.value.flatMap(speechClasses))].sort((a,b)=>a.localeCompare(b,'ja')));
-const filtered=computed(()=>entries.value.filter(node=>
-  (!speech.value||speechClasses(node).includes(speech.value))&&
-  (!query.value||[node.content.title,node.content.body,...wordMeanings(node).map(meaning=>meaning.definition??'')]
-    .some(text=>text.toLocaleLowerCase().includes(query.value.toLocaleLowerCase())))));
+const filtered=computed(()=>{
+  const q=query.value.trim().toLocaleLowerCase();
+  const result=entries.value.filter(node=>{
+    if(speech.value&&!speechClasses(node).includes(speech.value))return false;
+    if(node.kind==='tip'){
+      if(selectedTag.value&&!tipTags(node).includes(selectedTag.value))return false;
+      const sections=(tree.value??[]).filter(n=>n.kind==='tipSection'&&n.parentId===node.id);
+      return !q||[current.value?.content.title??'',node.content.title,node.content.body,...tipTags(node),
+        ...sections.flatMap(n=>[n.content.title,n.content.body])].some(s=>s.toLocaleLowerCase().includes(q));
+    }
+    return !q||[node.content.title,node.content.body,...wordMeanings(node).map(m=>m.definition??'')]
+      .some(s=>s.toLocaleLowerCase().includes(q));
+  });
+  if(childKind.value==='tip'){
+    if(tipOrder.value==='title')result.sort((a,b)=>a.content.title.localeCompare(b.content.title,'ja')||a.id.localeCompare(b.id));
+    if(tipOrder.value==='recent')result.sort((a,b)=>b.publishedAt-a.publishedAt||a.id.localeCompare(b.id));
+  }
+  return result;
+});
 const parentCrumbs=computed(()=>{
   const chain:{label:string;to?:string}[]=[];
   let cur=current.value;
@@ -90,6 +111,18 @@ const grammar=computed(()=>props.area==='dictionaries'&&props.parentId?
           <label>{{ t('readerPartOfSpeechFilter') }}<select v-model="speech">
             <option value="">{{ t('readerAllPartsOfSpeech') }}</option>
             <option v-for="part in classes" :key="part" :value="part">{{ part }}</option>
+          </select></label>
+        </div>
+        <div v-if="childKind==='tip'" class="domain-filters">
+          <label>{{ t('readerTipSearch') }}<input v-model="query" type="search" :placeholder="t('readerTipSearchPlaceholder')" /></label>
+          <label>{{ t('readerTagFilter') }}<select v-model="selectedTag">
+            <option value="">{{ t('readerAllTags') }}</option>
+            <option v-for="tag in tags" :key="tag" :value="tag">{{ tag }}</option>
+          </select></label>
+          <label>{{ t('readerSortFilter') }}<select v-model="tipOrder">
+            <option value="manual">{{ t('searchManual') }}</option>
+            <option value="title">{{ t('searchTitleSort') }}</option>
+            <option value="recent">{{ t('searchRecent') }}</option>
           </select></label>
         </div>
         <ul v-if="filtered.length" class="reader-list domain-list">
