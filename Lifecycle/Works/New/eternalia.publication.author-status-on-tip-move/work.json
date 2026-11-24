@@ -187,6 +187,31 @@
         "eternalia.publication.author-status-on-tip-move CAT symbolic contract > case.visible"
       ],
       "timeout_seconds": 60
+    },
+    {
+      "id": "browser-adopted",
+      "stage": "implementation-conformance",
+      "runner": "junit",
+      "cwd": "@repo:eternalia",
+      "argv": [
+        "node",
+        "--test",
+        "--test-reporter=junit",
+        "--test-reporter-destination={report}",
+        "--test-reporter=spec",
+        "--test-reporter-destination=stdout",
+        "apps/web/browser-acceptance/author-publication-published-parent.test.mjs"
+      ],
+      "input_paths": [
+        "apps/web/browser-acceptance/author-publication-published-parent.test.mjs",
+        "apps/web/app/pages/studio/publication.vue",
+        "apps/web/app/types/author.ts",
+        "packages/contracts/src/publication.ts"
+      ],
+      "test_ids": [
+        "MOVE-07: published ancestor, not moved draft ancestor, governs author visibility/status/filter"
+      ],
+      "timeout_seconds": 300
     }
   ],
   "depends_on": [],

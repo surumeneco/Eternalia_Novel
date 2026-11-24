@@ -194,6 +194,34 @@
         "eternalia.dictionary.master-only-input CAT symbolic contract > case.empty.legacy"
       ],
       "timeout_seconds": 60
+    },
+    {
+      "id": "browser-adopted",
+      "stage": "implementation-conformance",
+      "runner": "junit",
+      "cwd": "@repo:eternalia",
+      "argv": [
+        "node",
+        "--test",
+        "--test-reporter=junit",
+        "--test-reporter-destination={report}",
+        "--test-reporter=spec",
+        "--test-reporter-destination=stdout",
+        "apps/web/browser-acceptance/word-class-input-master.test.mjs"
+      ],
+      "input_paths": [
+        "apps/web/browser-acceptance/word-class-input-master.test.mjs",
+        "apps/web/app/components/WordMeaningsEditor.vue",
+        "apps/web/app/pages/studio.vue",
+        "apps/web/app/composables/useUiLocale.ts",
+        "apps/web/app/composables/ui-messages-en.ts",
+        "apps/web/app/utils/word-class-input-policy.ts"
+      ],
+      "test_ids": [
+        "LG-05: author creation and meaning editor never offer unregistered POS free-text",
+        "LG-05: a draft-only POS ID remains private until its owning language master is published"
+      ],
+      "timeout_seconds": 300
     }
   ],
   "depends_on": [],
