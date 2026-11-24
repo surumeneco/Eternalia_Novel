@@ -37,13 +37,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 'de38c8ba9cc367fe784067ce6fa9bdeb8142f1d7'
+          ref: '14784cf46a4a6858f17bb985f397ba29fa7956a8'
           persist-credentials: false
           path: project
       - uses: actions/checkout@v4
         with:
           repository: surumeneco/CAT-TDD
-          ref: 99cbe67ab7e05fd65164133b1b67b7e5bea23088
+          ref: 6e86d10ccd1c66ee813aed1a022c3893f1b1185e
           persist-credentials: false
           path: cat
       - uses: actions/setup-node@v4
@@ -53,17 +53,20 @@ jobs:
         working-directory: project
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = 'de38c8ba9cc367fe784067ce6fa9bdeb8142f1d7'
-          test "$(git rev-parse HEAD^{tree})" = 'f0a30e18863bdb8fdcb554dd8a45f3ee99916e6e'
+          test "$(git rev-parse HEAD)" = '14784cf46a4a6858f17bb985f397ba29fa7956a8'
+          test "$(git rev-parse HEAD^{tree})" = '64ddab63d29446cd5da37f5e3d764dedf3706eea'
           test "$(git -C ../cat rev-parse HEAD:.cat-system)" = fc73c75ca57f23bb25a19656015638b1087cffc9
-          git checkout -B feature/w07-compiler-constraint-bindings 'de38c8ba9cc367fe784067ce6fa9bdeb8142f1d7'
+          git checkout -B feature/w07-compiler-constraint-bindings '14784cf46a4a6858f17bb985f397ba29fa7956a8'
           mkdir -p "$RUNNER_TEMP/w07-evidence"
           git rev-parse HEAD > "$RUNNER_TEMP/w07-evidence/project-commit.txt"
           git rev-parse HEAD^{tree} > "$RUNNER_TEMP/w07-evidence/project-tree.txt"
           git -C ../cat rev-parse HEAD > "$RUNNER_TEMP/w07-evidence/cat-commit.txt"
           npm ci
-          npm install --no-save --package-lock=false playwright@1.56.1 vitest@3.2.4
-          npx playwright install --with-deps chromium
+          npm install --prefix "$RUNNER_TEMP/cat-tools" --no-package-lock --no-audit --no-fund playwright@1.56.1 vitest@3.2.4
+          ln -s "$RUNNER_TEMP/cat-tools/node_modules/vitest" node_modules/vitest
+          ln -s "$RUNNER_TEMP/cat-tools/node_modules/playwright" node_modules/playwright
+          node "$RUNNER_TEMP/cat-tools/node_modules/playwright/cli.js" install --with-deps chromium
+          node -e 'const l=require("./package-lock.json").packages; for(const n of ["vue","vue-tsc","typescript"]){const p="node_modules/"+n;const v=require("./"+p+"/package.json").version;if(v!==l[p].version)throw Error(n+" installed "+v+" expected "+l[p].version); console.log(n,v)}'
           npm run build
           npm run db:migrate
       - name: Execute all declared current items independently
@@ -139,6 +142,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: w07-compiler-constraint-revalidation
+          name: w07-compiler-constraint-locked-revalidation
           path: ${{ runner.temp }}/w07-evidence/
           include-hidden-files: true
