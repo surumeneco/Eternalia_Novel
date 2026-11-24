@@ -40,6 +40,14 @@ test('site-wide Tag/Div masters support stable IDs, ordering, guarded CRUD, and 
     ]);
     await assert.rejects(svc.remove('tags',tag.id,tag.revision),e=>e.status===409,'in-use tag deletion refused');
     await assert.rejects(svc.edit('tags',tag.id,{group:tag.group,name:'改名',order:3,expectedRevision:tag.revision}),e=>e.status===409,'in-use tag rename refused');
+    // PostgreSQL accepts upper-case UUID spelling as the same row identity.
+    // JSONB reference membership must use that row's canonical ID.
+    await assert.rejects(svc.edit('tags',tag.id.toUpperCase(),{
+      group:tag.group,name:'別名',order:3,expectedRevision:tag.revision,
+    }),e=>e.status===409,'upper-case UUID must not bypass referenced rename protection');
+    await assert.rejects(svc.remove('tags',tag.id.toUpperCase(),tag.revision),
+      e=>e.status===409,'upper-case UUID must not bypass referenced delete protection');
+    assert.equal((await svc.list('tags')).find(row=>row.id===tag.id).name,tag.name);
     await db.query('DELETE FROM author_memos WHERE id=$1',[memoId]);
     tag=await svc.edit('tags',tag.id,{group:tag.group,name:'改名',order:0,expectedRevision:tag.revision});
     assert.equal(tag.revision,2);

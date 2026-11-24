@@ -95,3 +95,17 @@ test('tip tags and references obey draft vs explicit published snapshot', () => 
   assert.equal(reader.content.details.tags,undefined,'label projection is persisted by PostgreSQL publication adapter');
   assert.deepEqual(JSON.parse(reader.content.details.relatedTips),[{id:second.id,title:'second'}]);
 });
+
+test('Tip creation and editing store canonical Tag UUIDs rather than input spelling', () => {
+  let { db, category, first } = fixture();
+  const id = 'abcdef12-3456-4789-abcd-1234567890ab';
+  const created = add(db, 'tip', category.id, 'upper-case reference', {
+    tagIds: JSON.stringify([id.toUpperCase()]),
+  });
+  db = created.db;
+  assert.equal(db.nodes.find(node => node.id === created.id).draft.details.tagIds, JSON.stringify([id]));
+  db = editNode(db, first.id, 1, content('first', {
+    tagIds: JSON.stringify([id.toUpperCase()]),
+  }), now + 1);
+  assert.equal(db.nodes.find(node => node.id === first.id).draft.details.tagIds, JSON.stringify([id]));
+});

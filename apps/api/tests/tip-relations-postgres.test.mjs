@@ -123,3 +123,39 @@ test('PostgreSQL persists tip tags and ordered related tips without exposing pri
     await storage.onModuleDestroy();
   }
 });
+ 
+test('distinct groups may share a Tag name without invalidating public labels or private ID references', async () => {
+  assert.ok(process.env.DATABASE_URL, 'DATABASE_URL must identify a disposable migrated test database');
+  const storage = new PostgresLibraryService();
+  const masters = new CommonMastersService();
+  const series = randomUUID(), category = randomUUID(), tip = randomUUID();
+  const group = 'same-label-' + randomUUID();
+  try {
+    const a = await masters.create('tags',{group:group+'-a',name:'共有名',order:0});
+    const b = await masters.create('tags',{group:group+'-b',name:'共有名',order:0});
+    assert.notEqual(a.id,b.id);
+    await storage.mutate(previous => {
+      let db = createNode(previous,{id:series,kind:'series',parentId:null,content:content('same-label-world'),now});
+      db = createNode(db,{id:category,kind:'category',parentId:series,content:content('same-label-category'),now});
+      db = createNode(db,{id:tip,kind:'tip',parentId:category,content:content('same-label-tip',{
+        tagIds:JSON.stringify([a.id,b.id]),
+      }),now});
+      for (const id of [series,category,tip]) db=publishNode(db,id,1,now);
+      return db;
+    });
+    const db = await storage.read();
+    const stored = db.nodes.find(node=>node.id===tip);
+    assert.deepEqual(JSON.parse(stored.draft.details.tagIds),[a.id,b.id]);
+    assert.deepEqual(JSON.parse(stored.published.value.details.tagIds),[a.id,b.id]);
+    const reader = toReader(db,tip,now+1);
+    assert.deepEqual(JSON.parse(reader.content.details.tags),['共有名']);
+    assert.equal(reader.content.details.tagIds,undefined);
+    for (const tag of [a,b]) {
+      await assert.rejects(masters.remove('tags',tag.id,tag.revision),
+        error=>error?.getStatus?.()===409);
+    }
+  } finally {
+    await masters.onModuleDestroy();
+    await storage.onModuleDestroy();
+  }
+});
