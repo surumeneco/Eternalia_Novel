@@ -15,7 +15,7 @@ const types={
 };
 
 test('CM-09: author-only home and area creation paths use validated canonical creation and edit routes',
-  {timeout:120_000},async()=>{
+  {timeout:240_000},async()=>{
   assert.ok(base?.startsWith('http://127.0.0.1:'));
   const browser=await chromium.launch({headless:true});
   try{
@@ -109,6 +109,48 @@ test('CM-09: author-only home and area creation paths use validated canonical cr
     assert.equal(createdWord.parentId,fixture.language);
     await page.waitForURL(url=>url.pathname==='/admin/series/'+fixture.seriesA+'/dictionaries/words/'+createdWord.id+'/edit');
     assert.equal((await context.request.get(base+'/api/public/items/'+createdWord.id)).status(),404);
+    // Every remaining canonical child kind must create under its admitted parent,
+    // navigate to its own editor, and remain unpublished until explicit publication.
+    for(const [kind,parent,group] of [
+      ['part',fixture.volume,'stories/parts'],
+      ['chapter',fixture.part,'stories/chapters'],
+      ['category',fixture.seriesA,'settings/categories'],
+      ['tip',fixture.category,'settings/tips'],
+      ['tipSection',fixture.tip,'settings/sections'],
+      ['language',fixture.seriesA,'dictionaries/languages'],
+      ['grammar',fixture.language,'dictionaries/grammar'],
+      ['periodization',fixture.seriesA,'timeline/periods'],
+      ['event',fixture.period,'timeline/events'],
+    ]){
+      const title=fixture.prefix+'-canonical-new-'+kind;
+      await page.goto(base+'/admin/series/'+fixture.seriesA+'/create/'+kind+'/'+parent);
+      const form=page.locator('form.create-form');
+      await form.waitFor();
+      await page.waitForFunction(()=>Boolean(document.querySelector('#__nuxt')?.__vue_app__));
+      assert.equal(await form.locator('select').first().inputValue(),kind);
+      assert.equal(await form.locator('select').first().isDisabled(),true);
+      await form.locator('input[maxlength="150"]').fill(title);
+      const response=page.waitForResponse(r=>r.request().method()==='POST'&&new URL(r.url()).pathname==='/api/admin/nodes');
+      await form.getByRole('button',{name:'作成',exact:true}).click();
+      const createdResponse=await response;
+      assert.equal(createdResponse.status(),201,kind);
+      const {id}=await createdResponse.json();
+      await page.waitForURL(url=>url.pathname==='/admin/series/'+fixture.seriesA+'/'+group+'/'+id+'/edit');
+      await page.locator('main').getByRole('heading',{name:new RegExp(title+'    await page.goto(base+'/stories');
+    await page.getByRole('link',{name:types.stories.label}).first().waitFor();
+    await selectUiLanguage(page, 'en');
+    await page.getByRole('link',{name:'Create a new arc in this series'}).first().waitFor();
+    await page.getByRole('link',{name:fixture.prefix+'-world-A'}).waitFor();
+    await context.close();
+  }finally{await browser.close()}
+});
+)}).first().waitFor();
+      const node=(await list()).find(n=>n.id===id);
+      assert.equal(node?.kind,kind);
+      assert.equal(node?.parentId,parent);
+      assert.equal(node?.draft.title,title);
+      assert.equal((await context.request.get(base+'/api/public/items/'+id)).status(),404,kind);
+    }
     await page.goto(base+'/stories');
     await page.getByRole('link',{name:types.stories.label}).first().waitFor();
     await selectUiLanguage(page, 'en');
