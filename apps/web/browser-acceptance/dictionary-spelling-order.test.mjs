@@ -19,7 +19,7 @@ test('LG-07: each public language displays spelling ascending, independent of cr
     const author = await browser.newContext();
     await author.addCookies([{ name: 'eternalia_author', value: fixture.authorToken,
       url: base, httpOnly: true, sameSite: 'Lax' }]);
-    const reader = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const reader = await browser.newContext({ viewport: { width: 390, height: 844 }, locale: 'en-US' });
     const prefix = fixture.prefix + '-spelling-order';
     async function nodes() {
       const response = await author.request.get(base + '/api/admin/nodes');
@@ -64,7 +64,15 @@ test('LG-07: each public language displays spelling ascending, independent of cr
       await create('word', languageB, omega, senses('動詞', '歩く')),
       await create('word', languageB, delta, senses('名詞', '空')),
     ];
-    await publish(series); await publish(languageA); await publish(languageB);
+    // The adopted comparator uses Japanese collation, not the deployment locale.
+    // These two distinct spellings reverse order between ja and en-US.
+    const languageCName = prefix + '-language-C';
+    const languageC = await create('language', series, languageCName, classes);
+    const hiragana = prefix + '-あ';
+    const smallKatakana = prefix + '-ァ';
+    wordIds.push(await create('word', languageC, hiragana, senses('名詞', '空')));
+    wordIds.push(await create('word', languageC, smallKatakana, senses('名詞', '海')));
+    await publish(series); await publish(languageA); await publish(languageB); await publish(languageC);
     for (const id of wordIds) await publish(id);
     const page = await reader.newPage();
     const openLanguage = async (languageId, languageName) => {
@@ -83,6 +91,8 @@ test('LG-07: each public language displays spelling ascending, independent of cr
     await page.getByLabel('品詞').selectOption('名詞');
     assert.deepEqual(await words(), [delta]);
     assert.equal(await page.getByRole('heading', { name: languageAName, exact: true }).count(), 0);
+    await openLanguage(languageC, languageCName);
+    assert.deepEqual(await words(), [smallKatakana, hiragana], 'canonical dictionary route must retain adopted Japanese spelling comparator');
     await page.close();
     await reader.close();
     await author.close();
