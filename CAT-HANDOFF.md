@@ -1,6 +1,6 @@
 # Eternalia_Novel α版開発完了後 — 実機確認・改善の引継ぎ
 
-この文書は**いま進めるべきWorkの分類と、証拠の参照先**だけを扱う。要求・設計の正本は [Google Drive プロジェクトREADME](https://drive.google.com/file/d/1iyt-eHelLjROHcgO699p86poC0Y_-7pd/view)、実装状態は [developの現行コード](https://github.com/surumeneco/Eternalia_Novel/tree/develop)、検証結果は [AC-01〜96台帳](docs/alpha-ac-traceability.md) / [実機受入](docs/alpha-manual-acceptance.md) が正本。固定SHA・PR状態・CI結果は作業ごとに取得する。シリーズ起点UI・共通マスタの修正と残件は [Issue #165](https://github.com/surumeneco/Eternalia_Novel/issues/165) を追跡する。
+この文書は**CAT工程・技術証拠の参照入口**であり、残Workの優先順位・依存・終了条件・実機への引渡し順序は [Drive 410_現行作業台帳](https://drive.google.com/file/d/1mwjZgnQhBNwgl914pqQtMQJSkyjTi-2f/view) を正本とする。要求・設計の正本は [Google Drive プロジェクトREADME](https://drive.google.com/file/d/1iyt-eHelLjROHcgO699p86poC0Y_-7pd/view)、実装状態は [developの現行コード](https://github.com/surumeneco/Eternalia_Novel/tree/develop)、検証結果は [AC-01〜96台帳](docs/alpha-ac-traceability.md) / [実機受入](docs/alpha-manual-acceptance.md) が正本。固定SHA・PR状態・CI結果は作業ごとに取得する。シリーズ起点UI・共通マスタの修正と残件は [Issue #165](https://github.com/surumeneco/Eternalia_Novel/issues/165) を追跡する。
 
 ## α版完了・受入・リリースの境界
 
@@ -10,7 +10,7 @@
 - 年代区分間の共通年は`C = Periodization.RelativeYears + Event.Year`を**2026-11-17に利用者が加算式として承認済み**（[Issue #5](https://github.com/surumeneco/Eternalia_Novel/issues/5)、PR #79）。式の実装は既存コードと一致。年0/負年/公開投影の自動テスト、CAT Artifactの個別Confirmed状態・正規Gate、実機での表示確認はそれぞれ別の判定。
 - 96件のACの `not-run` は「未実装96件」や「α版未完成」を意味しない。原則として各採用要求を「コードの挙動／自動証拠／CAT正式Gate／実機受入」の4軸で判定する。適用除外AC-13（ゴミ箱）・AC-77（独立無効化）は勝手に復活させない。
 
-## α版完了後のWorkの分類・次の具体的判定
+## α版完了後の技術的なWork分類（作業順序ではない）
 
 | Work | 現在の証拠・未確認の条件 | 進め方 |
 | --- | --- | --- |
@@ -23,11 +23,10 @@
 | **R6 画面・視覚受入** | 旧v0.3色/role tokenの静的対照とスクリーンショット自動取得は部分証拠。利用者による旧画面と現行の見比べは未実施 | 公開4領域/作者/管理画面、320〜1280pxと実端末を対照。作者の長文編集キャンバスは旧配色の機械的強制を避け、採用済みUXと照合 |
 | **R7 利用者受入・リリース** | α版開発完了≠実機受入合格≠`main`公開 | 実機フィードバックと修正を評価し、明示承認された範囲だけ`main`へ統合 |
 
-## 作業を選ぶ手順
+## 作業選択と引渡し
 
-1. [AC台帳](docs/alpha-ac-traceability.md) と [現在のIssue](https://github.com/surumeneco/Eternalia_Novel/issues)、[PR](https://github.com/surumeneco/Eternalia_Novel/pulls)、[Actions](https://github.com/surumeneco/Eternalia_Novel/actions) を、**その時点の `develop` HEAD** と照合する。
-2. 仕様欠落、実装不具合、試験欠落、CAT Gate、実機確認対象、単なる記録ずれに分類する。疑いだけで欠陥確定/仕様変更へ昇格しない。
-3. 採用済み仕様に沿う独立Workを作り、必要なCAT工程とテストを実行し、変更差分・CI・ブランチを検証して `develop` へ統合する。証拠の追加は具体的な未被覆条件の解消を根拠にする。
-4. 実機でしか確認できない条件は [MAN台帳](docs/alpha-manual-acceptance.md) に保持し、推測でpassにしない。
+[410_現行作業台帳](https://drive.google.com/file/d/1mwjZgnQhBNwgl914pqQtMQJSkyjTi-2f/view) の現行順序を適用する。上記R0〜R7は技術分類であって、R0から順番に独立PRを発行する指示ではない。最新develop・採用要件/指摘・既存PR/CI・AC/MANを照合し、未解消の受入阻害・必須条件・正式CAT義務を起点に、同一責務の変更を完結単位で処理する。既存の有効な成果と証拠を再利用し、記録だけの反復や追加最適化を既定作業にしない。
+
+正式CAT残義務は独立並行レーンで処理する。実機で確認できる状態のdevelopを早期に引き渡し、正式Gateの合格や実機合格は別々に判定する。リリースに必要なGate・受入条件は免除せず、main統合には利用者の明示承認を要する。
 
 **履歴**：旧PR/CI/時点別の判断と実装の長文経緯は [凍結した初期引継ぎ](docs/history/alpha-handoff-through-2026-11-15.md) に保存する。この文書へ時点別追補や過去ログを積層しない。
