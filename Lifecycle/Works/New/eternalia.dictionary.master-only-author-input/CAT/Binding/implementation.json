@@ -1,0 +1,14 @@
+{
+  "schema": "cat-typescript-conformance-binding/v1",
+  "repository": "eternalia",
+  "source_globs": [
+    "apps/web/app/utils/word-class-input-policy.ts"
+  ],
+  "public_entrypoints": [
+    "apps/web/app/utils/word-class-input-policy.ts"
+  ],
+  "interface_symbols": {
+    "wordClassInputPolicy": "show"
+  },
+  "capabilities": {}
+}

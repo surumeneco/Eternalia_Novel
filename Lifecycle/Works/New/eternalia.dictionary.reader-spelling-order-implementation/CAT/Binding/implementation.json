@@ -1,0 +1,14 @@
+{
+  "schema": "cat-typescript-conformance-binding/v1",
+  "repository": "eternalia",
+  "source_globs": [
+    "apps/web/app/utils/dictionary-order.ts"
+  ],
+  "public_entrypoints": [
+    "apps/web/app/utils/dictionary-order.ts"
+  ],
+  "interface_symbols": {
+    "compareDictionaryWordSpelling": "compare"
+  },
+  "capabilities": {}
+}
