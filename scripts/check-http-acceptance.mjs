@@ -83,6 +83,7 @@ try {
   // and fail the whole command rather than silently succeeding with red JUnit.
   const failures = [];
   if (process.env.HTTP_BROWSER_ACCEPTANCE === '1') {
+    try { await command(['scripts/run-test-junit.mjs', 'browser-reader-hierarchy', 'apps/web/browser-acceptance/reader-hierarchy.test.mjs']); } catch (error) { failures.push({ suite: 'browser-reader-hierarchy', error: String(error) }); console.error(String(error)); }
     // Inspect every independent suite in one CI run; report failures together.
     try { await command(['scripts/run-test-junit.mjs', 'browser-auth-boundary', 'apps/web/browser-acceptance/author-csrf-oauth.test.mjs']); } catch (error) { failures.push({ suite: 'browser-auth-boundary', error: String(error) }); console.error(String(error)); }
     try { await command(['scripts/run-test-junit.mjs', 'browser-admin-grid-shell', 'apps/web/browser-acceptance/admin-grid-shell.test.mjs']); } catch (error) { failures.push({ suite: 'browser-admin-grid-shell', error: String(error) }); console.error(String(error)); }

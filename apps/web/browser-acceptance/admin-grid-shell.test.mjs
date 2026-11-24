@@ -43,8 +43,9 @@ test('W04: each canonical management grid opens its own existing editor', {timeo
       assert.equal(await page.locator('main .admin-node-grid a[href*="'+fixture.languageB+'"]').count(),0,grid);
       await row.locator('a[href="'+edit+'"]').click();
       await page.waitForURL(url=>url.pathname===edit);
-      const heading=page.locator('.studio-editor h2');
-      await heading.waitFor();
+      // The page route may mount before the asynchronous author data/selection settles.
+      const heading=page.locator('.studio-editor h2').filter({hasText:'：'+byId.get(id).draft.title});
+      await heading.waitFor({timeout:10000});
       assert.ok((await heading.innerText()).endsWith('：'+byId.get(id).draft.title),edit);
       assert.equal(await page.locator('.studio-editor .create-form').count(),0,edit);
       await page.locator('.studio-editor .publication-editor').waitFor();
