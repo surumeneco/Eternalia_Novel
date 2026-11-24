@@ -122,3 +122,48 @@ test('W05: 320px and desktop shell labels, locale and Escape behavior', {timeout
     }
   }finally{await browser.close()}
 });
+
+test('AC-85/86: mobile overlays contain keyboard focus, block background and restore the opener', {timeout:90000},async()=>{
+  const browser=await chromium.launch({headless:true});
+  try{
+    for(const width of [320,390]){
+      const context=await browser.newContext({viewport:{width,height:844},isMobile:true,hasTouch:true});
+      const page=await context.newPage();
+      await page.goto(base+'/series/'+fixture.seriesA);
+      await ready(page);
+      const main=page.locator('#main-content');
+      const footer=page.locator('.site-footer');
+      for(const [toggleSelector,panelSelector] of [['.nav-toggle','#global-navigation'],['.aside-toggle','#updates-aside']]){
+        const toggle=page.locator(toggleSelector);
+        await toggle.focus();
+        await toggle.press('Enter');
+        await page.waitForFunction(sel=>document.querySelector(sel)?.getAttribute('aria-expanded')==='true',toggleSelector);
+        const panel=page.locator(panelSelector);
+        await panel.waitFor();
+        await page.waitForFunction(sel=>document.querySelector(sel)?.contains(document.activeElement),panelSelector);
+        assert.equal(await main.evaluate(el=>el.inert),true,'background content must be inert');
+        assert.equal(await footer.evaluate(el=>el.inert),true,'footer must be inert');
+        await page.locator('.page-top-panel a').evaluate(el=>el.focus());
+        assert.equal(await main.evaluate(el=>el.contains(document.activeElement)),false);
+        const links=await panel.locator('a[href],button:not([disabled])').count();
+        for(let i=0;i<links+3;i++){
+          await page.keyboard.press('Tab');
+          assert.ok(await page.evaluate(([panel,opener])=>document.querySelector(panel)?.contains(document.activeElement)||document.querySelector(opener)===document.activeElement,[panelSelector,toggleSelector]));
+        }
+        await page.keyboard.press('Shift+Tab');
+        assert.ok(await page.evaluate(([panel,opener])=>document.querySelector(panel)?.contains(document.activeElement)||document.querySelector(opener)===document.activeElement,[panelSelector,toggleSelector]));
+        await page.keyboard.press('Escape');
+        await page.waitForFunction(sel=>document.activeElement===document.querySelector(sel),toggleSelector);
+        assert.equal(await toggle.getAttribute('aria-expanded'),'false');
+        assert.equal(await main.evaluate(el=>el.inert),false);
+        assert.equal(await footer.evaluate(el=>el.inert),false);
+        await toggle.tap();
+        await page.locator('.mobile-menu-backdrop').waitFor();
+        await page.touchscreen.tap(toggleSelector==='.nav-toggle'?4:width-4,800);
+        await page.waitForFunction(sel=>document.querySelector(sel)?.getAttribute('aria-expanded')==='false',toggleSelector);
+        assert.equal(await main.evaluate(el=>el.inert),false);
+      }
+      await context.close();
+    }
+  }finally{await browser.close()}
+});
