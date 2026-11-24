@@ -1,4 +1,4 @@
-name: Formal CAT acceptance verification
+name: Actual reader regression verification
 on:
   push:
     branches: ['infra/chat-acceptance-snapshot-853ee0c0']
@@ -6,12 +6,37 @@ permissions:
   contents: read
 jobs:
   cat:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: eternalia_http
+          POSTGRES_USER: eternalia
+          POSTGRES_PASSWORD: ci-temp-password
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U eternalia -d eternalia_http"
+          --health-interval 5s --health-timeout 3s --health-retries 12
+    env:
+      DATABASE_URL: postgres://eternalia:ci-temp-password@127.0.0.1:5432/eternalia_http
+      NODE_ENV: test
+      HTTP_ACCEPTANCE_DISPOSABLE_DB: '1'
+      HTTP_BASE_URL: http://127.0.0.1:34110
+      HTTP_API_URL: http://127.0.0.1:34111
+      API_PORT: '34111'
+      NITRO_PORT: '34110'
+      NUXT_API_INTERNAL_URL: http://127.0.0.1:34111
+      APP_ORIGIN: http://127.0.0.1:34110
+      DISCORD_CLIENT_ID: '123456789012345678'
+      DISCORD_CLIENT_SECRET: test-placeholder-not-a-discord-secret
+      DISCORD_AUTHOR_USER_ID: '123456789012345678'
+      HTTP_ACCEPTANCE_TEST_AUTHOR_ID: '123456789012345678'
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: '853ee0c00cbcd5aa17747d323518ba35aa22551d'
+          ref: '26c932292d9e20e4152049d76923843dc830a70f'
           persist-credentials: false
           path: project
       - uses: actions/checkout@v4
@@ -23,37 +48,48 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Verify exact inputs and prepare actual Nuxt/Vitest dependencies
+      - name: Build exact product and prepare Chromium
         working-directory: project
         run: |
-          test "$(git rev-parse HEAD)" = '853ee0c00cbcd5aa17747d323518ba35aa22551d'
-          test "$(git rev-parse HEAD^{tree})" = bea9b2faeafd38f135c135d7ca3daf3f0aead0ad
-          test "$(git -C ../cat rev-parse HEAD)" = d42557a7b8318925f172b401d4e2bf55c4d230c7
+          test "$(git rev-parse HEAD)" = '26c932292d9e20e4152049d76923843dc830a70f'
+          git checkout -B feature/chapter-return-regression '26c932292d9e20e4152049d76923843dc830a70f'
           test "$(git -C ../cat rev-parse HEAD:.cat-system)" = eeb6cdbd008dedc261f1df380b92f8052be0c045
           npm ci
-          npm run build:contracts
-          npm exec -w @eternalia/web -- nuxt prepare
-          npm install --no-save --package-lock=false --ignore-scripts vitest@3.2.4
-      - name: Execute source-owned CAT suite sync and formal JUnit run/report
+          npm install --no-save --package-lock=false playwright@1.56.1 vitest@3.2.4
+          npx playwright install --with-deps chromium
+          npm run build
+          npm run db:migrate
+      - name: CAT source-owned current test and observed regression
         working-directory: project
         run: |
           set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/cat-evidence"
-          F=../cat/.cat-system/scripts/cat_flow.py
-          S=../cat/.cat-system/scripts/cat_spec_test_sync.py
-          W=Lifecycle/Works/New/eternalia.ui.canonical-create-suite/work.json
+          export HTTP_FIXTURE_FILE="$RUNNER_TEMP/fixture.json"
           D="$RUNNER_TEMP/cat-evidence"
+          mkdir -p "$D"
+          F=../cat/.cat-system/scripts/cat_flow.py
+          W=Lifecycle/Works/New/eternalia.ui.chapter-return/work.json
           python "$F" conformance --work "$W" --kind process-closure | tee "$D/closure.json"
           python "$F" compile --work "$W" --kind model | tee "$D/model.json"
           python "$F" conformance --work "$W" --kind model-conformance | tee "$D/model-conformance.json"
-          python "$F" compile --work "$W" --kind vectors | tee "$D/vectors.json"
-          for stage in plan sync verify run report; do
-            python "$S" "$stage" --work "$W" --repo . --repo-revision '853ee0c00cbcd5aa17747d323518ba35aa22551d' --prefix apps/web/tests/generated/ --manifest .cat-flow/test-suite-manifest.canonical-create.json --report-path .cat-flow/evidence/test-suite-canonical-create.json --check-id suite-canonical-create-4 | tee "$D/$stage.json"
+          for k in vectors queue tests; do
+            python "$F" compile --work "$W" --kind "$k" | tee "$D/$k.json"
           done
+          node scripts/seed-http-acceptance.mjs
+          node apps/api/dist/main.js > "$RUNNER_TEMP/api.log" 2>&1 &
+          A=$!
+          node apps/web/.output/server/index.mjs > "$RUNNER_TEMP/web.log" 2>&1 &
+          B=$!
+          trap 'kill "$A" "$B" 2>/dev/null || true' EXIT
+          for i in $(seq 1 60); do curl -fsS "$HTTP_BASE_URL/" >/dev/null && curl -fsS "$HTTP_API_URL/api/health" >/dev/null && break; sleep 1; done
+          curl -fsS "$HTTP_BASE_URL/" >/dev/null
+          set +e
+          python "$F" run --work "$W" --id red-chapter-return --execute | tee "$D/red.json"
+          echo "${PIPESTATUS[0]}" > "$D/red-exit.txt"
+          set -e
           cp -r "$(dirname "$W")/.cat-flow" "$D/work-evidence"
-          cp .cat-flow/test-suite-manifest.canonical-create.json "$D/manifest.json"
+          cp -r "$(dirname "$W")/CAT/Generated" "$D/generated"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: formal-cat-canonical-create-853ee0c0
+          name: formal-chapter-return-red
           path: ${{ runner.temp }}/cat-evidence/
