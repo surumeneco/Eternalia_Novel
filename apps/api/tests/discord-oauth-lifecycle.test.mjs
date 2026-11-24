@@ -10,6 +10,7 @@ import pg from 'pg';
 import 'reflect-metadata';
 const require = createRequire(import.meta.url);
 const { DiscordAuthService } = require('../dist/discord-auth.service.js');
+const { AuthController } = require('../dist/auth.controller.js');
 
 const sha256 = value => createHash('sha256').update(value).digest('hex');
 const challenge = value => createHash('sha256').update(value).digest('base64url');
@@ -80,11 +81,21 @@ test('PKCE/state one-time redemption, author allowlist, expiry and session revoc
         return { state, cookie: 'eternalia_oauth_state=' + state };
       }
       const first = await begin();
-      const result = await auth.complete({ cookie: first.cookie },
-        { state: first.state, code: 'author-code', iss: 'https://discord.com' });
-      assert.match(result.setCookie, /HttpOnly/);
-      assert.match(result.setCookie, /SameSite=Lax/);
-      const match = result.setCookie.match(/^eternalia_author=([a-f0-9]{64});/);
+      const controller = new AuthController(auth);
+      const headers = new Map();
+      let target;
+      await controller.callback(
+        { headers: { cookie: first.cookie }, query: { state: first.state, code: 'author-code', iss: 'https://discord.com' } },
+        { setHeader(name, value) { headers.set(name,value); }, redirect(url) { target=url; } },
+      );
+      assert.equal(target, 'http://127.0.0.1:34110/admin', 'OAuth success must enter the canonical management home');
+      const cookies = headers.get('Set-Cookie');
+      assert.ok(Array.isArray(cookies) && cookies.length===2);
+      assert.match(cookies[0], /^eternalia_oauth_state=;/);
+      const issued = cookies[1];
+      assert.match(issued, /HttpOnly/);
+      assert.match(issued, /SameSite=Lax/);
+      const match = issued.match(/^eternalia_author=([a-f0-9]{64});/);
       assert.ok(match, 'the application should issue a new opaque author cookie');
       const session = 'eternalia_author=' + match[1];
       assert.equal(await auth.isAuthor({ cookie: session }), true);

@@ -55,7 +55,18 @@ async function closeLanguageMenu() {
 function followMobileLink() {
   if (overlayOpen.value) void closeMobileMenu(false).then(() => mainContent.value?.focus());
 }
-const { data: auth, refresh: refreshAuth } = await useFetch<{ authenticated: boolean }>('/api/auth/me');
+// Menu visibility is a separate cache from the active author editor. Hiding
+// stale controls must not clear the editor's authentication/data refs.
+const { data: auth, error: authError, clear: clearAuth, refresh: refreshAuth } =
+  await useFetch<{ authenticated: boolean }>('/api/auth/me', { key: 'eternalia-author-menu-auth' });
+async function recheckMenuAuth() {
+  await refreshAuth();
+  if (authError.value) clearAuth();
+}
+usePublicReaderRevalidation([{clear:clearAuth,refresh:recheckMenuAuth}]);
+function onAuthFocus() {
+  if (document.visibilityState === 'visible') void recheckMenuAuth();
+}
 const { data: recent, error: recentError, clear: clearRecent, refresh: refreshRecent } =
   await useFetch<ReaderNode[]>('/api/public/recent');
 const { revalidating: recentRevalidating } = usePublicReaderRevalidation([
@@ -81,7 +92,8 @@ function dismissMenus(event: KeyboardEvent) {
 }
 onMounted(() => {
   clientReady.value = true;
-  void refreshAuth();
+  void recheckMenuAuth();
+  window.addEventListener('focus', onAuthFocus);
   mobileViewport = window.matchMedia('(max-width: 1100px)');
   mobileViewport.addEventListener('change', onViewportChange);
   window.addEventListener('keydown', dismissMenus);
@@ -90,12 +102,13 @@ onBeforeUnmount(() => {
   if (import.meta.client) {
     mobileViewport?.removeEventListener('change', onViewportChange);
     window.removeEventListener('keydown', dismissMenus);
+    window.removeEventListener('focus', onAuthFocus);
   }
 });
 watch(() => route.fullPath, () => {
   if (overlayOpen.value) followMobileLink();
   languageOpen.value = false;
-  if (import.meta.client) void refreshAuth();
+  if (import.meta.client) void recheckMenuAuth();
 });
 const seriesId = computed(() => {
   const match = /^\/series\/([^/]+)/.exec(route.path);

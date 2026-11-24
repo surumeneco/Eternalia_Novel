@@ -36,7 +36,7 @@ export class AuthController {
     // OAuth state cookie must match the returned state. Consumed on first use.
     const { setCookie } = await this.auth.complete(request.headers, request.query);
     response.setHeader('Set-Cookie', [this.auth.clearOAuthCookie(), setCookie]);
-    response.redirect((process.env.APP_ORIGIN || '') + '/studio');
+    response.redirect((process.env.APP_ORIGIN || '') + '/admin');
   }
 
   @Post('logout')

@@ -1753,6 +1753,10 @@ test('published tags search across categories without changing ownership or priv
     // each Category still owns a separate reader page and its Tip list.
     const searchUrl = base + '/search?series=' + series;
     await page.goto(searchUrl);
+    // SSR inputs can be visible before Vue has installed their handlers.
+    await page.waitForFunction(() => Boolean(document.querySelector('#__nuxt')?.__vue_app__));
+    await page.locator('button.locale-switch:not(:disabled)').waitFor();
+    assert.equal(await page.locator('.search-filters select').first().inputValue(), series);
     await page.locator('.search-filters select').first()
       .locator('option[value="' + series + '"]').waitFor({ state: 'attached' });
     await page.locator('.search-filters select').nth(1).selectOption('tips');
@@ -1778,7 +1782,15 @@ test('published tags search across categories without changing ownership or priv
       data: { expectedRevision: 1, isPublic: false, publicSince: null },
     });
     assert.equal(hidden.status(), 200);
+    const treeAfterHide = await anonymous.request.get(base + '/api/public/series/' + series + '/tree');
+    assert.equal(treeAfterHide.status(), 200);
+    const visibleIds = (await treeAfterHide.json()).map(node => node.id);
+    assert.ok(!visibleIds.includes(tipA) && visibleIds.includes(tipB), 'server tree must reflect visibility before the next search');
     await page.goto(searchUrl);
+    // SSR inputs can be visible before Vue has installed their handlers.
+    await page.waitForFunction(() => Boolean(document.querySelector('#__nuxt')?.__vue_app__));
+    await page.locator('button.locale-switch:not(:disabled)').waitFor();
+    assert.equal(await page.locator('.search-filters select').first().inputValue(), series);
     await page.locator('.search-filters select').nth(1).selectOption('tips');
     await page.locator('.search-filters input[type="search"]').fill(tag);
     await page.getByRole('status').filter({ hasText: '：1' }).waitFor();
