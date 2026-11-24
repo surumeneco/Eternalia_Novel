@@ -36,7 +36,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 'fd6316d6ea52b6c2ff907287bb29683a4936d9ff'
+          ref: 'c1e24475a964ebf85ef737bedf0aad0658a13553'
           persist-credentials: false
           path: project
       - uses: actions/checkout@v4
@@ -51,8 +51,8 @@ jobs:
       - name: Build exact product and prepare Chromium
         working-directory: project
         run: |
-          test "$(git rev-parse HEAD)" = 'fd6316d6ea52b6c2ff907287bb29683a4936d9ff'
-          git checkout -B feature/required-ia-regressions 'fd6316d6ea52b6c2ff907287bb29683a4936d9ff'
+          test "$(git rev-parse HEAD)" = 'c1e24475a964ebf85ef737bedf0aad0658a13553'
+          git checkout -B feature/required-ia-regressions 'c1e24475a964ebf85ef737bedf0aad0658a13553'
           test "$(git -C ../cat rev-parse HEAD:.cat-system)" = eeb6cdbd008dedc261f1df380b92f8052be0c045
           npm ci
           npm install --no-save --package-lock=false playwright@1.56.1 vitest@3.2.4
@@ -66,6 +66,7 @@ jobs:
           export HTTP_FIXTURE_FILE="$RUNNER_TEMP/fixture.json"
           D="$RUNNER_TEMP/cat-evidence"
           mkdir -p "$D"
+          export CAT_IA_OBSERVATIONS="$D/observations.jsonl"
           F=../cat/.cat-system/scripts/cat_flow.py
           node scripts/seed-http-acceptance.mjs
           node apps/api/dist/main.js > "$RUNNER_TEMP/api.log" 2>&1 &
