@@ -58,7 +58,7 @@ function chapterLink(chapterId: string) {
       </div>
       <article v-else>
         <h1>{{ chapter.content.title }}</h1>
-        <AuthorEditLink :item-id="chapter.id" />
+        <AuthorEditLink :item-id="chapter.id" item-kind="chapter" :series-id="seriesId" />
         <p class="note">{{ t('readerPublishedOn') }}<time :datetime="new Date(chapter.publishedAt).toISOString()">{{ formatJstDisplay(chapter.publishedAt, language) }}</time></p>
         <RichContent :source="chapter.content.body" :pages="chapter.content.pages" paged />
         <div v-if="ancestryError || treeError" role="alert" class="navigation-error">

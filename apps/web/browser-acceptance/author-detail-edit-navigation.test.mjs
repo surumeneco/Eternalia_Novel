@@ -12,15 +12,15 @@ assert.match(base ?? '', /^http:\/\/127\.0\.0\.1:\d+$/);
 
 const rows = [
   { id: fixture.chapter, publicPath: '/read/', publishedTitle: fixture.prefix + '-chapter-A',
-    kind: '章', draftTitle: fixture.prefix + '-unpublished-draft-title' },
+    group: 'stories/chapters', kind: '章', draftTitle: fixture.prefix + '-unpublished-draft-title' },
   { id: fixture.tip, publicPath: '/items/', publishedTitle: fixture.prefix + '-visible-setting',
-    kind: '設定', draftTitle: fixture.prefix + '-visible-setting' },
+    group: 'settings/tips', kind: '設定', draftTitle: fixture.prefix + '-visible-setting' },
   { id: fixture.word, publicPath: '/items/', publishedTitle: fixture.prefix + '-visible-word',
-    kind: '単語', draftTitle: fixture.prefix + '-visible-word' },
+    group: 'dictionaries/words', kind: '単語', draftTitle: fixture.prefix + '-visible-word' },
   { id: fixture.grammar, publicPath: '/items/', publishedTitle: fixture.prefix + '-visible-grammar',
-    kind: '文法', draftTitle: fixture.prefix + '-visible-grammar' },
+    group: 'dictionaries/grammar', kind: '文法', draftTitle: fixture.prefix + '-visible-grammar' },
   { id: fixture.event, publicPath: '/items/', publishedTitle: fixture.prefix + '-visible-event',
-    kind: '出来事', draftTitle: fixture.prefix + '-visible-event' },
+    group: 'timeline/events', kind: '出来事', draftTitle: fixture.prefix + '-visible-event' },
 ];
 
 test('AC-56: reader item links reach the exact authorized Studio editor without leaking edit controls to anonymous readers',
@@ -35,7 +35,7 @@ test('AC-56: reader item links reach the exact authorized Studio editor without 
         assert.equal(await anon.getByRole('link', { name: 'この項目を編集' }).count(), 0,
           'anonymous reader must not see author editing controls for ' + row.kind);
       }
-      await anon.goto(base + '/studio?item=' + fixture.word);
+      await anon.goto(base + '/admin/series/' + fixture.seriesA + '/dictionaries/words/' + fixture.word + '/edit');
       await anon.getByText('編集するには、許可された作者のDiscordアカウントで認証してください。',
         { exact: false }).waitFor();
       assert.equal(await anon.locator('.studio-editor form').count(), 0);
@@ -55,10 +55,11 @@ test('AC-56: reader item links reach the exact authorized Studio editor without 
         const href = await editLink.getAttribute('href');
         assert.ok(href, 'missing deep-link URL');
         const url = new URL(href, base);
-        assert.equal(url.pathname, '/studio');
-        assert.equal(url.searchParams.get('item'), row.id);
+        const expected = '/admin/series/' + fixture.seriesA + '/' + row.group + '/' + row.id + '/edit';
+        assert.equal(url.pathname, expected);
+        assert.equal(url.search, '');
         await editLink.click();
-        await page.waitForURL(url => url.pathname === '/studio' && url.searchParams.get('item') === row.id);
+        await page.waitForURL(url => url.pathname === expected);
         await page.getByRole('heading', { name: row.kind + '：' + row.draftTitle }).waitFor();
         assert.equal(await page.locator('.studio-editor form input[maxlength="150"]').first().inputValue(),
           row.draftTitle, 'Studio must select the requested ID, not the public title');
