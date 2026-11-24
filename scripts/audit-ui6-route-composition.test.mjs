@@ -81,10 +81,15 @@ test('UI6-ROUTE-02: relative Vue imports resolve by actual path, never same base
 
 test('UI6-ROUTE-04/05: current series-first pages and layout retain non-normative source observation', async () => {
   const report = await inspectAppRouteComposition('apps/web/app');
-  assert.equal(report.pageCount, 72);
+  assert.equal(report.pageCount, 74);
   assert.equal(report.layoutCount, 1);
-  assert.equal(report.sourceCount, 74);
+  assert.equal(report.sourceCount, 76);
   assert.equal(report.componentCount, 24);
+  for(const path of ['pages/admin/series/create.vue','pages/admin/series/[id]/create/[kind]/[parentId].vue']) {
+    const owner=report.owners.find(item=>item.source===path);
+    assert.ok(owner, path);
+    assert.ok(owner.staticVueImports.some(item=>item.specifier==='~/pages/studio.vue'),path);
+  }
   assert.ok(report.owners.find(item => item.source === 'pages/index.vue')?.localComponents.includes('ReaderPanel'));
   assert.ok(report.owners.find(item => item.source === 'pages/series/[id]/index.vue')?.localComponents.includes('ReaderPanel'));
   assert.ok(report.owners.find(item => item.source === 'pages/series/[id]/stories/[volumeId]/parts/[partId]/chapters/[chapterId].vue')?.localComponents.includes('ReaderDomainDetail'));
