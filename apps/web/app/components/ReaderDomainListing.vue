@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ReaderNode, ReaderKind } from '~/types/reader';
 import { parseTipTags } from '@eternalia/contracts';
+import { compareDictionaryWordSpelling } from '~/utils/dictionary-order';
 import { publicAreaRoute, publicNodeRoute, belongsToPublicSeries } from '~/utils/public-node-route';
 const props=defineProps<{ seriesId:string; area:'stories'|'settings'|'dictionaries'; parentId?:string }>();
 const { t }=useUiLocale();
@@ -21,7 +22,7 @@ const childKind=computed<ReaderKind>(()=>!props.parentId?expectedKind.value:prop
   current.value?.kind==='volume'?'part':'chapter':props.area==='settings'?'tip':'word');
 const entries=computed(()=>(tree.value??[]).filter(n=>n.parentId===(props.parentId??props.seriesId)&&n.kind===childKind.value)
   .sort((a,b)=>props.area==='dictionaries'&&props.parentId?
-    a.content.title.localeCompare(b.content.title):a.order-b.order||a.content.title.localeCompare(b.content.title,'ja')));
+    compareDictionaryWordSpelling(a,b):a.order-b.order||a.content.title.localeCompare(b.content.title,'ja')));
 const query=ref('');const speech=ref('');const selectedTag=ref('');const tipOrder=ref('manual');
 watch(()=>[props.seriesId,props.area,props.parentId],()=>{query.value='';speech.value='';selectedTag.value='';tipOrder.value='manual';});
 function tipTags(node:ReaderNode):string[]{
