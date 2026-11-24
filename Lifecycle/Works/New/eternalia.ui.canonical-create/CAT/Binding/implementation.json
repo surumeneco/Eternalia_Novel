@@ -1,0 +1,14 @@
+{
+  "schema": "cat-typescript-conformance-binding/v1",
+  "repository": "eternalia",
+  "source_globs": [
+    "apps/web/app/utils/canonical-create-admission.ts"
+  ],
+  "public_entrypoints": [
+    "apps/web/app/utils/canonical-create-admission.ts"
+  ],
+  "interface_symbols": {
+    "canonicalCreateAdmission": "check"
+  },
+  "capabilities": {}
+}
