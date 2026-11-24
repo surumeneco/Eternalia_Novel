@@ -1,3 +1,4 @@
+import pg from 'pg';
 /** LG-05: author API and Nuxt proxy use stable POS master IDs, without any data migration. */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -78,4 +79,22 @@ test('LG-05: stable ID survives master rename; draft name does not leak; referen
   assert.equal(drop.status,400,drop.text);
   assert.match(drop.body.message,/品詞/);
   assert.deepEqual(await publicMeaning(word),released,'rejecting drop must not alter reader');
+  // Independently observe committed draft and published snapshots.
+  const dbUrl=new URL(process.env.DATABASE_URL);
+  assert.ok(['127.0.0.1','localhost'].includes(dbUrl.hostname)&&dbUrl.pathname==='/eternalia_http','only disposable test database');
+  const client=new pg.Client({connectionString:dbUrl.toString()});
+  await client.connect();
+  try {
+    const {rows}=await client.query(`SELECT n.id::text,n.draft_content,n.draft_revision,p.snapshot,p.source_draft_revision
+      FROM content_nodes n JOIN published_snapshots p ON p.node_id=n.id WHERE n.id=ANY($1::uuid[])`,[[word,language]]);
+    assert.equal(rows.length,2);
+    const actualWord=rows.find(x=>x.id===word),actualLanguage=rows.find(x=>x.id===language);
+    assert.equal(actualWord.draft_revision,beforeWord.revision);
+    assert.equal(JSON.parse(actualWord.draft_content.details.meanings)[0].partOfSpeechId,id);
+    assert.equal(JSON.parse(actualWord.snapshot.details.meanings)[0].partOfSpeechId,id);
+    for(const value of [actualLanguage.draft_content,actualLanguage.snapshot]){
+      const classes=JSON.parse(value.details.wordClasses);
+      assert.equal(classes.length,1);assert.equal(classes[0].id,id);assert.equal(classes[0].name,'新しい名詞名');
+    }
+  }finally{await client.end()}
 });

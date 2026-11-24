@@ -1,0 +1,13 @@
+{
+  "schema": "cat-node-service-technology/v1",
+  "repository": "eternalia",
+  "check": "runtime-pos-http",
+  "package": "apps/api/package.json",
+  "engine_package": "package.json",
+  "postgres": {
+    "database": "eternalia_http",
+    "migrations": "db/migrations",
+    "table": "schema_migrations",
+    "column": "filename"
+  }
+}
