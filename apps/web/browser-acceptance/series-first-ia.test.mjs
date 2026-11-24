@@ -11,6 +11,25 @@ const fixture = JSON.parse(await readFile(process.env.HTTP_FIXTURE_FILE, 'utf8')
 const base = process.env.HTTP_BASE_URL;
 assert.match(base ?? '', /^http:\/\/127\.0\.0\.1:\d+$/);
 
+
+// IA-05/AC-81: every implemented management grid must be reachable through its area home.
+test('IA-05: settings sections and grammar grids are reachable from their area homes', { timeout: 30000 }, async () => {
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const context = await browser.newContext();
+    await context.addCookies([{ name: 'eternalia_author', value: fixture.authorToken, url: base, httpOnly: true, sameSite: 'Lax' }]);
+    const page = await context.newPage();
+    const root = '/admin/series/' + fixture.seriesA;
+    for (const [area, group] of [['settings', 'sections'], ['dictionaries', 'grammar']]) {
+      await page.goto(base + root + '/' + area);
+      await page.locator('main a[href="' + root + '/' + area + '/' + group + '"]').click();
+      await page.locator('main .admin-node-grid').waitFor();
+      assert.equal(new URL(page.url()).pathname, root + '/' + area + '/' + group);
+    }
+    await context.close();
+  } finally { await browser.close(); }
+});
+
 test('IA-01/02/03: readers select a series before its four content domains', { timeout: 60_000 }, async () => {
   const browser = await chromium.launch({ headless: true });
   try {
