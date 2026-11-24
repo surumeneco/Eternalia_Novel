@@ -1,0 +1,33 @@
+name: Chat read-only fixed project snapshot
+on:
+  push:
+    branches: [infra/chat-snapshot-9a4a80e-20261124]
+    paths: [.github/workflows/chat-readonly-snapshot.yml]
+permissions:
+  contents: read
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: surumeneco/Eternalia_Novel
+          ref: 9a4a80e6ab11724c35033b2debd148da9ebc73ab
+          persist-credentials: false
+      - name: Verify and archive fixed commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "9a4a80e6ab11724c35033b2debd148da9ebc73ab"
+          test "$(git rev-parse HEAD^{tree})" = "929155838edd8ab505d28014b780b95cbc0f483d"
+          mkdir -p "$RUNNER_TEMP/chat-snapshot"
+          git archive --format=tar.gz --output="$RUNNER_TEMP/chat-snapshot/project.tar.gz" HEAD
+          cd "$RUNNER_TEMP/chat-snapshot"
+          sha256sum project.tar.gz > SHA256SUMS
+          printf '%s\n' '{"repository":"surumeneco/Eternalia_Novel","commit":"9a4a80e6ab11724c35033b2debd148da9ebc73ab","tree":"929155838edd8ab505d28014b780b95cbc0f483d"}' > manifest.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: project-snapshot-9a4a80e
+          path: ${{ runner.temp }}/chat-snapshot/
+          retention-days: 1
