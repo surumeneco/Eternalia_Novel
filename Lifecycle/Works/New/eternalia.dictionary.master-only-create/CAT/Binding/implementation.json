@@ -10,5 +10,6 @@
   "interface_symbols": {
     "isRegisteredCreateWordPartOfSpeech": "check"
   },
-  "capabilities": {}
+  "capabilities": {},
+  "capability_analysis": "primitive-pure-functions/v1"
 }

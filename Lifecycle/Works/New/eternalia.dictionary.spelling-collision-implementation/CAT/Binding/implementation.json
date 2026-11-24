@@ -10,5 +10,6 @@
   "interface_symbols": {
     "hasSameLanguageSpellingCollision": "check"
   },
-  "capabilities": {}
+  "capabilities": {},
+  "capability_analysis": "primitive-pure-functions/v1"
 }
