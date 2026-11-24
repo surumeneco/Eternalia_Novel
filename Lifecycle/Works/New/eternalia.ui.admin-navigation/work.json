@@ -103,7 +103,8 @@
         "Lifecycle/Works/New/eternalia.ui.admin-navigation/CAT/Generated/admin-navigation-driver.mjs",
         "Lifecycle/Works/New/eternalia.ui.admin-navigation/CAT/Binding/driver.json",
         "apps/web/app/components/AdminEditBridge.vue",
-        "apps/web/app/pages/studio.vue"
+        "apps/web/app/pages/studio.vue",
+        "apps/web/app/middleware/author.global.ts"
       ],
       "test_ids": [
         "eternalia.ui.admin-navigation CAT symbolic contract > case.edit.denied"
@@ -130,7 +131,8 @@
         "Lifecycle/Works/New/eternalia.ui.admin-navigation/CAT/Generated/admin-navigation-driver.mjs",
         "Lifecycle/Works/New/eternalia.ui.admin-navigation/CAT/Binding/driver.json",
         "apps/web/app/components/AdminEditBridge.vue",
-        "apps/web/app/pages/studio.vue"
+        "apps/web/app/pages/studio.vue",
+        "apps/web/app/middleware/author.global.ts"
       ],
       "test_ids": [
         "eternalia.ui.admin-navigation CAT symbolic contract > case.edit.invalid"
@@ -157,7 +159,8 @@
         "Lifecycle/Works/New/eternalia.ui.admin-navigation/CAT/Generated/admin-navigation-driver.mjs",
         "Lifecycle/Works/New/eternalia.ui.admin-navigation/CAT/Binding/driver.json",
         "apps/web/app/components/AdminEditBridge.vue",
-        "apps/web/app/pages/studio.vue"
+        "apps/web/app/pages/studio.vue",
+        "apps/web/app/middleware/author.global.ts"
       ],
       "test_ids": [
         "eternalia.ui.admin-navigation CAT symbolic contract > case.edit.canonical"

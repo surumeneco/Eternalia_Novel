@@ -21,6 +21,10 @@ export function createDriver(){return {async prepare(){},async observeState(){re
     const page=await ctx.newPage();
     await page.goto(base+'/admin/series/'+series+'/'+area+'/'+node+'/edit'+(q.size?'?'+q:''));
     await ready(page);
+    if(new URL(page.url()).pathname==='/login'){
+      if(await page.locator('.studio-editor, .admin-editor-page form').count())throw Error('Unauthorized editor exposed');
+      return {'出力.結果':'認可拒否'};
+    }
     const editor=page.locator('.studio-editor'),denied=page.locator('.admin-editor-page [role="alert"]'),missing=page.locator('.admin-editor-page h1');
     await editor.or(denied).or(missing).first().waitFor({timeout:10000});
     if(await editor.count()){
