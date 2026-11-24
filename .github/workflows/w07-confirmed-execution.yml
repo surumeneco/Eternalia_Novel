@@ -37,13 +37,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: '14784cf46a4a6858f17bb985f397ba29fa7956a8'
+          ref: 'd06a3c8c1436793c4a14fcd31933e7af23d1714b'
           persist-credentials: false
           path: project
       - uses: actions/checkout@v4
         with:
           repository: surumeneco/CAT-TDD
-          ref: 6e86d10ccd1c66ee813aed1a022c3893f1b1185e
+          ref: 2b70c418d78198ee282f3456fd236d4b7c112e32
           persist-credentials: false
           path: cat
       - uses: actions/setup-node@v4
@@ -53,10 +53,10 @@ jobs:
         working-directory: project
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = '14784cf46a4a6858f17bb985f397ba29fa7956a8'
-          test "$(git rev-parse HEAD^{tree})" = '64ddab63d29446cd5da37f5e3d764dedf3706eea'
-          test "$(git -C ../cat rev-parse HEAD:.cat-system)" = fc73c75ca57f23bb25a19656015638b1087cffc9
-          git checkout -B feature/w07-compiler-constraint-bindings '14784cf46a4a6858f17bb985f397ba29fa7956a8'
+          test "$(git rev-parse HEAD)" = 'd06a3c8c1436793c4a14fcd31933e7af23d1714b'
+          test "$(git rev-parse HEAD^{tree})" = '799d81e9936758c199278424ffa7315a79053d07'
+          test "$(git -C ../cat rev-parse HEAD:.cat-system)" = 62fc85452172fab2d2ed966cf5e6acccd4150956
+          git checkout -B feature/w07-test-technology-bindings 'd06a3c8c1436793c4a14fcd31933e7af23d1714b'
           mkdir -p "$RUNNER_TEMP/w07-evidence"
           git rev-parse HEAD > "$RUNNER_TEMP/w07-evidence/project-commit.txt"
           git rev-parse HEAD^{tree} > "$RUNNER_TEMP/w07-evidence/project-tree.txt"
@@ -121,6 +121,10 @@ jobs:
                   row['execution']='complete'
               except Exception as e:row['execution']=str(e)
               try:
+                  for check in doc.get('checks',[]):
+                      if check['stage']=='implementation-conformance' and check['id'].startswith('browser-'):
+                          if run('run',['--id',check['id'],'--execute'],check['id']):
+                              row.setdefault('browser_errors',[]).append(check['id'])
                   run('conformance',['--kind','implementation-conformance'],'implementation')
                   report=json.loads((out/'implementation.json').read_text())
                   row['gate']=report.get('status')
@@ -142,6 +146,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: w07-compiler-constraint-locked-revalidation
+          name: w07-test-technology-revalidation
           path: ${{ runner.temp }}/w07-evidence/
           include-hidden-files: true
