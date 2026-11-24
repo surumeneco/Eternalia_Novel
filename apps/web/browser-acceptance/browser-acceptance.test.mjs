@@ -2710,3 +2710,138 @@ test('AC-06: related Tip reorder and removal affect readers only after explicit 
     await browser.close();
   }
 });
+
+test('common master catalog UI preserves stable IDs, revision conflicts and referenced tag protections', { timeout: 90000 }, async () => {
+  assert.ok(base?.startsWith('http://127.0.0.1:'), 'loopback acceptance URL required');
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const author = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    const anonymous = await browser.newContext();
+    const outsider = await browser.newContext();
+    for (const [context, token] of [[author, fixture.authorToken], [outsider, fixture.outsiderToken]]) {
+      await context.addCookies([{ name: 'eternalia_author', value: token, url: base, httpOnly: true, sameSite: 'Lax' }]);
+    }
+    const page = await author.newPage();
+    const scope = 'browser-master-' + randomUUID();
+    const headers = { Origin: base };
+    for (const type of ['tags', 'classifications']) {
+      const isTag = type === 'tags';
+      const api = base + '/api/admin/masters/' + type;
+      const field = isTag ? 'group' : 'kind';
+      const initial = { [field]: scope, name: '初期名称', order: 2, ...(!isTag ? { value: 'initial' } : {}) };
+      // The author-only endpoint deliberately returns 401 for both missing and
+      // authenticated non-author sessions; assert denial without exposing roles.
+      for (const [context, status] of [[anonymous, 401], [outsider, 401]]) {
+        assert.equal((await context.request.get(api)).status(), status);
+        assert.equal((await context.request.post(api, { headers, data: initial })).status(), status);
+        const denied = await context.newPage();
+        await denied.goto(base + '/admin/masters/' + type);
+        // Canonical /admin routes redirect unauthorized sessions to login
+        // before the catalog can render. Direct API refusal is checked above.
+        await denied.waitForURL(url => url.pathname === '/login');
+        await denied.locator('main a[href="/api/auth/discord"]').waitFor();
+        assert.equal(await denied.locator('.master-table').count(), 0);
+        await denied.close();
+      }
+      await page.goto(base + '/admin/masters/' + type);
+      const table = page.locator('.master-table');
+      await table.waitFor();
+      const newRow = table.locator('tbody tr').last();
+      await newRow.getByLabel(isTag ? '新規タググループ' : '新規区分種別', { exact: true }).fill(scope);
+      await newRow.getByLabel('新規名称', { exact: true }).fill(initial.name);
+      await newRow.getByLabel('新規表示順', { exact: true }).fill('2');
+      if (!isTag) await newRow.getByLabel('新規区分値', { exact: true }).fill(initial.value);
+      const createResponse = page.waitForResponse(r => r.url() === api && r.request().method() === 'POST');
+      await newRow.getByRole('button', { name: '追加', exact: true }).click();
+      const createdResponse = await createResponse;
+      assert.equal(createdResponse.status(), 201);
+      const created = await createdResponse.json();
+      assert.match(created.id, /^[0-9a-f-]{36}$/);
+      assert.equal(created.revision, 1);
+      const label = isTag ? 'タググループ' : '区分種別';
+      const row = async () => {
+        await page.waitForFunction(({ label, scope }) =>
+          [...document.querySelectorAll('.master-table tbody tr')].some(tr =>
+            [...tr.querySelectorAll('input')].some(input => input.getAttribute('aria-label') === label && input.value === scope)),
+          { label, scope });
+        const index = await table.locator('tbody tr').evaluateAll((rows, { label, scope }) =>
+          rows.findIndex(tr => [...tr.querySelectorAll('input')].some(input =>
+            input.getAttribute('aria-label') === label && input.value === scope)), { label, scope });
+        return table.locator('tbody tr').nth(index);
+      };
+      const read = async () => {
+        const response = await author.request.get(api);
+        assert.equal(response.status(), 200);
+        return (await response.json()).find(item => item.id === created.id);
+      };
+      let currentRow = await row();
+      await currentRow.getByLabel('名称', { exact: true }).fill('更新名称');
+      await currentRow.getByLabel('表示順', { exact: true }).fill('0');
+      if (!isTag) await currentRow.getByLabel('値', { exact: true }).fill('updated');
+      const saveResponse = page.waitForResponse(r => r.url() === api + '/' + created.id && r.request().method() === 'PATCH');
+      await currentRow.getByRole('button', { name: '保存', exact: true }).click();
+      assert.equal((await saveResponse).status(), 200);
+      await page.getByText('更新しました。', { exact: true }).waitFor();
+      let saved = await read();
+      assert.equal(saved.name, '更新名称');
+      assert.equal(saved.order, 0);
+      assert.equal(saved.revision, 2);
+      if (!isTag) assert.equal(saved.value, 'updated');
+      // Reload first to ensure the following stale update really uses revision 2.
+      await page.reload();
+      currentRow = await row();
+      const external = await author.request.patch(api + '/' + created.id, {
+        headers, data: { ...saved, order: 4, expectedRevision: saved.revision },
+      });
+      assert.equal(external.status(), 200);
+      saved = await external.json();
+      await currentRow.getByLabel('名称', { exact: true }).fill('旧改訂の変更');
+      const staleResponse = page.waitForResponse(r => r.url() === api + '/' + created.id && r.request().method() === 'PATCH');
+      await currentRow.getByRole('button', { name: '保存', exact: true }).click();
+      assert.equal((await staleResponse).status(), 409);
+      await page.locator('main [role="alert"]').first().waitFor();
+      assert.equal(await currentRow.getByLabel('名称', { exact: true }).inputValue(), '旧改訂の変更');
+      assert.deepEqual(await read(), saved);
+      await page.reload();
+      currentRow = await row();
+      if (isTag) {
+        const memoResponse = await author.request.post(base + '/api/admin/memos', {
+          headers, data: { title: scope, body: 'private', tags: [created.id] },
+        });
+        assert.equal(memoResponse.status(), 201);
+        const memo = await memoResponse.json();
+        await currentRow.getByLabel('名称', { exact: true }).fill('参照中の改名');
+        const renameResponse = page.waitForResponse(r => r.url() === api + '/' + created.id && r.request().method() === 'PATCH');
+        await currentRow.getByRole('button', { name: '保存', exact: true }).click();
+        assert.equal((await renameResponse).status(), 409);
+        await page.locator('main [role="alert"]').first().waitFor();
+        await page.reload();
+        currentRow = await row();
+        await currentRow.getByRole('button', { name: '削除', exact: true }).click();
+        const blocked = page.waitForResponse(r => r.url() === api + '/' + created.id && r.request().method() === 'DELETE');
+        await respondToAppDialog(page, true);
+        assert.equal((await blocked).status(), 409);
+        await page.locator('main [role="alert"]').first().waitFor();
+        assert.deepEqual(await read(), saved);
+        const detach = await author.request.patch(base + '/api/admin/memos/' + memo.id, {
+          headers, data: { title: memo.title, body: memo.body, tags: [], expectedRevision: memo.revision },
+        });
+        assert.equal(detach.status(), 200);
+      }
+      await currentRow.getByRole('button', { name: '削除', exact: true }).click();
+      await respondToAppDialog(page, false);
+      assert.deepEqual(await read(), saved);
+      await currentRow.getByRole('button', { name: '削除', exact: true }).click();
+      const removeResponse = page.waitForResponse(r => r.url() === api + '/' + created.id && r.request().method() === 'DELETE');
+      await respondToAppDialog(page, true);
+      assert.equal((await removeResponse).status(), 200);
+      await page.getByText('削除しました。', { exact: true }).waitFor();
+      assert.equal(await read(), undefined);
+    }
+    await outsider.close();
+    await anonymous.close();
+    await author.close();
+  } finally {
+    await browser.close();
+  }
+});
