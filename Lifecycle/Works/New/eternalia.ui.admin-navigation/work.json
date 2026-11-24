@@ -1,0 +1,105 @@
+{
+  "schema": "cat-work/v1",
+  "id": "eternalia.ui.admin-navigation",
+  "entry": "confirmed-spec",
+  "flow": "spec-implementation",
+  "mode": "implementation",
+  "work_kind": "implementation",
+  "issue_ref": "https://github.com/surumeneco/Eternalia_Novel/issues/165",
+  "project_entry_ref": "https://drive.google.com/file/d/1clwfVJ3e_t1_QKFfOWxxRIzE9WMFvTiM/view",
+  "normative": [
+    {
+      "uri": "https://drive.google.com/file/d/1G4q4DbJZdOk7jIfgvuZu0a2e4L1LIMti/view"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/issues/165"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/issues/165#issuecomment-7119957252"
+    }
+  ],
+  "evidence": [
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/2fe68c8b14b77f8dd2a9a2a51c777cf6adc0438a/apps/web/app/components/AdminNodeGrid.vue"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/2fe68c8b14b77f8dd2a9a2a51c777cf6adc0438a/apps/web/app/components/AdminEditBridge.vue"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/2fe68c8b14b77f8dd2a9a2a51c777cf6adc0438a/apps/web/app/pages/studio.vue"
+    }
+  ],
+  "repositories": [
+    {
+      "name": "eternalia",
+      "path": "../../../..",
+      "branch_pattern": "feature/*",
+      "allowed_paths": [
+        "Lifecycle/Works/New/eternalia.ui.admin-navigation/**",
+        "apps/web/app/components/AdminNodeGrid.vue",
+        "apps/web/app/components/AdminEditBridge.vue",
+        "apps/web/app/pages/studio.vue",
+        "apps/web/browser-acceptance/series-first-ia.test.mjs"
+      ],
+      "production_paths": [
+        "apps/web/app/components/AdminNodeGrid.vue",
+        "apps/web/app/components/AdminEditBridge.vue",
+        "apps/web/app/pages/studio.vue"
+      ],
+      "test_paths": [
+        "apps/web/browser-acceptance/series-first-ia.test.mjs",
+        "Lifecycle/Works/New/eternalia.ui.admin-navigation/CAT/Generated/current.test.ts"
+      ]
+    }
+  ],
+  "scope": {
+    "process_ids": [
+      "eternalia.ui.admin-navigation"
+    ],
+    "changed_ids": [
+      "IA-05.series-grid-navigation",
+      "IA-05.chapter-preview-navigation",
+      "IA-06.canonical-editor-identity"
+    ],
+    "preserved_ids": [
+      "author.server-side-access-control",
+      "author.draft-publication-separation",
+      "author.unsaved-draft-protection"
+    ]
+  },
+  "specification": {
+    "status": "confirmed",
+    "decision_ref": "https://github.com/surumeneco/Eternalia_Novel/issues/165#issuecomment-7119957252",
+    "artifact_refs": [
+      "Lifecycle/Works/New/eternalia.ui.admin-navigation/CAT/Confirmed/Process.md",
+      "Lifecycle/Works/New/eternalia.ui.admin-navigation/CAT/Confirmed/PI.md",
+      "Lifecycle/Works/New/eternalia.ui.admin-navigation/CAT/Confirmed/TCE.md"
+    ]
+  },
+  "technologies": [
+    "TypeScript",
+    "Vue",
+    "Playwright"
+  ],
+  "checks": [],
+  "depends_on": [],
+  "compilation": {
+    "schema": "cat-compile/v2",
+    "process": "CAT/Confirmed/Process.md",
+    "pi": "CAT/Confirmed/PI.md",
+    "pis": [
+      "CAT/Confirmed/PI.md"
+    ],
+    "tce": "CAT/Confirmed/TCE.md",
+    "tces": [
+      "CAT/Confirmed/TCE.md"
+    ],
+    "model": "CAT/Generated/TestModel.json",
+    "vectors": "CAT/Generated/Vectors.json",
+    "queue": "CAT/Generated/Queue.json",
+    "binding": "CAT/Binding/driver.json",
+    "tests_output": "CAT/Generated/current.test.ts",
+    "obligations": "CAT/Generated/obligations.json",
+    "allow_draft": false
+  }
+}
