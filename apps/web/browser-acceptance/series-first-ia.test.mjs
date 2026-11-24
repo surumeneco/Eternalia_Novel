@@ -307,11 +307,11 @@ test('IA-05: chapter editor can reach its independent saved-draft preview and re
   await withCanonicalAuthor(async (page, nodes) => {
     const title = nodes.find(n => n.id === fixture.chapter).draft.title;
     await page.goto(base + chapterEdit);
-    await page.locator('.studio-editor h2').getByText('章：' + title, {exact:true}).waitFor();
+    await page.locator('.studio-editor').getByRole('heading', {name:'章：' + title, exact:true}).waitFor();
     await page.locator('main a[href="' + chapterPreview + '"]').click({ timeout:5000 });
     await page.getByRole('heading', {name:title, exact:true}).waitFor();
     await page.locator('main a[href="' + chapterEdit + '"]').click();
-    await page.locator('.studio-editor h2').getByText('章：' + title, {exact:true}).waitFor();
+    await page.locator('.studio-editor').getByRole('heading', {name:'章：' + title, exact:true}).waitFor();
   });
 });
 
@@ -320,7 +320,7 @@ test('IA-06: legacy item query must not replace the validated canonical edit ide
     const title = nodes.find(n => n.id === fixture.chapter).draft.title;
     const foreignTitle = nodes.find(n => n.id === fixture.languageB).draft.title;
     await page.goto(base + chapterEdit + '?item=' + encodeURIComponent(fixture.languageB));
-    await page.locator('.studio-editor h2').getByText('章：' + title, {exact:true}).waitFor({timeout:5000});
+    await page.locator('.studio-editor').getByRole('heading', {name:'章：' + title, exact:true}).waitFor({timeout:5000});
     assert.equal(await page.locator('.studio-editor h2').filter({hasText:foreignTitle}).count(),0);
   });
 });
@@ -329,7 +329,7 @@ test('IA-06: legacy create query must not replace a canonical edit with a create
   await withCanonicalAuthor(async (page, nodes) => {
     const title = nodes.find(n => n.id === fixture.chapter).draft.title;
     await page.goto(base + chapterEdit + '?create=language&parent=' + encodeURIComponent(fixture.seriesB));
-    await page.locator('.studio-editor h2').getByText('章：' + title, {exact:true}).waitFor({timeout:5000});
+    await page.locator('.studio-editor').getByRole('heading', {name:'章：' + title, exact:true}).waitFor({timeout:5000});
     assert.equal(await page.locator('form.create-form').count(),0);
   });
 });
