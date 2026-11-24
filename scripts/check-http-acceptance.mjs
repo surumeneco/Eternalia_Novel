@@ -85,6 +85,7 @@ try {
   if (process.env.HTTP_BROWSER_ACCEPTANCE === '1') {
     // Inspect every independent suite in one CI run; report failures together.
     try { await command(['scripts/run-test-junit.mjs', 'browser-auth-boundary', 'apps/web/browser-acceptance/author-csrf-oauth.test.mjs']); } catch (error) { failures.push({ suite: 'browser-auth-boundary', error: String(error) }); console.error(String(error)); }
+    try { await command(['scripts/run-test-junit.mjs', 'browser-admin-grid-shell', 'apps/web/browser-acceptance/admin-grid-shell.test.mjs']); } catch (error) { failures.push({ suite: 'browser-admin-grid-shell', error: String(error) }); console.error(String(error)); }
     try { await command(['scripts/run-test-junit.mjs', 'browser-mobile-touch', 'apps/web/browser-acceptance/mobile-touch-editor.test.mjs']); } catch (error) { failures.push({ suite: 'browser-mobile-touch', error: String(error) }); console.error(String(error)); }
     try { await command(['scripts/run-test-junit.mjs', 'browser-chapter-autosave', 'apps/web/browser-acceptance/author-chapter-autosave.test.mjs']); } catch (error) { failures.push({ suite: 'browser-chapter-autosave', error: String(error) }); console.error(String(error)); }
     try { await command(['scripts/run-test-junit.mjs', 'browser-tip-category-move', 'apps/web/browser-acceptance/author-tip-category-move.test.mjs']); } catch (error) { failures.push({ suite: 'browser-tip-category-move', error: String(error) }); console.error(String(error)); }
