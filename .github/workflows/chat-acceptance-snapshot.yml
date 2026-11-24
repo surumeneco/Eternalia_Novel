@@ -36,7 +36,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: '90567fcacbcd0cbdcaba56259bfa707d78d5dc04'
+          ref: '5b7cd5169392a3b19104f361389dd5d9fadb620a'
           persist-credentials: false
           path: project
       - uses: actions/checkout@v4
@@ -51,15 +51,15 @@ jobs:
       - name: Build exact product and prepare Chromium
         working-directory: project
         run: |
-          test "$(git rev-parse HEAD)" = '90567fcacbcd0cbdcaba56259bfa707d78d5dc04'
-          git checkout -B feature/chapter-return-regression '90567fcacbcd0cbdcaba56259bfa707d78d5dc04'
+          test "$(git rev-parse HEAD)" = '5b7cd5169392a3b19104f361389dd5d9fadb620a'
+          git checkout -B feature/required-ia-regressions '5b7cd5169392a3b19104f361389dd5d9fadb620a'
           test "$(git -C ../cat rev-parse HEAD:.cat-system)" = eeb6cdbd008dedc261f1df380b92f8052be0c045
           npm ci
           npm install --no-save --package-lock=false playwright@1.56.1 vitest@3.2.4
           npx playwright install --with-deps chromium
           npm run build
           npm run db:migrate
-      - name: CAT source-owned current test and observed regression
+      - name: Required IA regression baseline
         working-directory: project
         run: |
           set -euo pipefail
@@ -67,13 +67,6 @@ jobs:
           D="$RUNNER_TEMP/cat-evidence"
           mkdir -p "$D"
           F=../cat/.cat-system/scripts/cat_flow.py
-          W=Lifecycle/Works/New/eternalia.ui.chapter-return/work.json
-          python "$F" conformance --work "$W" --kind process-closure | tee "$D/closure.json"
-          python "$F" compile --work "$W" --kind model | tee "$D/model.json"
-          python "$F" conformance --work "$W" --kind model-conformance | tee "$D/model-conformance.json"
-          for k in vectors queue tests; do
-            python "$F" compile --work "$W" --kind "$k" | tee "$D/$k.json"
-          done
           node scripts/seed-http-acceptance.mjs
           node apps/api/dist/main.js > "$RUNNER_TEMP/api.log" 2>&1 &
           A=$!
@@ -82,13 +75,29 @@ jobs:
           trap 'kill "$A" "$B" 2>/dev/null || true' EXIT
           for i in $(seq 1 60); do curl -fsS "$HTTP_BASE_URL/" >/dev/null && curl -fsS "$HTTP_API_URL/api/health" >/dev/null && break; sleep 1; done
           curl -fsS "$HTTP_BASE_URL/" >/dev/null
-          python "$F" run --work "$W" --id green-chapter-return --execute | tee "$D/green.json"
-          python "$F" queue-state --work "$W" --evidence "$(dirname "$W")/.cat-flow/evidence/green-chapter-return.json" | tee "$D/queue-state.json"
-          node scripts/run-test-junit.mjs browser-reader-hierarchy apps/web/browser-acceptance/reader-hierarchy.test.mjs
-          cp -r "$(dirname "$W")/.cat-flow" "$D/work-evidence"
-          cp -r "$(dirname "$W")/CAT/Generated" "$D/generated"
+          for id in reader-required-ia admin-required-ia; do
+            P="Lifecycle/Works/New/eternalia.ui.$id"
+            W="$P/work.json"
+            mkdir -p "$P/CAT/Confirmed" "$D/$id"
+            for n in Process PI TCE; do
+              python ../cat/.cat-system/scripts/cat_promote.py --source "$P/CAT/Draft/$n.md" --output "$P/CAT/Confirmed/$n.md" --decision-ref https://drive.google.com/file/d/1G4q4DbJZdOk7jIfgvuZu0a2e4L1LIMti/view
+            done
+            python "$F" conformance --work "$W" --kind process-closure | tee "$D/$id/closure.json"
+            python "$F" compile --work "$W" --kind model | tee "$D/$id/model.json"
+            python "$F" conformance --work "$W" --kind model-conformance | tee "$D/$id/model-conformance.json"
+            for k in vectors queue tests; do
+              python "$F" compile --work "$W" --kind "$k" | tee "$D/$id/$k.json"
+            done
+            set +e
+            python "$F" run --work "$W" --id red-required-ia --execute | tee "$D/$id/red.json"
+            echo "${PIPESTATUS[0]}" > "$D/$id/red-exit.txt"
+            set -e
+            cp -r "$P/.cat-flow" "$D/$id/work-evidence"
+            cp -r "$P/CAT/Confirmed" "$D/$id/confirmed"
+            cp -r "$P/CAT/Generated" "$D/$id/generated"
+          done
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: formal-chapter-return-green
+          name: required-ia-red
           path: ${{ runner.temp }}/cat-evidence/
