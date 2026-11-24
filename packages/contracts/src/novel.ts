@@ -118,7 +118,10 @@ function validateWordClassIds(library: Library, languageId: string, content: Con
 }
 /** Related settings must resolve to another Tip inside the same Series. */
 function validateTipReferences(library: Library, sourceId: string, categoryId: string, content: Content): void {
-  if (content.details.tagIds !== undefined) parseTipTagIds(content.details.tagIds);
+  if (content.details.tagIds !== undefined) {
+    // Persist the canonical UUID representation used for catalog membership.
+    content.details.tagIds = JSON.stringify(parseTipTagIds(content.details.tagIds));
+  }
   // Published display tags are projection-owned; author submissions use tagIds.
   if (content.details.tags !== undefined) domainError('bad-request', 'タグはマスタIDで指定してください。');
   if (content.details.relatedTipIds === undefined) return;

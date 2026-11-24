@@ -113,7 +113,9 @@ export class PostgresLibraryService implements OnModuleDestroy {
           const values = node.published.value.details;
           // A reader receives the label snapshot, not internal Tag IDs.
           if (values.tagIds !== undefined) {
-            values.tags = JSON.stringify(publishedIds.map(id => names.get(id)));
+            // Distinct Tag IDs in different groups may share a display label.
+            // Preserve all IDs internally, but project the reader's label set once.
+            values.tags = JSON.stringify([...new Set(publishedIds.map(id => names.get(id)!))]);
           }
         }
       }
