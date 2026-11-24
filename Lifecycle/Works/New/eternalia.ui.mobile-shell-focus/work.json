@@ -37,7 +37,9 @@
         "apps/web/app/layouts/default.vue"
       ],
       "test_paths": [
-        "apps/web/browser-acceptance/admin-grid-shell.test.mjs"
+        "apps/web/browser-acceptance/admin-grid-shell.test.mjs",
+        "Lifecycle/Works/New/eternalia.ui.mobile-shell-focus/CAT/Generated/current.test.ts",
+        "Lifecycle/Works/New/eternalia.ui.mobile-shell-focus/CAT/Generated/mobile-shell-driver.mjs"
       ]
     }
   ],
@@ -71,7 +73,60 @@
     "Vue",
     "Playwright"
   ],
-  "checks": [],
+  "checks": [
+    {
+      "id": "green-background-allowed",
+      "stage": "green",
+      "runner": "junit",
+      "cwd": "@repo:eternalia",
+      "argv": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "Lifecycle/Works/New/eternalia.ui.mobile-shell-focus/CAT/Generated/current.test.ts",
+        "--maxWorkers=1",
+        "--testTimeout=60000",
+        "--reporter=junit",
+        "--outputFile={report}"
+      ],
+      "input_paths": [
+        "Lifecycle/Works/New/eternalia.ui.mobile-shell-focus/CAT/Generated/current.test.ts",
+        "Lifecycle/Works/New/eternalia.ui.mobile-shell-focus/CAT/Generated/mobile-shell-driver.mjs",
+        "Lifecycle/Works/New/eternalia.ui.mobile-shell-focus/CAT/Binding/driver.json",
+        "apps/web/app/layouts/default.vue"
+      ],
+      "test_ids": [
+        "eternalia.ui.mobile-shell-focus CAT symbolic contract > case.background.allowed"
+      ],
+      "timeout_seconds": 120
+    },
+    {
+      "id": "green-background-blocked",
+      "stage": "green",
+      "runner": "junit",
+      "cwd": "@repo:eternalia",
+      "argv": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "Lifecycle/Works/New/eternalia.ui.mobile-shell-focus/CAT/Generated/current.test.ts",
+        "--maxWorkers=1",
+        "--testTimeout=60000",
+        "--reporter=junit",
+        "--outputFile={report}"
+      ],
+      "input_paths": [
+        "Lifecycle/Works/New/eternalia.ui.mobile-shell-focus/CAT/Generated/current.test.ts",
+        "Lifecycle/Works/New/eternalia.ui.mobile-shell-focus/CAT/Generated/mobile-shell-driver.mjs",
+        "Lifecycle/Works/New/eternalia.ui.mobile-shell-focus/CAT/Binding/driver.json",
+        "apps/web/app/layouts/default.vue"
+      ],
+      "test_ids": [
+        "eternalia.ui.mobile-shell-focus CAT symbolic contract > case.background.blocked"
+      ],
+      "timeout_seconds": 120
+    }
+  ],
   "depends_on": [],
   "compilation": {
     "schema": "cat-compile/v2",
@@ -88,6 +143,8 @@
     "vectors": "CAT/Generated/Vectors.json",
     "queue": "CAT/Generated/Queue.json",
     "obligations": "CAT/Generated/obligations.json",
-    "allow_draft": false
+    "allow_draft": false,
+    "binding": "CAT/Binding/driver.json",
+    "tests_output": "CAT/Generated/current.test.ts"
   }
 }

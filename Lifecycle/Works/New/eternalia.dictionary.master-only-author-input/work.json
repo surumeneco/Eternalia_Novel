@@ -51,7 +51,8 @@
         "apps/web/browser-acceptance/word-class-input-master.test.mjs",
         "Lifecycle/Works/New/eternalia.dictionary.master-only-author-input/CAT/Generated/current.test.ts",
         "apps/web/browser-acceptance/word-published-draft-redirect.test.mjs",
-        "apps/web/browser-acceptance/browser-acceptance.test.mjs"
+        "apps/web/browser-acceptance/browser-acceptance.test.mjs",
+        "Lifecycle/Works/New/eternalia.dictionary.master-only-author-input/CAT/Generated/word-class-driver.ts"
       ]
     }
   ],
@@ -85,7 +86,116 @@
     "Vitest",
     "Playwright"
   ],
-  "checks": [],
+  "checks": [
+    {
+      "id": "green-master-selected",
+      "stage": "green",
+      "runner": "junit",
+      "cwd": "@repo:eternalia",
+      "argv": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "Lifecycle/Works/New/eternalia.dictionary.master-only-author-input/CAT/Generated/current.test.ts",
+        "--maxWorkers=1",
+        "--testTimeout=15000",
+        "--reporter=junit",
+        "--outputFile={report}"
+      ],
+      "input_paths": [
+        "Lifecycle/Works/New/eternalia.dictionary.master-only-author-input/CAT/Generated/current.test.ts",
+        "Lifecycle/Works/New/eternalia.dictionary.master-only-author-input/CAT/Generated/word-class-driver.ts",
+        "Lifecycle/Works/New/eternalia.dictionary.master-only-author-input/CAT/Binding/driver.json",
+        "apps/web/app/utils/word-class-input-policy.ts",
+        "apps/web/app/components/WordMeaningsEditor.vue"
+      ],
+      "test_ids": [
+        "eternalia.dictionary.master-only-input CAT symbolic contract > case.master.selected"
+      ],
+      "timeout_seconds": 60
+    },
+    {
+      "id": "green-master-legacy",
+      "stage": "green",
+      "runner": "junit",
+      "cwd": "@repo:eternalia",
+      "argv": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "Lifecycle/Works/New/eternalia.dictionary.master-only-author-input/CAT/Generated/current.test.ts",
+        "--maxWorkers=1",
+        "--testTimeout=15000",
+        "--reporter=junit",
+        "--outputFile={report}"
+      ],
+      "input_paths": [
+        "Lifecycle/Works/New/eternalia.dictionary.master-only-author-input/CAT/Generated/current.test.ts",
+        "Lifecycle/Works/New/eternalia.dictionary.master-only-author-input/CAT/Generated/word-class-driver.ts",
+        "Lifecycle/Works/New/eternalia.dictionary.master-only-author-input/CAT/Binding/driver.json",
+        "apps/web/app/utils/word-class-input-policy.ts",
+        "apps/web/app/components/WordMeaningsEditor.vue"
+      ],
+      "test_ids": [
+        "eternalia.dictionary.master-only-input CAT symbolic contract > case.master.legacy"
+      ],
+      "timeout_seconds": 60
+    },
+    {
+      "id": "green-empty-no-legacy",
+      "stage": "green",
+      "runner": "junit",
+      "cwd": "@repo:eternalia",
+      "argv": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "Lifecycle/Works/New/eternalia.dictionary.master-only-author-input/CAT/Generated/current.test.ts",
+        "--maxWorkers=1",
+        "--testTimeout=15000",
+        "--reporter=junit",
+        "--outputFile={report}"
+      ],
+      "input_paths": [
+        "Lifecycle/Works/New/eternalia.dictionary.master-only-author-input/CAT/Generated/current.test.ts",
+        "Lifecycle/Works/New/eternalia.dictionary.master-only-author-input/CAT/Generated/word-class-driver.ts",
+        "Lifecycle/Works/New/eternalia.dictionary.master-only-author-input/CAT/Binding/driver.json",
+        "apps/web/app/utils/word-class-input-policy.ts",
+        "apps/web/app/components/WordMeaningsEditor.vue"
+      ],
+      "test_ids": [
+        "eternalia.dictionary.master-only-input CAT symbolic contract > case.empty.no-legacy"
+      ],
+      "timeout_seconds": 60
+    },
+    {
+      "id": "green-empty-legacy",
+      "stage": "green",
+      "runner": "junit",
+      "cwd": "@repo:eternalia",
+      "argv": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "Lifecycle/Works/New/eternalia.dictionary.master-only-author-input/CAT/Generated/current.test.ts",
+        "--maxWorkers=1",
+        "--testTimeout=15000",
+        "--reporter=junit",
+        "--outputFile={report}"
+      ],
+      "input_paths": [
+        "Lifecycle/Works/New/eternalia.dictionary.master-only-author-input/CAT/Generated/current.test.ts",
+        "Lifecycle/Works/New/eternalia.dictionary.master-only-author-input/CAT/Generated/word-class-driver.ts",
+        "Lifecycle/Works/New/eternalia.dictionary.master-only-author-input/CAT/Binding/driver.json",
+        "apps/web/app/utils/word-class-input-policy.ts",
+        "apps/web/app/components/WordMeaningsEditor.vue"
+      ],
+      "test_ids": [
+        "eternalia.dictionary.master-only-input CAT symbolic contract > case.empty.legacy"
+      ],
+      "timeout_seconds": 60
+    }
+  ],
   "depends_on": [],
   "compilation": {
     "schema": "cat-compile/v2",

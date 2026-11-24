@@ -26,10 +26,21 @@
       "path": "../../../..",
       "branch_pattern": "feature/*",
       "allowed_paths": [
-        "Lifecycle/Works/New/eternalia.master.delete-admission/**"
+        "Lifecycle/Works/New/eternalia.master.delete-admission/**",
+        "packages/contracts/tests/generated/cat_case_delete_conflict_130e5d4474fe.test.ts",
+        "packages/contracts/tests/generated/cat_case_delete_referenced_aebc43f68b97.test.ts",
+        "packages/contracts/tests/generated/cat_case_delete_allowed_16dad62be599.test.ts",
+        "packages/contracts/tests/generated/master-delete-admission-driver.ts",
+        ".cat-flow/test-suite-manifest.master-delete.json",
+        ".cat-flow/evidence/test-suite-master-delete.json"
       ],
       "production_paths": [],
-      "test_paths": []
+      "test_paths": [
+        "packages/contracts/tests/generated/cat_case_delete_conflict_130e5d4474fe.test.ts",
+        "packages/contracts/tests/generated/cat_case_delete_referenced_aebc43f68b97.test.ts",
+        "packages/contracts/tests/generated/cat_case_delete_allowed_16dad62be599.test.ts",
+        "packages/contracts/tests/generated/master-delete-admission-driver.ts"
+      ]
     }
   ],
   "scope": {
@@ -57,7 +68,43 @@
   "technologies": [
     "TypeScript"
   ],
-  "checks": [],
+  "checks": [
+    {
+      "id": "suite-master-delete-3",
+      "stage": "suite-run",
+      "runner": "junit",
+      "cwd": "@repo:eternalia",
+      "argv": [
+        "node",
+        "scripts/run-cat-vitest-suite-junit.mjs",
+        "--report",
+        "{report}",
+        "--process",
+        "eternalia.master.delete-admission",
+        "--ids",
+        "case.delete.conflict,case.delete.referenced,case.delete.allowed",
+        "--",
+        "packages/contracts/tests/generated/cat_case_delete_conflict_130e5d4474fe.test.ts",
+        "packages/contracts/tests/generated/cat_case_delete_referenced_aebc43f68b97.test.ts",
+        "packages/contracts/tests/generated/cat_case_delete_allowed_16dad62be599.test.ts"
+      ],
+      "input_paths": [
+        "packages/contracts/tests/generated/cat_case_delete_conflict_130e5d4474fe.test.ts",
+        "packages/contracts/tests/generated/cat_case_delete_referenced_aebc43f68b97.test.ts",
+        "packages/contracts/tests/generated/cat_case_delete_allowed_16dad62be599.test.ts",
+        "packages/contracts/tests/generated/master-delete-admission-driver.ts",
+        "Lifecycle/Works/New/eternalia.master.delete-admission/CAT/Binding/driver.json",
+        "apps/api/src/master-delete-admission.ts",
+        "scripts/run-cat-vitest-suite-junit.mjs"
+      ],
+      "test_ids": [
+        "case.delete.conflict",
+        "case.delete.referenced",
+        "case.delete.allowed"
+      ],
+      "timeout_seconds": 60
+    }
+  ],
   "depends_on": [],
   "compilation": {
     "schema": "cat-compile/v2",
@@ -74,6 +121,7 @@
     "vectors": "CAT/Generated/Vectors.json",
     "obligations": "CAT/Generated/obligations.json",
     "allow_draft": false,
-    "conformance_binding": "CAT/Binding/implementation.json"
+    "conformance_binding": "CAT/Binding/implementation.json",
+    "binding": "CAT/Binding/driver.json"
   }
 }

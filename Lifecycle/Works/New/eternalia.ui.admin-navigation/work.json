@@ -48,7 +48,8 @@
       ],
       "test_paths": [
         "apps/web/browser-acceptance/series-first-ia.test.mjs",
-        "Lifecycle/Works/New/eternalia.ui.admin-navigation/CAT/Generated/current.test.ts"
+        "Lifecycle/Works/New/eternalia.ui.admin-navigation/CAT/Generated/current.test.ts",
+        "Lifecycle/Works/New/eternalia.ui.admin-navigation/CAT/Generated/admin-navigation-driver.mjs"
       ]
     }
   ],
@@ -81,7 +82,92 @@
     "Vue",
     "Playwright"
   ],
-  "checks": [],
+  "checks": [
+    {
+      "id": "green-edit-denied",
+      "stage": "green",
+      "runner": "junit",
+      "cwd": "@repo:eternalia",
+      "argv": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "Lifecycle/Works/New/eternalia.ui.admin-navigation/CAT/Generated/current.test.ts",
+        "--maxWorkers=1",
+        "--testTimeout=60000",
+        "--reporter=junit",
+        "--outputFile={report}"
+      ],
+      "input_paths": [
+        "Lifecycle/Works/New/eternalia.ui.admin-navigation/CAT/Generated/current.test.ts",
+        "Lifecycle/Works/New/eternalia.ui.admin-navigation/CAT/Generated/admin-navigation-driver.mjs",
+        "Lifecycle/Works/New/eternalia.ui.admin-navigation/CAT/Binding/driver.json",
+        "apps/web/app/components/AdminEditBridge.vue",
+        "apps/web/app/pages/studio.vue",
+        "apps/web/app/middleware/author.global.ts"
+      ],
+      "test_ids": [
+        "eternalia.ui.admin-navigation CAT symbolic contract > case.edit.denied"
+      ],
+      "timeout_seconds": 120
+    },
+    {
+      "id": "green-edit-invalid",
+      "stage": "green",
+      "runner": "junit",
+      "cwd": "@repo:eternalia",
+      "argv": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "Lifecycle/Works/New/eternalia.ui.admin-navigation/CAT/Generated/current.test.ts",
+        "--maxWorkers=1",
+        "--testTimeout=60000",
+        "--reporter=junit",
+        "--outputFile={report}"
+      ],
+      "input_paths": [
+        "Lifecycle/Works/New/eternalia.ui.admin-navigation/CAT/Generated/current.test.ts",
+        "Lifecycle/Works/New/eternalia.ui.admin-navigation/CAT/Generated/admin-navigation-driver.mjs",
+        "Lifecycle/Works/New/eternalia.ui.admin-navigation/CAT/Binding/driver.json",
+        "apps/web/app/components/AdminEditBridge.vue",
+        "apps/web/app/pages/studio.vue",
+        "apps/web/app/middleware/author.global.ts"
+      ],
+      "test_ids": [
+        "eternalia.ui.admin-navigation CAT symbolic contract > case.edit.invalid"
+      ],
+      "timeout_seconds": 120
+    },
+    {
+      "id": "green-edit-canonical",
+      "stage": "green",
+      "runner": "junit",
+      "cwd": "@repo:eternalia",
+      "argv": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "Lifecycle/Works/New/eternalia.ui.admin-navigation/CAT/Generated/current.test.ts",
+        "--maxWorkers=1",
+        "--testTimeout=60000",
+        "--reporter=junit",
+        "--outputFile={report}"
+      ],
+      "input_paths": [
+        "Lifecycle/Works/New/eternalia.ui.admin-navigation/CAT/Generated/current.test.ts",
+        "Lifecycle/Works/New/eternalia.ui.admin-navigation/CAT/Generated/admin-navigation-driver.mjs",
+        "Lifecycle/Works/New/eternalia.ui.admin-navigation/CAT/Binding/driver.json",
+        "apps/web/app/components/AdminEditBridge.vue",
+        "apps/web/app/pages/studio.vue",
+        "apps/web/app/middleware/author.global.ts"
+      ],
+      "test_ids": [
+        "eternalia.ui.admin-navigation CAT symbolic contract > case.edit.canonical"
+      ],
+      "timeout_seconds": 120
+    }
+  ],
   "depends_on": [],
   "compilation": {
     "schema": "cat-compile/v2",

@@ -81,7 +81,116 @@
     "Vue",
     "Playwright"
   ],
-  "checks": [],
+  "checks": [
+    {
+      "id": "green-no-snapshot",
+      "stage": "green",
+      "runner": "junit",
+      "cwd": "@repo:eternalia",
+      "argv": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "apps/web/tests/generated/cat_author_publication_current.test.ts",
+        "--maxWorkers=1",
+        "--testTimeout=15000",
+        "--reporter=junit",
+        "--outputFile={report}"
+      ],
+      "input_paths": [
+        "apps/web/tests/generated/cat_author_publication_current.test.ts",
+        "apps/web/tests/generated/cat_move07_driver.mjs",
+        "Lifecycle/Works/New/eternalia.publication.author-status-on-tip-move/CAT/Binding/driver.json",
+        "apps/web/app/pages/studio/publication.vue",
+        "packages/contracts/src/publication.ts"
+      ],
+      "test_ids": [
+        "eternalia.publication.author-status-on-tip-move CAT symbolic contract > case.no-snapshot"
+      ],
+      "timeout_seconds": 60
+    },
+    {
+      "id": "green-self-blocked",
+      "stage": "green",
+      "runner": "junit",
+      "cwd": "@repo:eternalia",
+      "argv": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "apps/web/tests/generated/cat_author_publication_current.test.ts",
+        "--maxWorkers=1",
+        "--testTimeout=15000",
+        "--reporter=junit",
+        "--outputFile={report}"
+      ],
+      "input_paths": [
+        "apps/web/tests/generated/cat_author_publication_current.test.ts",
+        "apps/web/tests/generated/cat_move07_driver.mjs",
+        "Lifecycle/Works/New/eternalia.publication.author-status-on-tip-move/CAT/Binding/driver.json",
+        "apps/web/app/pages/studio/publication.vue",
+        "packages/contracts/src/publication.ts"
+      ],
+      "test_ids": [
+        "eternalia.publication.author-status-on-tip-move CAT symbolic contract > case.self-blocked"
+      ],
+      "timeout_seconds": 60
+    },
+    {
+      "id": "green-ancestor-blocked",
+      "stage": "green",
+      "runner": "junit",
+      "cwd": "@repo:eternalia",
+      "argv": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "apps/web/tests/generated/cat_author_publication_current.test.ts",
+        "--maxWorkers=1",
+        "--testTimeout=15000",
+        "--reporter=junit",
+        "--outputFile={report}"
+      ],
+      "input_paths": [
+        "apps/web/tests/generated/cat_author_publication_current.test.ts",
+        "apps/web/tests/generated/cat_move07_driver.mjs",
+        "Lifecycle/Works/New/eternalia.publication.author-status-on-tip-move/CAT/Binding/driver.json",
+        "apps/web/app/pages/studio/publication.vue",
+        "packages/contracts/src/publication.ts"
+      ],
+      "test_ids": [
+        "eternalia.publication.author-status-on-tip-move CAT symbolic contract > case.ancestor-blocked"
+      ],
+      "timeout_seconds": 60
+    },
+    {
+      "id": "green-visible",
+      "stage": "green",
+      "runner": "junit",
+      "cwd": "@repo:eternalia",
+      "argv": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "apps/web/tests/generated/cat_author_publication_current.test.ts",
+        "--maxWorkers=1",
+        "--testTimeout=15000",
+        "--reporter=junit",
+        "--outputFile={report}"
+      ],
+      "input_paths": [
+        "apps/web/tests/generated/cat_author_publication_current.test.ts",
+        "apps/web/tests/generated/cat_move07_driver.mjs",
+        "Lifecycle/Works/New/eternalia.publication.author-status-on-tip-move/CAT/Binding/driver.json",
+        "apps/web/app/pages/studio/publication.vue",
+        "packages/contracts/src/publication.ts"
+      ],
+      "test_ids": [
+        "eternalia.publication.author-status-on-tip-move CAT symbolic contract > case.visible"
+      ],
+      "timeout_seconds": 60
+    }
+  ],
   "depends_on": [],
   "compilation": {
     "schema": "cat-compile/v2",
