@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import type { ReaderKind } from '~/types/reader';
+import { adminCreatePath } from '~/utils/admin-node-route';
 
 const props = defineProps<{
   kind: ReaderKind;
   label: string;
   parentId?: string | null;
+  seriesId?: string | null;
 }>();
 
 const isAuthor = ref(false);
@@ -17,17 +19,12 @@ onMounted(async () => {
   }
 });
 
-const destination = computed(() => ({
-  path: '/studio',
-  query: {
-    create: props.kind,
-    ...(props.parentId ? { parent: props.parentId } : {}),
-  },
-}));
+const destination = computed(() => props.kind==='series' ? adminCreatePath(null,'series',null) :
+  props.seriesId&&props.parentId ? adminCreatePath(props.seriesId,props.kind,props.parentId) : null);
 </script>
 
 <template>
-  <NuxtLink v-if="isAuthor" :to="destination" class="author-create-link"
+  <NuxtLink v-if="isAuthor && destination" :to="destination" class="author-create-link"
     :aria-label="props.label">{{ props.label }}</NuxtLink>
 </template>
 

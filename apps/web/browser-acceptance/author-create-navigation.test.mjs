@@ -14,7 +14,7 @@ const types={
   timeline:{kind:'periodization',label:'このシリーズに新しい年代区分を作成'},
 };
 
-test('CM-09: author-only home and area creation paths use validated existing Studio editor',
+test('CM-09: author-only home and area creation paths use validated canonical creation and edit routes',
   {timeout:120_000},async()=>{
   assert.ok(base?.startsWith('http://127.0.0.1:'));
   const browser=await chromium.launch({headless:true});
@@ -28,7 +28,7 @@ test('CM-09: author-only home and area creation paths use validated existing Stu
     await anon.getByRole('heading',{name:'ストーリー'}).waitFor();
     assert.equal(await anon.getByRole('link',{name:'新規シリーズ'}).count(),0);
     assert.equal(await anon.getByRole('link',{name:types.stories.label}).count(),0);
-    await anon.goto(base+'/studio?create=series');
+    await anon.goto(base+'/admin/series/create');
     await anon.getByText('編集するには、許可された作者のDiscordアカウントで認証してください。',{exact:false}).waitFor();
     assert.equal(await anon.locator('form.create-form').count(),0);
     await anonymous.close();
@@ -39,7 +39,7 @@ test('CM-09: author-only home and area creation paths use validated existing Stu
     await page.goto(base+'/');
     const seriesCreate=page.getByRole('link',{name:'新規シリーズ'});
     await seriesCreate.waitFor();
-    assert.match(await seriesCreate.getAttribute('href'),/create=series/);
+    assert.equal(await seriesCreate.getAttribute('href'),'/admin/series/create');
     await seriesCreate.click();
     await page.getByRole('heading',{name:'項目を追加'}).waitFor();
     assert.equal(await page.locator('form.create-form select').inputValue(),'series');
@@ -56,7 +56,8 @@ test('CM-09: author-only home and area creation paths use validated existing Stu
     assert.ok(created);
     assert.equal(created.kind,'series');
     assert.equal(created.parentId,null);
-    assert.equal(new URL(page.url()).searchParams.get('item'),created.id,
+    await page.waitForURL(url=>url.pathname==='/admin/series/'+created.id+'/edit');
+    assert.equal(new URL(page.url()).pathname,'/admin/series/'+created.id+'/edit',
       'successful deep link creation should navigate to the created node');
 
     for(const [area,expected] of Object.entries(types)){
@@ -67,9 +68,7 @@ test('CM-09: author-only home and area creation paths use validated existing Stu
         .getByRole('link',{name:expected.label});
       await link.waitFor();
       const href=await link.getAttribute('href');
-      const params=new URL(href,base).searchParams;
-      assert.equal(params.get('create'),expected.kind,area);
-      assert.equal(params.get('parent'),fixture.seriesA,area);
+      assert.equal(new URL(href,base).pathname,'/admin/series/'+fixture.seriesA+'/create/'+expected.kind+'/'+fixture.seriesA,area);
       await link.click();
       await page.getByRole('heading',{name:'項目を追加'}).waitFor();
       assert.equal(await page.locator('form.create-form select').inputValue(),expected.kind,area);
@@ -82,15 +81,34 @@ test('CM-09: author-only home and area creation paths use validated existing Stu
         assert.ok(item);
         assert.equal(item.parentId,fixture.seriesA);
         assert.equal(item.kind,'volume');
+        await page.waitForURL(url=>url.pathname==='/admin/series/'+fixture.seriesA+'/stories/volumes/'+item.id+'/edit');
       }
     }
-    await page.goto(base+'/studio?create=chapter&parent='+fixture.seriesA);
+    await page.goto(base+'/admin/series/'+fixture.seriesA+'/create/chapter/'+fixture.seriesA);
     await page.getByText('新規作成の対象または種類が正しくありません。').waitFor();
     assert.equal(await page.locator('form.create-form').count(),0);
-    await page.goto(base+'/studio?create=tip&parent=nonexistent');
+    await page.goto(base+'/admin/series/'+fixture.seriesA+'/create/tip/nonexistent');
     await page.getByText('新規作成の対象または種類が正しくありません。').waitFor();
     assert.equal(await page.locator('form.create-form').count(),0);
 
+    await page.goto(base+'/admin/series/'+fixture.seriesA+'/create/word/'+fixture.languageB);
+    await page.getByText('新規作成の対象または種類が正しくありません。').waitFor();
+    assert.equal(await page.locator('form.create-form').count(),0,'foreign series parent refused');
+    await page.goto(base+'/admin/series/'+fixture.seriesA+'/dictionaries/words');
+    const wordLink=page.locator('.grid-create a[href="/admin/series/'+fixture.seriesA+'/create/word/'+fixture.language+'"]');
+    await wordLink.click();
+    const createForm=page.locator('form.create-form');
+    await createForm.waitFor();
+    assert.equal(await createForm.locator('select').first().inputValue(),'word');
+    assert.equal(await createForm.locator('select').first().isDisabled(),true);
+    await createForm.locator('input[maxlength="150"]').fill(fixture.prefix+'-canonical-new-word');
+    await createForm.getByRole('button',{name:'作成',exact:true}).click();
+    await page.getByRole('heading',{name:'単語：'+fixture.prefix+'-canonical-new-word'}).waitFor();
+    const createdWord=(await list()).find(n=>n.draft.title===fixture.prefix+'-canonical-new-word');
+    assert.ok(createdWord);
+    assert.equal(createdWord.parentId,fixture.language);
+    await page.waitForURL(url=>url.pathname==='/admin/series/'+fixture.seriesA+'/dictionaries/words/'+createdWord.id+'/edit');
+    assert.equal((await context.request.get(base+'/api/public/items/'+createdWord.id)).status(),404);
     await page.goto(base+'/stories');
     await page.getByRole('link',{name:types.stories.label}).first().waitFor();
     await selectUiLanguage(page, 'en');

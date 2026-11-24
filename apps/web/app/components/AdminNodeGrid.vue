@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { AuthorNode } from '~/types/author';
 import type { ReaderKind } from '~/types/reader';
+import { adminCreatePath, adminEditPath } from '~/utils/admin-node-route';
 const props=defineProps<{ seriesId?:string; kind:ReaderKind; title:string; editRoot?:string }>();
 const {t}=useUiLocale();
 const {data:auth,pending:authPending,refresh:refreshAuth}=await useFetch<{authenticated:boolean}>('/api/auth/me');
@@ -24,12 +25,7 @@ const parentKind:Record<ReaderKind,ReaderKind|null>={series:null,volume:'series'
 const createParents=computed(()=>(nodes.value??[]).filter(n=>n.kind===parentKind[props.kind]&&
   (!props.seriesId||ancestry(n)[0]?.id===props.seriesId)));
 function editorPath(node:AuthorNode):string{
-  if(!props.seriesId)return '/admin/series/'+node.id+'/edit';
-  const root='/admin/series/'+props.seriesId;
-  const groups:Partial<Record<ReaderKind,string>>={volume:'stories/volumes',part:'stories/parts',chapter:'stories/chapters',
-    category:'settings/categories',tip:'settings/tips',tipSection:'settings/sections',language:'dictionaries/languages',
-    word:'dictionaries/words',grammar:'dictionaries/grammar',periodization:'timeline/periods',event:'timeline/events'};
-  return root+'/'+(groups[node.kind]??'')+'/'+encodeURIComponent(node.id)+'/edit';
+  return adminEditPath(props.seriesId??node.id,node.kind,node.id);
 }
 </script>
 <template>
@@ -38,9 +34,9 @@ function editorPath(node:AuthorNode):string{
     <div v-else-if="!auth?.authenticated" role="alert">{{ t('studioLoginRequired') }}</div>
     <template v-else>
       <div class="grid-create">
-        <NuxtLink v-if="kind==='series'" :to="{path:'/studio',query:{create:'series'}}">{{ t('studioNewSeries') }}</NuxtLink>
+        <NuxtLink v-if="kind==='series'" :to="adminCreatePath(null,'series',null)">{{ t('studioNewSeries') }}</NuxtLink>
         <template v-else>
-          <NuxtLink v-for="parent in createParents" :key="parent.id" :to="{path:'/studio',query:{create:kind,parent:parent.id}}">
+          <NuxtLink v-for="parent in createParents" :key="parent.id" :to="adminCreatePath(seriesId??null,kind,parent.id)">
             {{ t('studioCreate') }} ({{ parent.draft.title }})
           </NuxtLink>
         </template>
