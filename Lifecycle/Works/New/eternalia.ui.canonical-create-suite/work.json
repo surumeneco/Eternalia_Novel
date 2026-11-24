@@ -1,0 +1,130 @@
+{
+  "schema": "cat-work/v1",
+  "id": "eternalia.ui.canonical-create-suite",
+  "entry": "confirmed-spec",
+  "flow": "spec-test-sync",
+  "mode": "implementation",
+  "work_kind": "test-maintenance",
+  "issue_ref": "https://github.com/surumeneco/Eternalia_Novel/issues/165",
+  "project_entry_ref": "https://drive.google.com/file/d/1clwfVJ3e_t1_QKFfOWxxRIzE9WMFvTiM/view",
+  "normative": [
+    {
+      "uri": "https://drive.google.com/file/d/1G4q4DbJZdOk7jIfgvuZu0a2e4L1LIMti/view"
+    },
+    {
+      "uri": "https://drive.google.com/file/d/14no6MWmkFuyWYPVS6QdcRmbLbrUBbOpc/view"
+    },
+    {
+      "uri": "https://drive.google.com/file/d/1LqX-Noytb_oWymIrpO01eO5PvThGlVGx/view"
+    }
+  ],
+  "evidence": [
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/pull/193"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/actions/runs/45327511500"
+    }
+  ],
+  "repositories": [
+    {
+      "name": "eternalia",
+      "path": "../../../..",
+      "branch_pattern": "feature/*",
+      "allowed_paths": [
+        "Lifecycle/Works/New/eternalia.ui.canonical-create-suite/**",
+        "apps/web/tests/generated/**",
+        ".cat-flow/test-suite-manifest.canonical-create.json",
+        ".cat-flow/evidence/test-suite-canonical-create.json"
+      ],
+      "production_paths": [],
+      "test_paths": [
+        "apps/web/tests/generated/**"
+      ]
+    }
+  ],
+  "scope": {
+    "process_ids": [
+      "eternalia.ui.canonical-create"
+    ],
+    "changed_ids": [
+      "AC-81.canonical-create.admission-suite"
+    ],
+    "preserved_ids": [
+      "LG-08.duplicate-spelling-unsaved-meaning",
+      "CM-09.author-creation",
+      "PB-03.private-draft",
+      "AC-90.unsaved-protection"
+    ]
+  },
+  "specification": {
+    "status": "confirmed",
+    "decision_ref": "https://drive.google.com/file/d/1G4q4DbJZdOk7jIfgvuZu0a2e4L1LIMti/view",
+    "artifact_refs": [
+      "Lifecycle/Works/New/eternalia.ui.canonical-create/CAT/Confirmed/Process.md",
+      "Lifecycle/Works/New/eternalia.ui.canonical-create/CAT/Confirmed/PI.md",
+      "Lifecycle/Works/New/eternalia.ui.canonical-create/CAT/Confirmed/TCE.md"
+    ]
+  },
+  "technologies": [
+    "TypeScript",
+    "Vitest"
+  ],
+  "checks": [
+    {
+      "id": "suite-canonical-create-4",
+      "stage": "suite-run",
+      "runner": "junit",
+      "cwd": "@repo:eternalia",
+      "argv": [
+        "node",
+        "scripts/run-cat-vitest-suite-junit.mjs",
+        "--report",
+        "{report}",
+        "--process",
+        "eternalia.ui.canonical-create",
+        "--ids",
+        "case.create.child,case.create.denied,case.create.invalid,case.create.root",
+        "--",
+        "apps/web/tests/generated/cat_case_create_child_460ece20185a.test.ts",
+        "apps/web/tests/generated/cat_case_create_denied_a84ec5f58e87.test.ts",
+        "apps/web/tests/generated/cat_case_create_invalid_c134bc29eac0.test.ts",
+        "apps/web/tests/generated/cat_case_create_root_dcf08f38f0ee.test.ts"
+      ],
+      "input_paths": [
+        "apps/web/tests/generated/cat_case_create_child_460ece20185a.test.ts",
+        "apps/web/tests/generated/cat_case_create_denied_a84ec5f58e87.test.ts",
+        "apps/web/tests/generated/cat_case_create_invalid_c134bc29eac0.test.ts",
+        "apps/web/tests/generated/cat_case_create_root_dcf08f38f0ee.test.ts",
+        "apps/web/tests/generated/canonical-create-driver.mjs",
+        "apps/web/app/utils/canonical-create-admission.ts",
+        "Lifecycle/Works/New/eternalia.ui.canonical-create-suite/CAT/Binding/driver.json",
+        "scripts/run-cat-vitest-suite-junit.mjs"
+      ],
+      "test_ids": [
+        "case.create.child",
+        "case.create.denied",
+        "case.create.invalid",
+        "case.create.root"
+      ],
+      "timeout_seconds": 60
+    }
+  ],
+  "depends_on": [],
+  "compilation": {
+    "schema": "cat-compile/v2",
+    "process": "@workspace/Lifecycle/Works/New/eternalia.ui.canonical-create/CAT/Confirmed/Process.md",
+    "pi": "@workspace/Lifecycle/Works/New/eternalia.ui.canonical-create/CAT/Confirmed/PI.md",
+    "pis": [
+      "@workspace/Lifecycle/Works/New/eternalia.ui.canonical-create/CAT/Confirmed/PI.md"
+    ],
+    "tce": "@workspace/Lifecycle/Works/New/eternalia.ui.canonical-create/CAT/Confirmed/TCE.md",
+    "tces": [
+      "@workspace/Lifecycle/Works/New/eternalia.ui.canonical-create/CAT/Confirmed/TCE.md"
+    ],
+    "model": "CAT/Generated/TestModel.json",
+    "vectors": "CAT/Generated/Vectors.json",
+    "binding": "CAT/Binding/driver.json",
+    "allow_draft": false
+  }
+}

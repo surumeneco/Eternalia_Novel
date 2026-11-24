@@ -41,6 +41,12 @@ export function normalizeCatJUnit(xml, processId, expectedIds) {
   return updated;
 }
 
+export function validateCatTestPaths(tests, ids) {
+  if (tests.length === 0 || tests.length !== ids.length || new Set(tests).size !== tests.length || tests.some(file => !/^(?:packages\/contracts|apps\/web)\/tests\/generated\/cat_[a-z0-9_]+\.test\.ts$/.test(file))) {
+    throw new Error('Every CAT case must have one declared generated test file');
+  }
+}
+
 function main() {
   const sep = process.argv.indexOf('--');
   if (sep < 0 || sep < 6 || !process.argv[sep + 1]) throw new Error('Expected --report PATH --process ID --ids CSV -- FILE ...');
@@ -54,9 +60,7 @@ function main() {
   const processId = flag('--process');
   const ids = flag('--ids').split(',');
   const tests = process.argv.slice(sep + 1);
-  if (tests.length !== ids.length || tests.some(file => !/^packages\/contracts\/tests\/generated\/cat_[a-z0-9_]+\.test\.ts$/.test(file))) {
-    throw new Error('Every CAT case must have one declared generated test file');
-  }
+  validateCatTestPaths(tests, ids);
   const dir = mkdtempSync(join(tmpdir(), 'eternalia-cat-vitest-'));
   try {
     const raw = join(dir, 'vitest.xml');
