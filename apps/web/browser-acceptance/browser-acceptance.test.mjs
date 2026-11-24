@@ -76,7 +76,9 @@ test('anonymous mobile reading and browser-based author draft/publish workflow',
       ['dictionaries', '辞書'], ['timeline', '年表'],
     ]) {
       await readerPage.goto(base + '/series/' + fixture.seriesA + '/' + area);
-      await readerPage.locator('.site-main').getByRole('heading', { name: title, exact: true }).waitFor();
+      const heading = area === 'timeline' ? fixture.prefix + '-world-A — ' + title : title;
+      await readerPage.locator('.site-main').getByRole('heading', { name: heading, exact: true }).waitFor();
+      if (area === 'timeline') await readerPage.locator('main .period-filter select').waitFor();
       const content = await readerPage.locator('body').innerText();
       assert.ok(content.includes(fixture.prefix + '-world-A'), 'missing series at ' + area);
     }
@@ -1763,8 +1765,12 @@ test('published tags search across categories without changing ownership or priv
       [categoryA, 'tip-A', 'tip-B'], [categoryB, 'tip-B', 'tip-A'],
     ]) {
       await page.goto(base + '/series/' + series + '/settings/' + category);
-      await page.getByRole('link', { name: prefix + '-' + own, exact: true }).waitFor();
-      assert.equal(await page.getByRole('link', { name: prefix + '-' + other, exact: true }).count(), 0);
+      const categoryContent = page.locator('#main-content');
+      const ownLink = categoryContent.getByRole('link', { name: prefix + '-' + own, exact: true });
+      await ownLink.waitFor();
+      assert.equal(await ownLink.getAttribute('href'), '/series/' + series + '/settings/' + category + '/' + (category === categoryA ? tipA : tipB));
+      assert.equal(await categoryContent.getByRole('link', { name: prefix + '-' + other, exact: true }).count(), 0,
+        'category content must not list a Tip owned by another Category; recent updates are independent');
     }
 
     const hidden = await author.request.post(base + '/api/admin/nodes/' + tipA + '/visibility', {
@@ -2364,9 +2370,8 @@ test('AC-56: shared author navigation works while anonymous editor and API write
     // The series detail page must also link directly to the exact series editor.
     await page.goto(base + '/series/' + series);
     await page.getByRole('link', { name: 'この項目を編集' }).click();
-    await page.waitForURL(url => url.pathname === '/studio'
-      && url.searchParams.get('item') === series);
-    await page.getByRole('heading', { name: 'シリーズ：' + title }).waitFor();
+    await page.waitForURL(url => url.pathname === '/admin/series/' + series + '/edit');
+    await page.locator('.studio-editor').getByRole('heading', { name: 'シリーズ：' + title, exact: true }).waitFor();
 
     const readerPage = await anonymous.newPage();
     await readerPage.goto(base + '/read/' + fixture.chapter);
