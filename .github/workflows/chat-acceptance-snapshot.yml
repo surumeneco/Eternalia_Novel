@@ -1,0 +1,26 @@
+name: Read-only acceptance snapshot
+on:
+  push:
+    branches: ['infra/chat-acceptance-snapshot-853ee0c0']
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: '853ee0c00cbcd5aa17747d323518ba35aa22551d'
+          persist-credentials: false
+      - name: Archive exact revision
+        run: |
+          test "$(git rev-parse HEAD)" = '853ee0c00cbcd5aa17747d323518ba35aa22551d'
+          mkdir -p /tmp/snapshot
+          git archive --format=tar.gz -o /tmp/snapshot/project.tar.gz HEAD
+          git rev-parse HEAD > /tmp/snapshot/commit.txt
+          git rev-parse HEAD^{tree} > /tmp/snapshot/tree.txt
+          sha256sum /tmp/snapshot/project.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: project-snapshot-853ee0c0
+          path: /tmp/snapshot/
