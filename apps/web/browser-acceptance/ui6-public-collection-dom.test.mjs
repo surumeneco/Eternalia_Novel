@@ -41,7 +41,7 @@ test('UI6-DOM-OBS-01/03/04: four anonymous public collections preserve semantic 
               nav?.nextElementSibling === panel,
             heading: panel?.querySelector('h1')?.textContent?.trim(),
             readerListCount: panel?.querySelectorAll('ul.reader-list').length,
-            authorCreateLinkCount: panel?.querySelectorAll('a[href*="/studio"]').length,
+            authorCreateLinkCount: panel?.querySelectorAll('a[href^="/studio"],a[href^="/admin"]').length,
           };
         });
         assert.ok(dom.header && dom.aside && dom.main && dom.footer,
@@ -81,7 +81,7 @@ test('UI6-DOM-OBS-02: all four published collections are readable in server HTML
         assert.ok((await page.locator('.site-main ul.reader-list').innerText())
           .includes(fixture.prefix + '-world-A'),
           area + ' must render published series in initial HTML');
-        assert.equal(await page.locator('.site-main a[href*="/studio"]').count(), 0);
+        assert.equal(await page.locator('.site-main a[href^="/studio"],a[href^="/admin"]').count(), 0);
       }
       await context.close();
     } finally { await browser.close(); }
@@ -120,7 +120,7 @@ test('UI6-DETAIL-DOM-01/02: anonymous series, Tip, and chapter readers keep shel
               nav?.nextElementSibling === panel,
             panelCount: main?.querySelectorAll('section.stone-panel').length,
             headings: [...(panel?.querySelectorAll('h1') ?? [])].map(h => h.textContent?.trim()),
-            authorEditLinks: main?.querySelectorAll('a[href*="/studio"]').length,
+            authorEditLinks: main?.querySelectorAll('a[href^="/studio"],a[href^="/admin"]').length,
             chapterArticle: !!panel?.querySelector('article > .rich-content'),
             chapterNav: !!panel?.querySelector('article nav.chapter-navigation'),
           };
@@ -163,7 +163,7 @@ test('UI6-DETAIL-DOM-03: no-JavaScript SSR retains public series, Tip, and both 
         assert.equal(response?.status(), 200, entry.path());
         assert.equal(await page.locator('.site-main section.stone-panel h1').innerText(), entry.title());
         assert.equal(await page.locator('.site-main nav.topic-path[aria-label]').count(), 1);
-        assert.equal(await page.locator('.site-main a[href*="/studio"]').count(), 0);
+        assert.equal(await page.locator('.site-main a[href^="/studio"],a[href^="/admin"]').count(), 0);
         const readerText = await page.locator('.site-main').innerText();
         assert.ok(!readerText.includes(fixture.prefix + '-unpublished-draft-title'));
         assert.ok(!readerText.includes(fixture.prefix + '-unpublished-draft-body'));
@@ -201,7 +201,7 @@ test('UI6-SLOT-DOM-01: anonymous SSR projects home and collection default-slot c
             [...panel.children].filter(el => el.matches('h1,h2')).map(el => el.textContent?.trim())),
           hasPublishedSeriesLink: Boolean(panels[1]?.querySelector(
             'ul.reader-list a[href*="/series/"]')),
-          authorLinks: main?.querySelectorAll('a[href*="/studio"]').length,
+          authorLinks: main?.querySelectorAll('a[href^="/studio"],a[href^="/admin"]').length,
         };
       });
       assert.equal(homeDom.mainHasRoute, true, 'layout default slot projects route inside main');
@@ -225,7 +225,7 @@ test('UI6-SLOT-DOM-01: anonymous SSR projects home and collection default-slot c
           breadcrumbBeforePanel: nav?.nextElementSibling === panel,
           headingDirect: panel?.querySelector(':scope > h1')?.textContent?.trim(),
           listDirect: Boolean(panel?.querySelector(':scope > ul.reader-list')),
-          authorLinks: panel?.querySelectorAll('a[href*="/studio"]').length,
+          authorLinks: panel?.querySelectorAll('a[href^="/studio"],a[href^="/admin"]').length,
         };
       });
       assert.equal(collectionDom.mainHasRoute, true);
