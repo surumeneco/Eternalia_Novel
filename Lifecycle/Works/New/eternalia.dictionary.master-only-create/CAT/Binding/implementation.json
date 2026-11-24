@@ -1,0 +1,14 @@
+{
+  "schema": "cat-typescript-conformance-binding/v1",
+  "repository": "eternalia",
+  "source_globs": [
+    "packages/contracts/src/word-pos-create-policy.ts"
+  ],
+  "public_entrypoints": [
+    "packages/contracts/src/word-pos-create-policy.ts"
+  ],
+  "interface_symbols": {
+    "isRegisteredCreateWordPartOfSpeech": "check"
+  },
+  "capabilities": {}
+}

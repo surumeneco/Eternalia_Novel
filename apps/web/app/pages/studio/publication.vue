@@ -7,6 +7,7 @@ import { canReadPublished } from '@eternalia/contracts';
 const { t, language } = useUiLocale();
 const { confirm: showConfirmation } = useAppDialog();
 const route = useRoute();
+const canonicalSeriesId = computed(() => typeof route.params.id === 'string' ? route.params.id : null);
 
 interface AuthState { configured: boolean; authenticated: boolean }
 const { data: auth, pending: authPending, refresh: refreshAuth } = await useFetch<AuthState>('/api/auth/me');
@@ -112,7 +113,22 @@ async function changeSeries(event: Event) {
   search.value = '';
   errorText.value = '';
   successText.value = '';
-  await navigateTo({ path: '/studio/publication', query: selectedSeriesId.value ? { series: selectedSeriesId.value } : {} }, { replace: true });
+  if (canonicalSeriesId.value) {
+    await navigateTo(selectedSeriesId.value ? '/admin/series/' + encodeURIComponent(selectedSeriesId.value) + '/publication' : '/admin/series', { replace: true });
+  } else {
+    await navigateTo({ path: '/studio/publication', query: selectedSeriesId.value ? { series: selectedSeriesId.value } : {} }, { replace: true });
+  }
+}
+function editorPath(node: AuthorNode): string {
+  const root = '/admin/series/' + encodeURIComponent(selectedSeriesId.value);
+  if (node.kind === 'series') return root + '/edit';
+  const groups: Record<Exclude<ReaderKind, 'series'>, string> = {
+    volume:'stories/volumes', part:'stories/parts', chapter:'stories/chapters',
+    category:'settings/categories', tip:'settings/tips', tipSection:'settings/sections',
+    language:'dictionaries/languages', word:'dictionaries/words', grammar:'dictionaries/grammar',
+    periodization:'timeline/periods', event:'timeline/events',
+  };
+  return root + '/' + groups[node.kind] + '/' + encodeURIComponent(node.id) + '/edit';
 }
 function pathTitle(node: AuthorNode): string {
   return ancestry(node).map(item => item.draft.title).join(' / ');
@@ -145,7 +161,7 @@ onMounted(async () => {
   const targetSeriesId = requestedTarget ? ancestry(requestedTarget)[0]?.id ?? '' : '';
   if (requestedSeries && seriesList.value.some(node => node.id === requestedSeries)) {
     selectedSeriesId.value = requestedSeries;
-  } else if (targetSeriesId && seriesList.value.some(node => node.id === targetSeriesId)) {
+  } else if (!canonicalSeriesId.value && targetSeriesId && seriesList.value.some(node => node.id === targetSeriesId)) {
     selectedSeriesId.value = targetSeriesId;
   }
   if (requestedTarget && targetSeriesId === selectedSeriesId.value) {
@@ -324,7 +340,7 @@ async function action(node: AuthorNode, kind: 'publish' | 'visibility') {
                 <button type="button" class="inline-action" :disabled="!!busyId || !node.published" @click="saveSchedule(node)">
                   {{ t('pubSaveDate') }}
                 </button>
-                <NuxtLink :to="{ path: '/studio', query: { item: node.id } }">{{ t('pubEdit') }}</NuxtLink>
+                <NuxtLink :to="editorPath(node)">{{ t('pubEdit') }}</NuxtLink>
               </div>
             </div>
           </li>

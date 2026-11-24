@@ -1,0 +1,14 @@
+{
+  "schema": "cat-typescript-conformance-binding/v1",
+  "repository": "eternalia",
+  "source_globs": [
+    "apps/web/app/utils/language-class-order.ts"
+  ],
+  "public_entrypoints": [
+    "apps/web/app/utils/language-class-order.ts"
+  ],
+  "interface_symbols": {
+    "moveLanguageClass": "move"
+  },
+  "capabilities": {}
+}
