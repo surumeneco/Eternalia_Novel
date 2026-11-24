@@ -205,7 +205,7 @@ test('AC-89/96: canonical text and controls respect inherited browser fonts and 
         await page.locator('html[lang="en"]').waitFor();
         const english=await page.evaluate(()=>({viewport:document.documentElement.clientWidth,scroll:document.documentElement.scrollWidth}));
         assert.ok(english.scroll<=english.viewport+1,JSON.stringify({path,width,english}));
-        await page.getByRole('button',{name:'Select language'}).click();
+        await page.getByRole('button',{name:'Choose interface language'}).click();
         await page.locator('#language-list').getByRole('button',{name:'日本語'}).click();
         await page.locator('html[lang="ja"]').waitFor();
       }
