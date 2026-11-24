@@ -8,6 +8,7 @@ const { t, language } = useUiLocale();
 const { confirm: showConfirmation } = useAppDialog();
 const studioRoute = useRoute();
 import type { ReaderKind } from '~/types/reader';
+const props = defineProps<{ canonicalTarget?: { seriesId:string; nodeId:string; kind:ReaderKind } }>();
 import { parseLanguageWordClasses, diagnoseWordSpelling, appendDuplicateWordMeaning, pagesForChapter, joinChapterPages } from '@eternalia/contracts';
 import { insertManuscriptMarkup, type ManuscriptInsertionKind } from '~/utils/manuscript-markup';
 import { chapterRecoveryKey, chapterRecoveryMatches, chapterRecoveryPrefix, isAutosaveRevisionConflict, parseChapterRecovery, type ChapterRecovery } from '~/utils/chapter-autosave';
@@ -364,10 +365,10 @@ onBeforeRouteLeave(async () => {
   cancelAutosaveTimer();
   if (selected.value?.kind === 'chapter') clearChapterRecovery(selected.value.id);
 });
-// /studio/child is a nested route: its parent stays mounted, so the leave
-// guard alone does not protect unsaved editor input on child navigation.
+// A reused route record can change the canonical target without a leave
+// event. Query-only changes do not affect the canonical editor identity.
 onBeforeRouteUpdate(async (to, from) => {
-  if (from.path !== '/studio' || to.fullPath === from.fullPath) return;
+  if (props.canonicalTarget ? to.path === from.path : from.path !== '/studio' || to.fullPath === from.fullPath) return;
   if (!await confirmDiscard()) return false;
   cancelAutosaveTimer();
   if (selected.value?.kind === 'chapter') clearChapterRecovery(selected.value.id);
@@ -520,8 +521,23 @@ onMounted(async () => {
   await refreshAuth();
   window.addEventListener('beforeunload', beforeUnload);
   if (auth.value?.authenticated) {
-    await load();
+    const loaded = await load();
     window.addEventListener('online', retryChapterAutosave);
+    if (props.canonicalTarget) {
+      if (!loaded) return;
+      // The bridge has validated the path; recheck against this editor's own
+      // fresh author snapshot. Never interpret unrelated query controls here.
+      const { seriesId, nodeId, kind } = props.canonicalTarget;
+      const target = byId.value.get(nodeId);
+      if (!target || target.kind !== kind || owningSeriesId(nodeId) !== seriesId) {
+        errorText.value = t('readerErrorNotPublic');
+        return;
+      }
+      selectedId.value = nodeId;
+      selectedSeriesId.value = seriesId;
+      filter.value = areaForKind(kind);
+      return;
+    }
     const requestedCreate = studioRoute.query.create;
     if (requestedCreate !== undefined) {
       const queryParent = studioRoute.query.parent;
@@ -785,7 +801,7 @@ async function logout() {
         <p v-if="statusText" class="status-success" role="status">{{ statusText }}</p>
         <p v-if="errorText" class="error-text" role="alert">{{ errorText }}</p>
         <div class="studio-grid">
-          <aside class="studio-sidebar" :aria-label="t('studioAuthorLibrary')">
+          <aside v-if="!props.canonicalTarget" class="studio-sidebar" :aria-label="t('studioAuthorLibrary')">
             <div class="section-header">
               <h2>{{ t('studioKindSeries') }}</h2>
               <button class="inline-action" type="button" :disabled="busy || autosavingChapter" @click="reloadNodes">{{ t('studioReload') }}</button>
@@ -858,6 +874,8 @@ async function logout() {
             </form>
             <template v-else-if="selected">
               <h2>{{ kinds[selected.kind] }}：{{ selected.draft.title }}</h2>
+              <NuxtLink v-if="props.canonicalTarget && selected.kind === 'chapter'"
+                :to="'/admin/series/'+encodeURIComponent(props.canonicalTarget.seriesId)+'/stories/chapters/'+encodeURIComponent(selected.id)+'/preview'">{{ t('studioDraftPreview') }}</NuxtLink>
               <p class="note">{{ t('studioDraftRevision') }} {{ selected.revision }} ／ {{ publicationStatus }}{{ selected.published ? '（' + t('studioPublishedSnapshot') + '）' : '' }}</p>
               <div v-if="selected.kind === 'chapter'" class="chapter-autosave" role="status">
                 <p v-if="chapterRecovery">{{ t('studioRecoveryAvailable') }}

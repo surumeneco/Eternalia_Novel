@@ -1,9 +1,9 @@
 {
   "schema": "cat-work/v1",
   "id": "eternalia.ui.admin-navigation",
-  "entry": "bug",
-  "flow": "issue-work",
-  "mode": "shadow",
+  "entry": "confirmed-spec",
+  "flow": "spec-implementation",
+  "mode": "implementation",
   "work_kind": "implementation",
   "issue_ref": "https://github.com/surumeneco/Eternalia_Novel/issues/165",
   "project_entry_ref": "https://drive.google.com/file/d/1clwfVJ3e_t1_QKFfOWxxRIzE9WMFvTiM/view",
@@ -13,6 +13,9 @@
     },
     {
       "uri": "https://github.com/surumeneco/Eternalia_Novel/issues/165"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/issues/165#issuecomment-7119957252"
     }
   ],
   "evidence": [
@@ -44,7 +47,8 @@
         "apps/web/app/pages/studio.vue"
       ],
       "test_paths": [
-        "apps/web/browser-acceptance/series-first-ia.test.mjs"
+        "apps/web/browser-acceptance/series-first-ia.test.mjs",
+        "Lifecycle/Works/New/eternalia.ui.admin-navigation/CAT/Generated/current.test.ts"
       ]
     }
   ],
@@ -60,17 +64,16 @@
     "preserved_ids": [
       "author.server-side-access-control",
       "author.draft-publication-separation",
-      "studio.legacy-link-compatibility",
       "author.unsaved-draft-protection"
     ]
   },
   "specification": {
-    "status": "draft",
-    "decision_ref": null,
+    "status": "confirmed",
+    "decision_ref": "https://github.com/surumeneco/Eternalia_Novel/issues/165#issuecomment-7119957252",
     "artifact_refs": [
-      "Lifecycle/Works/New/eternalia.ui.admin-navigation/CAT/Draft/Process.md",
-      "Lifecycle/Works/New/eternalia.ui.admin-navigation/CAT/Draft/PI.md",
-      "Lifecycle/Works/New/eternalia.ui.admin-navigation/CAT/Draft/TCE.md"
+      "Lifecycle/Works/New/eternalia.ui.admin-navigation/CAT/Confirmed/Process.md",
+      "Lifecycle/Works/New/eternalia.ui.admin-navigation/CAT/Confirmed/PI.md",
+      "Lifecycle/Works/New/eternalia.ui.admin-navigation/CAT/Confirmed/TCE.md"
     ]
   },
   "technologies": [
@@ -79,5 +82,24 @@
     "Playwright"
   ],
   "checks": [],
-  "depends_on": []
+  "depends_on": [],
+  "compilation": {
+    "schema": "cat-compile/v2",
+    "process": "CAT/Confirmed/Process.md",
+    "pi": "CAT/Confirmed/PI.md",
+    "pis": [
+      "CAT/Confirmed/PI.md"
+    ],
+    "tce": "CAT/Confirmed/TCE.md",
+    "tces": [
+      "CAT/Confirmed/TCE.md"
+    ],
+    "model": "CAT/Generated/TestModel.json",
+    "vectors": "CAT/Generated/Vectors.json",
+    "queue": "CAT/Generated/Queue.json",
+    "binding": "CAT/Binding/driver.json",
+    "tests_output": "CAT/Generated/current.test.ts",
+    "obligations": "CAT/Generated/obligations.json",
+    "allow_draft": false
+  }
 }

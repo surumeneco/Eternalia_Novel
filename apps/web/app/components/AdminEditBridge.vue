@@ -21,7 +21,7 @@ const valid=computed(()=>{
 </script>
 <template><div class="admin-editor-page">
   <div v-if="!auth?.authenticated" role="alert"><ReaderPanel>{{ t('studioLoginRequired') }}</ReaderPanel></div>
-  <StudioEditor v-else-if="valid" />
+  <StudioEditor v-else-if="valid" :key="JSON.stringify([seriesId,nodeId,kind])" :canonical-target="{seriesId,nodeId,kind}" />
   <ReaderPanel v-else><h1>{{ t('readerErrorNotPublic') }}</h1></ReaderPanel>
 </div></template>
 <style scoped>

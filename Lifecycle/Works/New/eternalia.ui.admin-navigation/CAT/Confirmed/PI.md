@@ -2,14 +2,15 @@
 cat_version: '0.3'
 kind: pi
 id: eternalia.ui.admin-navigation.pi
-status: draft
+status: confirmed
 process: eternalia.ui.admin-navigation
 source_refs:
   - https://drive.google.com/file/d/1G4q4DbJZdOk7jIfgvuZu0a2e4L1LIMti/view
-  - https://github.com/surumeneco/Eternalia_Novel/issues/165
+  - https://github.com/surumeneco/Eternalia_Novel/issues/165#issuecomment-7119957252
 refs: []
 semantic_contract: markdown-v2
 language: ja
+decision_ref: https://github.com/surumeneco/Eternalia_Novel/issues/165#issuecomment-7119957252
 ---
 # PI: eternalia.ui.admin-navigation.pi
 
