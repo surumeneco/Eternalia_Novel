@@ -1,0 +1,131 @@
+name: W07 reader order actual route regression
+on:
+  push:
+    branches: ['infra/chat-acceptance-snapshot-853ee0c0']
+    paths: ['.github/workflows/w07-reader-order-regression.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: eternalia_http
+          POSTGRES_USER: eternalia
+          POSTGRES_PASSWORD: ci-temp-password
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U eternalia -d eternalia_http"
+          --health-interval 5s --health-timeout 3s --health-retries 12
+    env:
+      DATABASE_URL: postgres://eternalia:ci-temp-password@127.0.0.1:5432/eternalia_http
+      NODE_ENV: test
+      HTTP_ACCEPTANCE_DISPOSABLE_DB: '1'
+      HTTP_BASE_URL: http://127.0.0.1:34110
+      HTTP_API_URL: http://127.0.0.1:34111
+      API_PORT: '34111'
+      NITRO_PORT: '34110'
+      NUXT_API_INTERNAL_URL: http://127.0.0.1:34111
+      APP_ORIGIN: http://127.0.0.1:34110
+      DISCORD_CLIENT_ID: '123456789012345678'
+      DISCORD_CLIENT_SECRET: test-placeholder-not-a-discord-secret
+      DISCORD_AUTHOR_USER_ID: '123456789012345678'
+      HTTP_ACCEPTANCE_TEST_AUTHOR_ID: '123456789012345678'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 'b94bc6dd7550c6dbf071d0387e1626262c4939b6'
+          persist-credentials: false
+          path: project
+      - uses: actions/checkout@v4
+        with:
+          repository: surumeneco/CAT-TDD
+          ref: fb3bd562684d80b016bf08b4cf21ad73079ea8fe
+          persist-credentials: false
+          path: cat
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Prepare fixed product and genuine browser runner
+        working-directory: project
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = 'b94bc6dd7550c6dbf071d0387e1626262c4939b6'
+          test "$(git rev-parse HEAD^{tree})" = '09edb9f8e62aa9e690a64f6d4fe3d9cd47f66318'
+          test "$(git -C ../cat rev-parse HEAD:.cat-system)" = 44089a373b58a89b56aff65247d9e3d1000f7b18
+          git checkout -B feature/w07-reader-order-reconnect 'b94bc6dd7550c6dbf071d0387e1626262c4939b6'
+          mkdir -p "$RUNNER_TEMP/w07-evidence"
+          git rev-parse HEAD > "$RUNNER_TEMP/w07-evidence/project-commit.txt"
+          git rev-parse HEAD^{tree} > "$RUNNER_TEMP/w07-evidence/project-tree.txt"
+          git -C ../cat rev-parse HEAD > "$RUNNER_TEMP/w07-evidence/cat-commit.txt"
+          npm ci
+          npm install --prefix "$RUNNER_TEMP/cat-tools" --no-package-lock --no-audit --no-fund playwright@1.56.1 vitest@3.2.4
+          ln -s "$RUNNER_TEMP/cat-tools/node_modules/vitest" node_modules/vitest
+          ln -s "$RUNNER_TEMP/cat-tools/node_modules/playwright" node_modules/playwright
+          node "$RUNNER_TEMP/cat-tools/node_modules/playwright/cli.js" install --with-deps chromium
+          node -e 'const l=require("./package-lock.json").packages; for(const n of ["vue","vue-tsc","typescript"]){const p="node_modules/"+n;const v=require("./"+p+"/package.json").version;if(v!==l[p].version)throw Error(n+" installed "+v+" expected "+l[p].version); console.log(n,v)}'
+          npm run build
+          npm run db:migrate
+      - name: Reproduce existing route defect and verify restored comparator
+        working-directory: project
+        env:
+          LANG: C.UTF-8
+          LC_ALL: C.UTF-8
+        run: |
+          set -euo pipefail
+          export HTTP_FIXTURE_FILE="$RUNNER_TEMP/fixture.json"
+          export D="$RUNNER_TEMP/w07-evidence"
+          export F="$(realpath ../cat/.cat-system/scripts/cat_flow.py)"
+          node scripts/seed-http-acceptance.mjs
+          node apps/api/dist/main.js > "$D/api.log" 2>&1 &
+          A=$!
+          node apps/web/.output/server/index.mjs > "$D/web-before.log" 2>&1 &
+          B=$!
+          trap 'kill "$A" "$B" 2>/dev/null || true' EXIT
+          ready() {
+            for i in $(seq 1 60); do curl -fsS "$HTTP_BASE_URL/" >/dev/null && curl -fsS "$HTTP_API_URL/api/health" >/dev/null && return 0; sleep 1; done
+            return 1
+          }
+          ready
+          node -e "const a='あ', b='ァ'; if(!(a.localeCompare(b)>0===false && a.localeCompare(b,'ja')>0))throw Error('unexpected default collation')"
+          set +e
+          node --test apps/web/browser-acceptance/dictionary-spelling-order.test.mjs > "$D/red.log" 2>&1
+          R=$?
+          set -e
+          cat "$D/red.log"
+          echo "$R" > "$D/red.exit"
+          test "$R" -ne 0
+          grep -F 'canonical dictionary route must retain adopted Japanese spelling comparator' "$D/red.log"
+          kill "$B"
+          wait "$B" || true
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('apps/web/app/components/ReaderDomainListing.vue')
+          s=p.read_text()
+          a="import { parseTipTags } from '@eternalia/contracts';"
+          b="a.content.title.localeCompare(b.content.title):a.order-b.order"
+          assert s.count(a)==1 and s.count(b)==1
+          p.write_text(s.replace(a,a+"\nimport { compareDictionaryWordSpelling } from '~/utils/dictionary-order';").replace(b,"compareDictionaryWordSpelling(a,b):a.order-b.order"))
+          PY
+          git diff --check
+          git diff --name-only > "$D/changed-paths.txt"
+          git diff > "$D/source.patch"
+          git hash-object apps/web/app/components/ReaderDomainListing.vue > "$D/source-blob.txt"
+          npm run build
+          # Fresh disposable fixture identities for the second execution.
+          node scripts/seed-http-acceptance.mjs
+          node apps/web/.output/server/index.mjs > "$D/web-after.log" 2>&1 &
+          B=$!
+          ready
+          node --test apps/web/browser-acceptance/dictionary-spelling-order.test.mjs > "$D/green.log" 2>&1
+          cat "$D/green.log"
+          echo 0 > "$D/green.exit"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: w07-reader-order-red-green
+          path: ${{ runner.temp }}/w07-evidence/
+          include-hidden-files: true
