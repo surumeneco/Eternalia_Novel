@@ -205,6 +205,37 @@
         "eternalia.ui.canonical-create CAT symbolic contract > case.create.invalid"
       ],
       "timeout_seconds": 60
+    },
+    {
+      "id": "browser-adopted",
+      "stage": "implementation-conformance",
+      "runner": "junit",
+      "cwd": "@repo:eternalia",
+      "argv": [
+        "node",
+        "--test",
+        "--test-reporter=junit",
+        "--test-reporter-destination={report}",
+        "--test-reporter=spec",
+        "--test-reporter-destination=stdout",
+        "apps/web/browser-acceptance/author-create-navigation.test.mjs"
+      ],
+      "input_paths": [
+        "apps/web/browser-acceptance/author-create-navigation.test.mjs",
+        "apps/web/app/pages/studio.vue",
+        "apps/web/app/utils/admin-node-route.ts",
+        "apps/web/app/utils/canonical-create-admission.ts",
+        "apps/web/app/components/AdminNodeGrid.vue",
+        "apps/web/app/components/AuthorCreateLink.vue",
+        "apps/web/app/components/PublicCollectionPage.vue",
+        "apps/web/app/pages/admin/series/create.vue",
+        "apps/web/app/pages/admin/series/[id]/create/[kind]/[parentId].vue",
+        "apps/web/browser-acceptance/ui-language.mjs"
+      ],
+      "test_ids": [
+        "CM-09: author-only home and area creation paths use validated canonical creation and edit routes"
+      ],
+      "timeout_seconds": 300
     }
   ],
   "depends_on": [],

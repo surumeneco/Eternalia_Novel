@@ -202,6 +202,39 @@
         "eternalia.dictionary.stable-pos-reference CAT symbolic contract > case.hidden"
       ],
       "timeout_seconds": 60
+    },
+    {
+      "id": "browser-adopted",
+      "stage": "implementation-conformance",
+      "runner": "junit",
+      "cwd": "@repo:eternalia",
+      "argv": [
+        "node",
+        "--test",
+        "--test-reporter=junit",
+        "--test-reporter-destination={report}",
+        "--test-reporter=spec",
+        "--test-reporter-destination=stdout",
+        "apps/web/browser-acceptance/word-class-input-master.test.mjs"
+      ],
+      "input_paths": [
+        "apps/web/browser-acceptance/word-class-input-master.test.mjs",
+        "packages/contracts/src/word-meanings.ts",
+        "packages/contracts/src/word-pos-reference.ts",
+        "packages/contracts/src/novel.ts",
+        "packages/contracts/src/word-pos-create-policy.ts",
+        "apps/web/app/components/WordMeaningsEditor.vue",
+        "apps/web/app/components/WordMeaningsReader.vue",
+        "apps/web/app/pages/studio.vue",
+        "apps/web/app/pages/dictionaries/[id].vue",
+        "apps/web/app/pages/search.vue",
+        "apps/web/app/pages/items/[id].vue"
+      ],
+      "test_ids": [
+        "LG-05: author creation and meaning editor never offer unregistered POS free-text",
+        "LG-05: a draft-only POS ID remains private until its owning language master is published"
+      ],
+      "timeout_seconds": 300
     }
   ],
   "depends_on": [],
