@@ -1,0 +1,15 @@
+{
+  "schema": "cat-typescript-conformance-binding/v1",
+  "repository": "eternalia",
+  "source_globs": [
+    "apps/web/app/utils/mobile-shell-background.ts"
+  ],
+  "public_entrypoints": [
+    "apps/web/app/utils/mobile-shell-background.ts"
+  ],
+  "interface_symbols": {
+    "mobileBackgroundAllowed": "check"
+  },
+  "capabilities": {},
+  "capability_analysis": "primitive-pure-functions/v1"
+}

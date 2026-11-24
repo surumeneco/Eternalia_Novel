@@ -31,10 +31,12 @@
       "allowed_paths": [
         "Lifecycle/Works/New/eternalia.ui.mobile-shell-focus/**",
         "apps/web/app/layouts/default.vue",
-        "apps/web/browser-acceptance/admin-grid-shell.test.mjs"
+        "apps/web/browser-acceptance/admin-grid-shell.test.mjs",
+        "apps/web/app/utils/mobile-shell-background.ts"
       ],
       "production_paths": [
-        "apps/web/app/layouts/default.vue"
+        "apps/web/app/layouts/default.vue",
+        "apps/web/app/utils/mobile-shell-background.ts"
       ],
       "test_paths": [
         "apps/web/browser-acceptance/admin-grid-shell.test.mjs",
@@ -93,7 +95,8 @@
         "Lifecycle/Works/New/eternalia.ui.mobile-shell-focus/CAT/Generated/current.test.ts",
         "Lifecycle/Works/New/eternalia.ui.mobile-shell-focus/CAT/Generated/mobile-shell-driver.mjs",
         "Lifecycle/Works/New/eternalia.ui.mobile-shell-focus/CAT/Binding/driver.json",
-        "apps/web/app/layouts/default.vue"
+        "apps/web/app/layouts/default.vue",
+        "apps/web/app/utils/mobile-shell-background.ts"
       ],
       "test_ids": [
         "eternalia.ui.mobile-shell-focus CAT symbolic contract > case.background.allowed"
@@ -119,7 +122,8 @@
         "Lifecycle/Works/New/eternalia.ui.mobile-shell-focus/CAT/Generated/current.test.ts",
         "Lifecycle/Works/New/eternalia.ui.mobile-shell-focus/CAT/Generated/mobile-shell-driver.mjs",
         "Lifecycle/Works/New/eternalia.ui.mobile-shell-focus/CAT/Binding/driver.json",
-        "apps/web/app/layouts/default.vue"
+        "apps/web/app/layouts/default.vue",
+        "apps/web/app/utils/mobile-shell-background.ts"
       ],
       "test_ids": [
         "eternalia.ui.mobile-shell-focus CAT symbolic contract > case.background.blocked"
@@ -146,6 +150,7 @@
     "allow_draft": false,
     "binding": "CAT/Binding/driver.json",
     "tests_output": "CAT/Generated/current.test.ts",
-    "technology_constraints": "CAT/Binding/technology-constraints.json"
+    "technology_constraints": "CAT/Binding/technology-constraints.json",
+    "conformance_binding": "CAT/Binding/implementation.json"
   }
 }
