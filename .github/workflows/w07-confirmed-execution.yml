@@ -37,7 +37,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: '255e3ac59e93d764ee0ed669b06384a4fbe21214'
+          ref: '9b7b5de354053bfaabd692218a7383751c93716e'
           persist-credentials: false
           path: project
       - uses: actions/checkout@v4
@@ -53,10 +53,10 @@ jobs:
         working-directory: project
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = '255e3ac59e93d764ee0ed669b06384a4fbe21214'
-          test "$(git rev-parse HEAD^{tree})" = '4796e3a84ba987d9e140fd74b4ea1d65891f153b'
+          test "$(git rev-parse HEAD)" = '9b7b5de354053bfaabd692218a7383751c93716e'
+          test "$(git rev-parse HEAD^{tree})" = '37cfef09996e7fc3c10e3306fd8f3f9facc381ab'
           test "$(git -C ../cat rev-parse HEAD:.cat-system)" = 44089a373b58a89b56aff65247d9e3d1000f7b18
-          git checkout -B feature/w07-mobile-background-boundary '255e3ac59e93d764ee0ed669b06384a4fbe21214'
+          git checkout -B feature/w07-reader-order-reconnect '9b7b5de354053bfaabd692218a7383751c93716e'
           mkdir -p "$RUNNER_TEMP/w07-evidence"
           git rev-parse HEAD > "$RUNNER_TEMP/w07-evidence/project-commit.txt"
           git rev-parse HEAD^{tree} > "$RUNNER_TEMP/w07-evidence/project-tree.txt"
@@ -84,6 +84,8 @@ jobs:
           trap 'kill "$A" "$B" 2>/dev/null || true' EXIT
           for i in $(seq 1 60); do curl -fsS "$HTTP_BASE_URL/" >/dev/null && curl -fsS "$HTTP_API_URL/api/health" >/dev/null && break; sleep 1; done
           curl -fsS "$HTTP_BASE_URL/" >/dev/null
+          LANG=C.UTF-8 LC_ALL=C.UTF-8 node --test apps/web/browser-acceptance/dictionary-spelling-order.test.mjs > "$D/reader-order-green.log" 2>&1 || { cat "$D/reader-order-green.log"; exit 1; }
+          cat "$D/reader-order-green.log"
           python - <<'PY'
           import pathlib,json,subprocess,os,sys,shutil
           D=pathlib.Path(os.environ['D']); F=os.environ['F']
@@ -174,6 +176,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: w07-mobile-and-suite-revalidation
+          name: w07-reader-order-and-suite-revalidation
           path: ${{ runner.temp }}/w07-evidence/
           include-hidden-files: true
