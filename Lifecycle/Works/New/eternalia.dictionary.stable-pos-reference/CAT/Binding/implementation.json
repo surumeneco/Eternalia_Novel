@@ -1,0 +1,15 @@
+{
+  "schema": "cat-typescript-conformance-binding/v1",
+  "repository": "eternalia",
+  "source_globs": [
+    "packages/contracts/src/word-pos-reference.ts"
+  ],
+  "public_entrypoints": [
+    "packages/contracts/src/word-pos-reference.ts"
+  ],
+  "interface_symbols": {
+    "hasPublishedWordClassLabel": "resolve",
+    "publishedWordClassName": "resolve"
+  },
+  "capabilities": {}
+}
