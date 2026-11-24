@@ -44,7 +44,7 @@ jobs:
         run: npm ci
       - name: Exercise existing alpha domain and HTTP tests
         run: npm run test:alpha
-      - name: Guard AC-01 through AC-78 acceptance evidence matrix
+      - name: Guard AC-01 through AC-96 acceptance evidence matrix
         run: npm run check:ac-traceability
       - name: Self-test JUnit evidence runner on Node 22
         run: npm run check:junit-tooling
