@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ReaderNode } from '~/types/reader';
+import { mobileBackgroundAllowed } from '~/utils/mobile-shell-background';
 const { t, language } = useUiLocale();
 const route = useRoute();
 const clientReady = ref(false);
@@ -12,7 +13,7 @@ const localeToggle = ref<HTMLButtonElement | null>(null);
 const navPanel = ref<HTMLElement | null>(null);
 const asidePanel = ref<HTMLElement | null>(null);
 const mainContent = ref<HTMLElement | null>(null);
-const overlayOpen = computed(() => navOpen.value || asideOpen.value);
+const overlayOpen = computed(() => !mobileBackgroundAllowed(navOpen.value ? 'primary' : asideOpen.value ? 'secondary' : 'closed'));
 let mobileViewport: MediaQueryList | undefined;
 function activeOpener() { return navOpen.value ? navToggle.value : asideOpen.value ? asideToggle.value : null; }
 function activePanel() { return navOpen.value ? navPanel.value : asideOpen.value ? asidePanel.value : null; }
