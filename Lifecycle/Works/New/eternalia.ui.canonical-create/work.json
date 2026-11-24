@@ -97,7 +97,116 @@
     "Vue",
     "Playwright"
   ],
-  "checks": [],
+  "checks": [
+    {
+      "id": "green-create-denied",
+      "stage": "green",
+      "runner": "junit",
+      "cwd": "@repo:eternalia",
+      "argv": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "apps/web/tests/generated/cat_canonical_create.test.ts",
+        "--maxWorkers=1",
+        "--testTimeout=15000",
+        "--reporter=junit",
+        "--outputFile={report}"
+      ],
+      "input_paths": [
+        "apps/web/tests/generated/cat_canonical_create.test.ts",
+        "apps/web/tests/generated/canonical-create-driver.mjs",
+        "Lifecycle/Works/New/eternalia.ui.canonical-create/CAT/Binding/driver.json",
+        "apps/web/app/utils/canonical-create-admission.ts",
+        "apps/web/app/pages/studio.vue"
+      ],
+      "test_ids": [
+        "eternalia.ui.canonical-create CAT symbolic contract > case.create.denied"
+      ],
+      "timeout_seconds": 60
+    },
+    {
+      "id": "green-create-root",
+      "stage": "green",
+      "runner": "junit",
+      "cwd": "@repo:eternalia",
+      "argv": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "apps/web/tests/generated/cat_canonical_create.test.ts",
+        "--maxWorkers=1",
+        "--testTimeout=15000",
+        "--reporter=junit",
+        "--outputFile={report}"
+      ],
+      "input_paths": [
+        "apps/web/tests/generated/cat_canonical_create.test.ts",
+        "apps/web/tests/generated/canonical-create-driver.mjs",
+        "Lifecycle/Works/New/eternalia.ui.canonical-create/CAT/Binding/driver.json",
+        "apps/web/app/utils/canonical-create-admission.ts",
+        "apps/web/app/pages/studio.vue"
+      ],
+      "test_ids": [
+        "eternalia.ui.canonical-create CAT symbolic contract > case.create.root"
+      ],
+      "timeout_seconds": 60
+    },
+    {
+      "id": "green-create-child",
+      "stage": "green",
+      "runner": "junit",
+      "cwd": "@repo:eternalia",
+      "argv": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "apps/web/tests/generated/cat_canonical_create.test.ts",
+        "--maxWorkers=1",
+        "--testTimeout=15000",
+        "--reporter=junit",
+        "--outputFile={report}"
+      ],
+      "input_paths": [
+        "apps/web/tests/generated/cat_canonical_create.test.ts",
+        "apps/web/tests/generated/canonical-create-driver.mjs",
+        "Lifecycle/Works/New/eternalia.ui.canonical-create/CAT/Binding/driver.json",
+        "apps/web/app/utils/canonical-create-admission.ts",
+        "apps/web/app/pages/studio.vue"
+      ],
+      "test_ids": [
+        "eternalia.ui.canonical-create CAT symbolic contract > case.create.child"
+      ],
+      "timeout_seconds": 60
+    },
+    {
+      "id": "green-create-invalid",
+      "stage": "green",
+      "runner": "junit",
+      "cwd": "@repo:eternalia",
+      "argv": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "apps/web/tests/generated/cat_canonical_create.test.ts",
+        "--maxWorkers=1",
+        "--testTimeout=15000",
+        "--reporter=junit",
+        "--outputFile={report}"
+      ],
+      "input_paths": [
+        "apps/web/tests/generated/cat_canonical_create.test.ts",
+        "apps/web/tests/generated/canonical-create-driver.mjs",
+        "Lifecycle/Works/New/eternalia.ui.canonical-create/CAT/Binding/driver.json",
+        "apps/web/app/utils/canonical-create-admission.ts",
+        "apps/web/app/pages/studio.vue"
+      ],
+      "test_ids": [
+        "eternalia.ui.canonical-create CAT symbolic contract > case.create.invalid"
+      ],
+      "timeout_seconds": 60
+    }
+  ],
   "depends_on": [],
   "compilation": {
     "schema": "cat-compile/v2",
@@ -115,6 +224,8 @@
     "obligations": "CAT/Generated/obligations.json",
     "allow_draft": false,
     "conformance_binding": "CAT/Binding/implementation.json",
-    "queue": "CAT/Generated/Queue.json"
+    "queue": "CAT/Generated/Queue.json",
+    "binding": "CAT/Binding/driver.json",
+    "tests_output": "@repo:eternalia/apps/web/tests/generated/cat_canonical_create.test.ts"
   }
 }

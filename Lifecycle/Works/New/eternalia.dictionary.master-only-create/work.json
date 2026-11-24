@@ -44,7 +44,8 @@
         "Lifecycle/Works/New/eternalia.dictionary.master-only-create/CAT/Generated/current.test.ts",
         "apps/web/browser-acceptance/dictionary-spelling-order.test.mjs",
         "apps/web/browser-acceptance/dictionary-compound-filters.test.mjs",
-        "apps/api/tests/postgres-alpha.test.mjs"
+        "apps/api/tests/postgres-alpha.test.mjs",
+        "Lifecycle/Works/New/eternalia.dictionary.master-only-create/CAT/Generated/word-pos-create-driver.ts"
       ]
     }
   ],
@@ -78,7 +79,89 @@
     "NestJS",
     "PostgreSQL"
   ],
-  "checks": [],
+  "checks": [
+    {
+      "id": "green-none",
+      "stage": "green",
+      "runner": "junit",
+      "cwd": "@repo:eternalia",
+      "argv": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "Lifecycle/Works/New/eternalia.dictionary.master-only-create/CAT/Generated/current.test.ts",
+        "--maxWorkers=1",
+        "--testTimeout=15000",
+        "--reporter=junit",
+        "--outputFile={report}"
+      ],
+      "input_paths": [
+        "Lifecycle/Works/New/eternalia.dictionary.master-only-create/CAT/Generated/current.test.ts",
+        "Lifecycle/Works/New/eternalia.dictionary.master-only-create/CAT/Generated/word-pos-create-driver.ts",
+        "Lifecycle/Works/New/eternalia.dictionary.master-only-create/CAT/Binding/driver.json",
+        "packages/contracts/src/word-pos-create-policy.ts",
+        "packages/contracts/src/novel.ts"
+      ],
+      "test_ids": [
+        "eternalia.dictionary.master-only-create CAT symbolic contract > case.none"
+      ],
+      "timeout_seconds": 60
+    },
+    {
+      "id": "green-member",
+      "stage": "green",
+      "runner": "junit",
+      "cwd": "@repo:eternalia",
+      "argv": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "Lifecycle/Works/New/eternalia.dictionary.master-only-create/CAT/Generated/current.test.ts",
+        "--maxWorkers=1",
+        "--testTimeout=15000",
+        "--reporter=junit",
+        "--outputFile={report}"
+      ],
+      "input_paths": [
+        "Lifecycle/Works/New/eternalia.dictionary.master-only-create/CAT/Generated/current.test.ts",
+        "Lifecycle/Works/New/eternalia.dictionary.master-only-create/CAT/Generated/word-pos-create-driver.ts",
+        "Lifecycle/Works/New/eternalia.dictionary.master-only-create/CAT/Binding/driver.json",
+        "packages/contracts/src/word-pos-create-policy.ts",
+        "packages/contracts/src/novel.ts"
+      ],
+      "test_ids": [
+        "eternalia.dictionary.master-only-create CAT symbolic contract > case.member"
+      ],
+      "timeout_seconds": 60
+    },
+    {
+      "id": "green-absent",
+      "stage": "green",
+      "runner": "junit",
+      "cwd": "@repo:eternalia",
+      "argv": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "Lifecycle/Works/New/eternalia.dictionary.master-only-create/CAT/Generated/current.test.ts",
+        "--maxWorkers=1",
+        "--testTimeout=15000",
+        "--reporter=junit",
+        "--outputFile={report}"
+      ],
+      "input_paths": [
+        "Lifecycle/Works/New/eternalia.dictionary.master-only-create/CAT/Generated/current.test.ts",
+        "Lifecycle/Works/New/eternalia.dictionary.master-only-create/CAT/Generated/word-pos-create-driver.ts",
+        "Lifecycle/Works/New/eternalia.dictionary.master-only-create/CAT/Binding/driver.json",
+        "packages/contracts/src/word-pos-create-policy.ts",
+        "packages/contracts/src/novel.ts"
+      ],
+      "test_ids": [
+        "eternalia.dictionary.master-only-create CAT symbolic contract > case.absent"
+      ],
+      "timeout_seconds": 60
+    }
+  ],
   "depends_on": [],
   "compilation": {
     "schema": "cat-compile/v2",
