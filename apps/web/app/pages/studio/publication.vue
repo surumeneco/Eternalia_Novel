@@ -172,9 +172,11 @@ async function updateBatch(kind:'publish'|'show'|'hide') {
   }
   batchSelection.value=[];
   const loaded=await load();
-  successText.value=completed?t('pubBatchCompleted')+' '+completed:'';
-  if(errors.length)errorText.value=t('pubUpdateFailed')+' : '+errors.join('、');
-  if(!loaded)errorText.value=t('pubLoadError');
+  // As with single-item writes, a failed readback cannot certify the
+  // resulting management state. Preserve any known per-item failures.
+  successText.value=loaded&&completed?t('pubBatchCompleted')+' '+completed:'';
+  const failed=errors.length?t('pubUpdateFailed')+' : '+errors.join('、'):'';
+  errorText.value=[!loaded?t('pubLoadError'):'',failed].filter(Boolean).join(' / ');
   busyId.value=null;
 }
 async function saveSchedule(node: AuthorNode) {
