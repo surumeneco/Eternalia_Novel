@@ -829,6 +829,7 @@ async function logout() {
     selectedId.value=null;
     nodes.value=[];
     await refreshAuth();
+    await refreshNuxtData('eternalia-author-menu-auth');
   }, t('studioLoggedOut'), false);
 }
 </script>

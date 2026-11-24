@@ -9,15 +9,10 @@ const props = defineProps<{
   seriesId?: string | null;
 }>();
 
-const isAuthor = ref(false);
-onMounted(async () => {
-  try {
-    const session = await $fetch<{ authenticated: boolean }>('/api/auth/me');
-    isAuthor.value = session.authenticated === true;
-  } catch {
-    isAuthor.value = false;
-  }
-});
+const {data:session}=useNuxtData<{authenticated:boolean}>('eternalia-author-menu-auth');
+const clientReady=ref(false);
+onMounted(()=>{clientReady.value=true;});
+const isAuthor=computed(()=>clientReady.value&&session.value?.authenticated===true);
 
 const destination = computed(() => props.kind==='series' ? adminCreatePath(null,'series',null) :
   props.seriesId&&props.parentId ? adminCreatePath(props.seriesId,props.kind,props.parentId) : null);

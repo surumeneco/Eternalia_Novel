@@ -5,15 +5,10 @@ import { adminEditPath } from '~/utils/admin-node-route';
 const props = defineProps<{ itemId: string; itemKind:ReaderKind; seriesId?:string }>();
 const destination=computed(()=>props.itemKind==='series' ? adminEditPath(props.itemId,'series',props.itemId) :
   props.seriesId ? adminEditPath(props.seriesId,props.itemKind,props.itemId) : null);
-const isAuthor = ref(false);
-onMounted(async () => {
-  try {
-    const session = await $fetch<{ authenticated: boolean }>('/api/auth/me');
-    isAuthor.value = session.authenticated === true;
-  } catch {
-    isAuthor.value = false;
-  }
-});
+const {data:session}=useNuxtData<{authenticated:boolean}>('eternalia-author-menu-auth');
+const clientReady=ref(false);
+onMounted(()=>{clientReady.value=true;});
+const isAuthor=computed(()=>clientReady.value&&session.value?.authenticated===true);
 </script>
 
 <template>
