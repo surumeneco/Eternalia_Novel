@@ -213,3 +213,50 @@ test('AC-89/96: canonical text and controls respect inherited browser fonts and 
     }
   }finally{await browser.close()}
 });
+
+test('AC-83: an expired server session removes author entry controls on public-page focus and rejects protected routes and writes', {timeout:90000},async()=>{
+  const {createHash,randomBytes}=await import('node:crypto');
+  const {default:pg}=await import('pg');
+  assert.ok(process.env.DATABASE_URL);
+  const authorId=process.env.HTTP_ACCEPTANCE_TEST_AUTHOR_ID;
+  assert.match(authorId??'',/^\d{15,25}$/);
+  const token=randomBytes(32).toString('hex');
+  const digest=createHash('sha256').update(token).digest('hex');
+  const pool=new pg.Pool({connectionString:process.env.DATABASE_URL,max:1});
+  const browser=await chromium.launch({headless:true});
+  try{
+    await pool.query("INSERT INTO author_sessions(session_digest,discord_user_id,expires_at) VALUES ($1,$2,NOW() + INTERVAL '1 hour')",[digest,authorId]);
+    const ctx=await browser.newContext({viewport:{width:1280,height:900}});
+    await ctx.addCookies([{name:'eternalia_author',value:token,url:base,httpOnly:true,sameSite:'Lax'}]);
+    const page=await ctx.newPage();
+    await page.goto(base+'/'); await ready(page);
+    const header=page.locator('#global-navigation a[href="/admin"]');
+    const footer=page.locator('footer a[href="/admin"]');
+    const create=page.locator('main .author-create-link');
+    await header.waitFor();await footer.waitFor();await create.first().waitFor();
+    await pool.query("UPDATE author_sessions SET expires_at=NOW()-INTERVAL '1 second' WHERE session_digest=$1",[digest]);
+    const me=await ctx.request.get(base+'/api/auth/me');
+    assert.equal((await me.json()).authenticated,false);
+    await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
+    await header.waitFor({state:'detached'});
+    await footer.waitFor({state:'detached'});
+    await create.first().waitFor({state:'detached'});
+    assert.equal(await page.locator('main .author-create-link,main .author-edit-link').count(),0);
+    assert.equal((await ctx.request.get(base+'/api/admin/nodes')).status(),401);
+    const result=await ctx.request.post(base+'/api/admin/nodes',{headers:{origin:base},data:{kind:'series',parentId:null,content:{title:fixture.prefix+'-expired-write',body:'',details:{}}}});
+    assert.equal(result.status(),401);
+    for(const routePath of [root+'/stories/chapters/'+fixture.chapter+'/edit',root+'/publication','/admin/series/create']){
+      await page.goto(base+routePath);await page.waitForURL(url=>url.pathname==='/login');
+      assert.equal(await page.locator('main .studio-editor,main .create-form,main .publication-row').count(),0);
+      assert.equal(await page.locator('#global-navigation a[href="/admin"],footer a[href="/admin"]').count(),0);
+    }
+    await ctx.close();
+    const author=await authorContext(browser);
+    const nodes=await (await author.request.get(base+'/api/admin/nodes')).json();
+    assert.ok(!nodes.some(node=>node.draft.title===fixture.prefix+'-expired-write'));
+    await author.close();
+  }finally{
+    await pool.query('DELETE FROM author_sessions WHERE session_digest=$1',[digest]);
+    await pool.end();await browser.close();
+  }
+});
