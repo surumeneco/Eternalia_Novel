@@ -53,7 +53,7 @@ function editorPath(node:AuthorNode):string{
           <th scope="col">{{ t('studioKindLabel') }}</th><th scope="col">{{ t('pubSelfLabel') }}</th>
           <th scope="col">{{ t('pubSnapshotLabel') }}</th><th scope="col">{{ t('pubEdit') }}</th></tr></thead>
           <tbody><tr v-for="node in records" :key="node.id">
-            <th scope="row">{{ node.draft.title }}</th>
+            <th scope="row"><NuxtLink v-if="kind==='series'" :to="'/admin/series/'+encodeURIComponent(node.id)">{{ node.draft.title }}</NuxtLink><template v-else>{{ node.draft.title }}</template></th>
             <td>{{ node.parentId?byId.get(node.parentId)?.draft.title??'—':'—' }}</td>
             <td>{{ node.isPublic?t('pubPublic'):t('pubPrivate') }}</td>
             <td>{{ node.published?t('pubYes'):t('pubNo') }}</td>
