@@ -1,0 +1,134 @@
+name: W07 mobile predicate guarded refactor
+on:
+  push:
+    branches: ['infra/chat-acceptance-snapshot-853ee0c0']
+    paths: ['.github/workflows/w07-mobile-refactor.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: eternalia_http
+          POSTGRES_USER: eternalia
+          POSTGRES_PASSWORD: ci-temp-password
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U eternalia -d eternalia_http"
+          --health-interval 5s --health-timeout 3s --health-retries 12
+    env:
+      DATABASE_URL: postgres://eternalia:ci-temp-password@127.0.0.1:5432/eternalia_http
+      NODE_ENV: test
+      HTTP_ACCEPTANCE_DISPOSABLE_DB: '1'
+      HTTP_BASE_URL: http://127.0.0.1:34110
+      HTTP_API_URL: http://127.0.0.1:34111
+      API_PORT: '34111'
+      NITRO_PORT: '34110'
+      NUXT_API_INTERNAL_URL: http://127.0.0.1:34111
+      APP_ORIGIN: http://127.0.0.1:34110
+      DISCORD_CLIENT_ID: '123456789012345678'
+      DISCORD_CLIENT_SECRET: test-placeholder-not-a-discord-secret
+      DISCORD_AUTHOR_USER_ID: '123456789012345678'
+      HTTP_ACCEPTANCE_TEST_AUTHOR_ID: '123456789012345678'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: '5f8e28e5fb7bcb6beff472ba599740d37b01d5da'
+          persist-credentials: false
+          path: project
+      - uses: actions/checkout@v4
+        with:
+          repository: surumeneco/CAT-TDD
+          ref: fb3bd562684d80b016bf08b4cf21ad73079ea8fe
+          persist-credentials: false
+          path: cat
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Prepare fixed product and genuine browser runner
+        working-directory: project
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = '5f8e28e5fb7bcb6beff472ba599740d37b01d5da'
+          test "$(git rev-parse HEAD^{tree})" = 'f5429c4dfbf0735e1e16018a737f516e9ea25173'
+          test "$(git -C ../cat rev-parse HEAD:.cat-system)" = 44089a373b58a89b56aff65247d9e3d1000f7b18
+          git checkout -B feature/w07-mobile-background-boundary '5f8e28e5fb7bcb6beff472ba599740d37b01d5da'
+          mkdir -p "$RUNNER_TEMP/w07-evidence"
+          git rev-parse HEAD > "$RUNNER_TEMP/w07-evidence/project-commit.txt"
+          git rev-parse HEAD^{tree} > "$RUNNER_TEMP/w07-evidence/project-tree.txt"
+          git -C ../cat rev-parse HEAD > "$RUNNER_TEMP/w07-evidence/cat-commit.txt"
+          npm ci
+          npm install --prefix "$RUNNER_TEMP/cat-tools" --no-package-lock --no-audit --no-fund playwright@1.56.1 vitest@3.2.4
+          ln -s "$RUNNER_TEMP/cat-tools/node_modules/vitest" node_modules/vitest
+          ln -s "$RUNNER_TEMP/cat-tools/node_modules/playwright" node_modules/playwright
+          node "$RUNNER_TEMP/cat-tools/node_modules/playwright/cli.js" install --with-deps chromium
+          node -e 'const l=require("./package-lock.json").packages; for(const n of ["vue","vue-tsc","typescript"]){const p="node_modules/"+n;const v=require("./"+p+"/package.json").version;if(v!==l[p].version)throw Error(n+" installed "+v+" expected "+l[p].version); console.log(n,v)}'
+          npm run build
+          npm run db:migrate
+      - name: Execute unchanged baseline, guarded source extraction, and regression
+        working-directory: project
+        run: |
+          set -euo pipefail
+          export HTTP_FIXTURE_FILE="$RUNNER_TEMP/fixture.json"
+          D="$RUNNER_TEMP/w07-evidence"
+          F="$(realpath ../cat/.cat-system/scripts/cat_flow.py)"
+          W=Lifecycle/Works/New/eternalia.ui.mobile-shell-background-boundary/work.json
+          printf '\n.cat-flow/\n' >> .git/info/exclude
+          node scripts/seed-http-acceptance.mjs
+          node apps/api/dist/main.js > "$RUNNER_TEMP/api.log" 2>&1 &
+          A=$!
+          node apps/web/.output/server/index.mjs > "$RUNNER_TEMP/web.log" 2>&1 &
+          B=$!
+          trap 'kill "$A" "$B" 2>/dev/null || true; cp -a "$(dirname "$W")/.cat-flow" "$D/" 2>/dev/null || true' EXIT
+          wait_web() {
+            for i in $(seq 1 60); do curl -fsS "$HTTP_BASE_URL/" >/dev/null && curl -fsS "$HTTP_API_URL/api/health" >/dev/null && break; sleep 1; done
+            curl -fsS "$HTTP_BASE_URL/" >/dev/null
+          }
+          wait_web
+          python "$F" validate --work "$W" | tee "$D/validate.json"
+          python "$F" run --work "$W" --id refactor-baseline --execute | tee "$D/baseline.json"
+          python "$F" guard --work "$W" --stage refactor --phase start | tee "$D/guard-start.json"
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('apps/web/app/layouts/default.vue')
+          s=p.read_text()
+          old='const overlayOpen = computed(() => navOpen.value || asideOpen.value);'
+          assert s.count(old)==1
+          new="const overlayOpen = computed(() => !mobileBackgroundAllowed(navOpen.value ? 'primary' : asideOpen.value ? 'secondary' : 'closed'));"
+          s=s.replace(old,new)
+          s=s.replace("import type { ReaderNode } from '~/types/reader';","import type { ReaderNode } from '~/types/reader';\nimport { mobileBackgroundAllowed } from '~/utils/mobile-shell-background';",1)
+          p.write_text(s)
+          helper=Path('apps/web/app/utils/mobile-shell-background.ts')
+          assert not helper.exists()
+          helper.write_text("export function mobileBackgroundAllowed(menu: 'closed' | 'primary' | 'secondary'): boolean {\n  return menu === 'closed';\n}\n")
+          PY
+          python "$F" guard --work "$W" --stage refactor --phase finish | tee "$D/guard-finish.json"
+          git diff --check
+          git diff -- apps/web/app/layouts/default.vue > "$D/source.diff"
+          cp apps/web/app/layouts/default.vue "$D/default.vue"
+          cp apps/web/app/utils/mobile-shell-background.ts "$D/mobile-shell-background.ts"
+          git hash-object apps/web/app/layouts/default.vue apps/web/app/utils/mobile-shell-background.ts > "$D/source-blobs.txt"
+          kill "$B"; wait "$B" || true
+          npm run build -w @eternalia/web
+          node apps/web/.output/server/index.mjs > "$RUNNER_TEMP/web-regression.log" 2>&1 &
+          B=$!
+          wait_web
+          python "$F" run --work "$W" --id regression --execute | tee "$D/regression.json"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          d=Path(os.environ['RUNNER_TEMP'])/'w07-evidence'
+          for name in ['baseline','regression']:
+              assert json.loads((d/(name+'.json')).read_text())['verdict']=='passed', name
+          assert json.loads((d/'guard-finish.json').read_text())['status']=='passed'
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: w07-mobile-guarded-refactor
+          path: ${{ runner.temp }}/w07-evidence/
+          include-hidden-files: true
