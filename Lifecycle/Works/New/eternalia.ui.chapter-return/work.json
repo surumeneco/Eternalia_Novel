@@ -1,0 +1,142 @@
+{
+  "schema": "cat-work/v1",
+  "id": "eternalia.ui.chapter-return",
+  "entry": "confirmed-spec",
+  "flow": "spec-implementation",
+  "mode": "implementation",
+  "work_kind": "implementation",
+  "issue_ref": "https://github.com/surumeneco/Eternalia_Novel/issues/165",
+  "project_entry_ref": "https://drive.google.com/file/d/1clwfVJ3e_t1_QKFfOWxxRIzE9WMFvTiM/view",
+  "normative": [
+    {
+      "uri": "https://drive.google.com/file/d/1G4q4DbJZdOk7jIfgvuZu0a2e4L1LIMti/view"
+    }
+  ],
+  "evidence": [
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/853ee0c00cbcd5aa17747d323518ba35aa22551d/apps/web/app/components/ReaderDomainDetail.vue"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/853ee0c00cbcd5aa17747d323518ba35aa22551d/apps/web/browser-acceptance/reader-hierarchy.test.mjs"
+    }
+  ],
+  "repositories": [
+    {
+      "name": "eternalia",
+      "path": "../../../..",
+      "branch_pattern": "feature/*",
+      "allowed_paths": [
+        "Lifecycle/Works/New/eternalia.ui.chapter-return/**",
+        "apps/web/app/components/ReaderDomainDetail.vue",
+        "apps/web/browser-acceptance/reader-hierarchy.test.mjs"
+      ],
+      "production_paths": [
+        "apps/web/app/components/ReaderDomainDetail.vue"
+      ],
+      "test_paths": [
+        "Lifecycle/Works/New/eternalia.ui.chapter-return/CAT/Generated/current.test.ts",
+        "Lifecycle/Works/New/eternalia.ui.chapter-return/CAT/Generated/chapter-return-driver.mjs",
+        "apps/web/browser-acceptance/reader-hierarchy.test.mjs"
+      ]
+    }
+  ],
+  "scope": {
+    "process_ids": [
+      "eternalia.ui.chapter-return"
+    ],
+    "changed_ids": [
+      "AC-92.chapter-toc-parent"
+    ],
+    "preserved_ids": [
+      "AC-92.previous-next",
+      "AC-95.public-ancestry"
+    ]
+  },
+  "specification": {
+    "status": "confirmed",
+    "decision_ref": "https://drive.google.com/file/d/1G4q4DbJZdOk7jIfgvuZu0a2e4L1LIMti/view",
+    "artifact_refs": [
+      "Lifecycle/Works/New/eternalia.ui.chapter-return/CAT/Confirmed/Process.md",
+      "Lifecycle/Works/New/eternalia.ui.chapter-return/CAT/Confirmed/PI.md",
+      "Lifecycle/Works/New/eternalia.ui.chapter-return/CAT/Confirmed/TCE.md"
+    ]
+  },
+  "technologies": [
+    "Vue",
+    "Playwright"
+  ],
+  "checks": [
+    {
+      "id": "red-chapter-return",
+      "stage": "red",
+      "runner": "junit",
+      "cwd": "@repo:eternalia",
+      "argv": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "Lifecycle/Works/New/eternalia.ui.chapter-return/CAT/Generated/current.test.ts",
+        "--maxWorkers=1",
+        "--testTimeout=30000",
+        "--reporter=junit",
+        "--outputFile={report}"
+      ],
+      "input_paths": [
+        "Lifecycle/Works/New/eternalia.ui.chapter-return/CAT/Generated/current.test.ts",
+        "Lifecycle/Works/New/eternalia.ui.chapter-return/CAT/Generated/chapter-return-driver.mjs",
+        "apps/web/app/components/ReaderDomainDetail.vue",
+        "Lifecycle/Works/New/eternalia.ui.chapter-return/CAT/Binding/driver.json"
+      ],
+      "test_ids": [
+        "eternalia.ui.chapter-return CAT symbolic contract > case.chapter.return"
+      ],
+      "timeout_seconds": 90
+    },
+    {
+      "id": "green-chapter-return",
+      "stage": "green",
+      "runner": "junit",
+      "cwd": "@repo:eternalia",
+      "argv": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "Lifecycle/Works/New/eternalia.ui.chapter-return/CAT/Generated/current.test.ts",
+        "--maxWorkers=1",
+        "--testTimeout=30000",
+        "--reporter=junit",
+        "--outputFile={report}"
+      ],
+      "input_paths": [
+        "Lifecycle/Works/New/eternalia.ui.chapter-return/CAT/Generated/current.test.ts",
+        "Lifecycle/Works/New/eternalia.ui.chapter-return/CAT/Generated/chapter-return-driver.mjs",
+        "apps/web/app/components/ReaderDomainDetail.vue",
+        "Lifecycle/Works/New/eternalia.ui.chapter-return/CAT/Binding/driver.json"
+      ],
+      "test_ids": [
+        "eternalia.ui.chapter-return CAT symbolic contract > case.chapter.return"
+      ],
+      "timeout_seconds": 90
+    }
+  ],
+  "depends_on": [],
+  "compilation": {
+    "schema": "cat-compile/v2",
+    "process": "CAT/Confirmed/Process.md",
+    "pi": "CAT/Confirmed/PI.md",
+    "pis": [
+      "CAT/Confirmed/PI.md"
+    ],
+    "tce": "CAT/Confirmed/TCE.md",
+    "tces": [
+      "CAT/Confirmed/TCE.md"
+    ],
+    "model": "CAT/Generated/TestModel.json",
+    "vectors": "CAT/Generated/Vectors.json",
+    "obligations": "CAT/Generated/obligations.json",
+    "allow_draft": false,
+    "queue": "CAT/Generated/Queue.json",
+    "binding": "CAT/Binding/driver.json",
+    "tests_output": "CAT/Generated/current.test.ts"
+  }
+}
