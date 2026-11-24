@@ -30,6 +30,32 @@ test('IA-05: settings sections and grammar grids are reachable from their area h
   } finally { await browser.close(); }
 });
 
+test('IA-07: publication routes retain canonical series scope and link to canonical editors', { timeout: 30000 }, async () => {
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const context = await browser.newContext();
+    await context.addCookies([{ name: 'eternalia_author', value: fixture.authorToken, url: base, httpOnly: true, sameSite: 'Lax' }]);
+    const page = await context.newPage();
+    const root = '/admin/series/' + fixture.seriesA;
+    const missing = '00000000-0000-0000-0000-000000000000';
+    await page.goto(base + '/admin/series/' + missing + '/publication?target=' + fixture.word);
+    await page.getByLabel('シリーズを選択').locator('option[value="' + fixture.seriesA + '"]').waitFor({state:'attached'});
+    assert.equal(await page.getByLabel('シリーズを選択').inputValue(), '');
+    assert.equal(await page.locator('.publication-row').count(), 0);
+    await page.goto(base + root + '/publication?target=' + fixture.word);
+    const link = page.locator('main a[href="' + root + '/dictionaries/words/' + fixture.word + '/edit"]');
+    await link.waitFor();
+    await link.click();
+    await page.waitForURL('**' + root + '/dictionaries/words/' + fixture.word + '/edit');
+    await page.goto(base + root + '/publication');
+    await page.getByLabel('シリーズを選択').locator('option[value="' + fixture.seriesB + '"]').waitFor({state:'attached'});
+    await page.getByLabel('シリーズを選択').selectOption(fixture.seriesB);
+    await page.waitForURL('**/admin/series/' + fixture.seriesB + '/publication');
+    await page.waitForFunction(id => document.querySelector('.publication-filters select')?.value === id, fixture.seriesB);
+    await context.close();
+  } finally { await browser.close(); }
+});
+
 test('IA-01/02/03: readers select a series before its four content domains', { timeout: 60_000 }, async () => {
   const browser = await chromium.launch({ headless: true });
   try {
@@ -125,7 +151,7 @@ test('IA-05/06/07: author editing and publication each require their own series/
     assert.equal(await page.getByLabel('領域').inputValue(), 'dictionaries',
       'publication deep link must select the edited item domain');
     await page.locator('.publication-row').filter({
-      has: page.locator('a[href*="item=' + fixture.word + '"]'),
+      has: page.locator('a[href="/admin/series/' + fixture.seriesA + '/dictionaries/words/' + fixture.word + '/edit"]'),
     }).waitFor();
     assert.equal(await page.locator('#global-navigation a[href="/stories/' + fixture.seriesA + '"]').count(), 0,
       'author publication scope must not become the global public-reader navigation scope');
