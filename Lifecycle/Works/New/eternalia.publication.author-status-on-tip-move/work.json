@@ -209,6 +209,7 @@
     "binding": "CAT/Binding/driver.json",
     "tests_output": "@repo:eternalia/apps/web/tests/generated/cat_author_publication_current.test.ts",
     "obligations": ".cat-flow/generated/obligations.json",
-    "allow_draft": false
+    "allow_draft": false,
+    "technology_constraints": "CAT/Binding/technology-constraints.json"
   }
 }
