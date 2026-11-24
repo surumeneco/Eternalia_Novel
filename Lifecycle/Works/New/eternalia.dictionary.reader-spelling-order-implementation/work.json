@@ -15,6 +15,9 @@
   "evidence": [
     {
       "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/b84cdc9340430659493e6bc14d240ce88570d246/apps/web/app/pages/dictionaries/%5Bid%5D.vue"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/255e3ac59e93d764ee0ed669b06384a4fbe21214/apps/web/app/components/ReaderDomainListing.vue"
     }
   ],
   "repositories": [
@@ -28,10 +31,11 @@
         "apps/web/app/utils/dictionary-order.ts",
         "apps/web/browser-acceptance/dictionary-spelling-order.test.mjs",
         "scripts/check-http-acceptance.mjs",
-        "docs/alpha-ac-traceability.md"
+        "docs/alpha-ac-traceability.md",
+        "apps/web/app/components/ReaderDomainListing.vue"
       ],
       "production_paths": [
-        "apps/web/app/pages/dictionaries/[id].vue",
+        "apps/web/app/components/ReaderDomainListing.vue",
         "apps/web/app/utils/dictionary-order.ts"
       ],
       "test_paths": [
@@ -86,7 +90,7 @@
         "Lifecycle/Works/New/eternalia.dictionary.reader-spelling-order-implementation/CAT/Generated/current.test.ts",
         "Lifecycle/Works/New/eternalia.dictionary.reader-spelling-order-implementation/CAT/Generated/reader-order-driver.ts",
         "apps/web/app/utils/dictionary-order.ts",
-        "apps/web/app/pages/dictionaries/[id].vue",
+        "apps/web/app/components/ReaderDomainListing.vue",
         "Lifecycle/Works/New/eternalia.dictionary.reader-spelling-order-implementation/CAT/Binding/driver.json"
       ],
       "test_ids": [
@@ -112,7 +116,7 @@
         "Lifecycle/Works/New/eternalia.dictionary.reader-spelling-order-implementation/CAT/Generated/current.test.ts",
         "Lifecycle/Works/New/eternalia.dictionary.reader-spelling-order-implementation/CAT/Generated/reader-order-driver.ts",
         "apps/web/app/utils/dictionary-order.ts",
-        "apps/web/app/pages/dictionaries/[id].vue",
+        "apps/web/app/components/ReaderDomainListing.vue",
         "Lifecycle/Works/New/eternalia.dictionary.reader-spelling-order-implementation/CAT/Binding/driver.json"
       ],
       "test_ids": [
@@ -138,7 +142,7 @@
         "Lifecycle/Works/New/eternalia.dictionary.reader-spelling-order-implementation/CAT/Generated/current.test.ts",
         "Lifecycle/Works/New/eternalia.dictionary.reader-spelling-order-implementation/CAT/Generated/reader-order-driver.ts",
         "apps/web/app/utils/dictionary-order.ts",
-        "apps/web/app/pages/dictionaries/[id].vue",
+        "apps/web/app/components/ReaderDomainListing.vue",
         "Lifecycle/Works/New/eternalia.dictionary.reader-spelling-order-implementation/CAT/Binding/driver.json"
       ],
       "test_ids": [
@@ -164,7 +168,7 @@
         "Lifecycle/Works/New/eternalia.dictionary.reader-spelling-order-implementation/CAT/Generated/current.test.ts",
         "Lifecycle/Works/New/eternalia.dictionary.reader-spelling-order-implementation/CAT/Generated/reader-order-driver.ts",
         "apps/web/app/utils/dictionary-order.ts",
-        "apps/web/app/pages/dictionaries/[id].vue",
+        "apps/web/app/components/ReaderDomainListing.vue",
         "Lifecycle/Works/New/eternalia.dictionary.reader-spelling-order-implementation/CAT/Binding/driver.json"
       ],
       "test_ids": [
@@ -190,7 +194,7 @@
         "Lifecycle/Works/New/eternalia.dictionary.reader-spelling-order-implementation/CAT/Generated/current.test.ts",
         "Lifecycle/Works/New/eternalia.dictionary.reader-spelling-order-implementation/CAT/Generated/reader-order-driver.ts",
         "apps/web/app/utils/dictionary-order.ts",
-        "apps/web/app/pages/dictionaries/[id].vue",
+        "apps/web/app/components/ReaderDomainListing.vue",
         "Lifecycle/Works/New/eternalia.dictionary.reader-spelling-order-implementation/CAT/Binding/driver.json"
       ],
       "test_ids": [
@@ -216,7 +220,7 @@
         "Lifecycle/Works/New/eternalia.dictionary.reader-spelling-order-implementation/CAT/Generated/current.test.ts",
         "Lifecycle/Works/New/eternalia.dictionary.reader-spelling-order-implementation/CAT/Generated/reader-order-driver.ts",
         "apps/web/app/utils/dictionary-order.ts",
-        "apps/web/app/pages/dictionaries/[id].vue",
+        "apps/web/app/components/ReaderDomainListing.vue",
         "Lifecycle/Works/New/eternalia.dictionary.reader-spelling-order-implementation/CAT/Binding/driver.json"
       ],
       "test_ids": [
