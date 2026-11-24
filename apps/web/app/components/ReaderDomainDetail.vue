@@ -71,7 +71,7 @@ const languageHome=computed(()=>{
         </template></dl>
         <nav v-if="kind==='chapter'" class="chapter-navigation" :aria-label="t('readerChapterNavigation')">
           <NuxtLink v-if="prev" :to="publicNodeRoute(tree??[],prev.id)??'#'">{{ t('readerPreviousChapter') }} {{ prev.content.title }}</NuxtLink>
-          <NuxtLink :to="publicAreaRoute(seriesId,'stories')">{{ t('readerBackToToc') }}</NuxtLink>
+          <NuxtLink v-if="item.parentId" :to="publicNodeRoute(tree??[],item.parentId)??'#'">{{ t('readerBackToToc') }}</NuxtLink>
           <NuxtLink v-if="next" :to="publicNodeRoute(tree??[],next.id)??'#'">{{ t('readerNextChapter') }} {{ next.content.title }}</NuxtLink>
         </nav>
         <NuxtLink v-else-if="languageDetails&&languageHome" :to="languageHome">{{ t('readerBackToToc') }}</NuxtLink>
