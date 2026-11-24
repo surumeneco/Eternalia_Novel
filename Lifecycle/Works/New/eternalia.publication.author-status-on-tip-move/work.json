@@ -31,23 +31,21 @@
         "Lifecycle/Works/New/eternalia.settings.tip-category-move/CAT/Draft/*.md",
         "apps/web/app/pages/studio/publication.vue",
         "apps/web/app/types/author.ts",
-        "apps/web/app/utils/author-publication-visibility.ts",
         "apps/web/browser-acceptance/author-publication-published-parent.test.mjs",
-        "apps/web/app/utils/author-publication-visibility.test.ts",
         "apps/web/tests/generated/cat_author_publication_current.test.ts",
         "apps/web/tests/generated/cat_move07_driver.mjs",
         "scripts/check-http-acceptance.mjs",
         "apps/web/tests/author-publication-published-parent.test.mjs",
-        ".github/workflows/alpha-checks.yml"
+        ".github/workflows/alpha-checks.yml",
+        "packages/contracts/src/publication.ts"
       ],
       "production_paths": [
         "apps/web/app/pages/studio/publication.vue",
         "apps/web/app/types/author.ts",
-        "apps/web/app/utils/author-publication-visibility.ts"
+        "packages/contracts/src/publication.ts"
       ],
       "test_paths": [
         "apps/web/browser-acceptance/author-publication-published-parent.test.mjs",
-        "apps/web/app/utils/author-publication-visibility.test.ts",
         "apps/web/tests/generated/cat_author_publication_current.test.ts",
         "apps/web/tests/generated/cat_move07_driver.mjs",
         "apps/web/tests/author-publication-published-parent.test.mjs"

@@ -3,6 +3,10 @@
   "repository": "eternalia",
   "projects": [
     {
+      "config": "packages/contracts/tsconfig.json",
+      "compiler": "tsc"
+    },
+    {
       "config": "apps/web/tsconfig.json",
       "compiler": "vue-tsc"
     }
