@@ -10,5 +10,6 @@
   "interface_symbols": {
     "wordClassInputPolicy": "show"
   },
-  "capabilities": {}
+  "capabilities": {},
+  "capability_analysis": "primitive-pure-functions/v1"
 }

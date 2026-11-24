@@ -11,5 +11,6 @@
     "hasPublishedWordClassLabel": "resolve",
     "publishedWordClassName": "resolve"
   },
-  "capabilities": {}
+  "capabilities": {},
+  "capability_analysis": "typed-data-functions/v1"
 }
