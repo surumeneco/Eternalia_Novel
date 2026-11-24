@@ -36,7 +36,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 'ded2bddac109c157cc438b4ed037b22948537376'
+          ref: 'fd6316d6ea52b6c2ff907287bb29683a4936d9ff'
           persist-credentials: false
           path: project
       - uses: actions/checkout@v4
@@ -51,15 +51,15 @@ jobs:
       - name: Build exact product and prepare Chromium
         working-directory: project
         run: |
-          test "$(git rev-parse HEAD)" = 'ded2bddac109c157cc438b4ed037b22948537376'
-          git checkout -B feature/required-ia-regressions 'ded2bddac109c157cc438b4ed037b22948537376'
+          test "$(git rev-parse HEAD)" = 'fd6316d6ea52b6c2ff907287bb29683a4936d9ff'
+          git checkout -B feature/required-ia-regressions 'fd6316d6ea52b6c2ff907287bb29683a4936d9ff'
           test "$(git -C ../cat rev-parse HEAD:.cat-system)" = eeb6cdbd008dedc261f1df380b92f8052be0c045
           npm ci
           npm install --no-save --package-lock=false playwright@1.56.1 vitest@3.2.4
           npx playwright install --with-deps chromium
           npm run build
           npm run db:migrate
-      - name: Required IA regression baseline
+      - name: Required IA regression Green
         working-directory: project
         run: |
           set -euo pipefail
@@ -67,19 +67,6 @@ jobs:
           D="$RUNNER_TEMP/cat-evidence"
           mkdir -p "$D"
           F=../cat/.cat-system/scripts/cat_flow.py
-          # Existing suites needing the real Nuxt tsconfig; independent of product repairs.
-          for s in class-order master-input reader-order; do
-            case "$s" in class-order) m=class; check=suite-class-4;; master-input) m=master-input; check=suite-master-input-4;; reader-order) m=reader-order; check=suite-reader-order-3;; esac
-            W="Lifecycle/Works/New/eternalia.dictionary.$s-suite/work.json"
-            mkdir -p "$D/dictionary-$s"
-            python "$F" conformance --work "$W" --kind process-closure > "$D/dictionary-$s/closure.json"
-            python "$F" compile --work "$W" --kind model > "$D/dictionary-$s/model.json"
-            python "$F" conformance --work "$W" --kind model-conformance > "$D/dictionary-$s/model-conformance.json"
-            python "$F" compile --work "$W" --kind vectors > "$D/dictionary-$s/vectors.json"
-            for k in plan sync verify run report; do
-              python ../cat/.cat-system/scripts/cat_spec_test_sync.py "$k" --work "$W" --repo . --repo-revision ded2bddac109c157cc438b4ed037b22948537376 --prefix packages/contracts/tests/generated/ --manifest ".cat-flow/test-suite-manifest.$m.json" --check-id "$check" --report-path ".cat-flow/evidence/test-suite-$m.json" > "$D/dictionary-$s/$k.json" || break
-            done
-          done
           node scripts/seed-http-acceptance.mjs
           node apps/api/dist/main.js > "$RUNNER_TEMP/api.log" 2>&1 &
           A=$!
@@ -88,13 +75,11 @@ jobs:
           trap 'kill "$A" "$B" 2>/dev/null || true' EXIT
           for i in $(seq 1 60); do curl -fsS "$HTTP_BASE_URL/" >/dev/null && curl -fsS "$HTTP_API_URL/api/health" >/dev/null && break; sleep 1; done
           curl -fsS "$HTTP_BASE_URL/" >/dev/null
+          failed=0
           for id in reader-required-ia admin-required-ia; do
             P="Lifecycle/Works/New/eternalia.ui.$id"
             W="$P/work.json"
             mkdir -p "$P/CAT/Confirmed" "$D/$id"
-            for n in Process PI TCE; do
-              python ../cat/.cat-system/scripts/cat_promote.py --source "$P/CAT/Draft/$n.md" --output "$P/CAT/Confirmed/$n.md" --decision-ref https://drive.google.com/file/d/1G4q4DbJZdOk7jIfgvuZu0a2e4L1LIMti/view
-            done
             python "$F" conformance --work "$W" --kind process-closure | tee "$D/$id/closure.json"
             python "$F" compile --work "$W" --kind model | tee "$D/$id/model.json"
             python "$F" conformance --work "$W" --kind model-conformance | tee "$D/$id/model-conformance.json"
@@ -102,15 +87,22 @@ jobs:
               python "$F" compile --work "$W" --kind "$k" | tee "$D/$id/$k.json"
             done
             set +e
-            python "$F" run --work "$W" --id red-required-ia --execute | tee "$D/$id/red.json"
-            echo "${PIPESTATUS[0]}" > "$D/$id/red-exit.txt"
+            python "$F" run --work "$W" --id green-required-ia --execute | tee "$D/$id/green.json"
+            status="${PIPESTATUS[0]}"
             set -e
+            echo "$status" > "$D/$id/green-exit.txt"
+            if [ "$status" = 0 ]; then
+              python "$F" queue-state --work "$W" --evidence "$P/.cat-flow/evidence/green-required-ia.json" | tee "$D/$id/queue-state.json" || failed=1
+            else
+              failed=1
+            fi
             cp -r "$P/.cat-flow" "$D/$id/work-evidence"
             cp -r "$P/CAT/Confirmed" "$D/$id/confirmed"
             cp -r "$P/CAT/Generated" "$D/$id/generated"
           done
+          exit "$failed"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: required-ia-red
+          name: required-ia-green
           path: ${{ runner.temp }}/cat-evidence/
