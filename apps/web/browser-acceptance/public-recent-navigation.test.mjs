@@ -95,7 +95,7 @@ test('AC-55: home recent links navigate for all six published item types',
           await link.click();
           await page.waitForURL(url => url.pathname === path);
           await page.getByRole('heading', { name: title, exact: true }).waitFor();
-          await page.getByText('published:' + title, { exact: false }).waitFor();
+          await page.getByText('published:' + title, { exact: true }).waitFor();
           assert.equal(await page.locator('main [role="alert"]').count(), 0);
         }
         await page.close();

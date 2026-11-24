@@ -136,15 +136,7 @@ test('CM-09: author-only home and area creation paths use validated canonical cr
       assert.equal(createdResponse.status(),201,kind);
       const {id}=await createdResponse.json();
       await page.waitForURL(url=>url.pathname==='/admin/series/'+fixture.seriesA+'/'+group+'/'+id+'/edit');
-      await page.locator('main').getByRole('heading',{name:new RegExp(title+'    await page.goto(base+'/stories');
-    await page.getByRole('link',{name:types.stories.label}).first().waitFor();
-    await selectUiLanguage(page, 'en');
-    await page.getByRole('link',{name:'Create a new arc in this series'}).first().waitFor();
-    await page.getByRole('link',{name:fixture.prefix+'-world-A'}).waitFor();
-    await context.close();
-  }finally{await browser.close()}
-});
-)}).first().waitFor();
+      await page.locator('main').getByRole('heading',{name:title,exact:false}).first().waitFor();
       const node=(await list()).find(n=>n.id===id);
       assert.equal(node?.kind,kind);
       assert.equal(node?.parentId,parent);
