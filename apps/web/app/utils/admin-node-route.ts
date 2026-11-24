@@ -20,6 +20,3 @@ export function adminCreatePath(seriesId:string|null,kind:ReaderKind,parentId:st
   if(!seriesId||!parentId)throw new Error('parent and series required');
   return '/admin/series/'+encodeURIComponent(seriesId)+'/create/'+encodeURIComponent(kind)+'/'+encodeURIComponent(parentId);
 }
-export function canonicalCreateAdmission(author:boolean,scope:'root'|'child',parent:'none'|'same'|'invalid',kindMatches:boolean):boolean {
-  return author && kindMatches && (scope==='root' ? parent==='none' : parent==='same');
-}

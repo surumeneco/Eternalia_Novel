@@ -8,7 +8,8 @@ const { t, language } = useUiLocale();
 const { confirm: showConfirmation } = useAppDialog();
 const studioRoute = useRoute();
 import type { ReaderKind } from '~/types/reader';
-import { adminEditPath, adminGridPath, canonicalCreateAdmission } from '~/utils/admin-node-route';
+import { adminEditPath, adminGridPath } from '~/utils/admin-node-route';
+import { canonicalCreateAdmission } from '~/utils/canonical-create-admission';
 const props = defineProps<{
   canonicalTarget?: { seriesId:string; nodeId:string; kind:ReaderKind };
   canonicalCreate?: { seriesId:string|null; parentId:string|null; kind:string };

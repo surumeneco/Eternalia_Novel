@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { adminCreatePath,adminEditPath,adminGridPath,canonicalCreateAdmission } from '../app/utils/admin-node-route.ts';
+import { adminCreatePath,adminEditPath,adminGridPath } from '../app/utils/admin-node-route.ts';
+import { canonicalCreateAdmission } from '../app/utils/canonical-create-admission.ts';
 
 test('canonical author route projection covers every material kind',()=>{
   const paths={volume:'stories/volumes',part:'stories/parts',chapter:'stories/chapters',
