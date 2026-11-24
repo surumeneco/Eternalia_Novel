@@ -36,7 +36,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 'b359e203c5e347bfe7ce02618614a403262a7d0a'
+          ref: 'c1f4a6a9c453f54692963726c7ed3b8afd639761'
           persist-credentials: false
           path: project
       - uses: actions/checkout@v4
@@ -52,10 +52,10 @@ jobs:
         working-directory: project
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = 'b359e203c5e347bfe7ce02618614a403262a7d0a'
-          test "$(git rev-parse HEAD^{tree})" = '0795074af85cdac719f9e9fbafb46b40d0a4cfe2'
+          test "$(git rev-parse HEAD)" = 'c1f4a6a9c453f54692963726c7ed3b8afd639761'
+          test "$(git rev-parse HEAD^{tree})" = '40c881b547037e66945107144a246f5a1d2aea66'
           test "$(git -C ../cat rev-parse HEAD:.cat-system)" = eeb6cdbd008dedc261f1df380b92f8052be0c045
-          git checkout -B feature/w07-confirmed-current-execution 'b359e203c5e347bfe7ce02618614a403262a7d0a'
+          git checkout -B feature/w07-confirmed-current-execution 'c1f4a6a9c453f54692963726c7ed3b8afd639761'
           mkdir -p "$RUNNER_TEMP/w07-evidence"
           git rev-parse HEAD > "$RUNNER_TEMP/w07-evidence/project-commit.txt"
           git rev-parse HEAD^{tree} > "$RUNNER_TEMP/w07-evidence/project-tree.txt"
@@ -92,7 +92,7 @@ jobs:
           summary=[]
           for w in sorted(pathlib.Path('Lifecycle/Works/New').glob('*/work.json')):
               doc=json.loads(w.read_text())
-              if doc.get('specification',{}).get('status')!='confirmed' or doc.get('flow')!='spec-implementation':continue
+              if doc.get('id')!='eternalia.ui.admin-navigation':continue
               C=doc['compilation']; out=D/doc['id'];out.mkdir()
               row={'work':doc['id'],'done':0,'total':None,'gate':None}
               def run(cmd,kind,name):
@@ -132,9 +132,30 @@ jobs:
               print(json.dumps(row,ensure_ascii=False),flush=True)
               (D/'summary.json').write_text(json.dumps(summary,ensure_ascii=False,indent=2))
           PY
+      - name: Generate and run confirmed master delete suite
+        working-directory: project
+        run: |
+          set -euo pipefail
+          W=Lifecycle/Works/New/eternalia.master.delete-admission/work.json
+          D="$RUNNER_TEMP/w07-evidence/master-delete-suite"
+          mkdir -p "$D"
+          F=../cat/.cat-system/scripts/cat_flow.py
+          S=../cat/.cat-system/scripts/cat_spec_test_sync.py
+          python "$F" conformance --work "$W" --kind process-closure > "$D/process-closure.json"
+          python "$F" compile --work "$W" --kind model > "$D/model.json"
+          python "$F" conformance --work "$W" --kind model-conformance > "$D/model-conformance.json"
+          python "$F" compile --work "$W" --kind vectors > "$D/vectors.json"
+          for phase in plan sync verify run report; do
+            python "$S" "$phase" --work "$W" --repo . --repo-revision "$(git rev-parse HEAD)" --prefix packages/contracts/tests/generated/ --manifest .cat-flow/test-suite-manifest.master-delete.json --check-id suite-master-delete-3 --report-path .cat-flow/evidence/test-suite-master-delete.json > "$D/$phase.json"
+          done
+          mkdir -p "$D/publish/packages/contracts/tests/generated" "$D/publish/.cat-flow"
+          cp packages/contracts/tests/generated/cat_case_delete_*.test.ts "$D/publish/packages/contracts/tests/generated/"
+          cp .cat-flow/test-suite-manifest.master-delete.json "$D/publish/.cat-flow/"
+          cp -a "$(dirname "$W")/.cat-flow" "$D/"
+          cp .cat-flow/evidence/test-suite-master-delete.json "$D/"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: w07-confirmed-current-execution
+          name: w07-admin-master-confirmed-execution
           path: ${{ runner.temp }}/w07-evidence/
           include-hidden-files: true
