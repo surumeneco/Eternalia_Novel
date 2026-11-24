@@ -55,12 +55,12 @@
     ]
   },
   "specification": {
-    "status": "draft",
-    "decision_ref": null,
+    "status": "confirmed",
+    "decision_ref": "https://drive.google.com/file/d/1G4q4DbJZdOk7jIfgvuZu0a2e4L1LIMti/view",
     "artifact_refs": [
-      "Lifecycle/Works/New/eternalia.ui.mobile-shell-focus/CAT/Draft/Process.md",
-      "Lifecycle/Works/New/eternalia.ui.mobile-shell-focus/CAT/Draft/PI.md",
-      "Lifecycle/Works/New/eternalia.ui.mobile-shell-focus/CAT/Draft/TCE.md"
+      "Lifecycle/Works/New/eternalia.ui.mobile-shell-focus/CAT/Confirmed/Process.md",
+      "Lifecycle/Works/New/eternalia.ui.mobile-shell-focus/CAT/Confirmed/PI.md",
+      "Lifecycle/Works/New/eternalia.ui.mobile-shell-focus/CAT/Confirmed/TCE.md"
     ]
   },
   "technologies": [

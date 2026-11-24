@@ -2,13 +2,14 @@
 cat_version: '0.3'
 kind: pi
 id: eternalia.ui.mobile-shell-focus.pi
-status: draft
+status: confirmed
 process: eternalia.ui.mobile-shell-focus
 source_refs:
   - https://drive.google.com/file/d/1G4q4DbJZdOk7jIfgvuZu0a2e4L1LIMti/view
 refs: []
 semantic_contract: markdown-v2
 language: ja
+decision_ref: https://drive.google.com/file/d/1G4q4DbJZdOk7jIfgvuZu0a2e4L1LIMti/view
 ---
 # PI: eternalia.ui.mobile-shell-focus.pi
 
