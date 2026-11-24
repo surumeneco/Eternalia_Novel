@@ -37,12 +37,7 @@ npm run db:migrate
 2. 上記の `npm run db:migrate` を実行し、各migrationのApplied/Skippedを確認する。既に適用したmigrationは再実行されない。
 3. 同じCompose DBを使っている場合に限り、次の読取り専用照会を実行する。外部PostgreSQLを使用している場合は、その接続先で同じSQLを実行する。
 
-```bash
-docker compose exec -T database sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT current_database(), current_schema(), to_regclass('"'oauth_states'"'), to_regclass('"'author_sessions'"'), to_regclass('"'schema_migrations'"');"'
-docker compose exec -T database sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT filename FROM schema_migrations ORDER BY filename;"'
-```
-
-PowerShellからは引用符の扱いが異なるため、`docker compose exec database sh` でコンテナ内シェルを開き、次のコマンドを実行する。
+Windows PowerShell・POSIXシェルのいずれでも、まず `docker compose exec database sh` でコンテナ内シェルを開き、次のコマンドを実行する。
 
 ```sh
 psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT current_database(), current_schema(), to_regclass('oauth_states'), to_regclass('author_sessions'), to_regclass('schema_migrations');"
