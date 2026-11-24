@@ -1,26 +1,59 @@
-name: Read-only acceptance snapshot
+name: Formal CAT acceptance verification
 on:
   push:
     branches: ['infra/chat-acceptance-snapshot-853ee0c0']
 permissions:
   contents: read
 jobs:
-  snapshot:
+  cat:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
           ref: '853ee0c00cbcd5aa17747d323518ba35aa22551d'
           persist-credentials: false
-      - name: Archive exact revision
+          path: project
+      - uses: actions/checkout@v4
+        with:
+          repository: surumeneco/CAT-TDD
+          ref: d42557a7b8318925f172b401d4e2bf55c4d230c7
+          persist-credentials: false
+          path: cat
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify exact inputs and prepare actual Nuxt/Vitest dependencies
+        working-directory: project
         run: |
           test "$(git rev-parse HEAD)" = '853ee0c00cbcd5aa17747d323518ba35aa22551d'
-          mkdir -p /tmp/snapshot
-          git archive --format=tar.gz -o /tmp/snapshot/project.tar.gz HEAD
-          git rev-parse HEAD > /tmp/snapshot/commit.txt
-          git rev-parse HEAD^{tree} > /tmp/snapshot/tree.txt
-          sha256sum /tmp/snapshot/project.tar.gz
+          test "$(git rev-parse HEAD^{tree})" = bea9b2faeafd38f135c135d7ca3daf3f0aead0ad
+          test "$(git -C ../cat rev-parse HEAD)" = d42557a7b8318925f172b401d4e2bf55c4d230c7
+          test "$(git -C ../cat rev-parse HEAD:.cat-system)" = eeb6cdbd008dedc261f1df380b92f8052be0c045
+          npm ci
+          npm run build:contracts
+          npm exec -w @eternalia/web -- nuxt prepare
+          npm install --no-save --package-lock=false --ignore-scripts vitest@3.2.4
+      - name: Execute source-owned CAT suite sync and formal JUnit run/report
+        working-directory: project
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/cat-evidence"
+          F=../cat/.cat-system/scripts/cat_flow.py
+          S=../cat/.cat-system/scripts/cat_spec_test_sync.py
+          W=Lifecycle/Works/New/eternalia.ui.canonical-create-suite/work.json
+          D="$RUNNER_TEMP/cat-evidence"
+          python "$F" conformance --work "$W" --kind process-closure | tee "$D/closure.json"
+          python "$F" compile --work "$W" --kind model | tee "$D/model.json"
+          python "$F" conformance --work "$W" --kind model-conformance | tee "$D/model-conformance.json"
+          python "$F" compile --work "$W" --kind vectors | tee "$D/vectors.json"
+          for stage in plan sync verify run report; do
+            python "$S" "$stage" --work "$W" --repo . --repo-revision '853ee0c00cbcd5aa17747d323518ba35aa22551d' --prefix apps/web/tests/generated/ --manifest .cat-flow/test-suite-manifest.canonical-create.json --report-path .cat-flow/evidence/test-suite-canonical-create.json --check-id suite-canonical-create-4 | tee "$D/$stage.json"
+          done
+          cp -r "$(dirname "$W")/.cat-flow" "$D/work-evidence"
+          cp .cat-flow/test-suite-manifest.canonical-create.json "$D/manifest.json"
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: project-snapshot-853ee0c0
-          path: /tmp/snapshot/
+          name: formal-cat-canonical-create-853ee0c0
+          path: ${{ runner.temp }}/cat-evidence/
