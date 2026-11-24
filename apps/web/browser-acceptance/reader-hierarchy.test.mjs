@@ -1,9 +1,10 @@
-/** W03 / AC-79,80,82,92,95: read-only exploratory verification.
- * Runs against the fresh disposable HTTP acceptance fixture before author mutations.
+/** W03 / AC-79,80,82,92,95: exploratory verification.
+ * Runs against a fresh disposable HTTP acceptance fixture; creates isolated test series only.
  * This is not a generated CAT Gate or manual acceptance.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { chromium } from 'playwright';
 
@@ -123,4 +124,112 @@ test('AC-82/95: wrong ancestor or series cannot open a canonical item and legacy
       await page.waitForURL(url => url.pathname === canonical);
     }
   });
+});
+
+/** Fresh isolated series; dispose by hiding the series, never alter the shared fixture. */
+async function author(method,path,data){
+  const response=await fetch(base+path,{method,headers:{Origin:base,'Content-Type':'application/json',Cookie:'eternalia_author='+fixture.authorToken},...(data===undefined?{}:{body:JSON.stringify(data)})});
+  const body=await response.text();
+  assert.ok(response.ok,method+' '+path+': '+response.status+' '+body);
+  return JSON.parse(body);
+}
+async function create(kind,parentId,title,details={}){
+  return (await author('POST','/api/admin/nodes',{kind,parentId,content:{title,body:'body:'+title,details}})).id;
+}
+async function revision(id){
+  const n=(await author('GET','/api/admin/nodes')).find(n=>n.id===id);
+  assert.ok(n,'missing author node '+id);
+  return n.revision;
+}
+async function publish(id){
+  await author('POST','/api/admin/nodes/'+id+'/publish',{expectedRevision:await revision(id)});
+}
+async function hide(id){
+  await author('POST','/api/admin/nodes/'+id+'/visibility',{expectedRevision:await revision(id),isPublic:false,publicSince:null});
+}
+
+test('AC-92/95: chapter links cross parts and volumes, omit unpublished chapters and support browser history', {timeout:120000},async()=>{
+  const prefix=fixture.prefix+'-chapter-cross-'+randomUUID().slice(0,8);
+  let series;
+  const browser=await chromium.launch({headless:true});
+  try{
+    series=await create('series',null,prefix+'-series');
+    const v1=await create('volume',series,prefix+'-volume-1');
+    const v2=await create('volume',series,prefix+'-volume-2');
+    const p1=await create('part',v1,prefix+'-part-1');
+    const p2=await create('part',v1,prefix+'-part-2');
+    const p3=await create('part',v2,prefix+'-part-3');
+    const a=await create('chapter',p1,prefix+'-chapter-A');
+    const hidden=await create('chapter',p1,prefix+'-chapter-hidden');
+    const b=await create('chapter',p2,prefix+'-chapter-B');
+    const c=await create('chapter',p3,prefix+'-chapter-C');
+    for(const id of [series,v1,v2,p1,p2,p3,a,b,c])await publish(id);
+    const root='/series/'+series+'/stories';
+    const paths=[root+'/'+v1+'/parts/'+p1+'/chapters/'+a,root+'/'+v1+'/parts/'+p2+'/chapters/'+b,root+'/'+v2+'/parts/'+p3+'/chapters/'+c];
+    const page=await browser.newPage({viewport:{width:390,height:844}});
+    async function check(index){
+      await page.locator('main').getByRole('heading',{name:prefix+'-chapter-'+['A','B','C'][index],exact:true}).waitFor();
+      const nav=page.locator('.chapter-navigation');
+      await nav.waitFor();
+      const expected=[...(index>0?[paths[index-1]]:[]),root,...(index<2?[paths[index+1]]:[])];
+      assert.deepEqual(await nav.locator('a').evaluateAll(a=>a.map(x=>x.getAttribute('href'))),expected);
+      assert.equal(await page.locator('main a[href*="'+hidden+'"]').count(),0);
+    }
+    await page.goto(base+paths[0]);await check(0);
+    for(let i=1;i<3;i++){
+      await page.locator('.chapter-navigation a[href="'+paths[i]+'"]').click();
+      await page.waitForURL(url=>url.pathname===paths[i]);await check(i);
+    }
+    await page.goBack();await page.waitForURL(url=>url.pathname===paths[1]);await check(1);
+    await page.goForward();await page.waitForURL(url=>url.pathname===paths[2]);await check(2);
+    for(let i=1;i>=0;i--){
+      await page.locator('.chapter-navigation a[href="'+paths[i]+'"]').click();
+      await page.waitForURL(url=>url.pathname===paths[i]);await check(i);
+    }
+    await page.locator('.chapter-navigation a[href="'+root+'"]').click();
+    await page.waitForURL(url=>url.pathname===root);
+  }finally{
+    if(series)try{await hide(series)}catch(error){console.error('fixture cleanup',error)}
+    await browser.close();
+  }
+});
+
+test('AC-31/55/95: search and related setting links reach canonical details and revoked targets disappear', {timeout:120000},async()=>{
+  const prefix=fixture.prefix+'-related-click-'+randomUUID().slice(0,8);
+  let series;
+  const browser=await chromium.launch({headless:true});
+  try{
+    series=await create('series',null,prefix+'-series');
+    const category=await create('category',series,prefix+'-category',{presets:'[]'});
+    const target=await create('tip',category,prefix+'-target');
+    const source=await create('tip',category,prefix+'-source',{relatedTipIds:JSON.stringify([target])});
+    for(const id of [series,category,target,source])await publish(id);
+    const root='/series/'+series+'/settings/'+category+'/';
+    const page=await browser.newPage({viewport:{width:390,height:844}});
+    await page.goto(base+'/search?series='+series);
+    await page.locator('.search-filters input[type="search"]').fill(prefix+'-source');
+    const search=page.locator('main .search-result a[href="'+root+source+'"]');
+    await search.waitFor();
+    await search.click();
+    await page.waitForURL(url=>url.pathname===root+source);
+    await page.locator('main').getByRole('heading',{name:prefix+'-source',exact:true}).waitFor();
+    const related=page.locator('main article a').filter({hasText:prefix+'-target'});
+    await related.waitFor();
+    await related.click();
+    await page.waitForURL(url=>url.pathname===root+target);
+    await page.locator('main').getByRole('heading',{name:prefix+'-target',exact:true}).waitFor();
+    await page.goBack();await page.waitForURL(url=>url.pathname===root+source);
+    await page.locator('main').getByRole('heading',{name:prefix+'-source',exact:true}).waitFor();
+    await hide(target);
+    await page.reload();
+    await page.locator('main').getByRole('heading',{name:prefix+'-source',exact:true}).waitFor();
+    assert.equal(await page.locator('main article a').filter({hasText:prefix+'-target'}).count(),0);
+    assert.ok(!(await page.locator('main').innerText()).includes(prefix+'-target'));
+    await page.goto(base+root+target);
+    await page.locator('main [role="alert"]').waitFor();
+    assert.equal(await page.locator('main article').count(),0);
+  }finally{
+    if(series)try{await hide(series)}catch(error){console.error('fixture cleanup',error)}
+    await browser.close();
+  }
 });
