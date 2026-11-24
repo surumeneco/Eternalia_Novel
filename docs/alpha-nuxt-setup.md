@@ -6,10 +6,11 @@
 
 ```bash
 npm ci
-cp .env.example .env
+# 初回だけ。既存の .env は上書きしない。
+[ -f .env ] || cp .env.example .env
 ```
 
-Windows PowerShellではコピーを `Copy-Item .env.example .env` に置き換えます。以下をローカルの `.env` で設定してください。
+Windows PowerShellではコピーを `if (-not (Test-Path .env)) { Copy-Item .env.example .env }` に置き換えます。以下をローカルの `.env` で設定してください。
 
 - `POSTGRES_PASSWORD` を強いローカルパスワードに変更し、同じパスワードを `DATABASE_URL` に反映。URL中に予約文字がある場合はURLエンコード。
 - `APP_ORIGIN=http://localhost:3000`（ブラウザでも必ず同じ `localhost` 名を使用）。
@@ -22,11 +23,28 @@ Windows PowerShellではコピーを `Copy-Item .env.example .env` に置き換�
 ## 2. データベース
 
 ```bash
-docker compose up -d database
+docker compose up -d --wait database
 npm run db:migrate
 ```
 
-`db:migrate` はルートの `.env` を読み込み、未適用migrationだけを適用します。DBはDockerボリューム `pgdata` に永続化されます。既存本番DBでの実行は禁止です。
+`db:migrate` はルートの `.env` を読み込み、未適用migrationだけを適用します。DBはDockerボリューム `pgdata` に永続化されます。既存本番DBでの実行は禁止です。再確認時も既存原稿が入ったボリュームや `.env` を削除・初期化しないでください。実機受入で架空データを作る場合は、普段の執筆データとは別の検証DBを使います。
+
+### OAuth開始時に `relation "oauth_states" does not exist` が出る場合
+
+このエラー（PostgreSQL 42P01）は、OAuth開始処理が接続したDB/schemaから `oauth_states` を解決できないことを示します。DiscordのシークレットやコールバックURLの誤りとは別の段階です。`002_auth.sql` が同テーブルと `author_sessions` を作成します。
+
+1. APIを停止し、ルートの `.env` に設定した `DATABASE_URL` が意図した検証DBを指していることを確認。APIを別の環境変数で起動していないかも確認する。シークレットは表示・共有しない。
+2. 上記の `npm run db:migrate` を実行し、各migrationのApplied/Skippedを確認する。既に適用したmigrationは再実行されない。
+3. 同じCompose DBを使っている場合に限り、次の読取り専用照会を実行する。外部PostgreSQLを使用している場合は、その接続先で同じSQLを実行する。
+
+Windows PowerShell・POSIXシェルのいずれでも、まず `docker compose exec database sh` でコンテナ内シェルを開き、次のコマンドを実行する。
+
+```sh
+psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT current_database(), current_schema(), to_regclass('oauth_states'), to_regclass('author_sessions'), to_regclass('schema_migrations');"
+psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT filename FROM schema_migrations ORDER BY filename;"
+```
+
+両認証テーブルが解決され、migration記録に `002_auth.sql` があることを確認する。記録だけが存在してテーブルが欠落する場合は、DB/schemaの取り違えまたはschema driftとして切り分け、バックアップを確保するまでmigration台帳の削除・DBリセット・手動DDLを行わない。
 
 ## 3. ドメインとサーバー
 
@@ -44,7 +62,7 @@ npm run dev:web
 APIのデフォルトは `127.0.0.1:3001`、Nuxtは `localhost:3000`。Nuxtサーバーからのみ `NUXT_API_INTERNAL_URL` を使用して内部APIをプロキシします。
 
 - 読者: `http://localhost:3000/`（ホーム・4領域・シリーズ・項目）
-- 作者: `http://localhost:3000/studio`（Discordログイン→管理）
+- 作者: `http://localhost:3000/login`（Discordログイン） → `http://localhost:3000/admin`（管理ホーム）
 - ヘルスチェック: `http://localhost:3000/api/health`
 
 DBは初期状態では空です。作者画面でシリーズを作成し、下書きを保存し、**明示的な公開版反映**を行ってください。シリーズの各祖先も公開されて初めて子の章や設定が匿名読者に見えます。
@@ -83,4 +101,4 @@ PowerShellでは最後の実行前に `$env:HTTP_ACCEPTANCE_DISPOSABLE_DB='1'`�
 
 ## 5. 人間による実機受入
 
-Discord本人・非本人のOAuth2、ログアウト、実日本語IME、長文、端末幅、旧v0.3のデザイン比較は、[α版 実機受入チェックリスト](./alpha-manual-acceptance.md)に手順と記録欄を分離しました。未実施の項目をCIのGreenで代用しません。全ACの追跡状況は[AC-01〜AC-78証拠台帳](./alpha-ac-traceability.md)を参照してください。
+Discord本人・非本人のOAuth2、ログアウト、実日本語IME、長文、端末幅、旧v0.3のデザイン比較は、[α版 実機受入チェックリスト](./alpha-manual-acceptance.md)に手順と記録欄を分離しました。未実施の項目をCIのGreenで代用しません。全ACの追跡状況は[AC-01〜AC-96証拠台帳](./alpha-ac-traceability.md)を参照してください。
