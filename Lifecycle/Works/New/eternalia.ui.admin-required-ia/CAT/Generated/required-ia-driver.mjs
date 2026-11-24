@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises';
+import { readFile, appendFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { chromium } from 'playwright';
 const yes=x=>x?'適合':'不適合';
@@ -19,6 +19,8 @@ const rowText=await row.innerText(),chapter=rowText.includes(f.prefix+'-book-A')
 const volumeGrid=await grid('stories/volumes'),noSeries=!(await volumeGrid.locator('tbody').innerText()).includes(f.prefix+'-world-A');
 const words=await grid('dictionaries/words'),filter=page.getByLabel('言語',{exact:true});let scoped=false;
 if(await filter.count()===1){await filter.selectOption(lang);scoped=await words.locator('a[href$="/'+word+'/edit"]').count()===1&&await words.locator('a[href$="/'+f.word+'/edit"]').count()===0&&await words.locator('a[href*="'+f.languageB+'"]').count()===0}
-return {'出力.章の編部':yes(chapter),'出力.表示順':yes(order),'出力.シリーズ非重複':yes(noSeries),'出力.言語限定':yes(scoped)}
+const output={'出力.章の編部':yes(chapter),'出力.表示順':yes(order),'出力.シリーズ非重複':yes(noSeries),'出力.言語限定':yes(scoped)};
+if(process.env.CAT_IA_OBSERVATIONS)await appendFile(process.env.CAT_IA_OBSERVATIONS,JSON.stringify({work:"admin",output})+'\n');
+return output;
 }finally{await browser.close()}
 }}}

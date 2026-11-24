@@ -114,12 +114,12 @@ const grammar=computed(()=>props.area==='dictionaries'&&props.parentId?
           </select></label>
         </div>
         <div v-if="childKind==='tip'" class="domain-filters">
-          <label>{{ t('readerTipSearch') }}<input v-model="query" type="search" :placeholder="t('readerTipSearchPlaceholder')" /></label>
-          <label>{{ t('readerTagFilter') }}<select v-model="selectedTag">
+          <label>{{ t('readerTipSearch') }}<input v-model="query" type="search" :aria-label="t('readerTipSearch')" :placeholder="t('readerTipSearchPlaceholder')" /></label>
+          <label>{{ t('readerTagFilter') }}<select v-model="selectedTag" :aria-label="t('readerTagFilter')">
             <option value="">{{ t('readerAllTags') }}</option>
             <option v-for="tag in tags" :key="tag" :value="tag">{{ tag }}</option>
           </select></label>
-          <label>{{ t('readerSortFilter') }}<select v-model="tipOrder">
+          <label>{{ t('readerSortFilter') }}<select v-model="tipOrder" :aria-label="t('readerSortFilter')">
             <option value="manual">{{ t('searchManual') }}</option>
             <option value="title">{{ t('searchTitleSort') }}</option>
             <option value="recent">{{ t('searchRecent') }}</option>

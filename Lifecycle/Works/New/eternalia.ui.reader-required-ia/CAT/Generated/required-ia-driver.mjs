@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises';
+import { readFile, appendFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { chromium } from 'playwright';
 const yes=x=>x?'適合':'不適合';
@@ -27,6 +27,8 @@ await page.goto(base+path+'/'+zz);await page.locator('main').getByRole('heading'
 const sectionVisible=(await page.locator('main article').innerText()).includes('body:'+p+'-section');
 await page.goto(base+'/series/'+f.seriesA+'/dictionaries/'+f.language+'/details');await page.locator('main').getByRole('heading',{name:f.prefix+'-visible-language',exact:true}).waitFor();
 const grammar=await page.locator('main article a[href="/series/'+f.seriesA+'/dictionaries/'+f.language+'/grammar/'+f.grammar+'"]').count()===1;
-return {'出力.名称項目検索':yes(search),'出力.タグ絞込':yes(tagFilter),'出力.名称順':yes(order),'出力.非公開除外':yes(privacy),'出力.設定項目本文':yes(sectionVisible),'出力.文法導線':yes(grammar)};
+const output={'出力.名称項目検索':yes(search),'出力.タグ絞込':yes(tagFilter),'出力.名称順':yes(order),'出力.非公開除外':yes(privacy),'出力.設定項目本文':yes(sectionVisible),'出力.文法導線':yes(grammar)};
+if(process.env.CAT_IA_OBSERVATIONS)await appendFile(process.env.CAT_IA_OBSERVATIONS,JSON.stringify({work:"reader",output})+'\n');
+return output;
 }finally{await browser.close();const nodes=await req('GET','/api/admin/nodes');const n=nodes.find(x=>x.id===root);if(n)await req('POST','/api/admin/nodes/'+root+'/visibility',{expectedRevision:n.revision,isPublic:false,publicSince:null})}
 }}}

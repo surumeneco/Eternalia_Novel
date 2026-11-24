@@ -65,7 +65,7 @@ function editorPath(node:AuthorNode):string{
       <p v-else-if="pending" role="status">{{ t('loading') }}</p>
       <div v-else class="admin-grid-scroller">
         <label v-if="kind==='word'">{{ t('readerDictionaryLanguageFilter') }}
-          <select v-model="languageFilter">
+          <select v-model="languageFilter" :aria-label="t('readerDictionaryLanguageFilter')">
             <option value="">{{ t('readerAllLanguages') }}</option>
             <option v-for="parent in createParents" :key="parent.id" :value="parent.id">{{ parent.draft.title }}</option>
           </select>
