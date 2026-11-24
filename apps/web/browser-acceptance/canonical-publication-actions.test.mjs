@@ -246,7 +246,7 @@ test('AC-94: canonical publication batch updates across story, dictionary and ti
       await reader(first,200,initialFirst.draft.title+'-updated');
       await reader(second,404);
       assert.equal((await get(second)).publicSince,future);
-      assert.equal((await get(second)).published.content.title,initialSecond.draft.title+'-updated');
+      assert.equal((await get(second)).published.value.title,initialSecond.draft.title+'-updated');
     }
     // A selected unpublished node cannot be made visible just by the visibility batch.
     await page.getByLabel('領域').selectOption('stories');
