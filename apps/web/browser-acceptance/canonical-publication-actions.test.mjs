@@ -164,3 +164,103 @@ test('AC-90/93: shared confirmation traps focus and cancel/Escape preserve saved
     await browser.close();
   }
 });
+
+test('AC-94: canonical publication batch updates across story, dictionary and timeline preserve schedules and series scope', {timeout:150000},async()=>{
+  const browser=await chromium.launch({headless:true});
+  const prefix=stamp+'-batch';
+  const roots=[];
+  const make=async(kind,parentId,suffix,details={})=>
+    (await request('POST','/api/admin/nodes',{kind,parentId,content:{title:prefix+'-'+suffix,body:'',details}})).id;
+  const past=Date.parse('2020-02-03T00:15:00Z');
+  const future=Date.parse('2099-02-03T00:15:00Z');
+  try{
+    const series=await make('series',null,'series');
+    roots.push(series);
+    await action(series,'publish');
+    const volume=await make('volume',series,'volume');
+    const part=await make('part',volume,'part');
+    const chapter1=await make('chapter',part,'chapter-past');
+    const chapter2=await make('chapter',part,'chapter-future');
+    const chapter3=await make('chapter',part,'chapter-no-snapshot');
+    const language=await make('language',series,'language',{characters:'[]',wordClasses:'[]'});
+    const word=await make('word',language,'word',{meanings:'[]'});
+    const grammar=await make('grammar',language,'grammar');
+    const period=await make('periodization',series,'period');
+    const event1=await make('event',period,'event-past',{year:'1'});
+    const event2=await make('event',period,'event-future',{year:'2'});
+    const foreignSeries=await make('series',null,'foreign-series');
+    roots.push(foreignSeries);
+    const foreignLanguage=await make('language',foreignSeries,'foreign-language',{characters:'[]',wordClasses:'[]'});
+    const foreignWord=await make('word',foreignLanguage,'foreign-word',{meanings:'[]'});
+    for(const id of [volume,part,chapter1,chapter2,language,word,grammar,period,event1,event2,foreignSeries,foreignLanguage,foreignWord])await action(id,'publish');
+    for(const id of [chapter1,word,event1])await action(id,'visibility',{isPublic:true,publicSince:past});
+    for(const id of [chapter2,grammar,event2])await action(id,'visibility',{isPublic:true,publicSince:future});
+    const foreignBefore=await get(foreignWord);
+    const ctx=await browser.newContext({timezoneId:'America/Los_Angeles'});
+    await ctx.addCookies([{name:'eternalia_author',value:fixture.authorToken,url:base,httpOnly:true,sameSite:'Lax'}]);
+    const page=await ctx.newPage();
+    await page.goto(base+'/admin/series/'+series+'/publication');
+    await page.waitForFunction(id=>document.querySelector('.publication-filters select')?.value===id,series);
+    const check=id=>page.locator('.publication-row input[type="checkbox"][value="'+id+'"]');
+    const batch=async(kind,count)=>{
+      await page.getByRole('button',{name:kind,exact:true}).click();
+      if(kind==='選択項目の公開版更新')await page.locator('dialog[open]').getByRole('button',{name:'実行',exact:true}).click();
+      await page.getByText('変更完了件数 '+count,{exact:true}).waitFor();
+    };
+    for(const [section,first,second] of [['stories',chapter1,chapter2],['dictionaries',word,grammar],['timeline',event1,event2]]){
+      await page.getByLabel('領域').selectOption(section);
+      await check(first).waitFor();
+      await check(second).waitFor();
+      assert.equal(await check(foreignWord).count(),0);
+      const initialFirst=await get(first);
+      const initialSecond=await get(second);
+      await reader(first,200,initialFirst.draft.title);
+      await reader(second,404);
+      // Hide/show modifies only the chosen rows, not draft or start dates.
+      await check(first).check();
+      await check(second).check();
+      await batch('選択項目を非公開',2);
+      await reader(first,404);
+      await reader(second,404);
+      assert.equal((await get(first)).publicSince,past);
+      assert.equal((await get(second)).publicSince,future);
+      await check(first).check();
+      await check(second).check();
+      await batch('選択項目を公開',2);
+      await reader(first,200,initialFirst.draft.title);
+      await reader(second,404);
+      assert.deepEqual((await get(first)).draft,initialFirst.draft);
+      assert.deepEqual((await get(second)).draft,initialSecond.draft);
+      assert.equal((await get(second)).publicSince,future);
+      // A saved draft change remains private until the explicit batch snapshot.
+      for(const [id,initial] of [[first,initialFirst],[second,initialSecond]]){
+        const current=await get(id);
+        await request('PATCH','/api/admin/nodes/'+id,{expectedRevision:current.revision,content:{...current.draft,title:initial.draft.title+'-updated'}});
+      }
+      await reader(first,200,initialFirst.draft.title);
+      await page.getByRole('button',{name:'再読込',exact:true}).click();
+      await page.getByRole('heading',{name:initialFirst.draft.title+'-updated',exact:true}).waitFor();
+      await check(first).check();
+      await check(second).check();
+      await batch('選択項目の公開版更新',2);
+      await reader(first,200,initialFirst.draft.title+'-updated');
+      await reader(second,404);
+      assert.equal((await get(second)).publicSince,future);
+      assert.equal((await get(second)).published.content.title,initialSecond.draft.title+'-updated');
+    }
+    // A selected unpublished node cannot be made visible just by the visibility batch.
+    await page.getByLabel('領域').selectOption('stories');
+    await check(chapter1).check();
+    await check(chapter3).check();
+    await batch('選択項目を公開',1);
+    await page.getByRole('alert').filter({hasText:prefix+'-chapter-no-snapshot'}).waitFor();
+    assert.equal((await get(chapter3)).published,null);
+    await reader(chapter3,404);
+    assert.deepEqual(await get(foreignWord),foreignBefore);
+    await reader(foreignWord,200,foreignBefore.draft.title);
+    await ctx.close();
+  }finally{
+    for(const id of roots)try{await action(id,'visibility',{isPublic:false,publicSince:null})}catch(error){console.error('fixture cleanup',error)}
+    await browser.close();
+  }
+});
