@@ -2734,7 +2734,10 @@ test('common master catalog UI preserves stable IDs, revision conflicts and refe
         assert.equal((await context.request.post(api, { headers, data: initial })).status(), status);
         const denied = await context.newPage();
         await denied.goto(base + '/admin/masters/' + type);
-        await denied.locator('main [role="alert"]').first().waitFor();
+        // Canonical /admin routes redirect unauthorized sessions to login
+        // before the catalog can render. Direct API refusal is checked above.
+        await denied.waitForURL(url => url.pathname === '/login');
+        await denied.locator('main a[href="/api/auth/discord"]').waitFor();
         assert.equal(await denied.locator('.master-table').count(), 0);
         await denied.close();
       }
