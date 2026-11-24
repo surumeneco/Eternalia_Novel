@@ -167,3 +167,49 @@ test('AC-85/86: mobile overlays contain keyboard focus, block background and res
     }
   }finally{await browser.close()}
 });
+
+test('AC-89/96: canonical text and controls respect inherited browser fonts and reflow at 320/640 CSS pixels', {timeout:150000},async()=>{
+  const browser=await chromium.launch({headless:true});
+  try{
+    // 640 CSS px is the reflow viewport of a 1280px desktop at 200%;
+    // this is a viewport proxy, not an OS/browser zoom or screen reader test.
+    const paths=['/series/'+fixture.seriesA+'/stories/'+fixture.volume+'/parts/'+fixture.part+'/chapters/'+fixture.chapter,
+      root+'/stories/chapters',root+'/stories/chapters/'+fixture.chapter+'/edit',root+'/publication'];
+    for(const width of [320,640]){
+      const ctx=await authorContext(browser,{viewport:{width,height:900},deviceScaleFactor:width===640?2:1});
+      const page=await ctx.newPage();
+      for(const path of paths){
+        await page.goto(base+path);
+        await ready(page);
+        const expected=path.endsWith('/edit')?'.studio-editor .publication-editor':path.endsWith('/publication')?'.publication-row':path.endsWith('/chapters')?'.admin-node-grid':'main article';
+        await page.locator(expected).first().waitFor();
+        const before=await page.evaluate(()=>({viewport:document.documentElement.clientWidth,scroll:document.documentElement.scrollWidth}));
+        assert.ok(before.scroll<=before.viewport+1,JSON.stringify({path,width,before}));
+        // A browser/user preference expressed at the root must flow through
+        // normal text and input/control surfaces, excluding icon pseudoelements.
+        const samples=await page.evaluate(()=>{
+          document.documentElement.style.fontFamily='monospace';
+          const selectors=['main h1','main h2','main p','main a','main button','main input:not([type="checkbox"]):not([type="radio"])','main textarea','main select'];
+          const found=[];
+          for(const selector of selectors){
+            const nodes=Array.from(document.querySelectorAll(selector)).filter(el=>el.getClientRects().length>0);
+            for(const el of nodes.slice(0,4))found.push({selector,font:getComputedStyle(el).fontFamily});
+          }
+          document.documentElement.style.removeProperty('font-family');
+          return found;
+        });
+        assert.ok(samples.length>=3,path);
+        for(const sample of samples)assert.equal(sample.font,'monospace',JSON.stringify({path,width,sample}));
+        await page.getByRole('button',{name:'表示言語を選択'}).click();
+        await page.locator('#language-list').getByRole('button',{name:'English'}).click();
+        await page.locator('html[lang="en"]').waitFor();
+        const english=await page.evaluate(()=>({viewport:document.documentElement.clientWidth,scroll:document.documentElement.scrollWidth}));
+        assert.ok(english.scroll<=english.viewport+1,JSON.stringify({path,width,english}));
+        await page.getByRole('button',{name:'Select language'}).click();
+        await page.locator('#language-list').getByRole('button',{name:'日本語'}).click();
+        await page.locator('html[lang="ja"]').waitFor();
+      }
+      await ctx.close();
+    }
+  }finally{await browser.close()}
+});
