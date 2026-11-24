@@ -266,3 +266,70 @@ test('AC-94: bulk visibility is scoped to one series and reports conflicts and u
     await context.close();
   } finally { await browser.close(); }
 });
+
+/** IA-05/06 observations; exploratory browser reproduction, not a CAT Gate.
+ * The approved hierarchy requires actual navigable links, not just routable URLs.
+ * Canonical edit identity must not be displaced by legacy Studio query inputs.
+ */
+async function withCanonicalAuthor(run) {
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const context = await browser.newContext();
+    await context.addCookies([{ name:'eternalia_author', value:fixture.authorToken,
+      url:base, httpOnly:true, sameSite:'Lax' }]);
+    const response = await context.request.get(base + '/api/admin/nodes');
+    assert.equal(response.status(), 200);
+    const nodes = await response.json();
+    const page = await context.newPage();
+    await run(page, nodes);
+    await context.close();
+  } finally { await browser.close(); }
+}
+const canonicalAdmin = '/admin/series/' + fixture.seriesA;
+const chapterEdit = canonicalAdmin + '/stories/chapters/' + fixture.chapter + '/edit';
+const chapterPreview = canonicalAdmin + '/stories/chapters/' + fixture.chapter + '/preview';
+
+test('IA-05: series management grid provides an actual link to the selected series areas', { timeout: 30_000 }, async () => {
+  await withCanonicalAuthor(async (page, nodes) => {
+    const title = nodes.find(n => n.id === fixture.seriesA).draft.title;
+    await page.goto(base + '/admin');
+    await page.locator('main a[href="/admin/series"]').click();
+    const row = page.locator('.admin-node-grid tr').filter({ has:page.getByRole('rowheader', { name:title, exact:true }) });
+    await row.waitFor();
+    await row.locator('a[href="' + canonicalAdmin + '"]').click({ timeout:5000 });
+    for (const area of ['stories','settings','dictionaries','timeline','publication']) {
+      await page.locator('main a[href="' + canonicalAdmin + '/' + area + '"]').waitFor();
+    }
+  });
+});
+
+test('IA-05: chapter editor can reach its independent saved-draft preview and return', { timeout: 30_000 }, async () => {
+  await withCanonicalAuthor(async (page, nodes) => {
+    const title = nodes.find(n => n.id === fixture.chapter).draft.title;
+    await page.goto(base + chapterEdit);
+    await page.locator('.studio-editor h2').getByText('章：' + title, {exact:true}).waitFor();
+    await page.locator('main a[href="' + chapterPreview + '"]').click({ timeout:5000 });
+    await page.getByRole('heading', {name:title, exact:true}).waitFor();
+    await page.locator('main a[href="' + chapterEdit + '"]').click();
+    await page.locator('.studio-editor h2').getByText('章：' + title, {exact:true}).waitFor();
+  });
+});
+
+test('IA-06: legacy item query must not replace the validated canonical edit identity', { timeout: 30_000 }, async () => {
+  await withCanonicalAuthor(async (page, nodes) => {
+    const title = nodes.find(n => n.id === fixture.chapter).draft.title;
+    const foreignTitle = nodes.find(n => n.id === fixture.languageB).draft.title;
+    await page.goto(base + chapterEdit + '?item=' + encodeURIComponent(fixture.languageB));
+    await page.locator('.studio-editor h2').getByText('章：' + title, {exact:true}).waitFor({timeout:5000});
+    assert.equal(await page.locator('.studio-editor h2').filter({hasText:foreignTitle}).count(),0);
+  });
+});
+
+test('IA-06: legacy create query must not replace a canonical edit with a create form', { timeout: 30_000 }, async () => {
+  await withCanonicalAuthor(async (page, nodes) => {
+    const title = nodes.find(n => n.id === fixture.chapter).draft.title;
+    await page.goto(base + chapterEdit + '?create=language&parent=' + encodeURIComponent(fixture.seriesB));
+    await page.locator('.studio-editor h2').getByText('章：' + title, {exact:true}).waitFor({timeout:5000});
+    assert.equal(await page.locator('form.create-form').count(),0);
+  });
+});
