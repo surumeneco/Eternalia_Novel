@@ -2729,7 +2729,9 @@ test('common master catalog UI preserves stable IDs, revision conflicts and refe
       const api = base + '/api/admin/masters/' + type;
       const field = isTag ? 'group' : 'kind';
       const initial = { [field]: scope, name: '初期名称', order: 2, ...(!isTag ? { value: 'initial' } : {}) };
-      for (const [context, status] of [[anonymous, 401], [outsider, 403]]) {
+      // The author-only endpoint deliberately returns 401 for both missing and
+      // authenticated non-author sessions; assert denial without exposing roles.
+      for (const [context, status] of [[anonymous, 401], [outsider, 401]]) {
         assert.equal((await context.request.get(api)).status(), status);
         assert.equal((await context.request.post(api, { headers, data: initial })).status(), status);
         const denied = await context.newPage();
