@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { verifyAcTraceability } from './check-ac-traceability.mjs';
 
 function matrix(overrides = {}) {
-  const rows = Array.from({length: 78}, (_, idx) => {
+  const rows = Array.from({length: 96}, (_, idx) => {
     const id = `AC-${String(idx + 1).padStart(2, '0')}`;
     return `| ${id} | Scenario ${id} | apps/web/tests/alpha.test.mjs | Synthetic only | not-run |`;
   });
@@ -21,17 +21,22 @@ function matrix(overrides = {}) {
   ].join('\n');
 }
 
-test('all 78 AC rows in canonical order with explicit not-run are valid, but not passed', () => {
+test('all 96 AC rows in canonical order with explicit not-run are valid, but not passed', () => {
   const result = verifyAcTraceability(matrix());
   assert.deepEqual(result.errors, []);
-  assert.equal(result.counts['not-run'], 78);
+  assert.equal(result.counts['not-run'], 96);
   assert.equal(result.counts.pass, 0);
-  assert.equal(result.checked, 78);
+  assert.equal(result.checked, 96);
 });
 
 test('missing AC ID is an error, never filled in from unrelated prose', () => {
   const result = verifyAcTraceability(matrix({12: null}) + '\nAC-12 is mentioned in a note');
   assert.ok(result.errors.some(error => /missing AC-12/.test(error)));
+});
+
+test('missing newly adopted AC-96 is an error', () => {
+  const result = verifyAcTraceability(matrix({96: null}));
+  assert.ok(result.errors.some(error => /missing AC-96/.test(error)));
 });
 
 test('duplicate AC IDs and order swaps are both errors', () => {
@@ -57,8 +62,8 @@ test('a structurally broken Markdown row is rejected', () => {
 
 test('a full pass claim with test source, exact commit and CI link passes structural validation only', () => {
   const sha = 'a'.repeat(40);
-  const row = `| AC-78 | A | apps/web/tests/alpha.test.mjs | HEAD ${sha}; https://github.com/surumeneco/Eternalia_Novel/actions/runs/123456 | pass |`;
-  const result = verifyAcTraceability(matrix({78:row}));
+  const row = `| AC-96 | A | apps/web/tests/alpha.test.mjs | HEAD ${sha}; https://github.com/surumeneco/Eternalia_Novel/actions/runs/123456 | pass |`;
+  const result = verifyAcTraceability(matrix({96:row}));
   assert.deepEqual(result.errors, []);
   assert.equal(result.counts.pass, 1);
 });

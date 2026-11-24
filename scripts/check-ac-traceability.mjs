@@ -48,7 +48,7 @@ export function verifyAcTraceability(markdown) {
       }
     }
   }
-  const sequence = Array.from({length: 78}, (_, i) => `AC-${String(i + 1).padStart(2, '0')}`);
+  const sequence = Array.from({length: 96}, (_, i) => `AC-${String(i + 1).padStart(2, '0')}`);
   for (const id of sequence) if (!seen.has(id)) errors.push(`missing ${id}`);
   if (rows.length !== sequence.length) errors.push(`found ${rows.length} AC rows, expected ${sequence.length}`);
   for (const [idx, row] of rows.entries()) {
