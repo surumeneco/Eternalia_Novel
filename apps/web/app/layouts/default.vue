@@ -43,6 +43,10 @@ async function toggleMobileMenu(menu: 'nav' | 'aside') {
 function onViewportChange(event: MediaQueryListEvent) {
   if (!event.matches && overlayOpen.value) void closeMobileMenu(false);
 }
+async function toggleLanguageMenu() {
+  if (overlayOpen.value) await closeMobileMenu(false);
+  languageOpen.value = !languageOpen.value;
+}
 async function closeLanguageMenu() {
   languageOpen.value = false;
   await nextTick();
@@ -124,7 +128,7 @@ useHead({ htmlAttrs: { lang: computed(() => language.value === 'en' ? 'en' : 'ja
     <a class="skip-to-content" href="#main-content" :inert="overlayOpen">{{ t('skipToContent') }}</a>
     <header class="site-header">
       <div class="header-inner">
-        <button ref="asideToggle" type="button" class="aside-toggle icon-button" :inert="navOpen" :disabled="!clientReady" :aria-expanded="asideOpen"
+        <button ref="asideToggle" type="button" class="aside-toggle icon-button" :disabled="!clientReady" :aria-expanded="asideOpen"
           :aria-label="t('sidebarToggle')" aria-controls="updates-aside" @click="toggleMobileMenu('aside')">
           <i class="bi bi-list" aria-hidden="true" />
         </button>
@@ -134,10 +138,10 @@ useHead({ htmlAttrs: { lang: computed(() => language.value === 'en' ? 'en' : 'ja
           <NuxtLink v-if="!auth?.authenticated" class="mobile-login" to="/login" @click="followMobileLink()">{{ t('loginTitle') }}</NuxtLink>
         </nav>
         <div class="header-actions">
-          <div class="locale-container" :inert="overlayOpen">
+          <div class="locale-container">
             <button ref="localeToggle" type="button" class="locale-switch icon-button" :disabled="!clientReady"
               :aria-label="t('selectLanguage')" :aria-expanded="languageOpen" aria-controls="language-list"
-              @click="languageOpen = !languageOpen">
+              @click="toggleLanguageMenu()">
               <i class="bi bi-translate" aria-hidden="true" />
             </button>
             <div v-if="languageOpen" id="language-list" class="language-dropdown" role="group" :aria-label="t('selectLanguage')">
@@ -145,7 +149,7 @@ useHead({ htmlAttrs: { lang: computed(() => language.value === 'en' ? 'en' : 'ja
               <button type="button" :aria-pressed="language === 'en'" @click="selectLanguage('en')">English</button>
             </div>
           </div>
-          <button ref="navToggle" type="button" class="nav-toggle icon-button" :inert="asideOpen" :disabled="!clientReady"
+          <button ref="navToggle" type="button" class="nav-toggle icon-button" :disabled="!clientReady"
             :aria-label="t('navigationToggle')" :aria-expanded="navOpen" aria-controls="global-navigation"
             @click="toggleMobileMenu('nav')">
             <i class="bi bi-list" aria-hidden="true" />
