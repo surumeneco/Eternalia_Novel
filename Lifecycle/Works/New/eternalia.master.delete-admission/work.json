@@ -1,0 +1,79 @@
+{
+  "schema": "cat-work/v1",
+  "id": "eternalia.master.delete-admission",
+  "entry": "confirmed-spec",
+  "flow": "spec-test-sync",
+  "mode": "implementation",
+  "work_kind": "test-maintenance",
+  "issue_ref": "https://github.com/surumeneco/Eternalia_Novel/issues/165",
+  "project_entry_ref": "https://drive.google.com/file/d/1clwfVJ3e_t1_QKFfOWxxRIzE9WMFvTiM/view",
+  "normative": [
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/issues/165#issuecomment-7106396316"
+    }
+  ],
+  "evidence": [
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/d19a3d18d707a61c0d95a71d328061458853a08e/apps/api/src/common-masters.service.ts"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/d19a3d18d707a61c0d95a71d328061458853a08e/apps/api/tests/common-masters-postgres.test.mjs"
+    }
+  ],
+  "repositories": [
+    {
+      "name": "eternalia",
+      "path": "../../../..",
+      "branch_pattern": "feature/*",
+      "allowed_paths": [
+        "Lifecycle/Works/New/eternalia.master.delete-admission/**"
+      ],
+      "production_paths": [],
+      "test_paths": []
+    }
+  ],
+  "scope": {
+    "process_ids": [
+      "eternalia.master.delete-admission"
+    ],
+    "changed_ids": [
+      "master.delete-admission"
+    ],
+    "preserved_ids": [
+      "master.reference-integrity",
+      "master.revision-conflict",
+      "master.authorization"
+    ]
+  },
+  "specification": {
+    "status": "confirmed",
+    "decision_ref": "https://github.com/surumeneco/Eternalia_Novel/issues/165#issuecomment-7106396316",
+    "artifact_refs": [
+      "Lifecycle/Works/New/eternalia.master.delete-admission/CAT/Confirmed/Process.md",
+      "Lifecycle/Works/New/eternalia.master.delete-admission/CAT/Confirmed/PI.md",
+      "Lifecycle/Works/New/eternalia.master.delete-admission/CAT/Confirmed/TCE.md"
+    ]
+  },
+  "technologies": [
+    "TypeScript"
+  ],
+  "checks": [],
+  "depends_on": [],
+  "compilation": {
+    "schema": "cat-compile/v2",
+    "process": "CAT/Confirmed/Process.md",
+    "pi": "CAT/Confirmed/PI.md",
+    "pis": [
+      "CAT/Confirmed/PI.md"
+    ],
+    "tce": "CAT/Confirmed/TCE.md",
+    "tces": [
+      "CAT/Confirmed/TCE.md"
+    ],
+    "model": "CAT/Generated/TestModel.json",
+    "vectors": "CAT/Generated/Vectors.json",
+    "obligations": "CAT/Generated/obligations.json",
+    "allow_draft": false,
+    "conformance_binding": "CAT/Binding/implementation.json"
+  }
+}

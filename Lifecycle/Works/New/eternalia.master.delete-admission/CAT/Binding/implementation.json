@@ -1,0 +1,14 @@
+{
+  "schema": "cat-typescript-conformance-binding/v1",
+  "repository": "eternalia",
+  "source_globs": [
+    "apps/api/src/master-delete-admission.ts"
+  ],
+  "public_entrypoints": [
+    "apps/api/src/master-delete-admission.ts"
+  ],
+  "interface_symbols": {
+    "deleteAdmission": "check"
+  },
+  "capabilities": {}
+}

@@ -4,6 +4,8 @@ import {
 } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { Pool, type PoolClient } from 'pg';
+import { deleteAdmission } from './master-delete-admission';
+export { deleteAdmission } from './master-delete-admission';
 
 export type MasterType = 'tags' | 'classifications';
 export interface MasterRow {
@@ -89,13 +91,6 @@ function translateSql(error: unknown): never {
   if (code === '23514' || code === '22P02') throw new BadRequestException('マスタの入力が不正です。');
   throw error;
 }
-/** A pure CAT delete-admission judgment; never substitutes DB reference checks. */
-export function deleteAdmission(revisionMatches: boolean, hasReferences: boolean):
-  'allowed' | 'conflict' | 'referenced' {
-  if (!revisionMatches) return 'conflict';
-  return hasReferences ? 'referenced' : 'allowed';
-}
-
 @Injectable()
 export class CommonMastersService implements OnModuleDestroy {
   private readonly pool: Pool | null = process.env.DATABASE_URL
