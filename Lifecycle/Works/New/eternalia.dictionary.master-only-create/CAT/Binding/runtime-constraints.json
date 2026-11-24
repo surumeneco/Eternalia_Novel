@@ -1,0 +1,22 @@
+{
+  "schema": "cat-node-service-technology/v1",
+  "repository": "eternalia",
+  "check": "runtime-pos-http",
+  "package": "apps/api/package.json",
+  "engine_package": "package.json",
+  "postgres": {
+    "database": "eternalia_http",
+    "migrations": "db/migrations",
+    "table": "schema_migrations",
+    "column": "filename"
+  },
+  "nest": {
+    "module": "apps/api/dist/app.module.js",
+    "export": "AppModule",
+    "health_path": "/health",
+    "health_fields": {
+      "status": "ok",
+      "service": "eternalia-api"
+    }
+  }
+}

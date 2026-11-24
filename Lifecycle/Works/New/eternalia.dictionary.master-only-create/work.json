@@ -160,6 +160,47 @@
         "eternalia.dictionary.master-only-create CAT symbolic contract > case.absent"
       ],
       "timeout_seconds": 60
+    },
+    {
+      "id": "runtime-pos-http",
+      "stage": "implementation-conformance",
+      "runner": "junit",
+      "cwd": "@repo:eternalia",
+      "argv": [
+        "node",
+        "--test",
+        "--test-reporter=junit",
+        "--test-reporter-destination={report}",
+        "--test-reporter=spec",
+        "--test-reporter-destination=stdout",
+        "apps/api/http-acceptance/word-pos-create-master.test.mjs"
+      ],
+      "input_paths": [
+        "apps/api/http-acceptance/word-pos-create-master.test.mjs",
+        "packages/contracts/src/novel.ts",
+        "packages/contracts/src/word-pos-create-policy.ts",
+        "Lifecycle/Works/New/eternalia.dictionary.master-only-create/CAT/Binding/runtime-constraints.json",
+        "apps/api/package.json",
+        "package.json",
+        "package-lock.json",
+        "db/migrations/001_library.sql",
+        "db/migrations/002_auth.sql",
+        "db/migrations/003_author_memos.sql",
+        "db/migrations/004_published_parent.sql",
+        "db/migrations/005_soft_delete.sql",
+        "db/migrations/006_common_masters.sql",
+        "apps/api/src/app.module.ts",
+        "apps/api/src/main.ts",
+        "apps/api/src/admin-nodes.controller.ts",
+        "apps/api/src/library-storage.service.ts",
+        "apps/api/src/postgres-library.service.ts",
+        "apps/api/dist/app.module.js",
+        "apps/api/dist/main.js"
+      ],
+      "test_ids": [
+        "LG-05: Nest and Nuxt reject unknown word POS with 400, preserve data and accept registered POS"
+      ],
+      "timeout_seconds": 180
     }
   ],
   "depends_on": [],
@@ -182,6 +223,7 @@
     "obligations": "CAT/Generated/obligations.json",
     "allow_draft": false,
     "conformance_binding": "CAT/Binding/implementation.json",
-    "technology_constraints": "CAT/Binding/technology-constraints.json"
+    "technology_constraints": "CAT/Binding/technology-constraints.json",
+    "runtime_constraints": "CAT/Binding/runtime-constraints.json"
   }
 }

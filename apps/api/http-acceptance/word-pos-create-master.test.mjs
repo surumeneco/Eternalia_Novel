@@ -1,3 +1,4 @@
+import pg from 'pg';
 /** LG-05: reject unknown POS in direct author POST via API and Nuxt proxy (real disposable PG). */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -52,4 +53,20 @@ test('LG-05: Nest and Nuxt reject unknown word POS with 400, preserve data and a
   assert.ok((await list()).some(x=>x.id===noPos));
   const hidden=await fetch(web+'/api/public/items/'+accepted);
   assert.equal(hidden.status,404,'new draft-only word has no public snapshot');
+  // Observe persisted rows directly, independently of the HTTP projection.
+  const dbUrl=new URL(process.env.DATABASE_URL);
+  assert.ok(['127.0.0.1','localhost'].includes(dbUrl.hostname)&&dbUrl.pathname==='/eternalia_http','only disposable test database');
+  const client=new pg.Client({connectionString:dbUrl.toString()});
+  await client.connect();
+  try {
+    const {rows}=await client.query(`SELECT n.id::text,n.parent_id::text,n.draft_content,p.node_id::text AS snapshot_id
+      FROM content_nodes n LEFT JOIN published_snapshots p ON p.node_id=n.id
+      WHERE n.parent_id=ANY($1::uuid[]) AND n.kind='word' ORDER BY n.id`,[[language,empty]]);
+    assert.deepEqual(rows.map(x=>x.id).sort(),[accepted,noPos].sort());
+    for(const row of rows){
+      assert.equal(row.parent_id,row.id===accepted?language:empty);
+      assert.equal(JSON.parse(row.draft_content.details.meanings)[0].partOfSpeechId,row.id===accepted?nounId:'');
+      assert.equal(row.snapshot_id,null);
+    }
+  }finally{await client.end()}
 });
