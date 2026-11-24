@@ -145,6 +145,7 @@
     "obligations": "CAT/Generated/obligations.json",
     "allow_draft": false,
     "binding": "CAT/Binding/driver.json",
-    "tests_output": "CAT/Generated/current.test.ts"
+    "tests_output": "CAT/Generated/current.test.ts",
+    "technology_constraints": "CAT/Binding/technology-constraints.json"
   }
 }

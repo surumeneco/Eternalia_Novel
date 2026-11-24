@@ -215,6 +215,7 @@
     "tests_output": "CAT/Generated/current.test.ts",
     "obligations": "CAT/Generated/obligations.json",
     "allow_draft": false,
-    "conformance_binding": "CAT/Binding/implementation.json"
+    "conformance_binding": "CAT/Binding/implementation.json",
+    "technology_constraints": "CAT/Binding/technology-constraints.json"
   }
 }

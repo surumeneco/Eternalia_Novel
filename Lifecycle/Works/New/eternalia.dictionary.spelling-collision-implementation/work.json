@@ -303,6 +303,7 @@
     "conformance_binding": "CAT/Binding/implementation.json",
     "tests_output": "CAT/Generated/current.test.ts",
     "obligations": "CAT/Generated/obligations.json",
-    "allow_draft": false
+    "allow_draft": false,
+    "technology_constraints": "CAT/Binding/technology-constraints.json"
   }
 }

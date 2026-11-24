@@ -226,6 +226,7 @@
     "conformance_binding": "CAT/Binding/implementation.json",
     "queue": "CAT/Generated/Queue.json",
     "binding": "CAT/Binding/driver.json",
-    "tests_output": "@repo:eternalia/apps/web/tests/generated/cat_canonical_create.test.ts"
+    "tests_output": "@repo:eternalia/apps/web/tests/generated/cat_canonical_create.test.ts",
+    "technology_constraints": "CAT/Binding/technology-constraints.json"
   }
 }

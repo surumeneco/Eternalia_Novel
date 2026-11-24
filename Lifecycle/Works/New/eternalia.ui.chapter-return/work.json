@@ -137,6 +137,7 @@
     "allow_draft": false,
     "queue": "CAT/Generated/Queue.json",
     "binding": "CAT/Binding/driver.json",
-    "tests_output": "CAT/Generated/current.test.ts"
+    "tests_output": "CAT/Generated/current.test.ts",
+    "technology_constraints": "CAT/Binding/technology-constraints.json"
   }
 }
