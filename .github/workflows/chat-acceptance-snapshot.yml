@@ -36,7 +36,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: '26c932292d9e20e4152049d76923843dc830a70f'
+          ref: '90567fcacbcd0cbdcaba56259bfa707d78d5dc04'
           persist-credentials: false
           path: project
       - uses: actions/checkout@v4
@@ -51,8 +51,8 @@ jobs:
       - name: Build exact product and prepare Chromium
         working-directory: project
         run: |
-          test "$(git rev-parse HEAD)" = '26c932292d9e20e4152049d76923843dc830a70f'
-          git checkout -B feature/chapter-return-regression '26c932292d9e20e4152049d76923843dc830a70f'
+          test "$(git rev-parse HEAD)" = '90567fcacbcd0cbdcaba56259bfa707d78d5dc04'
+          git checkout -B feature/chapter-return-regression '90567fcacbcd0cbdcaba56259bfa707d78d5dc04'
           test "$(git -C ../cat rev-parse HEAD:.cat-system)" = eeb6cdbd008dedc261f1df380b92f8052be0c045
           npm ci
           npm install --no-save --package-lock=false playwright@1.56.1 vitest@3.2.4
@@ -82,14 +82,13 @@ jobs:
           trap 'kill "$A" "$B" 2>/dev/null || true' EXIT
           for i in $(seq 1 60); do curl -fsS "$HTTP_BASE_URL/" >/dev/null && curl -fsS "$HTTP_API_URL/api/health" >/dev/null && break; sleep 1; done
           curl -fsS "$HTTP_BASE_URL/" >/dev/null
-          set +e
-          python "$F" run --work "$W" --id red-chapter-return --execute | tee "$D/red.json"
-          echo "${PIPESTATUS[0]}" > "$D/red-exit.txt"
-          set -e
+          python "$F" run --work "$W" --id green-chapter-return --execute | tee "$D/green.json"
+          python "$F" queue-state --work "$W" --evidence "$(dirname "$W")/.cat-flow/evidence/green-chapter-return.json" | tee "$D/queue-state.json"
+          node scripts/run-test-junit.mjs browser-reader-hierarchy apps/web/browser-acceptance/reader-hierarchy.test.mjs
           cp -r "$(dirname "$W")/.cat-flow" "$D/work-evidence"
           cp -r "$(dirname "$W")/CAT/Generated" "$D/generated"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: formal-chapter-return-red
+          name: formal-chapter-return-green
           path: ${{ runner.temp }}/cat-evidence/
