@@ -81,9 +81,9 @@ test('AC-09: published X/draft Y conflict redirects to Y editor without saving o
     assert.equal((await node(existingId)).draft.title, draftY);
 
     const page = await author.newPage();
-    await page.goto(base + '/studio?item=' + language);
-    await page.getByRole('heading', { name: '言語：' + prefix + '-language' }).waitFor();
-    await page.getByRole('button', { name: '子項目を追加' }).click();
+    await page.goto(base + '/admin/series/' + series + '/dictionaries/words');
+    await page.locator('.grid-create a[href="/admin/series/' + series + '/create/word/' + language + '"]').click();
+    await page.locator('form.create-form').waitFor();
     await page.getByRole('textbox', { name: 'タイトル' }).fill(publishedX);
     await page.getByRole('combobox', { name: '新しい意味の品詞' }).selectOption(nounId);
     await page.getByRole('textbox', { name: '新しい意味・説明' }).fill('追加した未保存の意味');
@@ -91,6 +91,8 @@ test('AC-09: published X/draft Y conflict redirects to Y editor without saving o
 
     await page.getByRole('alert').getByText('同じ言語に同じスペルが登録済みのため、新規登録できません。既存単語の編集に移りました。追記内容は未保存です。').waitFor();
     await page.getByRole('heading', { name: '単語：' + draftY }).waitFor();
+    await page.waitForURL(url=>url.pathname==='/admin/series/'+series+'/dictionaries/words/'+existingId+'/edit');
+    assert.equal(new URL(page.url()).search,'','unsaved meaning must not be serialized in URL');
     const editorMeanings = page.locator('.word-meaning');
     assert.equal(await editorMeanings.count(), 2);
     assert.equal(await editorMeanings.nth(0).getByRole('textbox', { name: '意味・説明' }).inputValue(), '既存の意味');

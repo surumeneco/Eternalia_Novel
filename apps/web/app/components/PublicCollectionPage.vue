@@ -37,7 +37,7 @@ function collectionLink(id: string) {
       <ul v-else-if="series?.length" class="reader-list">
         <li v-for="item in series" :key="item.id">
           <NuxtLink :to="collectionLink(item.id)">{{ item.content.title }}</NuxtLink>
-          <AuthorCreateLink :kind="childKind" :parent-id="item.id" :label="childLabel" />
+          <AuthorCreateLink :kind="childKind" :parent-id="item.id" :series-id="item.id" :label="childLabel" />
         </li>
       </ul>
       <p v-else>{{ t('collectionEmpty') }}</p>

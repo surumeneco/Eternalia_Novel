@@ -8,7 +8,13 @@ const { t, language } = useUiLocale();
 const { confirm: showConfirmation } = useAppDialog();
 const studioRoute = useRoute();
 import type { ReaderKind } from '~/types/reader';
-const props = defineProps<{ canonicalTarget?: { seriesId:string; nodeId:string; kind:ReaderKind } }>();
+import { adminEditPath, adminGridPath, canonicalCreateAdmission } from '~/utils/admin-node-route';
+const props = defineProps<{
+  canonicalTarget?: { seriesId:string; nodeId:string; kind:ReaderKind };
+  canonicalCreate?: { seriesId:string|null; parentId:string|null; kind:string };
+}>();
+// One-use client handoff, never in a URL, storage, or a public request.
+const duplicateHandoff = useState<{seriesId:string;wordId:string;partOfSpeechId:string;definition:string}|null>('studio-duplicate-word-handoff',()=>null);
 import { parseLanguageWordClasses, diagnoseWordSpelling, appendDuplicateWordMeaning, pagesForChapter, joinChapterPages } from '@eternalia/contracts';
 import { insertManuscriptMarkup, type ManuscriptInsertionKind } from '~/utils/manuscript-markup';
 import { chapterRecoveryKey, chapterRecoveryMatches, chapterRecoveryPrefix, isAutosaveRevisionConflict, parseChapterRecovery, type ChapterRecovery } from '~/utils/chapter-autosave';
@@ -354,6 +360,7 @@ async function cancelCreate() {
   createTitle.value = '';
   createWordPartOfSpeech.value = '';
   createWordDefinition.value = '';
+  if(props.canonicalCreate)await navigateTo(adminGridPath(props.canonicalCreate.seriesId,createKind.value));
 }
 function beforeUnload(event: BeforeUnloadEvent) {
   if (!hasUnsavedChanges.value) return;
@@ -368,7 +375,7 @@ onBeforeRouteLeave(async () => {
 // A reused route record can change the canonical target without a leave
 // event. Query-only changes do not affect the canonical editor identity.
 onBeforeRouteUpdate(async (to, from) => {
-  if (props.canonicalTarget ? to.path === from.path : from.path !== '/studio' || to.fullPath === from.fullPath) return;
+  if (props.canonicalTarget || props.canonicalCreate ? to.path === from.path : from.path !== '/studio' || to.fullPath === from.fullPath) return;
   if (!await confirmDiscard()) return false;
   cancelAutosaveTimer();
   if (selected.value?.kind === 'chapter') clearChapterRecovery(selected.value.id);
@@ -536,6 +543,34 @@ onMounted(async () => {
       selectedId.value = nodeId;
       selectedSeriesId.value = seriesId;
       filter.value = areaForKind(kind);
+      await nextTick();
+      const handoff=duplicateHandoff.value;
+      if(handoff && handoff.seriesId===seriesId && handoff.wordId===nodeId && kind==='word'){
+        duplicateHandoff.value=null;
+        restoreEditor();
+        try{
+          wordMeanings.value=appendDuplicateWordMeaning(form.details.meanings??'[]',{
+            id:crypto.randomUUID(),partOfSpeechId:handoff.partOfSpeechId,definition:handoff.definition,
+          });
+          errorText.value=t('studioWordDuplicateRedirect');
+        }catch{
+          errorText.value=t('studioWordDuplicateLimit');
+        }
+      }
+      return;
+    }
+    if(props.canonicalCreate){
+      if(!loaded)return;
+      const {seriesId,parentId,kind}=props.canonicalCreate;
+      const parent=parentId?byId.value.get(parentId):undefined;
+      const root=seriesId===null&&parentId===null;
+      const relation=root?'none':parent&&owningSeriesId(parent.id)===seriesId?'same':'invalid';
+      const matches=root?kind==='series':!!parent&&children[parent.kind].includes(kind as ReaderKind);
+      if(!canonicalCreateAdmission(auth.value?.authenticated===true,root?'root':'child',relation,matches)){
+        errorText.value=t('studioInvalidCreateLink');
+        return;
+      }
+      await openCreate(parentId,kind as ReaderKind);
       return;
     }
     const requestedCreate = studioRoute.query.create;
@@ -660,9 +695,13 @@ async function createItem() {
     filter.value = areaForKind(createKind.value);
     createdId = response.id;
   }, t('studioCreated'));
-  if (createdId && studioRoute.query.create) {
+  if (createdId && (props.canonicalCreate || studioRoute.query.create)) {
     await nextTick();
-    await navigateTo({path:'/studio',query:{item:createdId}}, {replace:true});
+    const seriesId=selectedSeriesId.value;
+    if(seriesId && selected.value?.id===createdId){
+      restoreEditor();
+      await navigateTo(adminEditPath(seriesId,createKind.value,createdId), {replace:true});
+    }
   }
   if (duplicateOutcome.wordId) {
     const existing = nodes.value.find(node => node.id === duplicateOutcome.wordId &&
@@ -670,6 +709,28 @@ async function createItem() {
     if (!existing) {
       errorText.value = t('studioWordDuplicateNotFound');
       statusText.value = '';
+      return;
+    }
+    if(props.canonicalCreate){
+      const seriesId=owningSeriesId(existing.id);
+      if(!seriesId || seriesId!==props.canonicalCreate.seriesId){
+        errorText.value=t('studioWordDuplicateNotFound');
+        statusText.value='';
+        return;
+      }
+      duplicateHandoff.value={seriesId,wordId:existing.id,...attempt};
+      createOpen.value=false;
+      try{
+        const result=await navigateTo(adminEditPath(seriesId,'word',existing.id),{replace:true});
+        if(result===false || (result && typeof result==='object' && 'type' in result)){
+          duplicateHandoff.value=null;
+          createOpen.value=true;
+        }
+      }catch{
+        duplicateHandoff.value=null;
+        createOpen.value=true;
+        errorText.value=t('studioWordDuplicateNotFound');
+      }
       return;
     }
     // The rejected form is never saved. Only the local existing-word editor
@@ -782,7 +843,7 @@ async function logout() {
           <p>{{ t('studioDraftVsPublication') }}</p>
         </div>
         <div v-if="auth?.authenticated" class="action-row">
-          <NuxtLink :to="{ path: '/studio/publication', query: selectedSeriesId ? { series: selectedSeriesId } : {} }">{{ t('studioPublicationManagement') }}</NuxtLink>
+          <NuxtLink :to="selectedSeriesId ? '/admin/series/' + encodeURIComponent(selectedSeriesId) + '/publication' : '/studio/publication'">{{ t('studioPublicationManagement') }}</NuxtLink>
           <NuxtLink :to="{ path: '/studio/order', query: selectedSeriesId ? { series: selectedSeriesId } : {} }">{{ t('studioReorder') }}</NuxtLink>
           <NuxtLink to="/studio/memos">{{ t('studioMemos') }}</NuxtLink>
           <button class="inline-action" type="button" @click="logout">{{ t('studioLogout') }}</button>
@@ -801,7 +862,7 @@ async function logout() {
         <p v-if="statusText" class="status-success" role="status">{{ statusText }}</p>
         <p v-if="errorText" class="error-text" role="alert">{{ errorText }}</p>
         <div class="studio-grid">
-          <aside v-if="!props.canonicalTarget" class="studio-sidebar" :aria-label="t('studioAuthorLibrary')">
+          <aside v-if="!props.canonicalTarget && !props.canonicalCreate" class="studio-sidebar" :aria-label="t('studioAuthorLibrary')">
             <div class="section-header">
               <h2>{{ t('studioKindSeries') }}</h2>
               <button class="inline-action" type="button" :disabled="busy || autosavingChapter" @click="reloadNodes">{{ t('studioReload') }}</button>
@@ -845,7 +906,7 @@ async function logout() {
             <form v-if="createOpen" class="create-form" @submit.prevent="createItem">
               <h2>{{ t('studioAddItem') }}</h2>
               <label>{{ t('studioKindLabel') }}
-                <select v-model="createKind">
+                <select v-model="createKind" :disabled="!!props.canonicalCreate">
                   <option v-for="kind in creationChoices" :key="kind" :value="kind">{{ kinds[kind] }}</option>
                 </select>
               </label>
@@ -1023,4 +1084,8 @@ textarea.manuscript-body {
 hr { border:0;border-top:1px solid var(--color-border-base);margin:1.5rem 0; }
 @media (max-width:900px) { .studio-grid { grid-template-columns:minmax(0,1fr); } .studio-title{align-items:flex-start;flex-direction:column;} }
 .spelling-warnings { color:#ffe2a9;margin:.25rem 0 1rem; }
+</style>
+
+<style scoped>
+.studio-grid:has(> .studio-editor:only-child) { grid-template-columns: minmax(0,1fr); }
 </style>
