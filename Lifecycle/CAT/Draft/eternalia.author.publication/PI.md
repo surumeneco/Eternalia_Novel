@@ -37,7 +37,7 @@ language: ja
 | 出力.選択系列ID | 送信 | string | 任意 |
 | 入力.一括対象 | 受信 | sequence<record<id:string,revision:integer,isPublic:boolean,publicSince:nullable<instant>>> | 不在 |
 | 出力.一括結果 | 送信 | sequence<record<id:string,result:enum{成功,競合,認可拒否,失敗}>> | 任意 |
-| 出力.更新結果 | 送信 | enum{成功,競合,認可拒否,失敗} | 任意 |
+| 出力.更新結果 | 送信 | enum{成功,競合,認可拒否,失敗,確認不能} | 任意 |
 
 ## 操作
 | ID | 方向 | 起点 |
@@ -64,9 +64,14 @@ language: ja
 | update-visibility | 入力.改訂 | 必須 |
 | batch-visibility | 入力.一括対象 | 必須 |
 | publish | 入力.対象ID | 必須 |
+| publish | 入力.シリーズID | 必須 |
 | publish | 入力.改訂 | 必須 |
 | update-visibility-view | 出力.更新結果 | 必須 |
 | publish-view | 出力.更新結果 | 必須 |
+| publish-view | 出力.管理行 | 不在 |
+| publish-view | 出力.公開絞込 | 不在 |
+| publish-view | 出力.選択系列ID | 不在 |
+| publish-view | 出力.一括結果 | 不在 |
 | batch-visibility-view | 出力.一括結果 | 任意 |
 
 ## 制約

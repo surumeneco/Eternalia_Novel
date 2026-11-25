@@ -33,6 +33,7 @@ language: ja
 | 入力.祖先ID列 | 受信 | sequence<string> | 不在 |
 | 入力.資料種別 | 受信 | string | 不在 |
 | 入力.資料ID | 受信 | string | 不在 |
+| 入力.部ID | 受信 | string | 不在 |
 | 入力.検索語 | 受信 | string | 不在 |
 | 入力.品詞ID | 受信 | nullable<string> | 不在 |
 | 入力.タグID | 受信 | nullable<string> | 不在 |
@@ -44,6 +45,7 @@ language: ja
 | 出力.文法リンクID列 | 送信 | sequence<string> | 任意 |
 | 出力.章列 | 送信 | sequence<record<id:string,title:string>> | 任意 |
 | 出力.章一覧の部ID | 送信 | string | 任意 |
+| 出力.章一覧の系列ID | 送信 | string | 任意 |
 | 出力.表示対象ID | 送信 | string | 任意 |
 | 出力.拒否 | 送信 | enum{対象なし} | 任意 |
 
@@ -58,6 +60,7 @@ language: ja
 | sort-settings | 受付 | 設定並び変更 |
 | open-detail | 受付 | 詳細閲覧 |
 | chapter-index | 受付 | 章一覧へ戻る |
+| open-chapter-index | 受付 | 章一覧閲覧 |
 | open-language-view | 提供 | 言語閲覧 |
 | open-settings-view | 提供 | カテゴリ閲覧 |
 | search-view | 提供 | 検索条件変更 |
@@ -66,6 +69,7 @@ language: ja
 | sort-settings-view | 提供 | 設定並び変更 |
 | open-detail-view | 提供 | 詳細閲覧 |
 | chapter-index-view | 提供 | 章一覧へ戻る |
+| open-chapter-index-view | 提供 | 章一覧閲覧 |
 
 ## 操作別存在
 | 操作 | 項目 | 存在 |
@@ -82,10 +86,18 @@ language: ja
 | open-detail | 入力.資料ID | 必須 |
 | open-detail | 入力.祖先ID列 | 必須 |
 | open-detail | 入力.資料種別 | 必須 |
+| open-chapter-index | 入力.シリーズID | 必須 |
+| open-chapter-index | 入力.部ID | 必須 |
+| open-chapter-index | 入力.祖先ID列 | 必須 |
+| chapter-index-view | 出力.章列 | 不在 |
+| chapter-index-view | 出力.表示対象ID | 不在 |
+| chapter-index-view | 出力.拒否 | 不在 |
+| open-chapter-index-view | 出力.章一覧の部ID | 不在 |
+| open-chapter-index-view | 出力.章一覧の系列ID | 不在 |
 
 
 ## 制約
 | 式 |
 | --- |
 
-実IDの所属、対象の同一性、操作に固有の結果Presenceは未形式化のTCEおよび領域別関係を参照する。適合/不適合はPIの値でない。
+章一覧の部ID・系列IDはリンク操作で要求する遷移先（実URLは公開祖先列に基づく）を示し、章列・表示対象IDは遷移先で公開状態を再評価した表示結果を示す。リンク操作だけで読込み成功・公開可否を宣言しない。実IDの所属、対象の同一性、その他の操作に固有の結果PresenceはTCEおよび領域別関係を参照する。適合/不適合はPIの値でない。

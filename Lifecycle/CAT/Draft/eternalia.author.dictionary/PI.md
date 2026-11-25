@@ -39,6 +39,8 @@ language: ja
 | 出力.品詞候補 | 送信 | sequence<record<id:string,name:string,description:string>> | 任意 |
 | 出力.品詞列 | 送信 | sequence<record<id:string,name:string,description:string>> | 任意 |
 | 出力.編集対象ID | 送信 | nullable<string> | 任意 |
+| 出力.編集スペル | 送信 | string | 任意 |
+| 出力.新規公開初期値 | 送信 | boolean | 任意 |
 | 出力.未保存意味 | 送信 | sequence<record<id:string,classId:nullable<string>,definition:string,etymologies:sequence<record<id:string,languageId:nullable<string>,wordId:nullable<string>,note:string>>>> | 任意 |
 | 出力.保存結果 | 送信 | enum{保存成功,重複,入力不正,認可拒否,保存失敗} | 任意 |
 | 出力.衝突語ID | 送信 | string | 任意 |
@@ -76,6 +78,9 @@ language: ja
 | save-word | 入力.スペル | 必須 |
 | save-word | 入力.意味列 | 必須 |
 | save-word-view | 出力.保存結果 | 必須 |
+| open-word-view | 出力.品詞列 | 不在 |
+| open-word-view | 出力.保存結果 | 不在 |
+| open-word-view | 出力.衝突語ID | 不在 |
 
 ## 制約
 | 式 |

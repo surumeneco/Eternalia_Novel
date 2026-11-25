@@ -67,8 +67,9 @@ language: ja
 | 設定並び変更 | eternalia.reader.pi/sort-settings |
 | 詳細閲覧 | eternalia.reader.pi/open-detail |
 | 章一覧へ戻る | eternalia.reader.pi/chapter-index |
+| 章一覧閲覧 | eternalia.reader.pi/open-chapter-index |
 
 ## 適用範囲
-比較済みの左前/右前、検索適合、文法導線適合等を入力・出力にしない。章一覧への復帰は部IDの同一性として観測する。
+比較済みの左前/右前、検索適合、文法導線適合等を入力・出力にしない。章一覧への復帰は部IDと系列IDの同一性として観測する。章詳細のリンク操作による遷移要求と、遷移先（直接URLアクセスも含む）の公開資料読込み・表示を別の起点とする。前者は公開章の既知の所属に基づくリンク先を定め、後者で公開状態を再評価する。公開条件が変化した場合に旧章の状態から表示成功を推測しない。
 
 未形式化のEffect・Condition・外部観測関係をTCE・領域別仕様に保持する。Compilerの対応範囲に合わせて要求を削らず、正式Gateは未完了。
