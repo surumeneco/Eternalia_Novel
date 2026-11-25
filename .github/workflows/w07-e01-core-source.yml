@@ -11,18 +11,18 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: surumeneco/CAT-TDD
-          ref: b5249485d8ba5a962934ee4499d10b4cce9694d0
+          ref: 1ce835dbff6148560c9cc055907bec33d3f45d4b
           persist-credentials: false
       - name: Archive fixed core tree
         run: |
-          test "$(git rev-parse HEAD)" = "b5249485d8ba5a962934ee4499d10b4cce9694d0"
-          test "$(git rev-parse HEAD^{tree})" = "2be5db1246936d35ef2af8e164849074bbe30ce2"
+          test "$(git rev-parse HEAD)" = "1ce835dbff6148560c9cc055907bec33d3f45d4b"
+          test "$(git rev-parse HEAD^{tree})" = "7dc74b965b365b3110b959eab48483fe760f7dae"
           mkdir -p /tmp/cat-source
           git archive --format=tar.gz --output=/tmp/cat-source/core.tar.gz HEAD
           git cat-file commit HEAD > /tmp/cat-source/core.commit
       - uses: actions/upload-artifact@v4
         with:
-          name: w07-e01-core-b524948
+          name: w07-e01-core-1ce835
           path: /tmp/cat-source/
           if-no-files-found: error
           compression-level: 0
