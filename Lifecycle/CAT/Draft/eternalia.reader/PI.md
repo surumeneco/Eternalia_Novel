@@ -30,7 +30,9 @@ language: ja
 | 入力.シリーズID | 受信 | string | 不在 |
 | 入力.言語ID | 受信 | string | 不在 |
 | 入力.カテゴリID | 受信 | string | 不在 |
-| 入力.祖先ID列 | 受信 | sequence<string> | 不在 |
+| 入力.中間祖先1 | 受信 | nullable<string> | 不在 |
+| 入力.中間祖先2 | 受信 | nullable<string> | 不在 |
+| 入力.編ID | 受信 | string | 不在 |
 | 入力.資料種別 | 受信 | string | 不在 |
 | 入力.資料ID | 受信 | string | 不在 |
 | 入力.部ID | 受信 | string | 不在 |
@@ -86,11 +88,12 @@ language: ja
 | sort-settings | 入力.並び | 必須 |
 | open-detail | 入力.シリーズID | 必須 |
 | open-detail | 入力.資料ID | 必須 |
-| open-detail | 入力.祖先ID列 | 必須 |
+| open-detail | 入力.中間祖先1 | 必須 |
+| open-detail | 入力.中間祖先2 | 必須 |
 | open-detail | 入力.資料種別 | 必須 |
 | open-chapter-index | 入力.シリーズID | 必須 |
 | open-chapter-index | 入力.部ID | 必須 |
-| open-chapter-index | 入力.祖先ID列 | 必須 |
+| open-chapter-index | 入力.編ID | 必須 |
 | chapter-index-view | 出力.章列 | 不在 |
 | chapter-index-view | 出力.表示対象ID | 不在 |
 | chapter-index-view | 出力.拒否 | 不在 |
@@ -101,5 +104,7 @@ language: ja
 ## 制約
 | 式 |
 | --- |
+
+詳細閲覧の中間祖先1/2は採用済み論理階層における系列と対象の間の実IDであり、該当階層なしはnull。章なら編・部、語/文法なら言語・なし、設定ならカテゴリ・なし、設定項目ならカテゴリ・設定、言語詳細なら両方なし。章一覧の編IDは実編のID。これはURL文字列や内部配列形式を規定せず、階層固定の意味を保持する。
 
 章一覧の部ID・系列IDはリンク操作で要求する遷移先（実URLは公開祖先列に基づく）を示し、章列・表示対象IDは遷移先で公開状態を再評価した表示結果を示す。リンク操作だけで読込み成功・公開可否を宣言しない。実IDの所属、対象の同一性、その他の操作に固有の結果PresenceはTCEおよび領域別関係を参照する。品詞名・タグ名の未指定はnullで表す（画面の空文字値を同一の論理値へ正規化）。品詞参照の保存IDを名称文字列へ変更する要求ではない。公開更新順は現行UIで観測できる選択肢として保持し、ST-09の詳細な追加採用を推定しない。適合/不適合はPIの値でない。

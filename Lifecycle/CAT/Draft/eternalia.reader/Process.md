@@ -46,6 +46,13 @@ language: ja
 ## 観測能力
 | ID | 情報源 | Domain |
 | --- | --- | --- |
+| 観測.公開対象ID | 匿名公開ツリーで解決された実対象ID（取得不能・不在はなし） | nullable<string> |
+| 観測.公開対象種別 | 同一実対象の種別（不在はなし） | nullable<string> |
+| 観測.公開根系列ID | 実対象から公開親鎖を辿った根系列ID（正規親鎖を構成できない場合はなし） | nullable<string> |
+| 観測.公開中間祖先1 | 公開親鎖の系列と実対象の間の第1祖先ID（該当なしはなし） | nullable<string> |
+| 観測.公開中間祖先2 | 同第2祖先ID（該当なしはなし） | nullable<string> |
+| 観測.詳細応答ID | 同じ閲覧の匿名詳細応答の実資料ID（不在・取得不能はなし） | nullable<string> |
+| 観測.詳細応答種別 | 同じ詳細応答の実種別（不在・取得不能はなし） | nullable<string> |
 | 観測.現在時刻 | 匿名APIで公開判定する時刻（読者端末の時計を信頼する要求ではない） | instant |
 | 観測.公開階層 | 匿名APIで取得した公開版上の資料・祖先関係（系列IDは取得元の系列から解決） | sequence<record<id:string,parentId:nullable<string>,seriesId:string,kind:string,title:string,order:integer,publishedAt:instant,body:string>> |
 | 観測.公開単語 | 公開言語の語と意味 | sequence<record<id:string,languageId:string,spelling:string,body:string,meanings:sequence<record<id:string,classId:nullable<string>,publicClassName:nullable<string>,definition:string,etymologies:sequence<record<id:string,languageId:nullable<string>,wordId:nullable<string>,note:string>>>>>> |
