@@ -51,6 +51,8 @@ language: ja
 | 観測.新規採番ID | 品詞追加を受理した場合に新規に採番された実際の安定ID | string |
 | 観測.対象品詞位置 | 編集中品詞列で入力.品詞IDを実際に検索した位置（不在は-1） | integer[-1..] |
 | 観測.編集語意味列 | 解決した語の保存済み下書き意味列 | sequence<record<id:string,classId:nullable<string>,definition:string,etymologies:sequence<record<id:string,languageId:nullable<string>,wordId:nullable<string>,note:string>>>> |
+| 観測.保存対象改訂 | 保存対象の実在下書き改訂（不在はなし） | nullable<integer> |
+| 観測.参照中品詞ID列 | 選択言語の未削除語の下書き・保持公開版が実際に参照する安定品詞ID | sequence<string> |
 | 観測.下書き品詞列 | 言語選択で解決した言語（その他の操作では現在選択言語）の保存済み品詞マスタ | sequence<record<id:string,name:string,description:string>> |
 | 観測.下書き単語 | 同一言語の保存済み語 | sequence<record<id:string,spelling:string,deleted:boolean>> |
 | 観測.保持公開単語 | 同一言語の保持公開版 | sequence<record<id:string,spelling:string,deleted:boolean>> |
@@ -59,6 +61,7 @@ language: ja
 | ID | 対象 | Domain |
 | --- | --- | --- |
 | 作用.保存語 | 下書き単語の保存 | record<id:string,languageId:string,spelling:string,meanings:sequence<record<id:string,classId:nullable<string>,definition:string,etymologies:sequence<record<id:string,languageId:nullable<string>,wordId:nullable<string>,note:string>>>>> |
+| 作用.保存品詞言語ID | 品詞列が確定保存された実言語ID | string |
 | 作用.保存品詞列 | 選択言語の下書きマスタの保存 | sequence<record<id:string,name:string,description:string>> |
 
 ## 起点

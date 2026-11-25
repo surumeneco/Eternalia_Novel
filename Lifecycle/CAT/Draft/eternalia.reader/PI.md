@@ -35,9 +35,11 @@ language: ja
 | 入力.資料ID | 受信 | string | 不在 |
 | 入力.部ID | 受信 | string | 不在 |
 | 入力.検索語 | 受信 | string | 不在 |
-| 入力.品詞ID | 受信 | nullable<string> | 不在 |
-| 入力.タグID | 受信 | nullable<string> | 不在 |
-| 入力.並び | 受信 | enum{名称順,既定順} | 不在 |
+| 入力.品詞名 | 受信 | nullable<string> | 不在 |
+| 入力.タグ名 | 受信 | nullable<string> | 不在 |
+| 入力.並び | 受信 | enum{名称順,既定順,公開更新順} | 不在 |
+| 出力.品詞選択肢 | 送信 | sequence<string> | 任意 |
+| 出力.タグ選択肢 | 送信 | sequence<string> | 任意 |
 | 出力.単語列 | 送信 | sequence<record<id:string,spelling:string>> | 任意 |
 | 出力.設定列 | 送信 | sequence<record<id:string,title:string>> | 任意 |
 | 出力.意味品詞列 | 送信 | sequence<record<meaningId:string,classId:nullable<string>,label:nullable<string>>> | 任意 |
@@ -79,8 +81,8 @@ language: ja
 | open-settings | 入力.シリーズID | 必須 |
 | open-settings | 入力.カテゴリID | 必須 |
 | search | 入力.検索語 | 必須 |
-| filter-pos | 入力.品詞ID | 必須 |
-| filter-tag | 入力.タグID | 必須 |
+| filter-pos | 入力.品詞名 | 必須 |
+| filter-tag | 入力.タグ名 | 必須 |
 | sort-settings | 入力.並び | 必須 |
 | open-detail | 入力.シリーズID | 必須 |
 | open-detail | 入力.資料ID | 必須 |
@@ -100,4 +102,4 @@ language: ja
 | 式 |
 | --- |
 
-章一覧の部ID・系列IDはリンク操作で要求する遷移先（実URLは公開祖先列に基づく）を示し、章列・表示対象IDは遷移先で公開状態を再評価した表示結果を示す。リンク操作だけで読込み成功・公開可否を宣言しない。実IDの所属、対象の同一性、その他の操作に固有の結果PresenceはTCEおよび領域別関係を参照する。適合/不適合はPIの値でない。
+章一覧の部ID・系列IDはリンク操作で要求する遷移先（実URLは公開祖先列に基づく）を示し、章列・表示対象IDは遷移先で公開状態を再評価した表示結果を示す。リンク操作だけで読込み成功・公開可否を宣言しない。実IDの所属、対象の同一性、その他の操作に固有の結果PresenceはTCEおよび領域別関係を参照する。品詞名・タグ名の未指定はnullで表す（画面の空文字値を同一の論理値へ正規化）。品詞参照の保存IDを名称文字列へ変更する要求ではない。公開更新順は現行UIで観測できる選択肢として保持し、ST-09の詳細な追加採用を推定しない。適合/不適合はPIの値でない。

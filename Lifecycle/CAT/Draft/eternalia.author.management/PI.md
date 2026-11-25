@@ -28,6 +28,7 @@ language: ja
 | ID | 方向 | Domain | 存在 |
 | --- | --- | --- | --- |
 | 入力.シリーズID | 受信 | string | 不在 |
+| 入力.一覧系列ID | 受信 | nullable<string> | 不在 |
 | 入力.一覧種別 | 受信 | string | 不在 |
 | 入力.削除確定 | 受信 | boolean | 不在 |
 | 入力.言語ID | 受信 | nullable<string> | 不在 |
@@ -38,7 +39,8 @@ language: ja
 | 入力.旧item | 受信 | string | 不在 |
 | 入力.旧create | 受信 | string | 不在 |
 | 入力.改訂 | 受信 | integer | 不在 |
-| 出力.一覧 | 送信 | sequence<record<id:string,title:string,order:integer,parentId:nullable<string>,editTargetId:string>> | 任意 |
+| 出力.一覧 | 送信 | sequence<record<id:string,title:string,order:integer,parentId:nullable<string>,editTargetId:string,isPublic:boolean,hasSnapshot:boolean>> | 任意 |
+| 出力.言語候補 | 送信 | sequence<record<id:string,title:string>> | 任意 |
 | 出力.章所属 | 送信 | sequence<record<chapterId:string,volumeId:string,partId:string>> | 任意 |
 | 出力.選択言語 | 送信 | nullable<string> | 任意 |
 | 出力.編集対象ID | 送信 | string | 任意 |
@@ -67,6 +69,7 @@ language: ja
 | --- | --- | --- |
 | select-series | 入力.シリーズID | 必須 |
 | list | 入力.一覧種別 | 必須 |
+| list | 入力.一覧系列ID | 必須 |
 | filter-language | 入力.言語ID | 必須 |
 | open-edit | 入力.シリーズID | 必須 |
 | open-edit | 入力.対象ID | 必須 |
@@ -87,4 +90,4 @@ language: ja
 | 式 |
 | --- |
 
-実IDの所属、対象の同一性、操作に固有の結果Presenceは未形式化のTCEおよび領域別関係を参照する。適合/不適合はPIの値でない。
+一覧系列IDは実URLの系列ID（最上位シリーズ一覧はなし）。実IDの所属、対象の同一性、操作に固有の結果Presenceは未形式化のTCEおよび領域別関係を参照する。適合/不適合はPIの値でない。

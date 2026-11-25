@@ -35,21 +35,22 @@ language: ja
 | 状態.閲覧種別 | enum{辞書一覧,設定一覧,章詳細,章一覧,その他} |
 | 状態.選択シリーズ | nullable<string> |
 | 状態.選択言語 | nullable<string> |
+| 状態.選択カテゴリ | nullable<string> |
 | 状態.表示章 | nullable<string> |
 | 状態.所属部 | nullable<string> |
 | 状態.検索語 | string |
-| 状態.選択品詞 | nullable<string> |
-| 状態.選択タグ | nullable<string> |
-| 状態.設定並び | enum{名称順,既定順} |
+| 状態.選択品詞名 | nullable<string> |
+| 状態.選択タグ名 | nullable<string> |
+| 状態.設定並び | enum{名称順,既定順,公開更新順} |
 
 ## 観測能力
 | ID | 情報源 | Domain |
 | --- | --- | --- |
-| 観測.現在時刻 | 公開判定の時刻 | instant |
-| 観測.公開階層 | 公開版上の資料・祖先関係と現在の自身公開設定 | sequence<record<id:string,parentId:nullable<string>,seriesId:string,kind:string,title:string,order:integer,isPublic:boolean,publicSince:nullable<instant>>> |
-| 観測.公開単語 | 公開言語の語と意味 | sequence<record<id:string,languageId:string,spelling:string,meanings:sequence<record<id:string,classId:nullable<string>,definition:string,etymologies:sequence<record<id:string,languageId:nullable<string>,wordId:nullable<string>,note:string>>>>>> |
+| 観測.現在時刻 | 匿名APIで公開判定する時刻（読者端末の時計を信頼する要求ではない） | instant |
+| 観測.公開階層 | 匿名APIで取得した公開版上の資料・祖先関係（系列IDは取得元の系列から解決） | sequence<record<id:string,parentId:nullable<string>,seriesId:string,kind:string,title:string,order:integer,publishedAt:instant,body:string>> |
+| 観測.公開単語 | 公開言語の語と意味 | sequence<record<id:string,languageId:string,spelling:string,body:string,meanings:sequence<record<id:string,classId:nullable<string>,publicClassName:nullable<string>,definition:string,etymologies:sequence<record<id:string,languageId:nullable<string>,wordId:nullable<string>,note:string>>>>>> |
 | 観測.公開品詞 | 言語ごとの公開マスタ | sequence<record<languageId:string,id:string,name:string>> |
-| 観測.公開設定 | 公開Tipと公開項目・タグ | sequence<record<id:string,categoryId:string,title:string,tagIds:sequence<string>,sectionIds:sequence<string>>> |
+| 観測.公開設定 | 公開Tipと公開項目・タグ | sequence<record<id:string,categoryId:string,title:string,tagNames:sequence<string>,sectionIds:sequence<string>,body:string,order:integer,publishedAt:instant>> |
 | 観測.公開本文 | 公開章・設定項目の内容 | sequence<record<id:string,body:string>> |
 
 ## 作用能力
@@ -70,6 +71,7 @@ language: ja
 | 章一覧閲覧 | eternalia.reader.pi/open-chapter-index |
 
 ## 適用範囲
+品詞絞込とタグ絞込の受付値は読者が選ぶ公開名称である。単語の保存参照・公開名の解決は安定IDを用いるが、公開名による選択操作をID入力に読み替えない。公開名の重複がある場合は同名の公開品詞を持つ語が絞込対象となる。公開ツリーと詳細応答は実際の匿名APIの取得値を用い、その取得が公開条件を満たすことは別途同じ保存状態・時刻で照合する。未公開データを読者側の観測能力として要求しない。
 比較済みの左前/右前、検索適合、文法導線適合等を入力・出力にしない。章一覧への復帰は部IDと系列IDの同一性として観測する。章詳細のリンク操作による遷移要求と、遷移先（直接URLアクセスも含む）の公開資料読込み・表示を別の起点とする。前者は公開章の既知の所属に基づくリンク先を定め、後者で公開状態を再評価する。公開条件が変化した場合に旧章の状態から表示成功を推測しない。
 
 未形式化のEffect・Condition・外部観測関係をTCE・領域別仕様に保持する。Compilerの対応範囲に合わせて要求を削らず、正式Gateは未完了。

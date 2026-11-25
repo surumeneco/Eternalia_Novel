@@ -33,6 +33,7 @@ language: ja
 | 入力.品詞ID | 受信 | string | 不在 |
 | 入力.方向 | 受信 | enum{前,後} | 不在 |
 | 入力.品詞名 | 受信 | string | 不在 |
+| 入力.改訂 | 受信 | nullable<integer> | 不在 |
 | 入力.語ID | 受信 | nullable<string> | 不在 |
 | 入力.スペル | 受信 | string | 不在 |
 | 入力.意味列 | 受信 | sequence<record<id:string,classId:nullable<string>,definition:string,etymologies:sequence<record<id:string,languageId:nullable<string>,wordId:nullable<string>,note:string>>>> | 不在 |
@@ -42,7 +43,7 @@ language: ja
 | 出力.編集スペル | 送信 | string | 任意 |
 | 出力.新規公開初期値 | 送信 | boolean | 任意 |
 | 出力.未保存意味 | 送信 | sequence<record<id:string,classId:nullable<string>,definition:string,etymologies:sequence<record<id:string,languageId:nullable<string>,wordId:nullable<string>,note:string>>>> | 任意 |
-| 出力.保存結果 | 送信 | enum{保存成功,重複,入力不正,認可拒否,保存失敗} | 任意 |
+| 出力.保存結果 | 送信 | enum{保存成功,重複,入力不正,認可拒否,競合,保存失敗,確認不能} | 任意 |
 | 出力.衝突語ID | 送信 | string | 任意 |
 
 ## 操作
@@ -75,9 +76,12 @@ language: ja
 | open-word | 入力.語ID | 必須 |
 | open-word | 入力.シリーズID | 必須 |
 | open-word | 入力.言語ID | 必須 |
+| save-classes | 入力.改訂 | 必須 |
+| save-word | 入力.改訂 | 必須 |
 | save-word | 入力.語ID | 必須 |
 | save-word | 入力.スペル | 必須 |
 | save-word | 入力.意味列 | 必須 |
+| save-classes-view | 出力.保存結果 | 必須 |
 | save-word-view | 出力.保存結果 | 必須 |
 | open-word-view | 出力.品詞列 | 不在 |
 | open-word-view | 出力.保存結果 | 不在 |
@@ -87,4 +91,4 @@ language: ja
 | 式 |
 | --- |
 
-実IDの所属、対象の同一性、操作に固有の結果Presenceは未形式化のTCEおよび領域別関係を参照する。適合/不適合はPIの値でない。
+入力.改訂は編集時に取得した対象改訂値であり、作者に手入力を要求しない。新規語では改訂値なしを許す。実IDの所属、対象の同一性、操作に固有の結果Presenceは未形式化のTCEおよび領域別関係を参照する。適合/不適合はPIの値でない。

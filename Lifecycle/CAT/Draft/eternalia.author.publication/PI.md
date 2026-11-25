@@ -29,6 +29,8 @@ language: ja
 | --- | --- | --- | --- |
 | 入力.シリーズID | 受信 | string | 不在 |
 | 入力.対象ID | 受信 | string | 不在 |
+| 入力.管理区分 | 受信 | enum{シリーズ,ストーリー,設定集,辞書,年表} | 不在 |
+| 入力.検索語 | 受信 | string | 不在 |
 | 入力.公開絞込 | 受信 | enum{すべて,公開,非公開,未公開稿} | 不在 |
 | 入力.公開フラグ | 受信 | boolean | 不在 |
 | 入力.公開日時 | 受信 | nullable<instant> | 不在 |
@@ -36,8 +38,12 @@ language: ja
 | 出力.管理行 | 送信 | sequence<record<id:string,isPublic:boolean,effectivelyPublic:boolean,status:enum{未公開稿,自身非公開,日時未設定,公開前,祖先非公開,公開中},publicSince:nullable<instant>>> | 任意 |
 | 出力.公開絞込 | 送信 | enum{すべて,公開,非公開,未公開稿} | 任意 |
 | 出力.選択系列ID | 送信 | string | 任意 |
-| 入力.一括対象 | 受信 | sequence<record<id:string,revision:integer,isPublic:boolean,publicSince:nullable<instant>>> | 不在 |
-| 出力.一括結果 | 送信 | sequence<record<id:string,result:enum{成功,競合,認可拒否,失敗}>> | 任意 |
+| 入力.一括対象ID列 | 受信 | sequence<string> | 不在 |
+| 入力.一括操作 | 受信 | enum{公開版更新,公開化,非公開化} | 不在 |
+| 入力.一括確定 | 受信 | boolean | 不在 |
+| 出力.一括成功件数 | 送信 | integer[0..] | 任意 |
+| 出力.一括失敗名称列 | 送信 | sequence<string> | 任意 |
+| 出力.一括読戻し結果 | 送信 | enum{確認済み,確認不能} | 任意 |
 | 出力.更新結果 | 送信 | enum{成功,競合,認可拒否,失敗,確認不能} | 任意 |
 
 ## 操作
@@ -60,13 +66,18 @@ language: ja
 | 操作 | 項目 | 存在 |
 | --- | --- | --- |
 | select-series | 入力.シリーズID | 必須 |
+| view | 入力.シリーズID | 必須 |
+| view | 入力.管理区分 | 必須 |
+| view | 入力.検索語 | 必須 |
 | filter | 入力.公開絞込 | 必須 |
 | update-visibility | 入力.シリーズID | 必須 |
 | update-visibility | 入力.対象ID | 必須 |
 | update-visibility | 入力.公開フラグ | 必須 |
 | update-visibility | 入力.公開日時 | 必須 |
 | update-visibility | 入力.改訂 | 必須 |
-| batch-visibility | 入力.一括対象 | 必須 |
+| batch-visibility | 入力.一括対象ID列 | 必須 |
+| batch-visibility | 入力.一括操作 | 必須 |
+| batch-visibility | 入力.一括確定 | 必須 |
 | publish | 入力.対象ID | 必須 |
 | publish | 入力.シリーズID | 必須 |
 | publish | 入力.改訂 | 必須 |
@@ -74,13 +85,19 @@ language: ja
 | update-visibility-view | 出力.管理行 | 不在 |
 | update-visibility-view | 出力.公開絞込 | 不在 |
 | update-visibility-view | 出力.選択系列ID | 不在 |
-| update-visibility-view | 出力.一括結果 | 不在 |
+| update-visibility-view | 出力.一括成功件数 | 不在 |
+| update-visibility-view | 出力.一括失敗名称列 | 不在 |
+| update-visibility-view | 出力.一括読戻し結果 | 不在 |
 | publish-view | 出力.更新結果 | 必須 |
 | publish-view | 出力.管理行 | 不在 |
 | publish-view | 出力.公開絞込 | 不在 |
 | publish-view | 出力.選択系列ID | 不在 |
-| publish-view | 出力.一括結果 | 不在 |
-| batch-visibility-view | 出力.一括結果 | 任意 |
+| publish-view | 出力.一括成功件数 | 不在 |
+| publish-view | 出力.一括失敗名称列 | 不在 |
+| publish-view | 出力.一括読戻し結果 | 不在 |
+| batch-visibility-view | 出力.一括成功件数 | 任意 |
+| batch-visibility-view | 出力.一括失敗名称列 | 任意 |
+| batch-visibility-view | 出力.一括読戻し結果 | 任意 |
 
 ## 制約
 | 式 |

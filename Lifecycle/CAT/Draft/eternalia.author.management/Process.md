@@ -33,6 +33,7 @@ language: ja
 | ID | Domain |
 | --- | --- |
 | 状態.選択シリーズ | nullable<string> |
+| 状態.一覧種別 | nullable<string> |
 | 状態.選択言語 | nullable<string> |
 | 状態.編集対象 | nullable<string> |
 
@@ -40,7 +41,7 @@ language: ja
 | ID | 情報源 | Domain |
 | --- | --- | --- |
 | 観測.認証役割 | サーバーの作者認可 | enum{作者,非作者,未ログイン} |
-| 観測.資料階層 | 対象と実祖先・所属・種別 | sequence<record<id:string,parentId:nullable<string>,seriesId:string,kind:string,title:string,order:integer>> |
+| 観測.資料階層 | 対象と実祖先・所属・種別 | sequence<record<id:string,parentId:nullable<string>,seriesId:string,kind:string,title:string,order:integer,isPublic:boolean,hasSnapshot:boolean>> |
 | 観測.共通マスタ | Tag/Divの保存済み状態と改訂 | sequence<record<id:string,kind:enum{tag,div},revision:integer,name:string>> |
 | 観測.マスタ参照 | 現在の参照関係 | sequence<record<masterId:string,targetId:string>> |
 | 観測.系列ID | 系列選択で対象となった実在シリーズのID（不在はなし） | nullable<string> |
@@ -70,6 +71,6 @@ language: ja
 | 共通マスタ削除 | eternalia.author.management.pi/delete-master |
 
 ## 適用範囲
-旧クエリの値は入力差であり、別の互換機能を要求しない。管理境界が所有するのは一覧と編集対象の遷移であって、個別エディターが所有する本文・未保存入力ではない。未保存保護と新規作成後の編集値の引継ぎは management.editor.handoff で規定する。削除可否の純粋判定は内部実装として再利用できるが、独立Process合格を削除動作全体の合格にしない。
+旧クエリの値は入力差であり、別の互換機能を要求しない。管理境界が所有するのは一覧の現在の種別・系列/言語条件と編集対象の遷移であって、個別エディターが所有する本文・未保存入力ではない。未保存保護と新規作成後の編集値の引継ぎは management.editor.handoff で規定する。削除可否の純粋判定は内部実装として再利用できるが、独立Process合格を削除動作全体の合格にしない。
 
 未形式化のEffect・Condition・外部観測関係をTCE・領域別仕様に保持する。Compilerの対応範囲に合わせて要求を削らず、正式Gateは未完了。

@@ -33,6 +33,8 @@ language: ja
 | ID | Domain |
 | --- | --- |
 | 状態.選択シリーズ | nullable<string> |
+| 状態.管理区分 | enum{シリーズ,ストーリー,設定集,辞書,年表} |
+| 状態.検索語 | string |
 | 状態.公開絞込 | enum{すべて,公開,非公開,未公開稿} |
 
 ## 観測能力
@@ -45,7 +47,7 @@ language: ja
 | 観測.公開対象系列ID | 同一対象の下書き所属を辿った正規系列ID | nullable<string> |
 | 観測.公開対象改訂 | 同一対象の保存済み下書き改訂（不在はなし） | nullable<integer> |
 | 観測.保持公開版あり | 同一対象の保持公開版が実在するか（対象不在は偽） | boolean |
-| 観測.下書き資料 | 下書き資料ID・親・所属と改訂 | sequence<record<id:string,parentId:nullable<string>,seriesId:string,revision:integer>> |
+| 観測.下書き資料 | 下書き資料ID・親・所属と改訂 | sequence<record<id:string,parentId:nullable<string>,seriesId:string,revision:integer,kind:string,title:string,order:integer>> |
 | 観測.公開資料 | 保持公開版の資料ID・公開版上の親と所属 | sequence<record<id:string,parentId:nullable<string>,seriesId:string>> |
 | 観測.公開設定 | 現在の各資料自身の公開設定（公開版内容と独立） | sequence<record<id:string,isPublic:boolean,publicSince:nullable<instant>>> |
 
@@ -55,6 +57,8 @@ language: ja
 | 作用.公開設定更新対象 | 実際に公開設定が確定更新された資料ID | string |
 | 作用.公開設定フラグ | 同一確定更新で設定される自身の公開フラグ | boolean |
 | 作用.公開日時指定 | 同一確定更新で適用される日時指定値（なしは指定解除）。保存値は publication.visibility.commit の日時正規化関係に従う | nullable<instant> |
+| 作用.一括公開版更新ID列 | 一括操作で実際に確定した公開版更新の資料ID列 | sequence<string> |
+| 作用.一括公開設定更新列 | 一括操作で実際に確定した設定更新（同一資料のID・フラグ・日時指定） | sequence<record<id:string,isPublic:boolean,publicSince:nullable<instant>>> |
 | 作用.公開版更新 | 対象資料IDの確定済み公開版更新（要求送信だけではない）。更新内容は publication.snapshot.commit に従う | string |
 
 ## 起点
