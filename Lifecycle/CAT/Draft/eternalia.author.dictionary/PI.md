@@ -68,12 +68,13 @@ language: ja
 | --- | --- | --- |
 | select-language | 入力.シリーズID | 必須 |
 | select-language | 入力.言語ID | 必須 |
-| add-class | 入力.品詞名 | 必須 |
 | move-class | 入力.品詞ID | 必須 |
 | move-class | 入力.方向 | 必須 |
 | edit-class | 入力.品詞ID | 必須 |
 | edit-class | 入力.品詞名 | 必須 |
 | open-word | 入力.語ID | 必須 |
+| open-word | 入力.シリーズID | 必須 |
+| open-word | 入力.言語ID | 必須 |
 | save-word | 入力.語ID | 必須 |
 | save-word | 入力.スペル | 必須 |
 | save-word | 入力.意味列 | 必須 |
