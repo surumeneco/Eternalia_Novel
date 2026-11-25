@@ -1,0 +1,40 @@
+name: W07 immutable source snapshot
+on:
+  push:
+    branches: [infra/w07-formalization-snapshot-62d3355]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 62d33552f4f0946f53b3561de1850d71ae9c48eb
+          path: product
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: surumeneco/CAT-TDD
+          ref: 9428981b251c961e5242a7e5935b4a6247b0e8ed
+          path: engine
+          persist-credentials: false
+      - name: Archive exact revisions
+        run: |
+          test "$(git -C product rev-parse HEAD)" = "62d33552f4f0946f53b3561de1850d71ae9c48eb"
+          test "$(git -C product rev-parse HEAD^{tree})" = "96193b7acdad7ca56c6703fb0b43f14e9e9bd7bd"
+          test "$(git -C engine rev-parse HEAD)" = "9428981b251c961e5242a7e5935b4a6247b0e8ed"
+          test "$(git -C engine rev-parse HEAD^{tree})" = "93fc50caa3180759e05f12297d234fcbf5a32a7e"
+          mkdir -p /tmp/w07-source
+          git -C product archive --format=tar.gz --output=/tmp/w07-source/product.tar.gz HEAD
+          git -C product cat-file commit HEAD > /tmp/w07-source/product.commit
+          git -C engine archive --format=tar.gz --output=/tmp/w07-source/engine.tar.gz HEAD
+          git -C engine cat-file commit HEAD > /tmp/w07-source/engine.commit
+          cd /tmp/w07-source
+          sha256sum *
+      - uses: actions/upload-artifact@v4
+        with:
+          name: w07-formalization-snapshot
+          path: /tmp/w07-source/
+          if-no-files-found: error
+          compression-level: 0
