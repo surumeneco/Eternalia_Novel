@@ -48,6 +48,7 @@ language: ja
 | 観測.編集語ID | 編集開始の要求で解決した実在未削除語ID（不在はなし） | nullable<string> |
 | 観測.編集語所属言語ID | 編集要求で解決した語の実所属言語 | nullable<string> |
 | 観測.編集語スペル | 解決した語の保存済み下書きスペル（不在はなし） | nullable<string> |
+| 観測.新規採番ID | 品詞追加を受理した場合に新規に採番された実際の安定ID | string |
 | 観測.対象品詞位置 | 編集中品詞列で入力.品詞IDを実際に検索した位置（不在は-1） | integer[-1..] |
 | 観測.編集語意味列 | 解決した語の保存済み下書き意味列 | sequence<record<id:string,classId:nullable<string>,definition:string,etymologies:sequence<record<id:string,languageId:nullable<string>,wordId:nullable<string>,note:string>>>> |
 | 観測.下書き品詞列 | 言語選択で解決した言語（その他の操作では現在選択言語）の保存済み品詞マスタ | sequence<record<id:string,name:string,description:string>> |
