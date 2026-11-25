@@ -1,0 +1,66 @@
+---
+cat_version: '0.3'
+kind: pi
+id: eternalia.author.publication.pi
+status: draft
+process: eternalia.author.publication
+source_refs:
+  - https://drive.google.com/file/d/1LqX-Noytb_oWymIrpO01eO5PvThGlVGx/view
+  - https://drive.google.com/file/d/1G4q4DbJZdOk7jIfgvuZu0a2e4L1LIMti/view
+  - https://drive.google.com/file/d/14no6MWmkFuyWYPVS6QdcRmbLbrUBbOpc/view
+  - https://github.com/surumeneco/Eternalia_Novel/issues/165
+refs: []
+base_revision: 961d291f493df219ac36cf88108d302d680c51ef
+semantic_contract: markdown-v2
+language: ja
+---
+
+# PI: eternalia.author.publication.pi
+
+利用者が区別する値・操作・結果の意味上の境界。レコードは境界上の必要な射影であり、HTTP DTOやDOMタグの形を固定しない。値の有無は操作ごとに区別する。未形式化の結果PresenceはTCEの契約と合わせて確定する。
+
+## 境界
+| 相手Process | 方向 |
+| --- | --- |
+| eternalia.actor.author | 双方向 |
+
+## 項目
+| ID | 方向 | Domain | 存在 |
+| --- | --- | --- | --- |
+| 入力.シリーズID | 受信 | string | 任意 |
+| 入力.対象ID | 受信 | string | 任意 |
+| 入力.公開絞込 | 受信 | enum{すべて,公開,非公開,未公開稿} | 任意 |
+| 入力.公開設定 | 受信 | record<id:string,isPublic:boolean,publicSince:nullable<instant>> | 任意 |
+| 入力.改訂 | 受信 | integer | 任意 |
+| 出力.管理行 | 送信 | sequence<record<id:string,isPublic:boolean,effectivelyPublic:boolean,status:enum{未公開稿,自身非公開,日時未設定,公開前,祖先非公開,公開中},publicSince:nullable<instant>>> | 任意 |
+| 出力.公開絞込 | 送信 | enum{すべて,公開,非公開,未公開稿} | 任意 |
+| 入力.一括対象 | 受信 | sequence<record<id:string,revision:integer,isPublic:boolean,publicSince:nullable<instant>>> | 任意 |
+| 出力.一括結果 | 送信 | sequence<record<id:string,result:enum{成功,競合,認可拒否,失敗}>> | 任意 |
+| 出力.更新結果 | 送信 | enum{成功,競合,認可拒否,失敗} | 任意 |
+
+## 操作
+| ID | 方向 | 起点 |
+| --- | --- | --- |
+| select-series | 受付 | 系列選択 |
+| view | 受付 | 公開管理閲覧 |
+| filter | 受付 | 公開絞込 |
+| update-visibility | 受付 | 公開設定変更 |
+| batch-visibility | 受付 | 一括公開設定変更 |
+| publish | 受付 | 明示公開版更新 |
+
+## 操作別存在
+| 操作 | 項目 | 存在 |
+| --- | --- | --- |
+| select-series | 入力.シリーズID | 必須 |
+| filter | 入力.公開絞込 | 必須 |
+| update-visibility | 入力.公開設定 | 必須 |
+| update-visibility | 入力.改訂 | 必須 |
+| batch-visibility | 入力.一括対象 | 必須 |
+| publish | 入力.対象ID | 必須 |
+| publish | 入力.改訂 | 必須 |
+
+## 制約
+| 式 |
+| --- |
+
+実IDの所属、対象の同一性、操作に固有の結果Presenceは未形式化のTCEおよび領域別関係を参照する。適合/不適合はPIの値でない。
