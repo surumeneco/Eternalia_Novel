@@ -30,7 +30,8 @@ language: ja
 | 入力.シリーズID | 受信 | string | 不在 |
 | 入力.対象ID | 受信 | string | 不在 |
 | 入力.公開絞込 | 受信 | enum{すべて,公開,非公開,未公開稿} | 不在 |
-| 入力.公開設定 | 受信 | record<id:string,isPublic:boolean,publicSince:nullable<instant>> | 不在 |
+| 入力.公開フラグ | 受信 | boolean | 不在 |
+| 入力.公開日時 | 受信 | nullable<instant> | 不在 |
 | 入力.改訂 | 受信 | integer | 不在 |
 | 出力.管理行 | 送信 | sequence<record<id:string,isPublic:boolean,effectivelyPublic:boolean,status:enum{未公開稿,自身非公開,日時未設定,公開前,祖先非公開,公開中},publicSince:nullable<instant>>> | 任意 |
 | 出力.公開絞込 | 送信 | enum{すべて,公開,非公開,未公開稿} | 任意 |
@@ -60,13 +61,20 @@ language: ja
 | --- | --- | --- |
 | select-series | 入力.シリーズID | 必須 |
 | filter | 入力.公開絞込 | 必須 |
-| update-visibility | 入力.公開設定 | 必須 |
+| update-visibility | 入力.シリーズID | 必須 |
+| update-visibility | 入力.対象ID | 必須 |
+| update-visibility | 入力.公開フラグ | 必須 |
+| update-visibility | 入力.公開日時 | 必須 |
 | update-visibility | 入力.改訂 | 必須 |
 | batch-visibility | 入力.一括対象 | 必須 |
 | publish | 入力.対象ID | 必須 |
 | publish | 入力.シリーズID | 必須 |
 | publish | 入力.改訂 | 必須 |
 | update-visibility-view | 出力.更新結果 | 必須 |
+| update-visibility-view | 出力.管理行 | 不在 |
+| update-visibility-view | 出力.公開絞込 | 不在 |
+| update-visibility-view | 出力.選択系列ID | 不在 |
+| update-visibility-view | 出力.一括結果 | 不在 |
 | publish-view | 出力.更新結果 | 必須 |
 | publish-view | 出力.管理行 | 不在 |
 | publish-view | 出力.公開絞込 | 不在 |

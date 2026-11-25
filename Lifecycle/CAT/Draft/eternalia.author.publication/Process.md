@@ -41,9 +41,10 @@ language: ja
 | 観測.認証役割 | サーバーの作者認可 | enum{作者,非作者,未ログイン} |
 | 観測.現在時刻 | 公開判定の時刻 | instant |
 | 観測.系列ID | 系列選択の実在シリーズID（不在はなし） | nullable<string> |
-| 観測.公開対象ID | 明示公開版更新の認可・改訂判定時に解決した実在未削除資料ID | nullable<string> |
+| 観測.公開対象ID | 公開設定変更または明示公開版更新の認可・改訂判定時に解決した実在未削除資料ID | nullable<string> |
 | 観測.公開対象系列ID | 同一対象の下書き所属を辿った正規系列ID | nullable<string> |
 | 観測.公開対象改訂 | 同一対象の保存済み下書き改訂（不在はなし） | nullable<integer> |
+| 観測.保持公開版あり | 同一対象の保持公開版が実在するか（対象不在は偽） | boolean |
 | 観測.下書き資料 | 下書き資料ID・親・所属と改訂 | sequence<record<id:string,parentId:nullable<string>,seriesId:string,revision:integer>> |
 | 観測.公開資料 | 保持公開版の資料ID・公開版上の親と所属 | sequence<record<id:string,parentId:nullable<string>,seriesId:string>> |
 | 観測.公開設定 | 現在の各資料自身の公開設定（公開版内容と独立） | sequence<record<id:string,isPublic:boolean,publicSince:nullable<instant>>> |
@@ -51,7 +52,9 @@ language: ja
 ## 作用能力
 | ID | 対象 | Domain |
 | --- | --- | --- |
-| 作用.公開設定更新 | 対象の公開設定 | record<id:string,isPublic:boolean,publicSince:nullable<instant>> |
+| 作用.公開設定更新対象 | 実際に公開設定が確定更新された資料ID | string |
+| 作用.公開設定フラグ | 同一確定更新で設定される自身の公開フラグ | boolean |
+| 作用.公開日時指定 | 同一確定更新で適用される日時指定値（なしは指定解除）。保存値は publication.visibility.commit の日時正規化関係に従う | nullable<instant> |
 | 作用.公開版更新 | 対象資料IDの確定済み公開版更新（要求送信だけではない）。更新内容は publication.snapshot.commit に従う | string |
 
 ## 起点
