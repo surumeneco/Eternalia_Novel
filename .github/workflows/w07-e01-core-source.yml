@@ -1,0 +1,28 @@
+name: W07 fixed core source transfer
+on:
+  push:
+    branches: [infra/w07-e01-core-snapshot-b524948]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: surumeneco/CAT-TDD
+          ref: b5249485d8ba5a962934ee4499d10b4cce9694d0
+          persist-credentials: false
+      - name: Archive fixed core tree
+        run: |
+          test "$(git rev-parse HEAD)" = "b5249485d8ba5a962934ee4499d10b4cce9694d0"
+          test "$(git rev-parse HEAD^{tree})" = "2be5db1246936d35ef2af8e164849074bbe30ce2"
+          mkdir -p /tmp/cat-source
+          git archive --format=tar.gz --output=/tmp/cat-source/core.tar.gz HEAD
+          git cat-file commit HEAD > /tmp/cat-source/core.commit
+      - uses: actions/upload-artifact@v4
+        with:
+          name: w07-e01-core-b524948
+          path: /tmp/cat-source/
+          if-no-files-found: error
+          compression-level: 0
