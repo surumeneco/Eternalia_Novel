@@ -45,7 +45,7 @@ language: ja
 | 観測.認証役割 | 作者認証・認可 | enum{作者,非作者,未ログイン} |
 | 観測.言語ID | 選択要求で解決した実在言語ID（不在はなし） | nullable<string> |
 | 観測.言語所属系列ID | 解決した言語の実所属系列 | nullable<string> |
-| 観測.下書き品詞列 | 選択言語の保存済み品詞マスタ | sequence<record<id:string,name:string,description:string>> |
+| 観測.下書き品詞列 | 言語選択で解決した言語（その他の操作では現在選択言語）の保存済み品詞マスタ | sequence<record<id:string,name:string,description:string>> |
 | 観測.下書き単語 | 同一言語の保存済み語 | sequence<record<id:string,spelling:string,deleted:boolean>> |
 | 観測.保持公開単語 | 同一言語の保持公開版 | sequence<record<id:string,spelling:string,deleted:boolean>> |
 

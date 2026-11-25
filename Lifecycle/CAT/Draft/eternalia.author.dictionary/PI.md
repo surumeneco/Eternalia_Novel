@@ -18,7 +18,7 @@ language: ja
 
 # PI: eternalia.author.dictionary.pi
 
-利用者が区別する値・操作・結果の意味上の境界。レコードは境界上の必要な射影であり、HTTP DTOやDOMタグの形を固定しない。値の有無は操作ごとに区別する。未形式化の結果PresenceはTCEの契約と合わせて確定する。
+利用者が区別する値・操作・結果の意味上の境界。レコードは境界上の必要な射影であり、HTTP DTOやDOMタグの形を固定しない。値の有無は操作ごとに区別する。受付入力は各操作の必要項目だけを保持し、提供Operationは同一論理実行の結果観測を区別する。操作別の未変換結果条件はTCEと領域別仕様を維持する。
 
 ## 境界
 | 相手Process | 方向 |
@@ -28,14 +28,14 @@ language: ja
 ## 項目
 | ID | 方向 | Domain | 存在 |
 | --- | --- | --- | --- |
-| 入力.シリーズID | 受信 | string | 任意 |
-| 入力.言語ID | 受信 | string | 任意 |
-| 入力.品詞ID | 受信 | string | 任意 |
-| 入力.方向 | 受信 | enum{前,後} | 任意 |
-| 入力.品詞名 | 受信 | string | 任意 |
-| 入力.語ID | 受信 | nullable<string> | 任意 |
-| 入力.スペル | 受信 | string | 任意 |
-| 入力.意味列 | 受信 | sequence<record<id:string,classId:nullable<string>,definition:string,etymologies:sequence<record<id:string,languageId:nullable<string>,wordId:nullable<string>,note:string>>>> | 任意 |
+| 入力.シリーズID | 受信 | string | 不在 |
+| 入力.言語ID | 受信 | string | 不在 |
+| 入力.品詞ID | 受信 | string | 不在 |
+| 入力.方向 | 受信 | enum{前,後} | 不在 |
+| 入力.品詞名 | 受信 | string | 不在 |
+| 入力.語ID | 受信 | nullable<string> | 不在 |
+| 入力.スペル | 受信 | string | 不在 |
+| 入力.意味列 | 受信 | sequence<record<id:string,classId:nullable<string>,definition:string,etymologies:sequence<record<id:string,languageId:nullable<string>,wordId:nullable<string>,note:string>>>> | 不在 |
 | 出力.品詞候補 | 送信 | sequence<record<id:string,name:string,description:string>> | 任意 |
 | 出力.品詞列 | 送信 | sequence<record<id:string,name:string,description:string>> | 任意 |
 | 出力.編集対象ID | 送信 | nullable<string> | 任意 |
@@ -53,6 +53,13 @@ language: ja
 | save-classes | 受付 | 品詞保存 |
 | open-word | 受付 | 語編集開始 |
 | save-word | 受付 | 語保存 |
+| select-language-view | 提供 | 言語選択 |
+| add-class-view | 提供 | 品詞追加 |
+| move-class-view | 提供 | 品詞移動 |
+| edit-class-view | 提供 | 品詞名称編集 |
+| save-classes-view | 提供 | 品詞保存 |
+| open-word-view | 提供 | 語編集開始 |
+| save-word-view | 提供 | 語保存 |
 
 ## 操作別存在
 | 操作 | 項目 | 存在 |
@@ -68,7 +75,7 @@ language: ja
 | save-word | 入力.語ID | 必須 |
 | save-word | 入力.スペル | 必須 |
 | save-word | 入力.意味列 | 必須 |
-| save-word | 出力.保存結果 | 必須 |
+| save-word-view | 出力.保存結果 | 必須 |
 
 ## 制約
 | 式 |

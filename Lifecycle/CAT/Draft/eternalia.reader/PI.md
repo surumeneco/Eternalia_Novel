@@ -17,7 +17,7 @@ language: ja
 
 # PI: eternalia.reader.pi
 
-利用者が区別する値・操作・結果の意味上の境界。レコードは境界上の必要な射影であり、HTTP DTOやDOMタグの形を固定しない。値の有無は操作ごとに区別する。未形式化の結果PresenceはTCEの契約と合わせて確定する。
+利用者が区別する値・操作・結果の意味上の境界。レコードは境界上の必要な射影であり、HTTP DTOやDOMタグの形を固定しない。値の有無は操作ごとに区別する。受付入力は各操作の必要項目だけを保持し、提供Operationは同一論理実行の結果観測を区別する。操作別の未変換結果条件はTCEと領域別仕様を維持する。
 
 ## 境界
 | 相手Process | 方向 |
@@ -27,16 +27,16 @@ language: ja
 ## 項目
 | ID | 方向 | Domain | 存在 |
 | --- | --- | --- | --- |
-| 入力.シリーズID | 受信 | string | 任意 |
-| 入力.言語ID | 受信 | string | 任意 |
-| 入力.カテゴリID | 受信 | string | 任意 |
-| 入力.祖先ID列 | 受信 | sequence<string> | 任意 |
-| 入力.資料種別 | 受信 | string | 任意 |
-| 入力.資料ID | 受信 | string | 任意 |
-| 入力.検索語 | 受信 | string | 任意 |
-| 入力.品詞ID | 受信 | nullable<string> | 任意 |
-| 入力.タグID | 受信 | nullable<string> | 任意 |
-| 入力.並び | 受信 | enum{名称順,既定順} | 任意 |
+| 入力.シリーズID | 受信 | string | 不在 |
+| 入力.言語ID | 受信 | string | 不在 |
+| 入力.カテゴリID | 受信 | string | 不在 |
+| 入力.祖先ID列 | 受信 | sequence<string> | 不在 |
+| 入力.資料種別 | 受信 | string | 不在 |
+| 入力.資料ID | 受信 | string | 不在 |
+| 入力.検索語 | 受信 | string | 不在 |
+| 入力.品詞ID | 受信 | nullable<string> | 不在 |
+| 入力.タグID | 受信 | nullable<string> | 不在 |
+| 入力.並び | 受信 | enum{名称順,既定順} | 不在 |
 | 出力.単語列 | 送信 | sequence<record<id:string,spelling:string>> | 任意 |
 | 出力.設定列 | 送信 | sequence<record<id:string,title:string>> | 任意 |
 | 出力.意味品詞列 | 送信 | sequence<record<meaningId:string,classId:nullable<string>,label:nullable<string>>> | 任意 |
@@ -58,6 +58,14 @@ language: ja
 | sort-settings | 受付 | 設定並び変更 |
 | open-detail | 受付 | 詳細閲覧 |
 | chapter-index | 受付 | 章一覧へ戻る |
+| open-language-view | 提供 | 言語閲覧 |
+| open-settings-view | 提供 | カテゴリ閲覧 |
+| search-view | 提供 | 検索条件変更 |
+| filter-pos-view | 提供 | 品詞絞込 |
+| filter-tag-view | 提供 | タグ絞込 |
+| sort-settings-view | 提供 | 設定並び変更 |
+| open-detail-view | 提供 | 詳細閲覧 |
+| chapter-index-view | 提供 | 章一覧へ戻る |
 
 ## 操作別存在
 | 操作 | 項目 | 存在 |
@@ -74,6 +82,7 @@ language: ja
 | open-detail | 入力.資料ID | 必須 |
 | open-detail | 入力.祖先ID列 | 必須 |
 | open-detail | 入力.資料種別 | 必須 |
+
 
 ## 制約
 | 式 |

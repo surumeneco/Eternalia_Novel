@@ -35,7 +35,6 @@ language: ja
 | 状態.選択シリーズ | nullable<string> |
 | 状態.選択言語 | nullable<string> |
 | 状態.編集対象 | nullable<string> |
-| 状態.未保存入力 | json-object |
 
 ## 観測能力
 | ID | 情報源 | Domain |
@@ -44,6 +43,16 @@ language: ja
 | 観測.資料階層 | 対象と実祖先・所属・種別 | sequence<record<id:string,parentId:nullable<string>,seriesId:string,kind:string,title:string,order:integer>> |
 | 観測.共通マスタ | Tag/Divの保存済み状態と改訂 | sequence<record<id:string,kind:enum{tag,div},revision:integer,name:string>> |
 | 観測.マスタ参照 | 現在の参照関係 | sequence<record<masterId:string,targetId:string>> |
+| 観測.系列ID | 系列選択で対象となった実在シリーズのID（不在はなし） | nullable<string> |
+| 観測.編集ID | 編集パスに対応する実在資料ID（不在はなし） | nullable<string> |
+| 観測.編集所属系列 | 編集対象から祖先を辿って得た実在シリーズID（不正な祖先はなし） | nullable<string> |
+| 観測.編集種別 | 編集対象の実際の種別（不在はなし） | nullable<string> |
+| 観測.作成親ID | 作成パスに対応する実在親ID | nullable<string> |
+| 観測.作成親系列 | 作成親の実在する祖先系列ID | nullable<string> |
+| 観測.作成親種別 | 作成親の実際の種別 | nullable<string> |
+| 観測.削除対象ID | 削除対象マスタの実在ID（不在はなし） | nullable<string> |
+| 観測.削除対象改訂 | 対象マスタの実改訂（不在はなし） | nullable<integer> |
+| 観測.削除対象参照数 | 対象マスタを参照する実参照集合の要素数 | integer[0..] |
 
 ## 作用能力
 | ID | 対象 | Domain |
@@ -61,6 +70,6 @@ language: ja
 | 共通マスタ削除 | eternalia.author.management.pi/delete-master |
 
 ## 適用範囲
-旧クエリの値は観測すべき入力差であり、別の互換機能を要求しない。削除可否の純粋判定は内部実装として再利用できるが、独立Process合格を削除動作全体の合格にしない。
+旧クエリの値は入力差であり、別の互換機能を要求しない。管理境界が所有するのは一覧と編集対象の遷移であって、個別エディターが所有する本文・未保存入力ではない。未保存保護と新規作成後の編集値の引継ぎは management.editor.handoff で規定する。削除可否の純粋判定は内部実装として再利用できるが、独立Process合格を削除動作全体の合格にしない。
 
 未形式化のEffect・Condition・外部観測関係をTCE・領域別仕様に保持する。Compilerの対応範囲に合わせて要求を削らず、正式Gateは未完了。

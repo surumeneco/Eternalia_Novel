@@ -40,6 +40,7 @@ language: ja
 | --- | --- | --- |
 | 観測.認証役割 | サーバーの作者認可 | enum{作者,非作者,未ログイン} |
 | 観測.現在時刻 | 公開判定の時刻 | instant |
+| 観測.系列ID | 系列選択の実在シリーズID（不在はなし） | nullable<string> |
 | 観測.下書き資料 | 下書き資料ID・親・所属と改訂 | sequence<record<id:string,parentId:nullable<string>,seriesId:string,revision:integer>> |
 | 観測.公開資料 | 保持公開版の資料ID・公開版上の親と所属 | sequence<record<id:string,parentId:nullable<string>,seriesId:string>> |
 | 観測.公開設定 | 現在の各資料自身の公開設定（公開版内容と独立） | sequence<record<id:string,isPublic:boolean,publicSince:nullable<instant>>> |
