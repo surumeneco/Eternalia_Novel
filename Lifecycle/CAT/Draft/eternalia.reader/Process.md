@@ -46,7 +46,7 @@ language: ja
 | ID | 情報源 | Domain |
 | --- | --- | --- |
 | 観測.現在時刻 | 公開判定の時刻 | instant |
-| 観測.公開階層 | 公開版上の資料・祖先関係と現在の自身公開設定 | sequence<record<id:string,parentId:nullable<string>,seriesId:string,kind:string,title:string,isPublic:boolean,publicSince:nullable<instant>>> |
+| 観測.公開階層 | 公開版上の資料・祖先関係と現在の自身公開設定 | sequence<record<id:string,parentId:nullable<string>,seriesId:string,kind:string,title:string,order:integer,isPublic:boolean,publicSince:nullable<instant>>> |
 | 観測.公開単語 | 公開言語の語と意味 | sequence<record<id:string,languageId:string,spelling:string,meanings:sequence<record<id:string,classId:nullable<string>,definition:string,etymologies:sequence<record<id:string,languageId:nullable<string>,wordId:nullable<string>,note:string>>>>>> |
 | 観測.公開品詞 | 言語ごとの公開マスタ | sequence<record<languageId:string,id:string,name:string>> |
 | 観測.公開設定 | 公開Tipと公開項目・タグ | sequence<record<id:string,categoryId:string,title:string,tagIds:sequence<string>,sectionIds:sequence<string>>> |

@@ -24,6 +24,31 @@
   "evidence": [
     {
       "uri": "https://github.com/surumeneco/Eternalia_Novel/tree/961d291f493df219ac36cf88108d302d680c51ef/Lifecycle/Works/New/eternalia.publication.author-status-on-tip-move/CAT/Confirmed"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/961d291f493df219ac36cf88108d302d680c51ef/apps/web/browser-acceptance/author-publication-published-parent.test.mjs#L10",
+      "scope": "publication.view/filter and publication.move.trace",
+      "kind": "existing-test-source; re-evaluate against replacement TCE; not a new execution receipt"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/961d291f493df219ac36cf88108d302d680c51ef/apps/web/browser-acceptance/canonical-publication-actions.test.mjs#L36",
+      "scope": "publication.visibility/publish and publication.snapshot.frame",
+      "kind": "existing-test-source; re-evaluate against replacement TCE; not a new execution receipt"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/961d291f493df219ac36cf88108d302d680c51ef/apps/web/browser-acceptance/canonical-publication-actions.test.mjs#L168",
+      "scope": "publication.batch and series isolation",
+      "kind": "existing-test-source; re-evaluate against replacement TCE; not a new execution receipt"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/961d291f493df219ac36cf88108d302d680c51ef/apps/web/browser-acceptance/series-first-ia.test.mjs#L234",
+      "scope": "publication.batch conflict and unverified readback",
+      "kind": "existing-test-source; re-evaluate against replacement TCE; not a new execution receipt"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/961d291f493df219ac36cf88108d302d680c51ef/apps/api/http-acceptance/public-http-clock-boundary.test.mjs#L65",
+      "scope": "actual release instant at HTTP boundary; not general clock proof",
+      "kind": "existing-test-source; re-evaluate against replacement TCE; not a new execution receipt"
     }
   ],
   "repositories": [],

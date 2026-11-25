@@ -24,6 +24,21 @@
   "evidence": [
     {
       "uri": "https://github.com/surumeneco/Eternalia_Novel/tree/961d291f493df219ac36cf88108d302d680c51ef/Lifecycle/Works/New/eternalia.ui.mobile-shell-focus/CAT/Confirmed"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/961d291f493df219ac36cf88108d302d680c51ef/apps/web/browser-acceptance/admin-grid-shell.test.mjs#L126",
+      "scope": "shell.open/close/focus and layout: focus containment, opener restore",
+      "kind": "existing-test-source; re-evaluate against replacement TCE; not a new execution receipt"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/961d291f493df219ac36cf88108d302d680c51ef/apps/web/browser-acceptance/series-first-ia.test.mjs#L162",
+      "scope": "shell.open/close: independent overlays and locale selection",
+      "kind": "existing-test-source; re-evaluate against replacement TCE; not a new execution receipt"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/961d291f493df219ac36cf88108d302d680c51ef/apps/web/browser-acceptance/shell-keyboard-bypass.test.mjs#L11",
+      "scope": "shell keyboard bypass and hydration regression",
+      "kind": "existing-test-source; re-evaluate against replacement TCE; not a new execution receipt"
     }
   ],
   "repositories": [],

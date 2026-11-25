@@ -33,6 +33,36 @@
     },
     {
       "uri": "https://github.com/surumeneco/Eternalia_Novel/tree/961d291f493df219ac36cf88108d302d680c51ef/Lifecycle/Works/New/eternalia.master.delete-admission/CAT/Confirmed"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/961d291f493df219ac36cf88108d302d680c51ef/apps/web/browser-acceptance/admin-grid-shell.test.mjs#L30",
+      "scope": "management.list/edit; existing editor routes",
+      "kind": "existing-test-source; re-evaluate against replacement TCE; not a new execution receipt"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/961d291f493df219ac36cf88108d302d680c51ef/apps/web/browser-acceptance/admin-grid-shell.test.mjs#L62",
+      "scope": "management.edit denial and foreign IDs",
+      "kind": "existing-test-source; re-evaluate against replacement TCE; not a new execution receipt"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/961d291f493df219ac36cf88108d302d680c51ef/apps/web/browser-acceptance/series-first-ia.test.mjs#L337",
+      "scope": "management.select and grid entry",
+      "kind": "existing-test-source; re-evaluate against replacement TCE; not a new execution receipt"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/961d291f493df219ac36cf88108d302d680c51ef/apps/web/browser-acceptance/series-first-ia.test.mjs#L363",
+      "scope": "management.edit: exact canonical identity and query independence (next case also covers create query)",
+      "kind": "existing-test-source; re-evaluate against replacement TCE; not a new execution receipt"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/961d291f493df219ac36cf88108d302d680c51ef/apps/web/browser-acceptance/author-create-navigation.test.mjs#L17",
+      "scope": "management.create actual navigation",
+      "kind": "existing-test-source; re-evaluate against replacement TCE; not a new execution receipt"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/961d291f493df219ac36cf88108d302d680c51ef/apps/api/tests/common-masters-postgres.test.mjs#L17",
+      "scope": "master.delete: storage CRUD and reference protection",
+      "kind": "existing-test-source; re-evaluate against replacement TCE; not a new execution receipt"
     }
   ],
   "repositories": [],

@@ -28,6 +28,8 @@ language: ja
 | ID | 方向 | Domain | 存在 |
 | --- | --- | --- | --- |
 | 入力.シリーズID | 受信 | string | 任意 |
+| 入力.一覧種別 | 受信 | string | 任意 |
+| 入力.削除確定 | 受信 | boolean | 任意 |
 | 入力.言語ID | 受信 | nullable<string> | 任意 |
 | 入力.対象ID | 受信 | string | 任意 |
 | 入力.親ID | 受信 | nullable<string> | 任意 |
@@ -56,6 +58,7 @@ language: ja
 | 操作 | 項目 | 存在 |
 | --- | --- | --- |
 | select-series | 入力.シリーズID | 必須 |
+| list | 入力.一覧種別 | 必須 |
 | filter-language | 入力.言語ID | 必須 |
 | open-edit | 入力.シリーズID | 必須 |
 | open-edit | 入力.対象ID | 必須 |
@@ -64,7 +67,7 @@ language: ja
 | open-create | 入力.親ID | 必須 |
 | delete-master | 入力.対象ID | 必須 |
 | delete-master | 入力.改訂 | 必須 |
-| delete-master | 出力.削除結果 | 必須 |
+| delete-master | 入力.削除確定 | 必須 |
 
 ## 制約
 | 式 |

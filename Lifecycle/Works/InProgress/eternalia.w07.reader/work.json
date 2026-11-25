@@ -33,6 +33,41 @@
     },
     {
       "uri": "https://github.com/surumeneco/Eternalia_Novel/tree/961d291f493df219ac36cf88108d302d680c51ef/Lifecycle/Works/New/eternalia.ui.chapter-return/CAT/Confirmed"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/961d291f493df219ac36cf88108d302d680c51ef/apps/web/browser-acceptance/dictionary-spelling-order.test.mjs#L15",
+      "scope": "reader.language, reader.order.relation: actual sorted list",
+      "kind": "existing-test-source; re-evaluate against replacement TCE; not a new execution receipt"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/961d291f493df219ac36cf88108d302d680c51ef/apps/web/browser-acceptance/dictionary-compound-filters.test.mjs#L15",
+      "scope": "reader.search/pos, private-word exclusion",
+      "kind": "existing-test-source; re-evaluate against replacement TCE; not a new execution receipt"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/961d291f493df219ac36cf88108d302d680c51ef/apps/web/browser-acceptance/reader-hierarchy.test.mjs#L51",
+      "scope": "reader.chapter.index: actual contents href; browser back tested here, click check separately",
+      "kind": "existing-test-source; re-evaluate against replacement TCE; not a new execution receipt"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/961d291f493df219ac36cf88108d302d680c51ef/apps/web/browser-acceptance/reader-hierarchy.test.mjs#L71",
+      "scope": "reader.settings/detail: actual public hierarchy and grammar navigation",
+      "kind": "existing-test-source; re-evaluate against replacement TCE; not a new execution receipt"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/961d291f493df219ac36cf88108d302d680c51ef/apps/web/browser-acceptance/reader-hierarchy.test.mjs#L101",
+      "scope": "reader.unavailable: wrong ancestry and series",
+      "kind": "existing-test-source; re-evaluate against replacement TCE; not a new execution receipt"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/961d291f493df219ac36cf88108d302d680c51ef/apps/api/http-acceptance/word-pos-stable-id.test.mjs#L38",
+      "scope": "reader.pos.rename: public API labels before/after publish",
+      "kind": "existing-test-source; re-evaluate against replacement TCE; not a new execution receipt"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/961d291f493df219ac36cf88108d302d680c51ef/Lifecycle/Works/New/eternalia.ui.reader-required-ia/CAT/Generated/required-ia-driver.mjs",
+      "scope": "existing real DOM fixture observations for search/filter/order/privacy/sections/grammar; reuse raw observations, not verdict-shaped PI",
+      "kind": "existing-test-source; re-evaluate against replacement TCE; not a new execution receipt"
     }
   ],
   "repositories": [],

@@ -30,6 +30,8 @@ language: ja
 | 入力.シリーズID | 受信 | string | 任意 |
 | 入力.言語ID | 受信 | string | 任意 |
 | 入力.カテゴリID | 受信 | string | 任意 |
+| 入力.祖先ID列 | 受信 | sequence<string> | 任意 |
+| 入力.資料種別 | 受信 | string | 任意 |
 | 入力.資料ID | 受信 | string | 任意 |
 | 入力.検索語 | 受信 | string | 任意 |
 | 入力.品詞ID | 受信 | nullable<string> | 任意 |
@@ -40,6 +42,7 @@ language: ja
 | 出力.意味品詞列 | 送信 | sequence<record<meaningId:string,classId:nullable<string>,label:nullable<string>>> | 任意 |
 | 出力.本文列 | 送信 | sequence<record<id:string,body:string>> | 任意 |
 | 出力.文法リンクID列 | 送信 | sequence<string> | 任意 |
+| 出力.章列 | 送信 | sequence<record<id:string,title:string>> | 任意 |
 | 出力.章一覧の部ID | 送信 | string | 任意 |
 | 出力.表示対象ID | 送信 | string | 任意 |
 | 出力.拒否 | 送信 | enum{対象なし} | 任意 |
@@ -67,7 +70,10 @@ language: ja
 | filter-pos | 入力.品詞ID | 必須 |
 | filter-tag | 入力.タグID | 必須 |
 | sort-settings | 入力.並び | 必須 |
+| open-detail | 入力.シリーズID | 必須 |
 | open-detail | 入力.資料ID | 必須 |
+| open-detail | 入力.祖先ID列 | 必須 |
+| open-detail | 入力.資料種別 | 必須 |
 
 ## 制約
 | 式 |

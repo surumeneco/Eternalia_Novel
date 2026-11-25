@@ -36,6 +36,36 @@
     },
     {
       "uri": "https://github.com/surumeneco/Eternalia_Novel/tree/961d291f493df219ac36cf88108d302d680c51ef/Lifecycle/Works/New/eternalia.dictionary.spelling-collision-implementation/CAT/Confirmed"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/961d291f493df219ac36cf88108d302d680c51ef/apps/web/browser-acceptance/language-class-manual-order.test.mjs#L15",
+      "scope": "class.append, class.move, class.save; adjacent order, exact records, explicit publication (fixture creation; append control separately check)",
+      "kind": "existing-test-source; re-evaluate against replacement TCE; not a new execution receipt"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/961d291f493df219ac36cf88108d302d680c51ef/apps/web/browser-acceptance/word-class-input-master.test.mjs#L11",
+      "scope": "word.open; actual options and no unregistered free-text",
+      "kind": "existing-test-source; re-evaluate against replacement TCE; not a new execution receipt"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/961d291f493df219ac36cf88108d302d680c51ef/apps/api/http-acceptance/word-pos-create-master.test.mjs#L31",
+      "scope": "word.save.valid/rejected; both HTTP boundaries",
+      "kind": "existing-test-source; re-evaluate against replacement TCE; not a new execution receipt"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/961d291f493df219ac36cf88108d302d680c51ef/apps/api/http-acceptance/word-published-snapshot-collision.test.mjs#L83",
+      "scope": "word.spelling.reservation; actual persistence and released spelling",
+      "kind": "existing-test-source; re-evaluate against replacement TCE; not a new execution receipt"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/961d291f493df219ac36cf88108d302d680c51ef/apps/web/browser-acceptance/word-published-draft-redirect.test.mjs#L16",
+      "scope": "word.save.duplicate and word.duplicate.atomic",
+      "kind": "existing-test-source; re-evaluate against replacement TCE; not a new execution receipt"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/961d291f493df219ac36cf88108d302d680c51ef/apps/api/http-acceptance/word-pos-stable-id.test.mjs#L38",
+      "scope": "class.rename and dictionary.class.id",
+      "kind": "existing-test-source; re-evaluate against replacement TCE; not a new execution receipt"
     }
   ],
   "repositories": [],

@@ -37,7 +37,7 @@ language: ja
 | 状態.選択言語 | nullable<string> |
 | 状態.編集対象 | nullable<string> |
 | 状態.未保存意味 | sequence<record<id:string,classId:nullable<string>,definition:string,etymologies:sequence<record<id:string,languageId:nullable<string>,wordId:nullable<string>,note:string>>>> |
-| 状態.編集中品詞列 | sequence<record<id:string,name:string>> |
+| 状態.編集中品詞列 | sequence<record<id:string,name:string,description:string>> |
 
 ## 観測能力
 | ID | 情報源 | Domain |
@@ -45,7 +45,7 @@ language: ja
 | 観測.認証役割 | 作者認証・認可 | enum{作者,非作者,未ログイン} |
 | 観測.言語ID | 選択要求で解決した実在言語ID（不在はなし） | nullable<string> |
 | 観測.言語所属系列ID | 解決した言語の実所属系列 | nullable<string> |
-| 観測.下書き品詞列 | 選択言語の保存済み品詞マスタ | sequence<record<id:string,name:string>> |
+| 観測.下書き品詞列 | 選択言語の保存済み品詞マスタ | sequence<record<id:string,name:string,description:string>> |
 | 観測.下書き単語 | 同一言語の保存済み語 | sequence<record<id:string,spelling:string,deleted:boolean>> |
 | 観測.保持公開単語 | 同一言語の保持公開版 | sequence<record<id:string,spelling:string,deleted:boolean>> |
 
@@ -53,7 +53,7 @@ language: ja
 | ID | 対象 | Domain |
 | --- | --- | --- |
 | 作用.保存語 | 下書き単語の保存 | record<id:string,languageId:string,spelling:string,meanings:sequence<record<id:string,classId:nullable<string>,definition:string,etymologies:sequence<record<id:string,languageId:nullable<string>,wordId:nullable<string>,note:string>>>>> |
-| 作用.保存品詞列 | 選択言語の下書きマスタの保存 | sequence<record<id:string,name:string>> |
+| 作用.保存品詞列 | 選択言語の下書きマスタの保存 | sequence<record<id:string,name:string,description:string>> |
 
 ## 起点
 | ID | 由来 |
