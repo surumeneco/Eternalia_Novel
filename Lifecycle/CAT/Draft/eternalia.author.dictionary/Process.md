@@ -51,6 +51,11 @@ language: ja
 | 観測.新規採番ID | 品詞追加を受理した場合に新規に採番された実際の安定ID | string |
 | 観測.対象品詞位置 | 編集中品詞列で入力.品詞IDを実際に検索した位置（不在は-1） | integer[-1..] |
 | 観測.編集語意味列 | 解決した語の保存済み下書き意味列 | sequence<record<id:string,classId:nullable<string>,definition:string,etymologies:sequence<record<id:string,languageId:nullable<string>,wordId:nullable<string>,note:string>>>> |
+| 観測.保存対象ID | 保存要求で解決した実在未削除語または言語ID（新規語・不在はなし） | nullable<string> |
+| 観測.保存対象所属言語ID | 保存対象が語の場合の実所属言語ID（新規語・言語・不在はなし） | nullable<string> |
+| 観測.衝突語ID | 正規化した入力スペルに対し実保存状態から同綴検査で解決された実在衝突語のID（衝突なしはなし） | nullable<string> |
+| 観測.衝突語下書きスペル | 拒否応答の対象IDと同じ語を再取得した実下書きスペル（取得不能はなし） | nullable<string> |
+| 観測.衝突語下書き意味列 | 同じ衝突語の再取得した下書き意味列 | sequence<record<id:string,classId:nullable<string>,definition:string,etymologies:sequence<record<id:string,languageId:nullable<string>,wordId:nullable<string>,note:string>>>> |
 | 観測.保存対象改訂 | 保存対象の実在下書き改訂（不在はなし） | nullable<integer> |
 | 観測.参照中品詞ID列 | 選択言語の未削除語の下書き・保持公開版が実際に参照する安定品詞ID | sequence<string> |
 | 観測.下書き品詞列 | 言語選択で解決した言語（その他の操作では現在選択言語）の保存済み品詞マスタ | sequence<record<id:string,name:string,description:string>> |

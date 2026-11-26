@@ -33,8 +33,9 @@ language: ja
 | 入力.検索語 | 受信 | string | 不在 |
 | 入力.公開絞込 | 受信 | enum{すべて,公開,非公開,未公開稿} | 不在 |
 | 入力.公開フラグ | 受信 | boolean | 不在 |
-| 入力.公開日時 | 受信 | nullable<instant> | 不在 |
+| 入力.公開日時 | 受信 | integer[0..9007199254740991] | 不在 |
 | 入力.改訂 | 受信 | integer | 不在 |
+| 出力.管理取得結果 | 送信 | enum{取得済み,取得失敗,認可拒否,対象なし} | 任意 |
 | 出力.管理行 | 送信 | sequence<record<id:string,isPublic:boolean,effectivelyPublic:boolean,status:enum{未公開稿,自身非公開,日時未設定,公開前,祖先非公開,公開中},publicSince:nullable<instant>>> | 任意 |
 | 出力.公開絞込 | 送信 | enum{すべて,公開,非公開,未公開稿} | 任意 |
 | 出力.選択系列ID | 送信 | string | 任意 |
@@ -73,7 +74,7 @@ language: ja
 | update-visibility | 入力.シリーズID | 必須 |
 | update-visibility | 入力.対象ID | 必須 |
 | update-visibility | 入力.公開フラグ | 必須 |
-| update-visibility | 入力.公開日時 | 必須 |
+| update-visibility | 入力.公開日時 | 任意 |
 | update-visibility | 入力.改訂 | 必須 |
 | batch-visibility | 入力.一括対象ID列 | 必須 |
 | batch-visibility | 入力.一括操作 | 必須 |
@@ -104,3 +105,5 @@ language: ja
 | --- |
 
 実IDの所属、対象の同一性、操作に固有の結果Presenceは未形式化のTCEおよび領域別関係を参照する。適合/不適合はPIの値でない。
+
+公開設定変更の日時値は現行管理APIが受理する1970年UTC起点の安全な非負整数ミリ秒という境界値を表す。null/省略は当該操作の有効日時指定なしへ正規化し、日時項目不在として表す（APIは input.publicSince ?? null で同一意味にする）。生のwire Presenceを全操作で同一視する要求ではない。JST画面入力と瞬間との対応は領域別規則に保持する。このAPI境界の値域は、他の日時Domainや将来の製品時刻精度を制約する新要件ではない。

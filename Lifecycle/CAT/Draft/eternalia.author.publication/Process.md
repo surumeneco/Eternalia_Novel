@@ -42,7 +42,9 @@ language: ja
 | --- | --- | --- |
 | 観測.認証役割 | サーバーの作者認可 | enum{作者,非作者,未ログイン} |
 | 観測.現在時刻 | 公開判定の時刻 | instant |
-| 観測.系列ID | 系列選択の実在シリーズID（不在はなし） | nullable<string> |
+| 観測.設定評価時刻 | 公開設定変更で日時を補う同一保存処理の現在時刻（UTC epochミリ秒の実評価値。未来の応答時刻や読者端末時刻ではない） | integer[0..9007199254740991] |
+| 観測.系列ID | 系列選択・公開管理閲覧の実在シリーズID（不在はなし） | nullable<string> |
+| 観測.管理取得 | 同一公開管理閲覧での作者API取得結果 | enum{取得済み,取得失敗} |
 | 観測.公開対象ID | 公開設定変更または明示公開版更新の認可・改訂判定時に解決した実在未削除資料ID | nullable<string> |
 | 観測.公開対象系列ID | 同一対象の下書き所属を辿った正規系列ID | nullable<string> |
 | 観測.公開対象改訂 | 同一対象の保存済み下書き改訂（不在はなし） | nullable<integer> |
@@ -56,7 +58,7 @@ language: ja
 | --- | --- | --- |
 | 作用.公開設定更新対象 | 実際に公開設定が確定更新された資料ID | string |
 | 作用.公開設定フラグ | 同一確定更新で設定される自身の公開フラグ | boolean |
-| 作用.公開日時指定 | 同一確定更新で適用される日時指定値（なしは指定解除）。保存値は publication.visibility.commit の日時正規化関係に従う | nullable<instant> |
+| 作用.保存公開日時 | 同一確定更新によって実際に保存される公開開始のUTC epochミリ秒値（非公開時の指定解除はなし） | nullable<integer[0..9007199254740991]> |
 | 作用.一括公開版更新ID列 | 一括操作で実際に確定した公開版更新の資料ID列 | sequence<string> |
 | 作用.一括公開設定更新列 | 一括操作で実際に確定した設定更新（同一資料のID・フラグ・日時指定） | sequence<record<id:string,isPublic:boolean,publicSince:nullable<instant>>> |
 | 作用.公開版更新 | 対象資料IDの確定済み公開版更新（要求送信だけではない）。更新内容は publication.snapshot.commit に従う | string |

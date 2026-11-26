@@ -45,9 +45,14 @@ language: ja
 | 出力.単語列 | 送信 | sequence<record<id:string,spelling:string>> | 任意 |
 | 出力.設定列 | 送信 | sequence<record<id:string,title:string>> | 任意 |
 | 出力.意味品詞列 | 送信 | sequence<record<meaningId:string,classId:nullable<string>,label:nullable<string>>> | 任意 |
+| 出力.詳細本文 | 送信 | string | 任意 |
+| 出力.章ページ列 | 送信 | sequence<string> | 任意 |
 | 出力.本文列 | 送信 | sequence<record<id:string,body:string>> | 任意 |
+| 出力.前章ID | 送信 | string | 任意 |
+| 出力.次章ID | 送信 | string | 任意 |
 | 出力.文法リンクID列 | 送信 | sequence<string> | 任意 |
 | 出力.章列 | 送信 | sequence<record<id:string,title:string>> | 任意 |
+| 出力.章一覧の編ID | 送信 | string | 任意 |
 | 出力.章一覧の部ID | 送信 | string | 任意 |
 | 出力.章一覧の系列ID | 送信 | string | 任意 |
 | 出力.表示対象ID | 送信 | string | 任意 |
@@ -97,6 +102,7 @@ language: ja
 | chapter-index-view | 出力.章列 | 不在 |
 | chapter-index-view | 出力.表示対象ID | 不在 |
 | chapter-index-view | 出力.拒否 | 不在 |
+| open-chapter-index-view | 出力.章一覧の編ID | 不在 |
 | open-chapter-index-view | 出力.章一覧の部ID | 不在 |
 | open-chapter-index-view | 出力.章一覧の系列ID | 不在 |
 
@@ -107,4 +113,4 @@ language: ja
 
 詳細閲覧の中間祖先1/2は採用済み論理階層における系列と対象の間の実IDであり、該当階層なしはnull。章なら編・部、語/文法なら言語・なし、設定ならカテゴリ・なし、設定項目ならカテゴリ・設定、言語詳細なら両方なし。章一覧の編IDは実編のID。これはURL文字列や内部配列形式を規定せず、階層固定の意味を保持する。
 
-章一覧の部ID・系列IDはリンク操作で要求する遷移先（実URLは公開祖先列に基づく）を示し、章列・表示対象IDは遷移先で公開状態を再評価した表示結果を示す。リンク操作だけで読込み成功・公開可否を宣言しない。実IDの所属、対象の同一性、その他の操作に固有の結果PresenceはTCEおよび領域別関係を参照する。品詞名・タグ名の未指定はnullで表す（画面の空文字値を同一の論理値へ正規化）。品詞参照の保存IDを名称文字列へ変更する要求ではない。公開更新順は現行UIで観測できる選択肢として保持し、ST-09の詳細な追加採用を推定しない。適合/不適合はPIの値でない。
+詳細本文は公開本文の論理内容であり、DOM文字列がマークアップの生文字列と一致することを要求しない。章ページ列は公開ページの順序列。本文列は設定詳細の公開項目本文（IDとの組）を表す。前章ID・次章IDは実際に表示されるリンクの対象IDで、存在しない方向は項目不在とする。章一覧の編ID・部ID・系列IDはリンク操作で要求する遷移先（実URLは公開祖先列に基づく）を示し、章列・表示対象IDは遷移先で公開状態を再評価した表示結果を示す。リンク操作だけで読込み成功・公開可否を宣言しない。実IDの所属、対象の同一性、その他の操作に固有の結果PresenceはTCEおよび領域別関係を参照する。品詞名・タグ名の未指定はnullで表す（画面の空文字値を同一の論理値へ正規化）。品詞参照の保存IDを名称文字列へ変更する要求ではない。公開更新順は現行UIで観測できる選択肢として保持し、ST-09の詳細な追加採用を推定しない。適合/不適合はPIの値でない。

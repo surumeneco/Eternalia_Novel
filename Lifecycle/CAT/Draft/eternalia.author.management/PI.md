@@ -29,7 +29,7 @@ language: ja
 | --- | --- | --- | --- |
 | 入力.シリーズID | 受信 | string | 不在 |
 | 入力.一覧系列ID | 受信 | nullable<string> | 不在 |
-| 入力.一覧種別 | 受信 | string | 不在 |
+| 入力.一覧種別 | 受信 | enum{series,volume,part,chapter,category,tip,tipSection,language,word,grammar,periodization,event} | 不在 |
 | 入力.マスタ種別 | 受信 | enum{tag,div} | 不在 |
 | 入力.削除確定 | 受信 | boolean | 不在 |
 | 入力.言語ID | 受信 | nullable<string> | 不在 |
@@ -40,6 +40,7 @@ language: ja
 | 入力.旧item | 受信 | string | 不在 |
 | 入力.旧create | 受信 | string | 不在 |
 | 入力.改訂 | 受信 | integer | 不在 |
+| 出力.一覧取得結果 | 送信 | enum{取得済み,取得失敗} | 任意 |
 | 出力.一覧 | 送信 | sequence<record<id:string,title:string,order:integer,parentId:nullable<string>,editTargetId:string,isPublic:boolean,hasSnapshot:boolean>> | 任意 |
 | 出力.言語候補 | 送信 | sequence<record<id:string,title:string>> | 任意 |
 | 出力.章所属 | 送信 | sequence<record<chapterId:string,volumeId:string,partId:string>> | 任意 |
