@@ -43,7 +43,7 @@ language: ja
 | 観測.認証役割 | サーバーの作者認可 | enum{作者,非作者,未ログイン} |
 | 観測.資料階層 | 対象と実祖先・所属・種別 | sequence<record<id:string,parentId:nullable<string>,seriesId:string,kind:string,title:string,order:integer,isPublic:boolean,hasSnapshot:boolean>> |
 | 観測.共通マスタ | Tag/Divの保存済み状態と改訂 | sequence<record<id:string,kind:enum{tag,div},revision:integer,name:string>> |
-| 観測.マスタ参照 | 現在の参照関係 | sequence<record<masterId:string,targetId:string>> |
+| 観測.マスタ参照 | 現在の参照関係 | sequence<record<masterKind:enum{tag,div},masterId:string,targetId:string>> |
 | 観測.系列ID | 系列選択で対象となった実在シリーズのID（不在はなし） | nullable<string> |
 | 観測.編集ID | 編集パスに対応する実在資料ID（不在はなし） | nullable<string> |
 | 観測.編集所属系列 | 編集対象から祖先を辿って得た実在シリーズID（不正な祖先はなし） | nullable<string> |
@@ -51,6 +51,7 @@ language: ja
 | 観測.作成親ID | 作成パスに対応する実在親ID | nullable<string> |
 | 観測.作成親系列 | 作成親の実在する祖先系列ID | nullable<string> |
 | 観測.作成親種別 | 作成親の実際の種別 | nullable<string> |
+| 観測.削除対象種別 | 実対象が属する共通マスタ種別（対象不在はなし） | nullable<enum{tag,div}> |
 | 観測.削除対象ID | 削除対象マスタの実在ID（不在はなし） | nullable<string> |
 | 観測.削除対象改訂 | 対象マスタの実改訂（不在はなし） | nullable<integer> |
 | 観測.削除対象参照数 | 対象マスタを参照する実参照集合の要素数 | integer[0..] |
@@ -58,7 +59,8 @@ language: ja
 ## 作用能力
 | ID | 対象 | Domain |
 | --- | --- | --- |
-| 作用.削除対象 | 共通Tag/Divの確定削除 | string |
+| 作用.削除対象 | 指定種別の共通マスタの確定削除ID（種別と同一作用） | string |
+| 作用.削除種別 | 同一確定削除の共通マスタ種別 | enum{tag,div} |
 
 ## 起点
 | ID | 由来 |

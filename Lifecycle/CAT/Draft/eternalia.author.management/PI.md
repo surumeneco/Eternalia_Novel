@@ -30,6 +30,7 @@ language: ja
 | 入力.シリーズID | 受信 | string | 不在 |
 | 入力.一覧系列ID | 受信 | nullable<string> | 不在 |
 | 入力.一覧種別 | 受信 | string | 不在 |
+| 入力.マスタ種別 | 受信 | enum{tag,div} | 不在 |
 | 入力.削除確定 | 受信 | boolean | 不在 |
 | 入力.言語ID | 受信 | nullable<string> | 不在 |
 | 入力.対象ID | 受信 | string | 不在 |
@@ -80,6 +81,7 @@ language: ja
 | open-edit | 入力.旧item | 任意 |
 | open-edit | 入力.旧create | 任意 |
 | delete-master | 入力.対象ID | 必須 |
+| delete-master | 入力.マスタ種別 | 必須 |
 | delete-master | 入力.改訂 | 必須 |
 | delete-master | 入力.削除確定 | 必須 |
 | select-series-view | 出力.画面 | 必須 |
@@ -90,4 +92,4 @@ language: ja
 | 式 |
 | --- |
 
-一覧系列IDは実URLの系列ID（最上位シリーズ一覧はなし）。実IDの所属、対象の同一性、操作に固有の結果Presenceは未形式化のTCEおよび領域別関係を参照する。適合/不適合はPIの値でない。
+一覧系列IDは実URLの系列ID（最上位シリーズ一覧はなし）。実IDの所属、対象の同一性、操作に固有の結果Presenceは未形式化のTCEおよび領域別関係を参照する。共通TagとDivは異なるマスタ種別であり、削除の同一性は種別と安定IDの組で定まる。分類の内部kindと共通マスタ種別を混同しない。適合/不適合はPIの値でない。
