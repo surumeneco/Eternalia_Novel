@@ -1,0 +1,111 @@
+{
+  "schema": "cat-work/v1",
+  "id": "eternalia.w07.author-management",
+  "entry": "issue",
+  "flow": "issue-work",
+  "mode": "shadow",
+  "work_kind": "specification",
+  "issue_ref": "https://github.com/surumeneco/Eternalia_Novel/issues/165",
+  "project_entry_ref": "https://drive.google.com/file/d/1clwfVJ3e_t1_QKFfOWxxRIzE9WMFvTiM/view",
+  "normative": [
+    {
+      "uri": "https://drive.google.com/file/d/1LqX-Noytb_oWymIrpO01eO5PvThGlVGx/view"
+    },
+    {
+      "uri": "https://drive.google.com/file/d/1G4q4DbJZdOk7jIfgvuZu0a2e4L1LIMti/view"
+    },
+    {
+      "uri": "https://drive.google.com/file/d/14no6MWmkFuyWYPVS6QdcRmbLbrUBbOpc/view"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/issues/165"
+    }
+  ],
+  "evidence": [
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/tree/961d291f493df219ac36cf88108d302d680c51ef/Lifecycle/Works/New/eternalia.ui.admin-navigation/CAT/Confirmed"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/tree/961d291f493df219ac36cf88108d302d680c51ef/Lifecycle/Works/New/eternalia.ui.admin-required-ia/CAT/Confirmed"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/tree/961d291f493df219ac36cf88108d302d680c51ef/Lifecycle/Works/New/eternalia.ui.canonical-create/CAT/Confirmed"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/tree/961d291f493df219ac36cf88108d302d680c51ef/Lifecycle/Works/New/eternalia.master.delete-admission/CAT/Confirmed"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/961d291f493df219ac36cf88108d302d680c51ef/apps/web/browser-acceptance/admin-grid-shell.test.mjs#L30",
+      "scope": "management.list/edit; existing editor routes",
+      "kind": "existing-test-source; re-evaluate against replacement TCE; not a new execution receipt"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/961d291f493df219ac36cf88108d302d680c51ef/apps/web/browser-acceptance/admin-grid-shell.test.mjs#L62",
+      "scope": "management.edit denial and foreign IDs",
+      "kind": "existing-test-source; re-evaluate against replacement TCE; not a new execution receipt"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/961d291f493df219ac36cf88108d302d680c51ef/apps/web/browser-acceptance/series-first-ia.test.mjs#L337",
+      "scope": "management.select and grid entry",
+      "kind": "existing-test-source; re-evaluate against replacement TCE; not a new execution receipt"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/961d291f493df219ac36cf88108d302d680c51ef/apps/web/browser-acceptance/series-first-ia.test.mjs#L363",
+      "scope": "management.edit: exact canonical identity and query independence (next case also covers create query)",
+      "kind": "existing-test-source; re-evaluate against replacement TCE; not a new execution receipt"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/961d291f493df219ac36cf88108d302d680c51ef/apps/web/browser-acceptance/author-create-navigation.test.mjs#L17",
+      "scope": "management.create actual navigation",
+      "kind": "existing-test-source; re-evaluate against replacement TCE; not a new execution receipt"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/961d291f493df219ac36cf88108d302d680c51ef/apps/api/tests/common-masters-postgres.test.mjs#L17",
+      "scope": "master.delete: storage CRUD and reference protection",
+      "kind": "existing-test-source; re-evaluate against replacement TCE; not a new execution receipt"
+    }
+  ],
+  "repositories": [],
+  "scope": {
+    "process_ids": [
+      "eternalia.author.management"
+    ],
+    "changed_ids": [
+      "AC-81",
+      "AC-95",
+      "AC-96",
+      "LG-08"
+    ],
+    "preserved_ids": [
+      "AC-81",
+      "AC-95",
+      "AC-96",
+      "LG-08"
+    ]
+  },
+  "specification": {
+    "status": "draft",
+    "decision_ref": null,
+    "artifact_refs": [
+      "Lifecycle/CAT/Draft/eternalia.author.management/Process.md",
+      "Lifecycle/CAT/Draft/eternalia.author.management/PI.md",
+      "Lifecycle/CAT/Draft/eternalia.author.management/TCE.md",
+      "Lifecycle/CAT/Draft/eternalia.author.management/DomainSpec.md"
+    ]
+  },
+  "technologies": [],
+  "checks": [],
+  "depends_on": [],
+  "compilation": {
+    "schema": "cat-compile/v2",
+    "process": "@workspace/Lifecycle/CAT/Draft/eternalia.author.management/Process.md",
+    "pi": "@workspace/Lifecycle/CAT/Draft/eternalia.author.management/PI.md",
+    "tce": "@workspace/Lifecycle/CAT/Draft/eternalia.author.management/TCE.md",
+    "domain_specs": [
+      "@workspace/Lifecycle/CAT/Draft/eternalia.author.management/DomainSpec.md"
+    ],
+    "model": "CAT/Generated/TestModel.json",
+    "vectors": "CAT/Generated/Vectors.json",
+    "allow_draft": true
+  }
+}

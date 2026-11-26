@@ -1,0 +1,85 @@
+{
+  "schema": "cat-work/v1",
+  "id": "eternalia.w07.shell",
+  "entry": "issue",
+  "flow": "issue-work",
+  "mode": "shadow",
+  "work_kind": "specification",
+  "issue_ref": "https://github.com/surumeneco/Eternalia_Novel/issues/165",
+  "project_entry_ref": "https://drive.google.com/file/d/1clwfVJ3e_t1_QKFfOWxxRIzE9WMFvTiM/view",
+  "normative": [
+    {
+      "uri": "https://drive.google.com/file/d/1LqX-Noytb_oWymIrpO01eO5PvThGlVGx/view"
+    },
+    {
+      "uri": "https://drive.google.com/file/d/1G4q4DbJZdOk7jIfgvuZu0a2e4L1LIMti/view"
+    },
+    {
+      "uri": "https://drive.google.com/file/d/14no6MWmkFuyWYPVS6QdcRmbLbrUBbOpc/view"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/issues/165"
+    }
+  ],
+  "evidence": [
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/tree/961d291f493df219ac36cf88108d302d680c51ef/Lifecycle/Works/New/eternalia.ui.mobile-shell-focus/CAT/Confirmed"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/961d291f493df219ac36cf88108d302d680c51ef/apps/web/browser-acceptance/admin-grid-shell.test.mjs#L126",
+      "scope": "shell.open/close/focus and layout: focus containment, opener restore",
+      "kind": "existing-test-source; re-evaluate against replacement TCE; not a new execution receipt"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/961d291f493df219ac36cf88108d302d680c51ef/apps/web/browser-acceptance/series-first-ia.test.mjs#L162",
+      "scope": "shell.open/close: independent overlays and locale selection",
+      "kind": "existing-test-source; re-evaluate against replacement TCE; not a new execution receipt"
+    },
+    {
+      "uri": "https://github.com/surumeneco/Eternalia_Novel/blob/961d291f493df219ac36cf88108d302d680c51ef/apps/web/browser-acceptance/shell-keyboard-bypass.test.mjs#L11",
+      "scope": "shell keyboard bypass and hydration regression",
+      "kind": "existing-test-source; re-evaluate against replacement TCE; not a new execution receipt"
+    }
+  ],
+  "repositories": [],
+  "scope": {
+    "process_ids": [
+      "eternalia.ui.shell"
+    ],
+    "changed_ids": [
+      "AC-85",
+      "AC-86",
+      "AC-96"
+    ],
+    "preserved_ids": [
+      "AC-85",
+      "AC-86",
+      "AC-96"
+    ]
+  },
+  "specification": {
+    "status": "draft",
+    "decision_ref": null,
+    "artifact_refs": [
+      "Lifecycle/CAT/Draft/eternalia.ui.shell/Process.md",
+      "Lifecycle/CAT/Draft/eternalia.ui.shell/PI.md",
+      "Lifecycle/CAT/Draft/eternalia.ui.shell/TCE.md",
+      "Lifecycle/CAT/Draft/eternalia.ui.shell/DomainSpec.md"
+    ]
+  },
+  "technologies": [],
+  "checks": [],
+  "depends_on": [],
+  "compilation": {
+    "schema": "cat-compile/v2",
+    "process": "@workspace/Lifecycle/CAT/Draft/eternalia.ui.shell/Process.md",
+    "pi": "@workspace/Lifecycle/CAT/Draft/eternalia.ui.shell/PI.md",
+    "tce": "@workspace/Lifecycle/CAT/Draft/eternalia.ui.shell/TCE.md",
+    "domain_specs": [
+      "@workspace/Lifecycle/CAT/Draft/eternalia.ui.shell/DomainSpec.md"
+    ],
+    "model": "CAT/Generated/TestModel.json",
+    "vectors": "CAT/Generated/Vectors.json",
+    "allow_draft": true
+  }
+}
